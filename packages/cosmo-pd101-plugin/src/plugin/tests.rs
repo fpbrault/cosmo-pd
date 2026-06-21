@@ -452,6 +452,73 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
 }
 
 #[test]
+fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+
+    let mut synth_params = (*plugin.shared_state.synth.synth_params.load_full()).clone();
+    synth_params.line1.algo = cosmo_synth_engine::params::Algo::Bend;
+    plugin
+        .shared_state
+        .synth
+        .synth_params
+        .store(Arc::new(synth_params));
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
+            param_key: "line1AlgoControl2".to_string(),
+            channel: 0,
+            cc: 74,
+        }]);
+    let initial_version = plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .load(Ordering::Acquire);
+
+    plugin.handle_host_event(&EventBody::ControlChange {
+        group: 0,
+        channel: 0,
+        cc: 74,
+        value: 127,
+    });
+
+    let published = plugin.shared_state.synth.synth_params.load();
+    let bend_bias = published
+        .line1
+        .algo_controls_a
+        .iter()
+        .flatten()
+        .find(|entry| entry.id == cosmo_synth_engine::params::AlgoControlId::BendBias);
+    assert_eq!(bend_bias.map(|entry| entry.value), Some(1.0));
+    assert!(
+        plugin
+            .audio
+            .cached_rt_synth_params
+            .line1
+            .algo_controls_a
+            .iter()
+            .flatten()
+            .any(
+                |entry| entry.id == cosmo_synth_engine::params::AlgoControlId::BendBias
+                    && entry.value == 1.0
+            )
+    );
+    assert!(
+        plugin
+            .shared_state
+            .synth
+            .synth_params_version
+            .load(Ordering::Acquire)
+            > initial_version
+    );
+    assert!(plugin.shared_state.ui.midi_param_change_queue.is_empty());
+}
+
+#[test]
 fn midi_mapping_matches_exact_channel() {
     with_test_data_dir(|_| {
         clear_test_global_settings();

@@ -4,6 +4,7 @@ import {
 	ENGINE_PARAM_UI_META_BY_KEY,
 	getEngineParamDefault,
 	getEngineParamUiMeta,
+	isNativeMidiMappingParamKey,
 	requireEngineParamDefault,
 } from "./paramMeta";
 
@@ -53,5 +54,23 @@ describe("paramMeta", () => {
 		expect(Object.keys(ENGINE_PARAM_UI_META_BY_KEY).length).toBe(
 			ENGINE_PARAM_UI_META_V1.length,
 		);
+	});
+
+	it("recognizes exactly the sixteen canonical algo-control MIDI keys", () => {
+		for (const line of [1, 2]) {
+			for (let slot = 1; slot <= 8; slot++) {
+				expect(
+					isNativeMidiMappingParamKey(`line${line}AlgoControl${slot}`),
+				).toBe(true);
+			}
+		}
+		for (const invalid of [
+			"line0AlgoControl1",
+			"line1AlgoControl0",
+			"line1AlgoControl9",
+			"line1AlgoParam1",
+		]) {
+			expect(isNativeMidiMappingParamKey(invalid)).toBe(false);
+		}
 	});
 });

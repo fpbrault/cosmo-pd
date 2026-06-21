@@ -88,7 +88,7 @@ export type AlgoSlotViewModel = {
 	disabled: boolean;
 	controls: AlgoControlRuntime[];
 	controlBindings: Record<string, AlgoControlBinding>;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getControlValue: (id: string, fallback: number) => number;
 	setControlValue: (id: string, value: number) => void;
 	getActiveSelectOption: (

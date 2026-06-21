@@ -15,6 +15,7 @@ import type {
 	LfoSyncDivision,
 	LfoWaveform,
 	LineSelect,
+	ModDestination,
 	ModMatrix,
 	ModMode,
 	PolyMode,
@@ -34,6 +35,7 @@ import {
 	sanitizeFxSlotConfig,
 	sanitizeFxSlots,
 } from "@/lib/synth/fxSlotSanitizer";
+import { normalizeAlgoSlotKey } from "@/lib/synth/modDestination";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 
 // ---------------------------------------------------------------------------
@@ -90,6 +92,16 @@ function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
 		return "normal";
 	}
 	return modMode;
+}
+
+function normalizeModMatrix(matrix: ModMatrix): ModMatrix {
+	return {
+		...matrix,
+		routes: (matrix.routes ?? []).map((route) => ({
+			...route,
+			destination: normalizeAlgoSlotKey(route.destination) as ModDestination,
+		})),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -1018,7 +1030,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				octave: safe(p.octave, 0),
 				modMatrix:
 					p.modMatrix && typeof p.modMatrix === "object"
-						? (p.modMatrix as ModMatrix)
+						? normalizeModMatrix(p.modMatrix as ModMatrix)
 						: { routes: [] },
 				fxSlots:
 					Array.isArray(p.fxSlots) && p.fxSlots.length === 6

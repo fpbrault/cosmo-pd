@@ -33,7 +33,9 @@ use wry::WebViewBuilderExtDarwin;
 use crate::CzPluginParams;
 use crate::ipc::IpcContext;
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-use crate::runtime_state::{MidiCcQueue, MidiParamChangeQueue};
+use crate::runtime_state::MidiCcQueue;
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+use crate::runtime_state::MidiParamChangeQueue;
 use crate::runtime_state::{PluginSharedState, ScopeBuffer};
 use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
 use cosmo_pd101_bridge_types::PluginIpcEnvelope;
@@ -524,9 +526,6 @@ impl Editor for CzEditor {
         } else {
             drain_and_coalesce_param_changes(&self.shared_state.ui.midi_param_change_queue)
         };
-        #[cfg(any(target_os = "ios", target_os = "android"))]
-        let param_changes =
-            drain_and_coalesce_param_changes(&self.shared_state.ui.midi_param_change_queue);
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
         let should_push_params = param_changes.is_empty() && !r_af_active;
         #[cfg(any(target_os = "ios", target_os = "android"))]

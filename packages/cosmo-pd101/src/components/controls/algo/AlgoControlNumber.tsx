@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useAlgoControl } from "@/lib/synth/i18nAlgo";
-import { algoParamTargetFromSlot } from "@/lib/synth/modDestination";
+import { algoControlTargetFromSlot } from "@/lib/synth/modDestination";
 import ControlKnob from "../ControlKnob";
 import type {
 	AlgoControlBinding,
@@ -14,7 +14,7 @@ interface AlgoControlNumberProps {
 	disabled?: boolean;
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	color?: string;
@@ -79,7 +79,7 @@ function AlgoControlNumberInner({
 	disabled = false,
 	binding,
 	lineIndex,
-	algoParamSlotIndex,
+	algoControlSlotIndex,
 	getAlgoControlValue,
 	setAlgoControlValue,
 	color = "cyan",
@@ -92,9 +92,9 @@ function AlgoControlNumberInner({
 	const value =
 		binding?.getNumber?.() ??
 		getAlgoControlValue(control.id, control.default ?? min);
-	const slotIdx = algoParamSlotIndex[control.id];
-	const algoParamTarget = slotIdx
-		? algoParamTargetFromSlot(slotIdx)
+	const slotIdx = algoControlSlotIndex[control.id];
+	const algoControlTarget = slotIdx
+		? algoControlTargetFromSlot(slotIdx)
 		: undefined;
 	const midiTargetKey =
 		slotIdx && slotIdx >= 1 && slotIdx <= 8
@@ -129,7 +129,7 @@ function AlgoControlNumberInner({
 				bipolar={min < 0 && max > 0}
 				defaultValue={control.default ?? undefined}
 				color={color}
-				modulatable={disabled ? undefined : algoParamTarget}
+				modulatable={disabled ? undefined : algoControlTarget}
 				lineIndex={lineIndex}
 				onChange={(newVal) =>
 					binding?.setNumber

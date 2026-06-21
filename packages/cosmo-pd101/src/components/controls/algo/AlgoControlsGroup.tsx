@@ -22,7 +22,7 @@ type AlgoControlsGroupSlot = {
 	controls: AlgoControlRuntime[];
 	controlBindings: Record<string, AlgoControlBinding>;
 	lineIndex: LineIndex;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	getActiveSelectOption: (
@@ -73,7 +73,7 @@ function AlgoControlsGroupInner({
 		controls,
 		controlBindings,
 		lineIndex,
-		algoParamSlotIndex,
+		algoControlSlotIndex,
 		getAlgoControlValue,
 		setAlgoControlValue,
 		getActiveSelectOption,
@@ -93,7 +93,7 @@ function AlgoControlsGroupInner({
 			disabled={disabled}
 			binding={controlBindings[control.id]}
 			lineIndex={lineIndex}
-			algoParamSlotIndex={algoParamSlotIndex}
+			algoControlSlotIndex={algoControlSlotIndex}
 			getAlgoControlValue={getAlgoControlValue}
 			setAlgoControlValue={setAlgoControlValue}
 			getActiveSelectOption={getActiveSelectOption}

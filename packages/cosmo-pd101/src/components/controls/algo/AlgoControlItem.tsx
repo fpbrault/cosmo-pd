@@ -16,7 +16,7 @@ interface AlgoControlItemProps {
 	disabled?: boolean;
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	getActiveSelectOption: (
@@ -31,7 +31,7 @@ function AlgoControlItemInner({
 	disabled = false,
 	binding,
 	lineIndex,
-	algoParamSlotIndex,
+	algoControlSlotIndex,
 	getAlgoControlValue,
 	setAlgoControlValue,
 	getActiveSelectOption,
@@ -88,7 +88,7 @@ function AlgoControlItemInner({
 				disabled={disabled}
 				binding={binding}
 				lineIndex={lineIndex}
-				algoParamSlotIndex={algoParamSlotIndex}
+				algoControlSlotIndex={algoControlSlotIndex}
 				getAlgoControlValue={getAlgoControlValue}
 				setAlgoControlValue={setAlgoControlValue}
 				color={color}

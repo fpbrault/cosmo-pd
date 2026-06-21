@@ -27,7 +27,7 @@ pub use line::{
     ModMode, PolyMode,
 };
 pub use mapping::{
-    MidiMappingBinding, apply_midi_mapping, apply_midi_mapping_binding,
+    MidiMappingBinding, apply_midi_mapping, apply_midi_mapping_binding, is_algo_control_slot_key,
     midi_mapping_param_ranges_v1, parameter_range_for_key, set_parameter_value_by_key,
 };
 pub use modulation::{

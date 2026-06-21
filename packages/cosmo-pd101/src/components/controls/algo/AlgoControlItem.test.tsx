@@ -25,7 +25,7 @@ vi.mock("./AlgoControlToggle", () => ({
 const baseProps = {
 	binding: {},
 	lineIndex: 1 as const,
-	algoParamSlotIndex: {},
+	algoControlSlotIndex: {},
 	getAlgoControlValue: () => 0,
 	setAlgoControlValue: () => {},
 	getActiveSelectOption: () => null,

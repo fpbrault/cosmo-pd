@@ -9,11 +9,11 @@ import AlgoControlTooltip from "./AlgoControlTooltip";
 import AlgoIconGrid from "./AlgoIconGrid";
 
 const knobSpy = vi.fn();
-const algoParamTargetFromSlotMock = vi.fn();
+const algoControlTargetFromSlotMock = vi.fn();
 
 vi.mock("@/lib/synth/modDestination", () => ({
-	algoParamTargetFromSlot: (...args: unknown[]) =>
-		algoParamTargetFromSlotMock(...args),
+	algoControlTargetFromSlot: (...args: unknown[]) =>
+		algoControlTargetFromSlotMock(...args),
 }));
 
 vi.mock("../ControlKnob", () => ({
@@ -50,7 +50,7 @@ const selectControl = {
 describe("algo controls (browser)", () => {
 	beforeEach(() => {
 		knobSpy.mockClear();
-		algoParamTargetFromSlotMock.mockReset();
+		algoControlTargetFromSlotMock.mockReset();
 	});
 
 	it("renders tooltip only when description exists", () => {
@@ -95,7 +95,7 @@ describe("algo controls (browser)", () => {
 			<AlgoControlItem
 				binding={{ setNumber }}
 				lineIndex={1}
-				algoParamSlotIndex={{}}
+				algoControlSlotIndex={{}}
 				getAlgoControlValue={() => 0}
 				setAlgoControlValue={() => {}}
 				getActiveSelectOption={() => selectControl.options[0]}
@@ -130,7 +130,7 @@ describe("algo controls (browser)", () => {
 
 	it("renders AlgoControlNumber and forwards onChange", () => {
 		const setAlgoControlValue = vi.fn();
-		algoParamTargetFromSlotMock.mockReturnValue("algoParam2");
+		algoControlTargetFromSlotMock.mockReturnValue("algoControl2");
 		render(
 			<AlgoControlNumber
 				control={{
@@ -142,7 +142,7 @@ describe("algo controls (browser)", () => {
 					algo: "cz101",
 				}}
 				lineIndex={1}
-				algoParamSlotIndex={{ depth: 2 }}
+				algoControlSlotIndex={{ depth: 2 }}
 				getAlgoControlValue={() => 1.25}
 				setAlgoControlValue={setAlgoControlValue}
 			/>,
@@ -153,7 +153,7 @@ describe("algo controls (browser)", () => {
 			onChange: (value: number) => void;
 			modulatable: string;
 		};
-		expect(props.modulatable).toBe("algoParam2");
+		expect(props.modulatable).toBe("algoControl2");
 		props.onChange(0.8);
 		expect(setAlgoControlValue).toHaveBeenCalledWith("depth", 0.8);
 	});
@@ -162,7 +162,7 @@ describe("algo controls (browser)", () => {
 		const baseProps = {
 			binding: {},
 			lineIndex: 1 as const,
-			algoParamSlotIndex: {},
+			algoControlSlotIndex: {},
 			getAlgoControlValue: () => 0,
 			setAlgoControlValue: () => {},
 			getActiveSelectOption: () => null,
@@ -200,7 +200,7 @@ describe("algo controls (browser)", () => {
 			controls: [],
 			controlBindings: {},
 			lineIndex: 1 as const,
-			algoParamSlotIndex: {},
+			algoControlSlotIndex: {},
 			getAlgoControlValue: () => 0,
 			setAlgoControlValue: () => {},
 			getActiveSelectOption: () => null,

@@ -57,32 +57,32 @@ impl ModSources {
     }
 }
 
-pub(crate) fn algo_param_slot_mods_for_line(
+pub(crate) fn algo_control_slot_mods_for_line(
     line_index: u8,
     cache: &ModMatrixCache,
     sources: &ModSources,
 ) -> [f32; 8] {
     if line_index == 2 {
         [
-            cache.get(ModDestination::Line2AlgoParam1, sources),
-            cache.get(ModDestination::Line2AlgoParam2, sources),
-            cache.get(ModDestination::Line2AlgoParam3, sources),
-            cache.get(ModDestination::Line2AlgoParam4, sources),
-            cache.get(ModDestination::Line2AlgoParam5, sources),
-            cache.get(ModDestination::Line2AlgoParam6, sources),
-            cache.get(ModDestination::Line2AlgoParam7, sources),
-            cache.get(ModDestination::Line2AlgoParam8, sources),
+            cache.get(ModDestination::Line2AlgoControl1, sources),
+            cache.get(ModDestination::Line2AlgoControl2, sources),
+            cache.get(ModDestination::Line2AlgoControl3, sources),
+            cache.get(ModDestination::Line2AlgoControl4, sources),
+            cache.get(ModDestination::Line2AlgoControl5, sources),
+            cache.get(ModDestination::Line2AlgoControl6, sources),
+            cache.get(ModDestination::Line2AlgoControl7, sources),
+            cache.get(ModDestination::Line2AlgoControl8, sources),
         ]
     } else {
         [
-            cache.get(ModDestination::Line1AlgoParam1, sources),
-            cache.get(ModDestination::Line1AlgoParam2, sources),
-            cache.get(ModDestination::Line1AlgoParam3, sources),
-            cache.get(ModDestination::Line1AlgoParam4, sources),
-            cache.get(ModDestination::Line1AlgoParam5, sources),
-            cache.get(ModDestination::Line1AlgoParam6, sources),
-            cache.get(ModDestination::Line1AlgoParam7, sources),
-            cache.get(ModDestination::Line1AlgoParam8, sources),
+            cache.get(ModDestination::Line1AlgoControl1, sources),
+            cache.get(ModDestination::Line1AlgoControl2, sources),
+            cache.get(ModDestination::Line1AlgoControl3, sources),
+            cache.get(ModDestination::Line1AlgoControl4, sources),
+            cache.get(ModDestination::Line1AlgoControl5, sources),
+            cache.get(ModDestination::Line1AlgoControl6, sources),
+            cache.get(ModDestination::Line1AlgoControl7, sources),
+            cache.get(ModDestination::Line1AlgoControl8, sources),
         ]
     }
 }

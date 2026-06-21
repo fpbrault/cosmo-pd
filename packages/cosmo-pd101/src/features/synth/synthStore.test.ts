@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_ALGO_REF } from "@/lib/synth/algoRef";
-import type { FxSlotConfig, SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import type {
+	FxSlotConfig,
+	ModDestination,
+	SynthPresetV1,
+} from "@/lib/synth/bindings/synth";
 import { useSynthStore } from "./synthStore";
 
 describe("useSynthStore", () => {
@@ -73,6 +77,30 @@ describe("useSynthStore", () => {
 				{ id: "feedback", value: 0.75 },
 			]),
 		);
+	});
+
+	it("normalizes legacy algo-param modulation destinations when loading", () => {
+		const preset = useSynthStore.getState().gatherState();
+		preset.params.modMatrix = {
+			routes: [
+				{
+					source: "lfo1",
+					destination: "line1AlgoParam1" as ModDestination,
+					amount: 0.5,
+					enabled: true,
+				},
+			],
+		};
+
+		act(() => useSynthStore.getState().applyPreset(preset));
+
+		expect(useSynthStore.getState().modMatrix.routes?.[0]?.destination).toBe(
+			"line1AlgoControl1",
+		);
+		expect(
+			useSynthStore.getState().gatherState().params.modMatrix?.routes?.[0]
+				?.destination,
+		).toBe("line1AlgoControl1");
 	});
 
 	it("gathers state into a preset structure", () => {

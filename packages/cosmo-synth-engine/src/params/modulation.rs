@@ -36,27 +36,43 @@ pub enum ModDestination {
     Line1AlgoBlend,
     Line2DetuneNote,
     Line1Octave,
-    Line1AlgoParam1,
-    Line1AlgoParam2,
-    Line1AlgoParam3,
-    Line1AlgoParam4,
-    Line1AlgoParam5,
-    Line1AlgoParam6,
-    Line1AlgoParam7,
-    Line1AlgoParam8,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam1"))]
+    Line1AlgoControl1,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam2"))]
+    Line1AlgoControl2,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam3"))]
+    Line1AlgoControl3,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam4"))]
+    Line1AlgoControl4,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam5"))]
+    Line1AlgoControl5,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam6"))]
+    Line1AlgoControl6,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam7"))]
+    Line1AlgoControl7,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line1AlgoParam8"))]
+    Line1AlgoControl8,
     Line2DcwBase,
     Line2DcaBase,
     Line2AlgoBlend,
     Line2DetuneFine,
     Line2DetuneOctave,
-    Line2AlgoParam1,
-    Line2AlgoParam2,
-    Line2AlgoParam3,
-    Line2AlgoParam4,
-    Line2AlgoParam5,
-    Line2AlgoParam6,
-    Line2AlgoParam7,
-    Line2AlgoParam8,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam1"))]
+    Line2AlgoControl1,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam2"))]
+    Line2AlgoControl2,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam3"))]
+    Line2AlgoControl3,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam4"))]
+    Line2AlgoControl4,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam5"))]
+    Line2AlgoControl5,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam6"))]
+    Line2AlgoControl6,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam7"))]
+    Line2AlgoControl7,
+    #[cfg_attr(not(feature = "specta-bindings"), serde(alias = "line2AlgoParam8"))]
+    Line2AlgoControl8,
     FilterCutoff,
     FilterResonance,
     FilterEnvAmount,
@@ -256,6 +272,36 @@ pub struct ModRoute {
     pub destination: ModDestination,
     pub amount: f32,
     pub enabled: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn algo_control_destinations_emit_canonical_names() {
+        assert_eq!(
+            serde_json::to_string(&ModDestination::Line1AlgoControl1).unwrap(),
+            r#""line1AlgoControl1""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ModDestination::Line2AlgoControl8).unwrap(),
+            r#""line2AlgoControl8""#
+        );
+    }
+
+    #[test]
+    #[cfg(not(feature = "specta-bindings"))]
+    fn legacy_algo_param_destinations_deserialize_as_algo_controls() {
+        assert_eq!(
+            serde_json::from_str::<ModDestination>(r#""line1AlgoParam1""#).unwrap(),
+            ModDestination::Line1AlgoControl1
+        );
+        assert_eq!(
+            serde_json::from_str::<ModDestination>(r#""line2AlgoParam8""#).unwrap(),
+            ModDestination::Line2AlgoControl8
+        );
+    }
 }
 
 impl Default for ModRoute {

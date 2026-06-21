@@ -4,11 +4,11 @@ import { getMidiLearnTargetRegistration } from "@/features/synth/midiLearnRegist
 import AlgoControlNumber from "./AlgoControlNumber";
 
 const knobSpy = vi.fn();
-const algoParamTargetFromSlotMock = vi.fn();
+const algoControlTargetFromSlotMock = vi.fn();
 
 vi.mock("@/lib/synth/modDestination", () => ({
-	algoParamTargetFromSlot: (...args: unknown[]) =>
-		algoParamTargetFromSlotMock(...args),
+	algoControlTargetFromSlot: (...args: unknown[]) =>
+		algoControlTargetFromSlotMock(...args),
 }));
 
 vi.mock("@/lib/synth/i18nAlgo", () => ({
@@ -28,12 +28,12 @@ vi.mock("../ControlKnob", () => ({
 describe("AlgoControlNumber", () => {
 	beforeEach(() => {
 		knobSpy.mockClear();
-		algoParamTargetFromSlotMock.mockReset();
+		algoControlTargetFromSlotMock.mockReset();
 	});
 
 	it("renders knob with resolved value and forwards number changes to binding", () => {
 		const setNumber = vi.fn();
-		algoParamTargetFromSlotMock.mockReturnValue("algoParam2");
+		algoControlTargetFromSlotMock.mockReturnValue("algoControl2");
 
 		render(
 			<AlgoControlNumber
@@ -47,7 +47,7 @@ describe("AlgoControlNumber", () => {
 				}}
 				binding={{ getNumber: () => 1.25, setNumber }}
 				lineIndex={1}
-				algoParamSlotIndex={{ depth: 2 }}
+				algoControlSlotIndex={{ depth: 2 }}
 				getAlgoControlValue={vi.fn()}
 				setAlgoControlValue={vi.fn()}
 			/>,
@@ -60,7 +60,7 @@ describe("AlgoControlNumber", () => {
 			modulatable: string;
 		};
 		expect(props.value).toBe(1.25);
-		expect(props.modulatable).toBe("algoParam2");
+		expect(props.modulatable).toBe("algoControl2");
 		props.onChange(0.77);
 		expect(setNumber).toHaveBeenCalledWith(0.77);
 	});
@@ -78,7 +78,7 @@ describe("AlgoControlNumber", () => {
 					algo: "cz101",
 				}}
 				lineIndex={2}
-				algoParamSlotIndex={{}}
+				algoControlSlotIndex={{}}
 				getAlgoControlValue={() => 0.61}
 				setAlgoControlValue={setAlgoControlValue}
 			/>,
@@ -94,7 +94,7 @@ describe("AlgoControlNumber", () => {
 	});
 
 	it("registers generic slot-based MIDI learn target key (not algo-specific)", () => {
-		algoParamTargetFromSlotMock.mockReturnValue("algoParam2");
+		algoControlTargetFromSlotMock.mockReturnValue("algoControl2");
 		render(
 			<AlgoControlNumber
 				control={{
@@ -106,7 +106,7 @@ describe("AlgoControlNumber", () => {
 					algo: "cz101",
 				}}
 				lineIndex={1}
-				algoParamSlotIndex={{ depth: 2 }}
+				algoControlSlotIndex={{ depth: 2 }}
 				getAlgoControlValue={vi.fn()}
 				setAlgoControlValue={vi.fn()}
 			/>,
@@ -123,7 +123,7 @@ describe("AlgoControlNumber", () => {
 	});
 
 	it("does not register MIDI target when slot index is absent", () => {
-		algoParamTargetFromSlotMock.mockReturnValue(undefined);
+		algoControlTargetFromSlotMock.mockReturnValue(undefined);
 		render(
 			<AlgoControlNumber
 				control={{
@@ -135,7 +135,7 @@ describe("AlgoControlNumber", () => {
 					algo: "cz101",
 				}}
 				lineIndex={2}
-				algoParamSlotIndex={{}}
+				algoControlSlotIndex={{}}
 				getAlgoControlValue={vi.fn()}
 				setAlgoControlValue={vi.fn()}
 			/>,
@@ -146,7 +146,7 @@ describe("AlgoControlNumber", () => {
 	});
 
 	it("does not register MIDI target for slots > 8", () => {
-		algoParamTargetFromSlotMock.mockReturnValue(undefined);
+		algoControlTargetFromSlotMock.mockReturnValue(undefined);
 		render(
 			<AlgoControlNumber
 				control={{
@@ -157,7 +157,7 @@ describe("AlgoControlNumber", () => {
 					algo: "cz101",
 				}}
 				lineIndex={1}
-				algoParamSlotIndex={{ overflow: 9 }}
+				algoControlSlotIndex={{ overflow: 9 }}
 				getAlgoControlValue={vi.fn()}
 				setAlgoControlValue={vi.fn()}
 			/>,
@@ -181,7 +181,7 @@ describe("AlgoControlNumber", () => {
 						readoutFormat: { kind: "degrees" },
 					}}
 					lineIndex={1}
-					algoParamSlotIndex={{}}
+					algoControlSlotIndex={{}}
 					getAlgoControlValue={() => 0.25}
 					setAlgoControlValue={vi.fn()}
 				/>
@@ -196,7 +196,7 @@ describe("AlgoControlNumber", () => {
 						readoutFormat: { kind: "integer" },
 					}}
 					lineIndex={1}
-					algoParamSlotIndex={{}}
+					algoControlSlotIndex={{}}
 					getAlgoControlValue={() => 12}
 					setAlgoControlValue={vi.fn()}
 				/>

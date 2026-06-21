@@ -167,7 +167,7 @@ describe("useMidiLearnBindings", () => {
 		expect(useMidiLearnStore.getState().learnMode).toBe(true);
 	});
 
-	it("captures UI-only targets locally in plugin mode", () => {
+	it("defers generic algo-control capture to native plugin mode", () => {
 		(
 			window as Window & {
 				__czAddMidiBinding?: (key: string, channel: number, cc: number) => void;
@@ -185,9 +185,7 @@ describe("useMidiLearnBindings", () => {
 			}),
 		);
 
-		expect(useMidiLearnStore.getState().bindings).toEqual([
-			{ paramKey: "line1AlgoControl1", channel: 2, cc: 14 },
-		]);
+		expect(useMidiLearnStore.getState().bindings).toEqual([]);
 	});
 
 	it("does not duplicate native engine-backed mapping in plugin mode", () => {
@@ -203,6 +201,23 @@ describe("useMidiLearnBindings", () => {
 			}),
 		);
 		expect(setVolume).not.toHaveBeenCalled();
+	});
+
+	it("does not duplicate native algo-control mapping in plugin mode", () => {
+		window.__czAddMidiBinding = vi.fn();
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("line1AlgoControl1", { apply });
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "line1AlgoControl1", channel: 0, cc: 7 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 7, rawValue: 127 },
+			}),
+		);
+		expect(apply).not.toHaveBeenCalled();
+		cleanup();
 	});
 
 	it("quantizes stepped controls like octave in web mode", () => {

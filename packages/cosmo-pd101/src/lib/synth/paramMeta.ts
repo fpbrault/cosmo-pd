@@ -26,6 +26,14 @@ export const ENGINE_MIDI_PARAM_RANGES_BY_KEY = new Map<
 	EngineParamRangeV1
 >(ENGINE_MIDI_PARAM_RANGES_V1.map((range) => [range.key, range] as const));
 
+const ALGO_CONTROL_SLOT_KEY = /^line[12]AlgoControl[1-8]$/;
+
+export function isNativeMidiMappingParamKey(key: string): boolean {
+	return (
+		ENGINE_MIDI_PARAM_RANGES_BY_KEY.has(key) || ALGO_CONTROL_SLOT_KEY.test(key)
+	);
+}
+
 export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 	Record<SynthParamKey, EngineParamUiMetaWithRangeV1>
 > = ENGINE_PARAM_UI_META_V1.reduce(

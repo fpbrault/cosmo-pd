@@ -977,13 +977,13 @@ fn heavy_mod_matrix() -> ModMatrix {
         },
         ModRoute {
             source: ModSource::Random,
-            destination: ModDestination::Line1AlgoParam1,
+            destination: ModDestination::Line1AlgoControl1,
             amount: 0.6,
             enabled: true,
         },
         ModRoute {
             source: ModSource::Random,
-            destination: ModDestination::Line2AlgoParam2,
+            destination: ModDestination::Line2AlgoControl2,
             amount: 0.6,
             enabled: true,
         },

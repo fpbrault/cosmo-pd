@@ -1,4 +1,9 @@
-use super::{EngineParamRangeV1, SynthParams, engine_param_ranges_v1};
+use crate::generators::{AlgoControlKindV1, algo_definitions_v1};
+
+use super::{
+    AlgoControlId, AlgoControlSlots, AlgoControlValueV1, EngineParamRangeV1, LineParams,
+    SynthParams, engine_param_ranges_v1,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MidiMappingBinding<'a> {
@@ -22,6 +27,148 @@ struct AutomatableParamSpec {
     min: f32,
     max: f32,
     step: Option<f32>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct AlgoControlMidiSlot {
+    line_index: usize,
+    slot_index: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AlgoControlSection {
+    A,
+    B,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct ResolvedAlgoControlTarget {
+    line_index: usize,
+    section: AlgoControlSection,
+    control_id: AlgoControlId,
+    min: f32,
+    max: f32,
+}
+
+fn parse_algo_control_midi_slot(key: &str) -> Option<AlgoControlMidiSlot> {
+    let suffix = key.strip_prefix("line")?;
+    let (line, slot) = suffix.split_once("AlgoControl")?;
+    let line_index = match line {
+        "1" => 0,
+        "2" => 1,
+        _ => return None,
+    };
+    let slot_index = slot.parse::<usize>().ok()?.checked_sub(1)?;
+    if slot_index >= 8 || slot.len() != 1 {
+        return None;
+    }
+    Some(AlgoControlMidiSlot {
+        line_index,
+        slot_index,
+    })
+}
+
+pub fn is_algo_control_slot_key(key: &str) -> bool {
+    parse_algo_control_midi_slot(key).is_some()
+}
+
+fn algo_definition_for(algo: super::Algo) -> Option<&'static crate::generators::AlgoDefinitionV1> {
+    algo_definitions_v1()
+        .iter()
+        .find(|definition| definition.id == algo)
+}
+
+fn resolve_algo_control_slot(
+    params: &SynthParams,
+    slot: AlgoControlMidiSlot,
+) -> Option<ResolvedAlgoControlTarget> {
+    let line = match slot.line_index {
+        0 => &params.line1,
+        1 => &params.line2,
+        _ => return None,
+    };
+    let mut numeric_slot = 0;
+
+    for (section, algo) in [
+        (AlgoControlSection::A, Some(line.algo)),
+        (AlgoControlSection::B, line.algo2),
+    ] {
+        let Some(definition) = algo.and_then(algo_definition_for) else {
+            continue;
+        };
+        for control in definition.controls {
+            if control.kind != AlgoControlKindV1::Number {
+                continue;
+            }
+            if numeric_slot == slot.slot_index {
+                let control_id = AlgoControlId::from_str(control.id);
+                if control_id == AlgoControlId::Unknown {
+                    return None;
+                }
+                return Some(ResolvedAlgoControlTarget {
+                    line_index: slot.line_index,
+                    section,
+                    control_id,
+                    min: control.min.unwrap_or(0.0),
+                    max: control.max.unwrap_or(1.0),
+                });
+            }
+            numeric_slot += 1;
+            if numeric_slot >= 8 {
+                return None;
+            }
+        }
+    }
+    None
+}
+
+fn upsert_algo_control_value(
+    controls: &mut AlgoControlSlots,
+    control_id: AlgoControlId,
+    value: f32,
+) -> bool {
+    if let Some(existing) = controls
+        .iter_mut()
+        .flatten()
+        .find(|entry| entry.id == control_id)
+    {
+        existing.value = value;
+        return true;
+    }
+    let Some(empty) = controls.iter_mut().find(|entry| entry.is_none()) else {
+        return false;
+    };
+    *empty = Some(AlgoControlValueV1 {
+        id: control_id,
+        value,
+    });
+    true
+}
+
+fn apply_virtual_algo_control_midi_mapping(
+    params: &mut SynthParams,
+    key: &str,
+    normalized_value: f32,
+) -> Option<AppliedMidiParamChange> {
+    let slot = parse_algo_control_midi_slot(key)?;
+    let target = resolve_algo_control_slot(params, slot)?;
+    let mapped = target.min + normalized_value.clamp(0.0, 1.0) * (target.max - target.min);
+    let line: &mut LineParams = match target.line_index {
+        0 => &mut params.line1,
+        1 => &mut params.line2,
+        _ => return None,
+    };
+    let controls = match target.section {
+        AlgoControlSection::A => &mut line.algo_controls_a,
+        AlgoControlSection::B => &mut line.algo_controls_b,
+    };
+    if !upsert_algo_control_value(controls, target.control_id, mapped) {
+        return None;
+    }
+    Some(AppliedMidiParamChange {
+        key: key.to_string(),
+        value: mapped,
+    })
 }
 
 const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
@@ -382,6 +529,11 @@ pub fn apply_midi_mapping_binding(
     {
         return None;
     }
+    if let Some(change) =
+        apply_virtual_algo_control_midi_mapping(params, param_key, normalized_value)
+    {
+        return Some(change);
+    }
     let (min, max) = parameter_range_for_key(param_key)?;
     let mapped = min + normalized_value.clamp(0.0, 1.0) * (max - min);
     let step = parameter_step_for_key(param_key);
@@ -589,5 +741,144 @@ mod tests {
         assert_eq!(parameter_step_for_key("volume"), None);
         assert_eq!(parameter_step_for_key("lfoDepth"), None);
         assert_eq!(parameter_step_for_key("missing"), None);
+    }
+
+    #[test]
+    fn parses_only_canonical_algo_control_midi_slots() {
+        for (key, line_index, slot_index) in [
+            ("line1AlgoControl1", 0, 0),
+            ("line1AlgoControl8", 0, 7),
+            ("line2AlgoControl1", 1, 0),
+            ("line2AlgoControl8", 1, 7),
+        ] {
+            assert_eq!(
+                parse_algo_control_midi_slot(key),
+                Some(AlgoControlMidiSlot {
+                    line_index,
+                    slot_index,
+                })
+            );
+        }
+
+        for key in [
+            "line0AlgoControl1",
+            "line3AlgoControl1",
+            "line1AlgoControl0",
+            "line1AlgoControl9",
+            "line1AlgoControl01",
+            "line1AlgoAControldepth",
+            "line1AlgoControlDepth",
+            "line1AlgoParam1",
+        ] {
+            assert_eq!(parse_algo_control_midi_slot(key), None, "{key}");
+        }
+    }
+
+    #[test]
+    fn resolves_algo_a_then_algo_b_numeric_controls() {
+        let mut params = SynthParams::default();
+        params.line1.algo = super::super::Algo::Bend;
+        params.line1.algo2 = Some(super::super::Algo::Fold);
+
+        let first = resolve_algo_control_slot(
+            &params,
+            AlgoControlMidiSlot {
+                line_index: 0,
+                slot_index: 0,
+            },
+        )
+        .unwrap();
+        assert_eq!(first.section, AlgoControlSection::A);
+        assert_eq!(first.control_id, AlgoControlId::BendCurve);
+
+        let first_b = resolve_algo_control_slot(
+            &params,
+            AlgoControlMidiSlot {
+                line_index: 0,
+                slot_index: 3,
+            },
+        )
+        .unwrap();
+        assert_eq!(first_b.section, AlgoControlSection::B);
+        assert_eq!(first_b.control_id, AlgoControlId::FoldStages);
+    }
+
+    #[test]
+    fn non_numeric_controls_do_not_consume_algo_control_slots() {
+        let mut params = SynthParams::default();
+        params.line1.algo = super::super::Algo::Cz101;
+        params.line1.algo2 = Some(super::super::Algo::Bend);
+
+        let target = resolve_algo_control_slot(
+            &params,
+            AlgoControlMidiSlot {
+                line_index: 0,
+                slot_index: 0,
+            },
+        )
+        .unwrap();
+        assert_eq!(target.section, AlgoControlSection::B);
+        assert_eq!(target.control_id, AlgoControlId::BendCurve);
+    }
+
+    #[test]
+    fn resolves_at_most_eight_algo_control_slots_per_line() {
+        let mut params = SynthParams::default();
+        params.line2.algo = super::super::Algo::Fold;
+        params.line2.algo2 = Some(super::super::Algo::Skew);
+
+        let eighth = resolve_algo_control_slot(
+            &params,
+            AlgoControlMidiSlot {
+                line_index: 1,
+                slot_index: 7,
+            },
+        )
+        .unwrap();
+        assert_eq!(eighth.section, AlgoControlSection::B);
+        assert_eq!(eighth.control_id, AlgoControlId::SkewTilt);
+    }
+
+    #[test]
+    fn virtual_algo_control_mapping_uses_current_range_and_upserts() {
+        let mut params = SynthParams::default();
+        params.line1.algo = super::super::Algo::Bend;
+
+        let min = apply_midi_mapping_binding(&mut params, "line1AlgoControl2", -1, 74, 0, 74, 0.0)
+            .unwrap();
+        assert_eq!(min.key, "line1AlgoControl2");
+        assert_eq!(min.value, -1.0);
+
+        let max = apply_midi_mapping_binding(&mut params, "line1AlgoControl2", -1, 74, 0, 74, 1.0)
+            .unwrap();
+        assert_eq!(max.value, 1.0);
+
+        let entries: Vec<_> = params.line1.algo_controls_a.iter().flatten().collect();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].id, AlgoControlId::BendBias);
+        assert_eq!(entries[0].value, 1.0);
+    }
+
+    #[test]
+    fn virtual_algo_control_mapping_tracks_dynamic_algo_changes() {
+        let mut params = SynthParams::default();
+        params.line1.algo = super::super::Algo::Bend;
+
+        let bend_change =
+            apply_midi_mapping_binding(&mut params, "line1AlgoControl1", -1, 11, 0, 11, 0.25)
+                .unwrap();
+        assert_eq!(bend_change.key, "line1AlgoControl1");
+        assert!(params.line1.algo_controls_a.iter().flatten().any(|entry| {
+            entry.id == AlgoControlId::BendCurve && (entry.value - 0.25).abs() < f32::EPSILON
+        }));
+
+        params.line1.algo = super::super::Algo::Fold;
+        let fold_change =
+            apply_midi_mapping_binding(&mut params, "line1AlgoControl1", -1, 11, 0, 11, 0.75)
+                .unwrap();
+        assert_eq!(fold_change.key, "line1AlgoControl1");
+        assert!(params.line1.algo_controls_a.iter().flatten().any(|entry| {
+            entry.id == AlgoControlId::FoldStages && (entry.value - 0.75).abs() < f32::EPSILON
+        }));
     }
 }

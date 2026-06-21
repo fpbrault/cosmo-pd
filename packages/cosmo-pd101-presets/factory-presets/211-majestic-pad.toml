@@ -196,6 +196,6 @@ timeMode = "hz"
 
 [[params.mod.routes]]
 source = "modWheel"
-destination = "line1AlgoParam4"
+destination = "line1AlgoControl4"
 amount = -0.6846875
 enabled = true

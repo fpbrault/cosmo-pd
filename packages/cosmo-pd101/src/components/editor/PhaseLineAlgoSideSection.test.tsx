@@ -81,7 +81,7 @@ function createSlot(slotId: "a" | "b"): AlgoSlotViewModel {
 		disabled: false,
 		controls: [],
 		controlBindings: {},
-		algoParamSlotIndex: {},
+		algoControlSlotIndex: {},
 		getControlValue: vi.fn((_, fallback: number) => fallback),
 		setControlValue: vi.fn(),
 		getActiveSelectOption: vi.fn(() => null),

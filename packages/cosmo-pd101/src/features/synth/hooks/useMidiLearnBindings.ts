@@ -9,7 +9,10 @@ import {
 } from "@/features/synth/midiLearnStore";
 import { SYNTH_PARAM_SETTERS } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
-import { ENGINE_MIDI_PARAM_RANGES_BY_KEY } from "@/lib/synth/paramMeta";
+import {
+	ENGINE_MIDI_PARAM_RANGES_BY_KEY,
+	isNativeMidiMappingParamKey,
+} from "@/lib/synth/paramMeta";
 
 type UseMidiLearnBindingsOptions = {
 	applyBindings?: boolean;
@@ -29,7 +32,7 @@ export function useMidiLearnBindings({
 		if (typeof bridgeAddBinding === "function") {
 			const pending = store.pendingLearnParam;
 			const isNativeBacked = pending
-				? ENGINE_MIDI_PARAM_RANGES_BY_KEY.has(pending)
+				? isNativeMidiMappingParamKey(pending)
 				: false;
 			if (!isNativeBacked && pending) {
 				store.captureBindingLocally(pending, channel, cc);
@@ -53,7 +56,7 @@ export function useMidiLearnBindings({
 				const nativeRange = ENGINE_MIDI_PARAM_RANGES_BY_KEY.get(
 					binding.paramKey,
 				);
-				if (pluginBacked && nativeRange) {
+				if (pluginBacked && isNativeMidiMappingParamKey(binding.paramKey)) {
 					continue;
 				}
 

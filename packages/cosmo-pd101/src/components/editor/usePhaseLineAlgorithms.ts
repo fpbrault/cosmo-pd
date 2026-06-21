@@ -24,6 +24,31 @@ type PhaseLineAlgorithms = {
 	slotB: AlgoSlotViewModel;
 };
 
+export function assignAlgoControlSlots(
+	controlsA: AlgoControlRuntime[],
+	controlsB: AlgoControlRuntime[],
+): {
+	slotIndexA: Record<string, number>;
+	slotIndexB: Record<string, number>;
+} {
+	const slotIndexA: Record<string, number> = {};
+	let slotCounter = 1;
+	for (const control of controlsA) {
+		if ((control.kind ?? "number") === "number" && slotCounter <= 8) {
+			slotIndexA[control.id] = slotCounter++;
+		}
+	}
+
+	const slotIndexB: Record<string, number> = {};
+	for (const control of controlsB) {
+		if ((control.kind ?? "number") === "number" && slotCounter <= 8) {
+			slotIndexB[control.id] = slotCounter++;
+		}
+	}
+
+	return { slotIndexA, slotIndexB };
+}
+
 export function usePhaseLineAlgorithms(
 	algo: PhaseLineAlgoModel,
 ): PhaseLineAlgorithms {
@@ -91,27 +116,10 @@ export function usePhaseLineAlgorithms(
 		[activeAlgoDefinitionB],
 	);
 
-	const { slotIndexA, slotIndexB } = useMemo(() => {
-		const nextSlotIndexA: Record<string, number> = {};
-		let slotCounter = 1;
-		for (const ctrl of controlsA) {
-			if ((ctrl.kind ?? "number") === "number" && slotCounter <= 8) {
-				nextSlotIndexA[ctrl.id] = slotCounter++;
-			}
-		}
-
-		const nextSlotIndexB: Record<string, number> = {};
-		for (const ctrl of controlsB) {
-			if ((ctrl.kind ?? "number") === "number" && slotCounter <= 8) {
-				nextSlotIndexB[ctrl.id] = slotCounter++;
-			}
-		}
-
-		return {
-			slotIndexA: nextSlotIndexA,
-			slotIndexB: nextSlotIndexB,
-		};
-	}, [controlsA, controlsB]);
+	const { slotIndexA, slotIndexB } = useMemo(
+		() => assignAlgoControlSlots(controlsA, controlsB),
+		[controlsA, controlsB],
+	);
 
 	const getAlgoControlValue = useCallback(
 		(entries: AlgoControlValueV1[], id: string, fallback: number) => {
@@ -276,7 +284,7 @@ export function usePhaseLineAlgorithms(
 			disabled: false,
 			controls: controlsA,
 			controlBindings: controlBindingsA,
-			algoParamSlotIndex: slotIndexA,
+			algoControlSlotIndex: slotIndexA,
 			getControlValue: (id, fallback) =>
 				getAlgoControlValue(algo.controlsA, id, fallback),
 			setControlValue: (id, value) =>
@@ -310,7 +318,7 @@ export function usePhaseLineAlgorithms(
 			disabled: !algoBEnabled,
 			controls: controlsB,
 			controlBindings: controlBindingsB,
-			algoParamSlotIndex: slotIndexB,
+			algoControlSlotIndex: slotIndexB,
 			getControlValue: (id, fallback) =>
 				getAlgoControlValue(algo.controlsB, id, fallback),
 			setControlValue: (id, value) =>

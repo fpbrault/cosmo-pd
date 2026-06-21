@@ -1,7 +1,9 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-use cosmo_synth_engine::params::{SynthParams, apply_midi_mapping_binding};
+use cosmo_synth_engine::params::{
+    SynthParams, apply_midi_mapping_binding, is_algo_control_slot_key,
+};
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
 };
@@ -277,6 +279,9 @@ impl CzPlugin {
             .capture_pending_binding(channel, cc);
         let changes = self.apply_midi_mapping(channel, cc, value);
         for change in &changes {
+            if is_algo_control_slot_key(&change.0) {
+                continue;
+            }
             let _ = self
                 .shared_state
                 .ui
