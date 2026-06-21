@@ -79,6 +79,12 @@ fn handle_ipc_invoke(
             midi_cc_queue: Arc::new(ArrayQueue::new(
                 crate::runtime_state::MIDI_CC_QUEUE_CAPACITY,
             )),
+            midi_param_change_queue: Arc::new(ArrayQueue::new(
+                crate::runtime_state::MIDI_PARAM_CHANGE_QUEUE_CAPACITY,
+            )),
+            pending_param_changes_flushed_via_ipc: Arc::new(std::sync::atomic::AtomicBool::new(
+                false,
+            )),
         },
         editor: crate::runtime_state::EditorSessionState {
             editor_state: editor_state.clone(),

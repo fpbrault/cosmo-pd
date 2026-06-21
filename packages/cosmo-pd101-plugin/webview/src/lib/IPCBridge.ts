@@ -268,6 +268,24 @@ function installMidiCcHandler() {
 	}
 }
 
+// ─── Param changes handler ─────────────────────────────────────────────────────
+
+function installParamChangesHandler() {
+	try {
+		Object.defineProperty(window, "__czOnParamChanges", {
+			configurable: true,
+			writable: true,
+			value: (changes: Record<string, number>) => {
+				window.dispatchEvent(
+					new CustomEvent("cz-param-changes", { detail: changes }),
+				);
+			},
+		});
+	} catch {
+		// Host may prevent definition; param changes visual updates will not work.
+	}
+}
+
 // ─── MIDI learn state handler ──────────────────────────────────────────────────
 
 function installMidiLearnStateHandler() {
@@ -326,7 +344,7 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 }
 
 function installScopePolling() {
-	const INTERVAL_MS = 50; // ~20 fps
+	const INTERVAL_MS = 16; // ~60 fps
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -418,7 +436,7 @@ function installScopePolling() {
 
 function installRuntimeModSourcesPolling() {
 	const eventName = "cz-runtime-mod-sources";
-	const INTERVAL_MS = 100; // ~10 fps
+	const INTERVAL_MS = 16; // ~10 fps
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -498,7 +516,7 @@ function installRuntimeModSourcesPolling() {
 
 function installRuntimeVoiceStatesPolling() {
 	const eventName = "cz-runtime-voice-states";
-	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 100;
+	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -687,6 +705,7 @@ export function ensureIPCBridge(): boolean {
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
+	installParamChangesHandler();
 	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();

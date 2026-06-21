@@ -33,7 +33,7 @@ use wry::WebViewBuilderExtDarwin;
 use crate::CzPluginParams;
 use crate::ipc::IpcContext;
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-use crate::runtime_state::MidiCcQueue;
+use crate::runtime_state::{MidiCcQueue, MidiParamChangeQueue};
 use crate::runtime_state::{PluginSharedState, ScopeBuffer};
 use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
 use cosmo_pd101_bridge_types::PluginIpcEnvelope;
@@ -446,10 +446,38 @@ impl Editor for CzEditor {
             let last_sent_params_json = self.last_sent_params_json.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
             let midi_cc_queue = self.shared_state.ui.midi_cc_queue.clone();
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            let midi_param_change_queue = self.shared_state.ui.midi_param_change_queue.clone();
+            #[cfg(not(any(target_os = "ios", target_os = "android")))]
+            let pending_param_changes_flushed_via_ipc = self
+                .shared_state
+                .ui
+                .pending_param_changes_flushed_via_ipc
+                .clone();
             let midi_learn = self.shared_state.midi_learn.clone();
             run_on_main(move |_mtm| {
-                push_params_to_webview(&webview_state, &synth_params, &last_sent_params_json);
+                #[cfg(not(any(target_os = "ios", target_os = "android")))]
+                let r_af_active =
+                    pending_param_changes_flushed_via_ipc.swap(false, Ordering::AcqRel);
                 let events = drain_midi_cc_queue(&midi_cc_queue);
+                // When rAF IPC pull consumed MIDI param changes, skip double-drain
+                // to avoid the race between GetPendingParamChanges and idle().
+                #[cfg(not(any(target_os = "ios", target_os = "android")))]
+                let param_changes = if r_af_active {
+                    serde_json::Map::new()
+                } else {
+                    drain_and_coalesce_param_changes(&midi_param_change_queue)
+                };
+                #[cfg(any(target_os = "ios", target_os = "android"))]
+                let param_changes = drain_and_coalesce_param_changes(&midi_param_change_queue);
+                // Skip redundant full-params sync when param patches were sent
+                #[cfg(not(any(target_os = "ios", target_os = "android")))]
+                let should_push = param_changes.is_empty() && !r_af_active;
+                #[cfg(any(target_os = "ios", target_os = "android"))]
+                let should_push = param_changes.is_empty();
+                if should_push {
+                    push_params_to_webview(&webview_state, &synth_params, &last_sent_params_json);
+                }
                 let state = midi_learn.snapshot();
                 if let Ok(json) = serde_json::to_string(&state) {
                     let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
@@ -464,6 +492,8 @@ impl Editor for CzEditor {
                 }
                 #[cfg(not(any(target_os = "ios", target_os = "android")))]
                 push_midi_cc_batch_to_webview(&webview_state, &events);
+                #[cfg(not(any(target_os = "ios", target_os = "android")))]
+                push_param_changes_to_webview(&webview_state, &param_changes);
             });
             return;
         }
@@ -479,7 +509,32 @@ impl Editor for CzEditor {
             }
         }
 
-        self.push_params();
+        // When MIDI mapping already sent targeted param patches via IPC pull (rAF)
+        // skip double-drain of the change queue to avoid the race between
+        // GetPendingParamChanges and idle().
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        let r_af_active = self
+            .shared_state
+            .ui
+            .pending_param_changes_flushed_via_ipc
+            .swap(false, Ordering::AcqRel);
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        let param_changes = if r_af_active {
+            serde_json::Map::new()
+        } else {
+            drain_and_coalesce_param_changes(&self.shared_state.ui.midi_param_change_queue)
+        };
+        #[cfg(any(target_os = "ios", target_os = "android"))]
+        let param_changes =
+            drain_and_coalesce_param_changes(&self.shared_state.ui.midi_param_change_queue);
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        let should_push_params = param_changes.is_empty() && !r_af_active;
+        #[cfg(any(target_os = "ios", target_os = "android"))]
+        let should_push_params = true;
+
+        if should_push_params {
+            self.push_params();
+        }
 
         // Push MIDI learn state if version changed
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
@@ -492,6 +547,9 @@ impl Editor for CzEditor {
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
         push_midi_cc_batch_to_webview(&self.webview_state, &events);
+
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        push_param_changes_to_webview(&self.webview_state, &param_changes);
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
@@ -603,6 +661,43 @@ fn push_midi_cc_batch_to_webview(
 }}"#
         );
         let _ = wv.evaluate_script(&script);
+    }
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn drain_and_coalesce_param_changes(
+    midi_param_change_queue: &MidiParamChangeQueue,
+) -> serde_json::Map<String, serde_json::Value> {
+    use std::collections::HashMap;
+    let mut coalesced: HashMap<String, f32> = HashMap::new();
+    while let Some((key, value)) = midi_param_change_queue.pop() {
+        coalesced.insert(key, value);
+    }
+    let mut map = serde_json::Map::with_capacity(coalesced.len());
+    for (key, value) in coalesced {
+        map.insert(key, serde_json::Value::from(value));
+    }
+    map
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn push_param_changes_to_webview(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    changes: &serde_json::Map<String, serde_json::Value>,
+) {
+    if changes.is_empty() {
+        return;
+    }
+
+    if let Ok(payload) = serde_json::to_string(changes) {
+        let script = format!(
+            "if(typeof window.__czOnParamChanges === 'function') {{ window.__czOnParamChanges({payload}); }}"
+        );
+        if let Ok(container) = webview_state.lock()
+            && let Some(wv) = &container.webview
+        {
+            let _ = wv.evaluate_script(&script);
+        }
     }
 }
 

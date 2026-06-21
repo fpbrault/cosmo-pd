@@ -67,6 +67,7 @@ impl IpcContext {
             PluginIpcRequest::GetParams
             | PluginIpcRequest::SetParams(..)
             | PluginIpcRequest::GetParamsVersion
+            | PluginIpcRequest::GetPendingParamChanges
             | PluginIpcRequest::GetRuntimeModSources
             | PluginIpcRequest::GetRuntimeVoiceStates
             | PluginIpcRequest::GetTransportInfo

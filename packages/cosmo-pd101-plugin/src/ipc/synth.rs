@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cosmo_pd101_bridge_types::ScopeDataResponse;
 
 use super::*;
@@ -75,6 +77,20 @@ pub(super) fn handle(
                 _ => append_log(&format!("[webview:{level}] {message}")),
             }
             Ok(PluginIpcResponse::ClientLog)
+        }
+        PluginIpcRequest::GetPendingParamChanges => {
+            let mut coalesced: HashMap<String, f32> = HashMap::new();
+            while let Some((key, value)) = context.shared_state.ui.midi_param_change_queue.pop() {
+                coalesced.insert(key, value);
+            }
+            if !coalesced.is_empty() {
+                context
+                    .shared_state
+                    .ui
+                    .pending_param_changes_flushed_via_ipc
+                    .store(true, Ordering::Release);
+            }
+            Ok(PluginIpcResponse::GetPendingParamChanges(coalesced))
         }
         _ => unreachable!("method routed to wrong IPC domain"),
     }

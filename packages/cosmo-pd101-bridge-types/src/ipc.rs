@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::editor::EditorState;
@@ -56,6 +58,8 @@ pub enum PluginIpcRequest {
     SetParams(Box<SynthParams>),
     #[serde(rename = "getParamsVersion")]
     GetParamsVersion,
+    #[serde(rename = "getPendingParamChanges")]
+    GetPendingParamChanges,
     #[serde(rename = "getRuntimeModSources")]
     GetRuntimeModSources,
     #[serde(rename = "getRuntimeVoiceStates")]
@@ -175,6 +179,8 @@ pub enum PluginIpcResponse {
     SetParams,
     #[serde(rename = "getParamsVersion")]
     GetParamsVersion(u32),
+    #[serde(rename = "getPendingParamChanges")]
+    GetPendingParamChanges(HashMap<String, f32>),
     #[serde(rename = "getRuntimeModSources")]
     GetRuntimeModSources(RuntimeModSources),
     #[serde(rename = "getRuntimeVoiceStates")]

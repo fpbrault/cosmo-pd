@@ -326,6 +326,8 @@ type SynthActions = {
 	gatherState: () => SynthPresetV1;
 	gatherPresetState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
+	/** Apply targeted param changes from host MIDI mapping (no engine echo). */
+	applyHostParamChanges: (changes: Record<string, number>) => void;
 };
 
 export type SynthStore = SynthState & SynthActions;
@@ -781,6 +783,54 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					czDacEnabled: undefined,
 				},
 			};
+		},
+
+		// --- applyPreset ---
+		// --- applyHostParamChanges ---
+		applyHostParamChanges(changes: Record<string, number>) {
+			const patch: Record<string, unknown> = {};
+			for (const [key, value] of Object.entries(changes)) {
+				switch (key) {
+					case "volume":
+					case "warpAAmount":
+					case "warpBAmount":
+					case "algoBlendA":
+					case "algoBlendB":
+					case "line1Level":
+					case "line2Level":
+					case "line2DetuneNote":
+					case "line2DetuneFine":
+					case "line2DetuneOctave":
+					case "velocityCurve":
+					case "pitchBendRange":
+					case "portamentoRate":
+					case "portamentoTime":
+					case "lfoRate":
+					case "lfoDepth":
+					case "lfoSymmetry":
+					case "lfoOffset":
+					case "lfo2Rate":
+					case "lfo2Depth":
+					case "lfo2Symmetry":
+					case "lfo2Offset":
+					case "randomRate":
+					case "modEnvAttack":
+					case "modEnvDecay":
+					case "modEnvSustain":
+					case "modEnvRelease":
+					case "tempoBpm":
+					case "lineOctave":
+					case "macro1":
+					case "macro2":
+					case "macro3":
+					case "macro4":
+						patch[key] = value;
+						break;
+				}
+			}
+			if (Object.keys(patch).length > 0) {
+				set(patch);
+			}
 		},
 
 		// --- applyPreset ---

@@ -109,6 +109,7 @@ export function usePluginBridgeSynthEngine(
 } {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
+	const applyHostParamChanges = useSynthStore((s) => s.applyHostParamChanges);
 	const enabled = options.enabled ?? true;
 	const onExternalParamChange = options.onExternalParamChange;
 	const outboundEnabledRef = useRef(false);
@@ -169,6 +170,73 @@ export function usePluginBridgeSynthEngine(
 			window.__czOnParams = undefined;
 		};
 	}, [enabled, applyHostParams, onExternalParamChange]);
+
+	// Param changes from native MIDI mapping via push (cz-param-changes event)
+	useEffect(() => {
+		if (!enabled) return;
+		const handler = (event: Event) => {
+			if (applyingHostParamsRef.current) return;
+			const changes = (event as CustomEvent).detail as
+				| Record<string, number>
+				| undefined;
+			if (!changes) return;
+			applyingHostParamsRef.current = true;
+			try {
+				applyHostParamChanges(changes);
+			} finally {
+				applyingHostParamsRef.current = false;
+			}
+		};
+		window.addEventListener("cz-param-changes", handler);
+		return () => window.removeEventListener("cz-param-changes", handler);
+	}, [enabled, applyHostParamChanges]);
+
+	// Param changes from native MIDI mapping via IPC pull (rAF).
+	// Independent of host idle() cadence for lower-latency knob updates.
+	useEffect(() => {
+		if (!enabled) return;
+		let rafId = 0;
+		let inFlight = false;
+		let cancelled = false;
+		const poll = () => {
+			if (cancelled) return;
+			const getPendingParamChanges = window.__czGetPendingParamChanges;
+			if (
+				getPendingParamChanges &&
+				!inFlight &&
+				!applyingHostParamsRef.current
+			) {
+				inFlight = true;
+				void getPendingParamChanges()
+					.then((changes) => {
+						if (cancelled) return;
+						if (changes && Object.keys(changes).length > 0) {
+							applyingHostParamsRef.current = true;
+							try {
+								const clean = Object.fromEntries(
+									Object.entries(changes).filter((e): e is [string, number] => e[1] != null),
+								);
+								applyHostParamChanges(clean);
+							} finally {
+								applyingHostParamsRef.current = false;
+							}
+						}
+					})
+					.catch(() => {
+						// native bridge may be unavailable during startup/shutdown
+					})
+					.finally(() => {
+						inFlight = false;
+					});
+			}
+			rafId = requestAnimationFrame(poll);
+		};
+		rafId = requestAnimationFrame(poll);
+		return () => {
+			cancelled = true;
+			cancelAnimationFrame(rafId);
+		};
+	}, [enabled, applyHostParamChanges]);
 
 	// Outbound: React state → Rust
 	useEffect(() => {
@@ -271,7 +339,7 @@ export function usePluginBridgeSynthEngine(
 
 		tryGetParams();
 
-		// Params-version polling fallback: poll ~18ms for native version bumps
+		// Params-version polling fallback: poll ~200ms for native version bumps
 		// (e.g., host MIDI mapping changes params). Only hydrate when version
 		// changes, and never echo back to native.
 		const startPolling = () => {
@@ -294,10 +362,10 @@ export function usePluginBridgeSynthEngine(
 					});
 				}
 				if (!cancelled) {
-					pollId = window.setTimeout(poll, 18);
+					pollId = window.setTimeout(poll, 200);
 				}
 			};
-			pollId = window.setTimeout(poll, 18);
+			pollId = window.setTimeout(poll, 200);
 		};
 		startPolling();
 

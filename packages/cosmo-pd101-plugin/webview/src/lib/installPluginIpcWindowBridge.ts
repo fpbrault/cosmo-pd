@@ -22,6 +22,8 @@ function fireAndForget(label: string, promise: Promise<unknown>) {
 const pluginBridgeWindowInstallers = {
 	__czGetParams: (invoke) => () => invoke("getParams"),
 	__czGetParamsVersion: (invoke) => () => invoke("getParamsVersion"),
+	__czGetPendingParamChanges: (invoke) => () =>
+		invoke("getPendingParamChanges"),
 	__czSetParams: (invoke) => (params) => {
 		fireAndForget("setParams", invoke("setParams", params));
 	},

@@ -86,17 +86,22 @@ impl CzPlugin {
         }
     }
 
-    pub(crate) fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
+    pub(crate) fn apply_midi_mapping(
+        &mut self,
+        channel: u8,
+        cc: u8,
+        value: u8,
+    ) -> Vec<(String, f32)> {
         let bindings = self.shared_state.midi_learn.bindings_snapshot();
 
         if bindings.is_empty() {
-            return false;
+            return Vec::new();
         }
         let mut synth_params = (*self.shared_state.synth.synth_params.load_full()).clone();
         let normalized = f32::from(value) / 127.0;
-        let mut applied = false;
+        let mut changes = Vec::with_capacity(bindings.len());
         for binding in bindings.iter() {
-            applied = apply_midi_mapping_binding(
+            if let Some(change) = apply_midi_mapping_binding(
                 &mut synth_params,
                 &binding.param_key,
                 binding.channel,
@@ -104,11 +109,13 @@ impl CzPlugin {
                 channel,
                 cc,
                 normalized,
-            ) || applied;
+            ) {
+                changes.push((change.key, change.value));
+            }
         }
 
-        if !applied {
-            return false;
+        if changes.is_empty() {
+            return Vec::new();
         }
 
         let rt_params = Arc::new(build_rt_synth_params(&synth_params));
@@ -134,7 +141,7 @@ impl CzPlugin {
             proc.set_shared_params(rt_params);
         }
 
-        true
+        changes
     }
 
     pub(crate) fn tracked_param_changes(
@@ -268,7 +275,14 @@ impl CzPlugin {
             .shared_state
             .midi_learn
             .capture_pending_binding(channel, cc);
-        let _ = self.apply_midi_mapping(channel, cc, value);
+        let changes = self.apply_midi_mapping(channel, cc, value);
+        for change in &changes {
+            let _ = self
+                .shared_state
+                .ui
+                .midi_param_change_queue
+                .push(change.clone());
+        }
         let _ = self
             .shared_state
             .ui

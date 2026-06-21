@@ -5,6 +5,9 @@ export type PluginBridgeWindowFacade = {
 	__czGetParamsVersion?: () => Promise<
 		PluginIpcMethods["getParamsVersion"]["response"]
 	>;
+	__czGetPendingParamChanges?: () => Promise<
+		PluginIpcMethods["getPendingParamChanges"]["response"]
+	>;
 	__czSetParams?: (params: PluginIpcMethods["setParams"]["request"]) => void;
 	__czGetTransportInfo?: () => Promise<
 		PluginIpcMethods["getTransportInfo"]["response"]
@@ -128,5 +131,6 @@ declare global {
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czOnMidiCcBatch?: (events: Array<[number, number, number]>) => void;
 		__czOnMidiLearnState?: (json: string) => void;
+		__czOnParamChanges?: (changes: Record<string, number>) => void;
 	}
 }

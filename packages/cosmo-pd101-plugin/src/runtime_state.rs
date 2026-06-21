@@ -16,10 +16,12 @@ use cosmo_pd101_bridge_types::{EditorState, MidiLearnState, PresetSession, Trans
 pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
+pub const MIDI_PARAM_CHANGE_QUEUE_CAPACITY: usize = 128;
 
 pub type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 pub type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
+pub type MidiParamChangeQueue = Arc<ArrayQueue<(String, f32)>>;
 pub type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
@@ -212,6 +214,12 @@ pub struct RuntimeTelemetry {
 pub struct UiEventQueues {
     pub ui_input_queue: UiInputQueue,
     pub midi_cc_queue: MidiCcQueue,
+    pub midi_param_change_queue: MidiParamChangeQueue,
+    /// Set to true when IPC handler drains `midi_param_change_queue` via
+    /// `GetPendingParamChanges`. Checked by `idle()` to skip redundant
+    /// full-params sync when the JS rAF pull path is actively consuming
+    /// MIDI-mapped param patches. Reset to false by `idle()` each cycle.
+    pub pending_param_changes_flushed_via_ipc: Arc<AtomicBool>,
 }
 
 #[derive(Clone)]
@@ -259,6 +267,10 @@ impl PluginSharedState {
             ui: UiEventQueues {
                 ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
                 midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
+                midi_param_change_queue: Arc::new(ArrayQueue::new(
+                    MIDI_PARAM_CHANGE_QUEUE_CAPACITY,
+                )),
+                pending_param_changes_flushed_via_ipc: Arc::new(AtomicBool::new(false)),
             },
             editor: EditorSessionState {
                 editor_state: Arc::new(Mutex::new(None)),

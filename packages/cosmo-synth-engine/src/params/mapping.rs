@@ -7,6 +7,15 @@ pub struct MidiMappingBinding<'a> {
     pub cc: i32,
 }
 
+/// A MIDI-mapped param change: the parameter key and its authoritative
+/// (clamped, quantized) mapped value.  Emitted by `apply_midi_mapping` so
+/// the plugin can send small visual patches to the webview.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AppliedMidiParamChange {
+    pub key: String,
+    pub value: f32,
+}
+
 #[derive(Clone, Copy)]
 struct AutomatableParamSpec {
     key: &'static str,
@@ -338,12 +347,12 @@ pub fn apply_midi_mapping(
     channel: u8,
     cc: u8,
     value: u8,
-) -> bool {
+) -> Vec<AppliedMidiParamChange> {
     let normalized = f32::from(value) / 127.0;
-    let mut applied = false;
+    let mut changes = Vec::with_capacity(bindings.len());
 
     for binding in bindings {
-        if apply_midi_mapping_binding(
+        if let Some(change) = apply_midi_mapping_binding(
             params,
             binding.param_key,
             binding.channel,
@@ -352,11 +361,11 @@ pub fn apply_midi_mapping(
             cc,
             normalized,
         ) {
-            applied = true;
+            changes.push(change);
         }
     }
 
-    applied
+    changes
 }
 
 pub fn apply_midi_mapping_binding(
@@ -367,19 +376,24 @@ pub fn apply_midi_mapping_binding(
     channel: u8,
     cc: u8,
     normalized_value: f32,
-) -> bool {
+) -> Option<AppliedMidiParamChange> {
     if binding_cc != i32::from(cc)
         || (binding_channel != -1 && binding_channel != i32::from(channel))
     {
-        return false;
+        return None;
     }
-    let Some((min, max)) = parameter_range_for_key(param_key) else {
-        return false;
-    };
+    let (min, max) = parameter_range_for_key(param_key)?;
     let mapped = min + normalized_value.clamp(0.0, 1.0) * (max - min);
     let step = parameter_step_for_key(param_key);
     let quantized = quantize_midi_mapped_value(mapped, step, min);
-    set_parameter_value_by_key(params, param_key, quantized)
+    if set_parameter_value_by_key(params, param_key, quantized) {
+        Some(AppliedMidiParamChange {
+            key: param_key.to_string(),
+            value: quantized,
+        })
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -389,7 +403,7 @@ mod tests {
     #[test]
     fn midi_mapping_applies_matching_binding() {
         let mut params = SynthParams::default();
-        let applied = apply_midi_mapping(
+        let changes = apply_midi_mapping(
             &mut params,
             &[MidiMappingBinding {
                 param_key: "macro1",
@@ -401,14 +415,16 @@ mod tests {
             127,
         );
 
-        assert!(applied);
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].key, "macro1");
+        assert_eq!(changes[0].value, 1.0);
         assert_eq!(params.macro1, 1.0);
     }
 
     #[test]
     fn midi_mapping_ignores_non_matching_channel() {
         let mut params = SynthParams::default();
-        let applied = apply_midi_mapping(
+        let changes = apply_midi_mapping(
             &mut params,
             &[MidiMappingBinding {
                 param_key: "macro1",
@@ -420,7 +436,7 @@ mod tests {
             127,
         );
 
-        assert!(!applied);
+        assert!(changes.is_empty());
         assert_eq!(params.macro1, 0.0);
     }
 
@@ -476,7 +492,8 @@ mod tests {
             },
         ];
 
-        assert!(apply_midi_mapping(&mut params, &bindings, 0, 12, 0));
+        let changes = apply_midi_mapping(&mut params, &bindings, 0, 12, 0);
+        assert_eq!(changes.len(), 2);
         assert_eq!(params.line1.octave, -2.0);
         assert_eq!(params.line2.detune_fine, -60.0);
     }
@@ -485,7 +502,7 @@ mod tests {
     fn midi_mapping_quantizes_octave_control_to_integer() {
         let mut params = SynthParams::default();
         // CC 15, value 76 → normalized ~0.598 → lineOctave = -2 + 0.598*4 ≈ 0.394 → quantized to 0
-        assert!(apply_midi_mapping(
+        let changes = apply_midi_mapping(
             &mut params,
             &[MidiMappingBinding {
                 param_key: "lineOctave",
@@ -495,7 +512,9 @@ mod tests {
             0,
             15,
             76,
-        ));
+        );
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].value, 0.0);
         assert_eq!(params.line1.octave, 0.0);
         assert_eq!(params.line2.octave, 0.0);
     }
@@ -504,7 +523,7 @@ mod tests {
     fn midi_mapping_quantizes_octave_cc_127_to_max() {
         let mut params = SynthParams::default();
         // CC 16, value 127 → normalized 1.0 → lineOctave = -2 + 1.0*4 = 2.0 → quantized to 2.0
-        assert!(apply_midi_mapping(
+        let changes = apply_midi_mapping(
             &mut params,
             &[MidiMappingBinding {
                 param_key: "lineOctave",
@@ -514,7 +533,9 @@ mod tests {
             0,
             16,
             127,
-        ));
+        );
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].value, 2.0);
         assert_eq!(params.line1.octave, 2.0);
     }
 
@@ -522,7 +543,7 @@ mod tests {
     fn midi_mapping_quantizes_octave_cc_0_to_min() {
         let mut params = SynthParams::default();
         // CC 17, value 0 → normalized 0.0 → lineOctave = -2.0 → quantized to -2.0
-        assert!(apply_midi_mapping(
+        let changes = apply_midi_mapping(
             &mut params,
             &[MidiMappingBinding {
                 param_key: "lineOctave",
@@ -532,7 +553,9 @@ mod tests {
             0,
             17,
             0,
-        ));
+        );
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].value, -2.0);
         assert_eq!(params.line1.octave, -2.0);
     }
 
@@ -540,7 +563,7 @@ mod tests {
     fn midi_mapping_does_not_quantize_continuous_param() {
         let mut params = SynthParams::default();
         // volume has no step → must remain continuous
-        assert!(apply_midi_mapping(
+        let changes = apply_midi_mapping(
             &mut params,
             &[MidiMappingBinding {
                 param_key: "volume",
@@ -550,7 +573,9 @@ mod tests {
             0,
             18,
             64,
-        ));
+        );
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].key, "volume");
         // volume range 0..1, value 64 = normalized 64/127 ≈ 0.5039
         let expected = 64.0_f32 / 127.0;
         assert!((params.volume - expected).abs() < 0.001);
