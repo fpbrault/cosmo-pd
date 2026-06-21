@@ -296,18 +296,17 @@ impl CzEditor {
     }
 
     fn push_midi_learn_state(&mut self) {
-        if let Ok(state) = self.shared_state.midi_learn.state.lock() {
-            self.last_midi_learn_version = state.version;
-            if let Ok(json) = serde_json::to_string(&*state) {
-                let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
-                let script = format!(
-                    "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
-                );
-                if let Ok(container) = self.webview_state.lock()
-                    && let Some(wv) = &container.webview
-                {
-                    let _ = wv.evaluate_script(&script);
-                }
+        let state = self.shared_state.midi_learn.snapshot();
+        self.last_midi_learn_version = state.version;
+        if let Ok(json) = serde_json::to_string(&state) {
+            let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
+            let script = format!(
+                "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
+            );
+            if let Ok(container) = self.webview_state.lock()
+                && let Some(wv) = &container.webview
+            {
+                let _ = wv.evaluate_script(&script);
             }
         }
     }
@@ -447,13 +446,12 @@ impl Editor for CzEditor {
             let last_sent_params_json = self.last_sent_params_json.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
             let midi_cc_queue = self.shared_state.ui.midi_cc_queue.clone();
-            let midi_learn_state = self.shared_state.midi_learn.state.clone();
+            let midi_learn = self.shared_state.midi_learn.clone();
             run_on_main(move |_mtm| {
                 push_params_to_webview(&webview_state, &synth_params, &last_sent_params_json);
-                // Push MIDI learn state (unconditional, no version check)
-                if let Ok(state) = midi_learn_state.lock()
-                    && let Ok(json) = serde_json::to_string(&*state)
-                {
+                let events = drain_midi_cc_queue(&midi_cc_queue);
+                let state = midi_learn.snapshot();
+                if let Ok(json) = serde_json::to_string(&state) {
                     let escaped = json.replace('\\', "\\\\").replace('"', "\\\"");
                     let script = format!(
                         "if(typeof window.__czOnMidiLearnState === 'function') {{ window.__czOnMidiLearnState(\"{escaped}\"); }}"
@@ -465,7 +463,7 @@ impl Editor for CzEditor {
                     }
                 }
                 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-                flush_midi_cc_queue_to_webview(&webview_state, &midi_cc_queue);
+                push_midi_cc_batch_to_webview(&webview_state, &events);
             });
             return;
         }
@@ -484,19 +482,16 @@ impl Editor for CzEditor {
         self.push_params();
 
         // Push MIDI learn state if version changed
-        let midi_learn_state_changed = self
-            .shared_state
-            .midi_learn
-            .state
-            .lock()
-            .map(|state| state.version != self.last_midi_learn_version)
-            .unwrap_or(false);
+        #[cfg(not(any(target_os = "ios", target_os = "android")))]
+        let events = drain_midi_cc_queue(&self.shared_state.ui.midi_cc_queue);
+        let midi_learn_state_changed =
+            self.shared_state.midi_learn.version() != self.last_midi_learn_version;
         if midi_learn_state_changed {
             self.push_midi_learn_state();
         }
 
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
-        flush_midi_cc_queue_to_webview(&self.webview_state, &self.shared_state.ui.midi_cc_queue);
+        push_midi_cc_batch_to_webview(&self.webview_state, &events);
     }
 
     fn set_scale_factor(&mut self, factor: f64) {
@@ -574,18 +569,19 @@ fn apply_webview_size(
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-fn flush_midi_cc_queue_to_webview(
-    webview_state: &Arc<Mutex<WebViewContainer>>,
-    midi_cc_queue: &MidiCcQueue,
-) {
-    let events: Vec<(u8, u8, u8)> = {
-        let mut v = Vec::new();
-        while let Some(event) = midi_cc_queue.pop() {
-            v.push(event);
-        }
-        v
-    };
+fn drain_midi_cc_queue(midi_cc_queue: &MidiCcQueue) -> Vec<(u8, u8, u8)> {
+    let mut events = Vec::new();
+    while let Some(event) = midi_cc_queue.pop() {
+        events.push(event);
+    }
+    events
+}
 
+#[cfg(not(any(target_os = "ios", target_os = "android")))]
+fn push_midi_cc_batch_to_webview(
+    webview_state: &Arc<Mutex<WebViewContainer>>,
+    events: &[(u8, u8, u8)],
+) {
     if events.is_empty() {
         return;
     }
@@ -596,12 +592,17 @@ fn flush_midi_cc_queue_to_webview(
     if let Ok(container) = webview_state.lock()
         && let Some(wv) = &container.webview
     {
-        for (channel, cc, value) in &events {
-            let script = format!(
-                "if(typeof window.__czOnMidiCc === 'function') {{ window.__czOnMidiCc({channel},{cc},{value}); }}"
-            );
-            let _ = wv.evaluate_script(&script);
-        }
+        let payload = serde_json::to_string(events).unwrap_or_else(|_| "[]".to_string());
+        let script = format!(
+            r#"if (typeof window.__czOnMidiCcBatch === 'function') {{
+  window.__czOnMidiCcBatch({payload});
+}} else if (typeof window.__czOnMidiCc === 'function') {{
+  for (const [channel, cc, value] of {payload}) {{
+    window.__czOnMidiCc(channel, cc, value);
+  }}
+}}"#
+        );
+        let _ = wv.evaluate_script(&script);
     }
 }
 

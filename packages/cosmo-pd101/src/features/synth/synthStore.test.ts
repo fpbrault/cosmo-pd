@@ -60,6 +60,21 @@ describe("useSynthStore", () => {
 		expect(useSynthStore.getState().lineOctave).toBe(-2);
 	});
 
+	it("updates multiple algo controls against current state", () => {
+		const { updateAlgoControlValue } = useSynthStore.getState();
+		act(() => {
+			updateAlgoControlValue(1, "A", "depth", 0.25);
+			updateAlgoControlValue(1, "A", "feedback", 0.75);
+		});
+
+		expect(useSynthStore.getState().line1AlgoControlsA).toEqual(
+			expect.arrayContaining([
+				{ id: "depth", value: 0.25 },
+				{ id: "feedback", value: 0.75 },
+			]),
+		);
+	});
+
 	it("gathers state into a preset structure", () => {
 		const {
 			setWarpAAmount,

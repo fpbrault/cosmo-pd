@@ -13,6 +13,29 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Host to UI inbound updates", () => {
+	test("batched MIDI CC delivery preserves event order", async ({ page }) => {
+		const received = await page.evaluate(async () => {
+			const events: number[] = [];
+			return await new Promise<number[]>((resolve) => {
+				const handler = (event: Event) => {
+					events.push((event as CustomEvent).detail.rawValue);
+					if (events.length === 3) {
+						window.removeEventListener("cz-midi-cc", handler);
+						resolve(events);
+					}
+				};
+				window.addEventListener("cz-midi-cc", handler);
+				window.__czOnMidiCcBatch?.([
+					[0, 74, 10],
+					[0, 74, 80],
+					[0, 74, 20],
+				]);
+			});
+		});
+
+		expect(received).toEqual([10, 80, 20]);
+	});
+
 	test("pushParamUpdate drives volume display to the pushed value", async ({
 		page,
 	}) => {

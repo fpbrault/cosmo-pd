@@ -11,6 +11,7 @@ fn clear_test_global_settings() {
     let path = crate::global_settings::get_global_settings_path();
     let _ = fs::remove_file(path);
     crate::global_settings::reset_global_settings_cache();
+    crate::midi_learn::reset_global_midi_bindings();
 }
 
 fn with_test_data_dir<T>(test_fn: impl FnOnce(PathBuf) -> T) -> T {
@@ -430,14 +431,14 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        bindings: vec![crate::session_state::MidiLearnBinding {
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
             param_key: "macro1".to_string(),
             channel: 0,
             cc: 74,
-        }],
-        ..Default::default()
-    };
+        }]);
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -457,15 +458,14 @@ fn midi_mapping_matches_exact_channel() {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
-        *plugin.shared_state.midi_learn.state.lock().unwrap() =
-            crate::session_state::MidiLearnState {
-                bindings: vec![crate::session_state::MidiLearnBinding {
-                    param_key: "macro1".to_string(),
-                    channel: 2,
-                    cc: 74,
-                }],
-                ..Default::default()
-            };
+        plugin
+            .shared_state
+            .midi_learn
+            .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 2,
+                cc: 74,
+            }]);
         let baseline = plugin.shared_state.synth.synth_params.load().macro1;
 
         plugin.handle_host_event(&EventBody::ControlChange {
@@ -487,8 +487,10 @@ fn midi_mapping_applies_to_all_bindings_for_same_cc() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        bindings: vec![
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![
             crate::session_state::MidiLearnBinding {
                 param_key: "macro1".to_string(),
                 channel: 0,
@@ -499,9 +501,7 @@ fn midi_mapping_applies_to_all_bindings_for_same_cc() {
                 channel: 0,
                 cc: 74,
             },
-        ],
-        ..Default::default()
-    };
+        ]);
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -520,14 +520,14 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        bindings: vec![crate::session_state::MidiLearnBinding {
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
             param_key: "warpAAmount".to_string(),
             channel: 0,
             cc: 55,
-        }],
-        ..Default::default()
-    };
+        }]);
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -581,16 +581,16 @@ fn host_param_value_drift_updates_runtime_snapshot_and_version() {
 }
 
 #[test]
-fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
+fn host_side_midi_learn_captures_in_cc_side_effects() {
     clear_test_global_settings();
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
-    *plugin.shared_state.midi_learn.state.lock().unwrap() = crate::session_state::MidiLearnState {
-        learn_mode: true,
-        pending_param_key: Some("macro1".to_string()),
-        ..Default::default()
-    };
+    plugin.shared_state.midi_learn.set_learn_mode(true);
+    plugin
+        .shared_state
+        .midi_learn
+        .set_pending_param_key(Some("macro1".to_string()));
 
     plugin.handle_host_event(&EventBody::ControlChange {
         group: 0,
@@ -599,9 +599,36 @@ fn host_side_midi_learn_keeps_mode_and_pending_target_enabled() {
         value: 64,
     });
 
-    let state = plugin.shared_state.midi_learn.state.lock().unwrap().clone();
+    let state = plugin.shared_state.midi_learn.snapshot();
     assert!(state.learn_mode);
     assert_eq!(state.pending_param_key.as_deref(), Some("macro1"));
+    assert!(state.bindings.iter().any(|binding| {
+        binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
+    }));
+}
+
+#[test]
+fn host_side_midi_learn_capture_does_not_require_queue_drain() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    plugin.shared_state.midi_learn.set_learn_mode(true);
+    plugin
+        .shared_state
+        .midi_learn
+        .set_pending_param_key(Some("macro1".to_string()));
+
+    plugin.handle_host_event(&EventBody::ControlChange {
+        group: 0,
+        channel: 0,
+        cc: 74,
+        value: 64,
+    });
+
+    // Do NOT drain queue — capture happens in handle_cc_side_effects,
+    // not in the drain path. Binding should already exist.
+    let state = plugin.shared_state.midi_learn.snapshot();
     assert!(state.bindings.iter().any(|binding| {
         binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 74
     }));
@@ -1020,7 +1047,7 @@ fn plugin_startup_seeds_default_global_midi_settings() {
 
         let params = Arc::new(CzPluginParams::new());
         let plugin = CzPlugin::new(Arc::clone(&params));
-        let state = plugin.shared_state.midi_learn.state.lock().unwrap().clone();
+        let state = plugin.shared_state.midi_learn.snapshot();
         let saved = crate::global_settings::load_or_init_global_settings().unwrap();
 
         assert_eq!(
@@ -1042,18 +1069,14 @@ fn plugin_global_midi_settings_persist_across_instances() {
         let params = Arc::new(CzPluginParams::new());
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
+        let params2 = Arc::new(CzPluginParams::new());
+        let plugin2 = CzPlugin::new(Arc::clone(&params2));
+        let plugin2_version_before = plugin2.shared_state.midi_learn.version();
 
         let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
         {
             let mut state = mm.lock().unwrap();
-            state.bindings = plugin
-                .shared_state
-                .midi_learn
-                .state
-                .lock()
-                .unwrap()
-                .bindings
-                .clone();
+            state.bindings = plugin.shared_state.midi_learn.snapshot().bindings;
         }
 
         let result = handle_ipc_invoke(
@@ -1077,21 +1100,15 @@ fn plugin_global_midi_settings_persist_across_instances() {
             &mm,
         );
         assert!(result.is_ok());
-        *plugin.shared_state.midi_learn.state.lock().unwrap() = mm.lock().unwrap().clone();
-
-        let params2 = Arc::new(CzPluginParams::new());
-        let plugin2 = CzPlugin::new(Arc::clone(&params2));
-        let bindings = plugin2
-            .shared_state
-            .midi_learn
-            .state
-            .lock()
-            .unwrap()
-            .bindings
-            .clone();
+        let bindings = plugin2.shared_state.midi_learn.snapshot().bindings;
         assert!(bindings.iter().any(|binding| {
             binding.param_key == "macro1" && binding.channel == 2 && binding.cc == 74
         }));
+        assert!(plugin2.shared_state.midi_learn.version() > plugin2_version_before);
+
+        plugin.shared_state.midi_learn.set_learn_mode(true);
+        assert!(plugin.shared_state.midi_learn.snapshot().learn_mode);
+        assert!(!plugin2.shared_state.midi_learn.snapshot().learn_mode);
 
         let remove_result = handle_ipc_invoke(
             PluginIpcRequest::RemoveMidiBinding(MidiLearnBinding {
@@ -1117,14 +1134,7 @@ fn plugin_global_midi_settings_persist_across_instances() {
 
         let params3 = Arc::new(CzPluginParams::new());
         let plugin3 = CzPlugin::new(Arc::clone(&params3));
-        let bindings = plugin3
-            .shared_state
-            .midi_learn
-            .state
-            .lock()
-            .unwrap()
-            .bindings
-            .clone();
+        let bindings = plugin3.shared_state.midi_learn.snapshot().bindings;
         assert!(!bindings.iter().any(|binding| {
             binding.param_key == "macro1" && binding.channel == 2 && binding.cc == 74
         }));
@@ -1153,9 +1163,7 @@ fn plugin_global_midi_settings_persist_across_instances() {
             plugin4
                 .shared_state
                 .midi_learn
-                .state
-                .lock()
-                .unwrap()
+                .snapshot()
                 .bindings
                 .is_empty()
         );

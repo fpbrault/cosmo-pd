@@ -35,8 +35,10 @@ export type PhaseLineAlgoModel = {
 	setBaseWaveformB: (value: BaseWaveform) => void;
 	controlsA: AlgoControlValueV1[];
 	setControlsA: (value: AlgoControlValueV1[]) => void;
+	updateControlA: (id: string, value: number) => void;
 	controlsB: AlgoControlValueV1[];
 	setControlsB: (value: AlgoControlValueV1[]) => void;
+	updateControlB: (id: string, value: number) => void;
 };
 
 export type PhaseLineParametersModel = {

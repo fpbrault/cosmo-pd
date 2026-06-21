@@ -130,29 +130,33 @@ describe("usePluginBridgeSynthEngine", () => {
 		unmount();
 	});
 
-	it("hydrates host-side param changes from params version polling without echoing outbound", async () => {
-		let version = 1;
-		let hostParams = makeParams(0.42);
-		window.__czGetParamsVersion = vi.fn(async () => version);
+	it("hydrates pushed host-side param changes without polling or echoing outbound", async () => {
+		const hostParams = makeParams(0.42);
 		window.__czGetParams = vi.fn(async () => hostParams);
+		const onExternalParamChange = vi.fn();
 
 		const outboundJsons: string[] = [];
 		captureSetParams(outboundJsons);
 
-		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
+		const { unmount } = renderHook(() =>
+			usePluginBridgeSynthEngine({ onExternalParamChange }),
+		);
 
 		await waitFor(() => {
 			expect(useSynthStore.getState().volume).toBeCloseTo(0.42, 6);
 		});
 		expect(outboundJsons).toHaveLength(0);
 
-		hostParams = makeParams(0.73);
-		version = 2;
+		act(() => {
+			window.__czOnParams?.(JSON.stringify(makeParams(0.73)));
+		});
 
 		await waitFor(() => {
 			expect(useSynthStore.getState().volume).toBeCloseTo(0.73, 6);
 		});
 		expect(outboundJsons).toHaveLength(0);
+		expect(window.__czGetParamsVersion).toBeUndefined();
+		expect(onExternalParamChange).toHaveBeenCalledOnce();
 
 		unmount();
 	});

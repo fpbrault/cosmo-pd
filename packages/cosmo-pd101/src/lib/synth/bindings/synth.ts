@@ -4769,7 +4769,7 @@ export const MOD_ENV_PRESET_DATA: ModEnvPresetV1[] = [
 ];
 
 export type EngineParamUiMetaV1 = { key: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
-export type EngineParamRangeV1 = { key: string; min: number; max: number };
+export type EngineParamRangeV1 = { key: string; min: number; max: number; step?: number };
 /** Rust-owned engine parameter tooltip and readout metadata. */
 export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   {
@@ -5305,6 +5305,191 @@ export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = [
     "key": "randomRate",
     "min": 0.0,
     "max": 200.0
+  }
+];
+
+/** Rust-owned numeric ranges for native MIDI mapping targets. */
+export const ENGINE_MIDI_PARAM_RANGES_V1: EngineParamRangeV1[] = [
+  {
+    "key": "volume",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "warpAAmount",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "warpBAmount",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "algoBlendA",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "algoBlendB",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "line1Level",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "line2Level",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "line1Octave",
+    "min": -2.0,
+    "max": 2.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2Octave",
+    "min": -2.0,
+    "max": 2.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2DetuneNote",
+    "min": -11.0,
+    "max": 11.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2DetuneFine",
+    "min": -60.0,
+    "max": 60.0
+  },
+  {
+    "key": "velocityCurve",
+    "min": -1.0,
+    "max": 1.0
+  },
+  {
+    "key": "pitchBendRange",
+    "min": 1.0,
+    "max": 24.0,
+    "step": 1.0
+  },
+  {
+    "key": "portamentoRate",
+    "min": 0.0,
+    "max": 127.0
+  },
+  {
+    "key": "portamentoTime",
+    "min": 0.0,
+    "max": 5.0
+  },
+  {
+    "key": "lfoRate",
+    "min": 0.01,
+    "max": 30.0
+  },
+  {
+    "key": "lfoDepth",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfoOffset",
+    "min": -1.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfo2Rate",
+    "min": 0.01,
+    "max": 30.0
+  },
+  {
+    "key": "lfo2Depth",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfo2Offset",
+    "min": -1.0,
+    "max": 1.0
+  },
+  {
+    "key": "randomRate",
+    "min": 0.01,
+    "max": 30.0
+  },
+  {
+    "key": "modEnvAttack",
+    "min": 0.0,
+    "max": 10.0
+  },
+  {
+    "key": "modEnvDecay",
+    "min": 0.0,
+    "max": 10.0
+  },
+  {
+    "key": "modEnvSustain",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "modEnvRelease",
+    "min": 0.0,
+    "max": 10.0
+  },
+  {
+    "key": "tempoBpm",
+    "min": 20.0,
+    "max": 300.0
+  },
+  {
+    "key": "lineOctave",
+    "min": -2.0,
+    "max": 2.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2DetuneOctave",
+    "min": -3.0,
+    "max": 3.0,
+    "step": 1.0
+  },
+  {
+    "key": "lfoSymmetry",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfo2Symmetry",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro1",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro2",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro3",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro4",
+    "min": 0.0,
+    "max": 1.0
   }
 ];
 

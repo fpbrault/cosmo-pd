@@ -27,7 +27,8 @@ pub use line::{
     ModMode, PolyMode,
 };
 pub use mapping::{
-    MidiMappingBinding, apply_midi_mapping, parameter_range_for_key, set_parameter_value_by_key,
+    MidiMappingBinding, apply_midi_mapping, apply_midi_mapping_binding,
+    midi_mapping_param_ranges_v1, parameter_range_for_key, set_parameter_value_by_key,
 };
 pub use modulation::{
     ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, ModDestination, ModMatrix, ModRoute, ModSource,

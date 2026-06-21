@@ -52,6 +52,9 @@ pub struct EngineParamRangeV1 {
     pub key: &'static str,
     pub min: f32,
     pub max: f32,
+    /// MIDI-mapped value quantization step. `None` or `Some(0.0)` = continuous.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<f32>,
 }
 
 const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
@@ -369,11 +372,13 @@ const ENGINE_PARAM_RANGES_V1: [EngineParamRangeV1; 2] = [
         key: "tempoBpm",
         min: 20.0,
         max: 300.0,
+        step: None,
     },
     EngineParamRangeV1 {
         key: "randomRate",
         min: 0.0,
         max: 200.0,
+        step: None,
     },
 ];
 

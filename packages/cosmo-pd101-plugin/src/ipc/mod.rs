@@ -7,7 +7,6 @@ use cosmo_synth_engine::processor::CosmoInputEvent;
 use uuid::Uuid;
 
 use crate::diagnostics::{append_log, append_log_debug, append_log_error, append_log_warn};
-use crate::midi_learn::persist_midi_learn_bindings;
 use crate::params::{CzPluginParams, sync_all_daw_params_from_synth};
 use crate::runtime_state::PluginSharedState;
 

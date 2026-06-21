@@ -244,7 +244,6 @@ impl PluginSharedState {
         voice_limit: u8,
     ) -> Self {
         let preset_session = Arc::new(Mutex::new(PresetSession::default()));
-        let midi_learn_state = Arc::new(Mutex::new(midi_learn_state));
         Self {
             synth: SynthParamState {
                 synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),

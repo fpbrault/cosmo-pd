@@ -126,6 +126,7 @@ declare global {
 			hz: number,
 		) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
+		__czOnMidiCcBatch?: (events: Array<[number, number, number]>) => void;
 		__czOnMidiLearnState?: (json: string) => void;
 	}
 }

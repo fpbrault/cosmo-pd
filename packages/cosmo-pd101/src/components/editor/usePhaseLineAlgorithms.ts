@@ -137,14 +137,13 @@ export function usePhaseLineAlgorithms(
 
 	const setAlgoControlValue = useCallback(
 		(
-			entries: AlgoControlValueV1[],
-			setEntries: (value: AlgoControlValueV1[]) => void,
+			updateEntry: (id: string, value: number) => void,
 			id: string,
 			value: number,
 		) => {
-			setEntries(upsertAlgoControlValue(entries, id, value));
+			updateEntry(id, value);
 		},
-		[upsertAlgoControlValue],
+		[],
 	);
 
 	const applyOptionAssignments = useCallback(
@@ -170,7 +169,7 @@ export function usePhaseLineAlgorithms(
 		(
 			controls: AlgoControlRuntime[],
 			entries: AlgoControlValueV1[],
-			setEntries: (value: AlgoControlValueV1[]) => void,
+			updateEntry: (id: string, value: number) => void,
 		): Record<string, AlgoControlBinding> =>
 			Object.fromEntries(
 				controls.map((control) => {
@@ -186,7 +185,7 @@ export function usePhaseLineAlgorithms(
 										control.default ?? 0,
 									),
 								setNumber: (value: number) =>
-									setAlgoControlValue(entries, setEntries, control.id, value),
+									setAlgoControlValue(updateEntry, control.id, value),
 							} satisfies AlgoControlBinding,
 						];
 					}
@@ -202,12 +201,7 @@ export function usePhaseLineAlgorithms(
 										control.defaultToggle ? 1 : 0,
 									) >= 0.5,
 								setToggle: (value: boolean) =>
-									setAlgoControlValue(
-										entries,
-										setEntries,
-										control.id,
-										value ? 1 : 0,
-									),
+									setAlgoControlValue(updateEntry, control.id, value ? 1 : 0),
 							} satisfies AlgoControlBinding,
 						];
 					}
@@ -219,12 +213,12 @@ export function usePhaseLineAlgorithms(
 	);
 
 	const controlBindingsA = useMemo(
-		() => createControlBindings(controlsA, algo.controlsA, algo.setControlsA),
-		[algo.controlsA, algo.setControlsA, controlsA, createControlBindings],
+		() => createControlBindings(controlsA, algo.controlsA, algo.updateControlA),
+		[algo.controlsA, algo.updateControlA, controlsA, createControlBindings],
 	);
 	const controlBindingsB = useMemo(
-		() => createControlBindings(controlsB, algo.controlsB, algo.setControlsB),
-		[algo.controlsB, algo.setControlsB, controlsB, createControlBindings],
+		() => createControlBindings(controlsB, algo.controlsB, algo.updateControlB),
+		[algo.controlsB, algo.updateControlB, controlsB, createControlBindings],
 	);
 
 	const getActiveSelectOption = useCallback(
@@ -286,7 +280,7 @@ export function usePhaseLineAlgorithms(
 			getControlValue: (id, fallback) =>
 				getAlgoControlValue(algo.controlsA, id, fallback),
 			setControlValue: (id, value) =>
-				setAlgoControlValue(algo.controlsA, algo.setControlsA, id, value),
+				setAlgoControlValue(algo.updateControlA, id, value),
 			getActiveSelectOption: (control) =>
 				getActiveSelectOption(algo.controlsA, control, controlBindingsA),
 			applyOptionAssignments: (option) =>
@@ -296,6 +290,7 @@ export function usePhaseLineAlgorithms(
 			algo.algoA,
 			algo.controlsA,
 			algo.setControlsA,
+			algo.updateControlA,
 			handleAlgoChangeA,
 			controlsA,
 			controlBindingsA,
@@ -319,7 +314,7 @@ export function usePhaseLineAlgorithms(
 			getControlValue: (id, fallback) =>
 				getAlgoControlValue(algo.controlsB, id, fallback),
 			setControlValue: (id, value) =>
-				setAlgoControlValue(algo.controlsB, algo.setControlsB, id, value),
+				setAlgoControlValue(algo.updateControlB, id, value),
 			getActiveSelectOption: (control) =>
 				getActiveSelectOption(algo.controlsB, control, controlBindingsB),
 			applyOptionAssignments: (option) =>
@@ -329,6 +324,7 @@ export function usePhaseLineAlgorithms(
 			algo.algoB,
 			algo.controlsB,
 			algo.setControlsB,
+			algo.updateControlB,
 			algoBEnabled,
 			handleAlgoChangeB,
 			controlsB,

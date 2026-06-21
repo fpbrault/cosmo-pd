@@ -62,6 +62,21 @@ function normalizeAlgoControls(
 	}));
 }
 
+function upsertAlgoControlValue(
+	entries: AlgoControlValueV1[],
+	id: string,
+	value: number,
+): AlgoControlValueV1[] {
+	const nextValue = Number.isFinite(value) ? value : 0;
+	const index = entries.findIndex((entry) => entry.id === id);
+	if (index < 0) {
+		return [...entries, { id, value: nextValue }];
+	}
+	const next = [...entries];
+	next[index] = { ...next[index], value: nextValue };
+	return next;
+}
+
 function toIntegerInRange(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, Math.round(value)));
 }
@@ -242,6 +257,12 @@ type SynthActions = {
 	setLine2DcaEnv: (v: StepEnvData) => void;
 	setLine2AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine2AlgoControlsB: (v: AlgoControlValueV1[]) => void;
+	updateAlgoControlValue: (
+		lineIndex: 1 | 2,
+		slot: "A" | "B",
+		id: string,
+		value: number,
+	) => void;
 	setLine2BaseWaveformA: (v: BaseWaveform) => void;
 	setLine2BaseWaveformB: (v: BaseWaveform) => void;
 
@@ -474,6 +495,43 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setLine2DcaEnv: (v) => setEditedState({ line2DcaEnv: v }),
 		setLine2AlgoControlsA: (v) => setEditedState({ line2AlgoControlsA: v }),
 		setLine2AlgoControlsB: (v) => setEditedState({ line2AlgoControlsB: v }),
+		updateAlgoControlValue: (lineIndex, slot, id, value) =>
+			setEditedState((state) => {
+				if (lineIndex === 1 && slot === "A") {
+					return {
+						line1AlgoControlsA: upsertAlgoControlValue(
+							state.line1AlgoControlsA,
+							id,
+							value,
+						),
+					};
+				}
+				if (lineIndex === 1) {
+					return {
+						line1AlgoControlsB: upsertAlgoControlValue(
+							state.line1AlgoControlsB,
+							id,
+							value,
+						),
+					};
+				}
+				if (slot === "A") {
+					return {
+						line2AlgoControlsA: upsertAlgoControlValue(
+							state.line2AlgoControlsA,
+							id,
+							value,
+						),
+					};
+				}
+				return {
+					line2AlgoControlsB: upsertAlgoControlValue(
+						state.line2AlgoControlsB,
+						id,
+						value,
+					),
+				};
+			}),
 		setLine2BaseWaveformA: (v) => setEditedState({ line2BaseWaveformA: v }),
 		setLine2BaseWaveformB: (v) => setEditedState({ line2BaseWaveformB: v }),
 

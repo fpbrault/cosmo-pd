@@ -87,7 +87,12 @@ fn handle_ipc_invoke(
             preset_library.clone(),
             preset_session.clone(),
         ),
-        midi_learn: crate::midi_learn::MidiLearnService::new(midi_learn_state.clone()),
+        midi_learn: crate::midi_learn::MidiLearnService::new(
+            midi_learn_state
+                .lock()
+                .map(|state| state.clone())
+                .unwrap_or_default(),
+        ),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });

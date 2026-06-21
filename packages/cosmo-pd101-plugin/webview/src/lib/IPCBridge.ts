@@ -241,16 +241,26 @@ let _nativePostMessage: (msg: string) => void = (msg) => {
 // ─── MIDI CC handler ──────────────────────────────────────────────────────────
 
 function installMidiCcHandler() {
+	const dispatchMidiCc = (channel: number, cc: number, value: number) => {
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel, cc, rawValue: value },
+			}),
+		);
+	};
 	try {
 		Object.defineProperty(window, "__czOnMidiCc", {
 			configurable: true,
 			writable: true,
-			value: (channel: number, cc: number, value: number) => {
-				window.dispatchEvent(
-					new CustomEvent("cz-midi-cc", {
-						detail: { channel, cc, rawValue: value },
-					}),
-				);
+			value: dispatchMidiCc,
+		});
+		Object.defineProperty(window, "__czOnMidiCcBatch", {
+			configurable: true,
+			writable: true,
+			value: (events: Array<[number, number, number]>) => {
+				for (const [channel, cc, value] of events) {
+					dispatchMidiCc(channel, cc, value);
+				}
 			},
 		});
 	} catch {

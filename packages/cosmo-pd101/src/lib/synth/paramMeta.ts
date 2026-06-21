@@ -1,6 +1,7 @@
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { i18n } from "@/i18n";
 import {
+	ENGINE_MIDI_PARAM_RANGES_V1,
 	ENGINE_PARAM_RANGES_V1,
 	ENGINE_PARAM_UI_META_V1,
 	type EngineParamRangeV1,
@@ -19,6 +20,11 @@ export type EngineParamUiMetaWithRangeV1 = EngineParamUiMetaV1 & {
 const ENGINE_PARAM_RANGES_BY_KEY = new Map<string, EngineParamRangeV1>(
 	ENGINE_PARAM_RANGES_V1.map((range) => [range.key, range] as const),
 );
+
+export const ENGINE_MIDI_PARAM_RANGES_BY_KEY = new Map<
+	string,
+	EngineParamRangeV1
+>(ENGINE_MIDI_PARAM_RANGES_V1.map((range) => [range.key, range] as const));
 
 export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 	Record<SynthParamKey, EngineParamUiMetaWithRangeV1>
