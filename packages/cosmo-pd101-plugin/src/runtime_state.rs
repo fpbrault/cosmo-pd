@@ -1,30 +1,56 @@
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 
 use arc_swap::ArcSwap;
-use cosmo_synth_engine::params::SynthParams;
+use cosmo_synth_engine::params::{AlgoControlId, SynthParams};
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use crossbeam_queue::ArrayQueue;
 use truce_core::events::TransportInfo;
 
-use crate::midi_learn::{MidiLearnService, MidiMappingSnapshot};
+use crate::midi_learn::MidiLearnService;
 use crate::preset_library::PresetLibrary;
 use crate::preset_service::PresetService;
-use cosmo_pd101_bridge_types::{EditorState, MidiLearnState, PresetSession, TransportInfoResponse};
+use cosmo_pd101_bridge_types::{
+    EditorState, MidiLearnState, PresetSession, TransportInfoResponse, UiAlgoControlSection,
+    UiParamChange,
+};
 
 pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
 pub const RENDER_CONTROL_QUEUE_CAPACITY: usize = 256;
+pub const UI_PARAM_CHANGE_QUEUE_CAPACITY: usize = 128;
 
 pub type ScopeBuffer = Arc<RwLock<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 pub type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
 pub type RenderControlQueue = Arc<ArrayQueue<RenderControlEvent>>;
+
+#[derive(Debug)]
+pub enum NativeUiParamKey {
+    Static(&'static str),
+    Owned(String),
+}
+
+#[derive(Debug)]
+pub enum NativeUiParamChange {
+    Scalar {
+        key: NativeUiParamKey,
+        value: f32,
+    },
+    AlgoControl {
+        line: u8,
+        section: UiAlgoControlSection,
+        control_id: AlgoControlId,
+        value: f32,
+    },
+}
+
+pub type UiParamChangeQueue = Arc<ArrayQueue<NativeUiParamChange>>;
 pub type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
-pub type SharedMidiMappingSnapshot = Arc<ArcSwap<MidiMappingSnapshot>>;
 pub type SharedRuntimeModSources = Arc<RwLock<RuntimeModSources>>;
 pub type SharedRuntimeVoiceStates = Arc<RwLock<Vec<RuntimeVoiceDebugState>>>;
 pub type SharedTransportSnapshot = Arc<TransportSnapshot>;
@@ -45,6 +71,51 @@ pub struct RenderControlDiagnostics {
     pub block_event_overflows: AtomicU64,
     pub parameter_snapshot_rejections: AtomicU64,
     pub midi_mapping_misses: AtomicU64,
+}
+
+pub fn drain_and_coalesce_ui_param_changes(queue: &UiParamChangeQueue) -> Vec<UiParamChange> {
+    let mut scalar_changes = HashMap::<String, f32>::new();
+    let mut algo_changes = HashMap::<(u8, UiAlgoControlSection, AlgoControlId), f32>::new();
+
+    while let Some(change) = queue.pop() {
+        match change {
+            NativeUiParamChange::Scalar { key, value } => {
+                let key = match key {
+                    NativeUiParamKey::Static(key) => key.to_string(),
+                    NativeUiParamKey::Owned(key) => key,
+                };
+                scalar_changes.insert(key, value);
+            }
+            NativeUiParamChange::AlgoControl {
+                line,
+                section,
+                control_id,
+                value,
+            } => {
+                algo_changes.insert((line, section, control_id), value);
+            }
+        }
+    }
+
+    let mut changes = Vec::with_capacity(scalar_changes.len() + algo_changes.len());
+    changes.extend(
+        scalar_changes
+            .into_iter()
+            .map(|(key, value)| UiParamChange::Scalar { key, value }),
+    );
+    changes.extend(
+        algo_changes
+            .into_iter()
+            .map(
+                |((line, section, control_id), value)| UiParamChange::AlgoControl {
+                    line,
+                    section,
+                    control_id: control_id.as_str().to_string(),
+                    value,
+                },
+            ),
+    );
+    changes
 }
 
 pub struct ScopeFrame {
@@ -230,6 +301,8 @@ pub struct UiEventQueues {
     pub midi_cc_queue: MidiCcQueue,
     pub render_control_queue: RenderControlQueue,
     pub render_control_diagnostics: Arc<RenderControlDiagnostics>,
+    pub ui_param_change_queue: UiParamChangeQueue,
+    pub pending_param_changes_flushed_via_ipc: Arc<AtomicBool>,
 }
 
 #[derive(Clone)]
@@ -262,9 +335,6 @@ impl PluginSharedState {
         voice_limit: u8,
     ) -> Self {
         let preset_session = Arc::new(Mutex::new(PresetSession::default()));
-        let midi_mapping_snapshot =
-            crate::midi_learn::new_shared_mapping_snapshot(&midi_learn_state);
-        let midi_learn_state = Arc::new(Mutex::new(midi_learn_state));
         Self {
             synth: SynthParamState {
                 synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),
@@ -284,12 +354,14 @@ impl PluginSharedState {
                 midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
                 render_control_queue: Arc::new(ArrayQueue::new(RENDER_CONTROL_QUEUE_CAPACITY)),
                 render_control_diagnostics: Arc::new(RenderControlDiagnostics::default()),
+                ui_param_change_queue: Arc::new(ArrayQueue::new(UI_PARAM_CHANGE_QUEUE_CAPACITY)),
+                pending_param_changes_flushed_via_ipc: Arc::new(AtomicBool::new(false)),
             },
             editor: EditorSessionState {
                 editor_state: Arc::new(Mutex::new(None)),
             },
             presets: PresetService::new(preset_library.clone(), preset_session),
-            midi_learn: MidiLearnService::new(midi_learn_state, midi_mapping_snapshot),
+            midi_learn: MidiLearnService::new(midi_learn_state),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
         }

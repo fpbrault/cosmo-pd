@@ -203,6 +203,6 @@ enabled = true
 
 [[params.mod.routes]]
 source = "macro1"
-destination = "line1AlgoParam1"
+destination = "line1AlgoControl1"
 amount = 1
 enabled = true

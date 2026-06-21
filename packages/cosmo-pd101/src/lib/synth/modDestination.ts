@@ -13,29 +13,38 @@ type LineScopedModTarget =
 	| "detune"
 	| "octave";
 
-export type AlgoParamSlotTarget =
-	| "algoParam1"
-	| "algoParam2"
-	| "algoParam3"
-	| "algoParam4"
-	| "algoParam5"
-	| "algoParam6"
-	| "algoParam7"
-	| "algoParam8";
+export type AlgoControlSlotTarget =
+	| "algoControl1"
+	| "algoControl2"
+	| "algoControl3"
+	| "algoControl4"
+	| "algoControl5"
+	| "algoControl6"
+	| "algoControl7"
+	| "algoControl8";
 
 export type ModTarget =
 	| ModDestination
 	| LineScopedModTarget
-	| AlgoParamSlotTarget
+	| AlgoControlSlotTarget
 	| ModTargetKey;
 
-export function algoParamTargetFromSlot(
+export function algoControlTargetFromSlot(
 	slot: number,
-): AlgoParamSlotTarget | undefined {
+): AlgoControlSlotTarget | undefined {
 	if (!Number.isInteger(slot) || slot < 1 || slot > 8) {
 		return undefined;
 	}
-	return `algoParam${slot}` as AlgoParamSlotTarget;
+	return `algoControl${slot}` as AlgoControlSlotTarget;
+}
+
+const LEGACY_ALGO_SLOT_KEY = /^line[12]AlgoParam[1-8]$/;
+
+/** Normalizes persisted pre-AlgoControl modulation destination keys. */
+export function normalizeAlgoSlotKey(key: string): string {
+	return LEGACY_ALGO_SLOT_KEY.test(key)
+		? key.replace("AlgoParam", "AlgoControl")
+		: key;
 }
 
 export function resolveModDestination(
@@ -71,22 +80,22 @@ export function resolveModDestination(
 			return `${linePrefix}Detune` as ModDestination;
 		case "octave":
 			return `${linePrefix}Octave` as ModDestination;
-		case "algoParam1":
-			return `${linePrefix}AlgoParam1` as ModDestination;
-		case "algoParam2":
-			return `${linePrefix}AlgoParam2` as ModDestination;
-		case "algoParam3":
-			return `${linePrefix}AlgoParam3` as ModDestination;
-		case "algoParam4":
-			return `${linePrefix}AlgoParam4` as ModDestination;
-		case "algoParam5":
-			return `${linePrefix}AlgoParam5` as ModDestination;
-		case "algoParam6":
-			return `${linePrefix}AlgoParam6` as ModDestination;
-		case "algoParam7":
-			return `${linePrefix}AlgoParam7` as ModDestination;
-		case "algoParam8":
-			return `${linePrefix}AlgoParam8` as ModDestination;
+		case "algoControl1":
+			return `${linePrefix}AlgoControl1` as ModDestination;
+		case "algoControl2":
+			return `${linePrefix}AlgoControl2` as ModDestination;
+		case "algoControl3":
+			return `${linePrefix}AlgoControl3` as ModDestination;
+		case "algoControl4":
+			return `${linePrefix}AlgoControl4` as ModDestination;
+		case "algoControl5":
+			return `${linePrefix}AlgoControl5` as ModDestination;
+		case "algoControl6":
+			return `${linePrefix}AlgoControl6` as ModDestination;
+		case "algoControl7":
+			return `${linePrefix}AlgoControl7` as ModDestination;
+		case "algoControl8":
+			return `${linePrefix}AlgoControl8` as ModDestination;
 		default:
 			return undefined;
 	}

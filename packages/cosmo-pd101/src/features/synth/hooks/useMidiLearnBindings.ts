@@ -9,7 +9,10 @@ import {
 } from "@/features/synth/midiLearnStore";
 import { SYNTH_PARAM_SETTERS } from "@/features/synth/SynthParamController";
 import { useSynthStore } from "@/features/synth/synthStore";
-import { ENGINE_PARAM_UI_META_BY_KEY } from "@/lib/synth/paramMeta";
+import {
+	ENGINE_MIDI_PARAM_RANGES_BY_KEY,
+	isNativeMidiMappingParamKey,
+} from "@/lib/synth/paramMeta";
 
 type UseMidiLearnBindingsOptions = {
 	applyBindings?: boolean;
@@ -21,13 +24,20 @@ export function useMidiLearnBindings({
 	const edgeTriggeredStates = useRef<Record<string, boolean>>({});
 	const learnBindingFromWebMidi = useCallback((channel: number, cc: number) => {
 		const bridgeAddBinding = window.__czAddMidiBinding;
-		if (typeof bridgeAddBinding === "function") {
-			return false;
-		}
-
 		const store = useMidiLearnStore.getState();
 		if (!store.learnMode || !store.pendingLearnParam) {
 			return false;
+		}
+
+		if (typeof bridgeAddBinding === "function") {
+			const pending = store.pendingLearnParam;
+			const isNativeBacked = pending
+				? isNativeMidiMappingParamKey(pending)
+				: false;
+			if (!isNativeBacked && pending) {
+				store.captureBindingLocally(pending, channel, cc);
+			}
+			return true;
 		}
 
 		store.addBinding(store.pendingLearnParam, channel, cc);
@@ -40,24 +50,18 @@ export function useMidiLearnBindings({
 				.getState()
 				.getBindingsForMidi(channel, cc);
 			if (bindings.length === 0) return;
+			const pluginBacked = typeof window.__czAddMidiBinding === "function";
 
 			for (const binding of bindings) {
-				const meta =
-					ENGINE_PARAM_UI_META_BY_KEY[
-						binding.paramKey as keyof typeof ENGINE_PARAM_UI_META_BY_KEY
-					];
-				const min = meta?.min ?? 0;
-				const max = meta?.max ?? 1;
-				const range = max - min;
-				const normalizedValue = rawValue / 127;
-				const mappedValue = min + normalizedValue * range;
+				const nativeRange = ENGINE_MIDI_PARAM_RANGES_BY_KEY.get(
+					binding.paramKey,
+				);
+				if (pluginBacked && isNativeMidiMappingParamKey(binding.paramKey)) {
+					continue;
+				}
 
-				const setterName =
-					SYNTH_PARAM_SETTERS[
-						binding.paramKey as keyof typeof SYNTH_PARAM_SETTERS
-					];
-				if (!setterName) {
-					const registration = getMidiLearnTargetRegistration(binding.paramKey);
+				const registration = getMidiLearnTargetRegistration(binding.paramKey);
+				if (registration) {
 					if (registration?.mode === "edge-trigger") {
 						const threshold = registration.threshold ?? 64;
 						const isHigh = rawValue >= threshold;
@@ -69,6 +73,25 @@ export function useMidiLearnBindings({
 						}
 					}
 					applyRegisteredMidiLearnTarget(binding.paramKey, rawValue);
+					continue;
+				}
+
+				if (!nativeRange) {
+					continue;
+				}
+				const normalizedValue = rawValue / 127;
+				let mappedValue =
+					nativeRange.min +
+					normalizedValue * (nativeRange.max - nativeRange.min);
+				if (nativeRange.step != null && nativeRange.step > 0) {
+					mappedValue =
+						Math.round(mappedValue / nativeRange.step) * nativeRange.step;
+				}
+				const setterName =
+					SYNTH_PARAM_SETTERS[
+						binding.paramKey as keyof typeof SYNTH_PARAM_SETTERS
+					];
+				if (!setterName) {
 					continue;
 				}
 

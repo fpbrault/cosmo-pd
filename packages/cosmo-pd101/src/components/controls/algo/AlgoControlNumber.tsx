@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useAlgoControl } from "@/lib/synth/i18nAlgo";
-import { algoParamTargetFromSlot } from "@/lib/synth/modDestination";
+import { algoControlTargetFromSlot } from "@/lib/synth/modDestination";
 import ControlKnob from "../ControlKnob";
 import type {
 	AlgoControlBinding,
@@ -12,10 +12,9 @@ import type {
 interface AlgoControlNumberProps {
 	control: AlgoControlRuntime;
 	disabled?: boolean;
-	sectionId?: "a" | "b";
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	color?: string;
@@ -78,10 +77,9 @@ function formatAlgoControlValue(
 function AlgoControlNumberInner({
 	control,
 	disabled = false,
-	sectionId = "a",
 	binding,
 	lineIndex,
-	algoParamSlotIndex,
+	algoControlSlotIndex,
 	getAlgoControlValue,
 	setAlgoControlValue,
 	color = "cyan",
@@ -89,19 +87,24 @@ function AlgoControlNumberInner({
 	const translated = useAlgoControl(control.algo, control.id);
 	const label = translated.label || control.label || control.id;
 	const description = translated.description || control.description || "";
-	const resolvedSectionId = sectionId === "b" ? "B" : "A";
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;
 	const value =
 		binding?.getNumber?.() ??
 		getAlgoControlValue(control.id, control.default ?? min);
-	const slotIdx = algoParamSlotIndex[control.id];
-	const algoParamTarget = slotIdx
-		? algoParamTargetFromSlot(slotIdx)
+	const slotIdx = algoControlSlotIndex[control.id];
+	const algoControlTarget = slotIdx
+		? algoControlTargetFromSlot(slotIdx)
 		: undefined;
+	const midiTargetKey =
+		slotIdx && slotIdx >= 1 && slotIdx <= 8
+			? `line${lineIndex}AlgoControl${slotIdx}`
+			: undefined;
 	const midiLearn = useMidiLearnTarget({
-		targetKey: `line${lineIndex}Algo${resolvedSectionId}Control${control.id}`,
-		label: `Line ${lineIndex} Algo ${resolvedSectionId} ${label}`,
+		targetKey: midiTargetKey,
+		label: midiTargetKey
+			? `Line ${lineIndex} Algo Control ${slotIdx}`
+			: undefined,
 		apply: (rawValue) => {
 			const normalized = rawValue / 127;
 			const mappedValue = min + normalized * (max - min);
@@ -126,7 +129,7 @@ function AlgoControlNumberInner({
 				bipolar={min < 0 && max > 0}
 				defaultValue={control.default ?? undefined}
 				color={color}
-				modulatable={disabled ? undefined : algoParamTarget}
+				modulatable={disabled ? undefined : algoControlTarget}
 				lineIndex={lineIndex}
 				onChange={(newVal) =>
 					binding?.setNumber

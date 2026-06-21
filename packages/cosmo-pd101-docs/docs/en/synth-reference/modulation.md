@@ -25,8 +25,8 @@ Routes modulation sources to parameters across the entire synth with adjustable 
 | Category | Count | Examples |
 |----------|-------|----------|
 | **Global** | 2 | Volume, Pitch |
-| **Line 1** | 13 | DcwBase, DcaBase, AlgoBlend, Octave, AlgoParam1-8 |
-| **Line 2** | 12 | DcwBase, DcaBase, AlgoBlend, Detune, AlgoParam1-8 |
+| **Line 1** | 13 | DcwBase, DcaBase, AlgoBlend, Octave, AlgoControl1-8 |
+| **Line 2** | 12 | DcwBase, DcaBase, AlgoBlend, Detune, AlgoControl1-8 |
 
 :::warning
 AlgoBlend and Octave/Detune are listed as modulation destinations but do not currently modulate the signal. Modulation support for these destinations is planned for a future update.

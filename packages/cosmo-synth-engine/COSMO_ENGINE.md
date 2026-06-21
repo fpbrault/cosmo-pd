@@ -277,7 +277,7 @@ DCW:   (same as DCA)
 ```mermaid
 flowchart LR
     src["7 Sources<br/>────────<br/>LFO 1<br/>LFO 2<br/>Random S&H<br/>Mod Env (ADSR)<br/>Velocity<br/>Mod Wheel<br/>Aftertouch"] --> MAT["Mod Matrix<br/>──────────────<br/>∑(amount × src_value)<br/>clamped [-1, +1]"]
-    MAT --> dest["51 Destinations<br/>───────────────<br/>Volume, Pitch<br/>Line1/2: DCW, DCA, AlgoBlend<br/>Line1/2: AlgoParam 1-8<br/>Line1/2: Octave, Detune<br/>Line1/2: EnvStep level/rate<br/>Vibrato rate/depth<br/>IntPM Ratio<br/>LFO1/2: rate, depth, sym, offset<br/>Phaser: rate, depth, fb, mix<br/>Random rate<br/>(and more...)"]
+    MAT --> dest["51 Destinations<br/>───────────────<br/>Volume, Pitch<br/>Line1/2: DCW, DCA, AlgoBlend<br/>Line1/2: AlgoControl 1-8<br/>Line1/2: Octave, Detune<br/>Line1/2: EnvStep level/rate<br/>Vibrato rate/depth<br/>IntPM Ratio<br/>LFO1/2: rate, depth, sym, offset<br/>Phaser: rate, depth, fb, mix<br/>Random rate<br/>(and more...)"]
 ```
 
 Each route: `source × amount → destination`, summed per destination and clamped. The mod matrix is pre-cached per sample frame (`ModMatrixCache`) for O(1) per-destination lookups during voice rendering.

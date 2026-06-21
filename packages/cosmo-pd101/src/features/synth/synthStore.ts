@@ -4,6 +4,7 @@ import {
 	DEFAULT_ALGO_REF,
 	toAlgoRefV1,
 } from "@/lib/synth/algoRef";
+import type { UiParamChange } from "@/lib/synth/bindings/plugin-bridge";
 import type {
 	Algo,
 	AlgoControlValueV1,
@@ -15,6 +16,7 @@ import type {
 	LfoSyncDivision,
 	LfoWaveform,
 	LineSelect,
+	ModDestination,
 	ModMatrix,
 	ModMode,
 	PolyMode,
@@ -34,6 +36,7 @@ import {
 	sanitizeFxSlotConfig,
 	sanitizeFxSlots,
 } from "@/lib/synth/fxSlotSanitizer";
+import { normalizeAlgoSlotKey } from "@/lib/synth/modDestination";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 
 // ---------------------------------------------------------------------------
@@ -62,6 +65,21 @@ function normalizeAlgoControls(
 	}));
 }
 
+function upsertAlgoControlValue(
+	entries: AlgoControlValueV1[],
+	id: string,
+	value: number,
+): AlgoControlValueV1[] {
+	const nextValue = Number.isFinite(value) ? value : 0;
+	const index = entries.findIndex((entry) => entry.id === id);
+	if (index < 0) {
+		return [...entries, { id, value: nextValue }];
+	}
+	const next = [...entries];
+	next[index] = { ...next[index], value: nextValue };
+	return next;
+}
+
 function toIntegerInRange(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, Math.round(value)));
 }
@@ -75,6 +93,16 @@ function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
 		return "normal";
 	}
 	return modMode;
+}
+
+function normalizeModMatrix(matrix: ModMatrix): ModMatrix {
+	return {
+		...matrix,
+		routes: (matrix.routes ?? []).map((route) => ({
+			...route,
+			destination: normalizeAlgoSlotKey(route.destination) as ModDestination,
+		})),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -242,6 +270,12 @@ type SynthActions = {
 	setLine2DcaEnv: (v: StepEnvData) => void;
 	setLine2AlgoControlsA: (v: AlgoControlValueV1[]) => void;
 	setLine2AlgoControlsB: (v: AlgoControlValueV1[]) => void;
+	updateAlgoControlValue: (
+		lineIndex: 1 | 2,
+		slot: "A" | "B",
+		id: string,
+		value: number,
+	) => void;
 	setLine2BaseWaveformA: (v: BaseWaveform) => void;
 	setLine2BaseWaveformB: (v: BaseWaveform) => void;
 
@@ -305,6 +339,10 @@ type SynthActions = {
 	gatherState: () => SynthPresetV1;
 	gatherPresetState: () => SynthPresetV1;
 	applyPreset: (preset: SynthPresetV1) => void;
+	/** Apply targeted param changes from host MIDI mapping (no engine echo). */
+	applyHostParamChanges: (changes: Record<string, number>) => void;
+	/** Apply typed native-origin UI patches (no engine echo). */
+	applyHostUiParamChanges: (changes: UiParamChange[]) => void;
 };
 
 export type SynthStore = SynthState & SynthActions;
@@ -474,6 +512,43 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setLine2DcaEnv: (v) => setEditedState({ line2DcaEnv: v }),
 		setLine2AlgoControlsA: (v) => setEditedState({ line2AlgoControlsA: v }),
 		setLine2AlgoControlsB: (v) => setEditedState({ line2AlgoControlsB: v }),
+		updateAlgoControlValue: (lineIndex, slot, id, value) =>
+			setEditedState((state) => {
+				if (lineIndex === 1 && slot === "A") {
+					return {
+						line1AlgoControlsA: upsertAlgoControlValue(
+							state.line1AlgoControlsA,
+							id,
+							value,
+						),
+					};
+				}
+				if (lineIndex === 1) {
+					return {
+						line1AlgoControlsB: upsertAlgoControlValue(
+							state.line1AlgoControlsB,
+							id,
+							value,
+						),
+					};
+				}
+				if (slot === "A") {
+					return {
+						line2AlgoControlsA: upsertAlgoControlValue(
+							state.line2AlgoControlsA,
+							id,
+							value,
+						),
+					};
+				}
+				return {
+					line2AlgoControlsB: upsertAlgoControlValue(
+						state.line2AlgoControlsB,
+						id,
+						value,
+					),
+				};
+			}),
 		setLine2BaseWaveformA: (v) => setEditedState({ line2BaseWaveformA: v }),
 		setLine2BaseWaveformB: (v) => setEditedState({ line2BaseWaveformB: v }),
 
@@ -726,6 +801,108 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		},
 
 		// --- applyPreset ---
+		// --- applyHostParamChanges ---
+		applyHostParamChanges(changes: Record<string, number>) {
+			const patch: Record<string, unknown> = {};
+			for (const [key, value] of Object.entries(changes)) {
+				switch (key) {
+					case "volume":
+					case "warpAAmount":
+					case "warpBAmount":
+					case "algoBlendA":
+					case "algoBlendB":
+					case "line1Level":
+					case "line2Level":
+					case "line2DetuneNote":
+					case "line2DetuneFine":
+					case "line2DetuneOctave":
+					case "velocityCurve":
+					case "pitchBendRange":
+					case "portamentoRate":
+					case "portamentoTime":
+					case "lfoRate":
+					case "lfoDepth":
+					case "lfoSymmetry":
+					case "lfoOffset":
+					case "lfo2Rate":
+					case "lfo2Depth":
+					case "lfo2Symmetry":
+					case "lfo2Offset":
+					case "randomRate":
+					case "modEnvAttack":
+					case "modEnvDecay":
+					case "modEnvSustain":
+					case "modEnvRelease":
+					case "tempoBpm":
+					case "lineOctave":
+					case "macro1":
+					case "macro2":
+					case "macro3":
+					case "macro4":
+						patch[key] = value;
+						break;
+				}
+			}
+			if (Object.keys(patch).length > 0) {
+				set(patch);
+			}
+		},
+		applyHostUiParamChanges(changes: UiParamChange[]) {
+			const scalarChanges: Record<string, number> = {};
+			const algoChanges = changes.filter(
+				(change): change is Extract<UiParamChange, { type: "algoControl" }> =>
+					change.type === "algoControl",
+			);
+			for (const change of changes) {
+				if (change.type === "scalar" && change.value != null) {
+					scalarChanges[change.key] = change.value;
+				}
+			}
+			get().applyHostParamChanges(scalarChanges);
+			if (algoChanges.length === 0) return;
+			set((state) => {
+				let line1A = state.line1AlgoControlsA;
+				let line1B = state.line1AlgoControlsB;
+				let line2A = state.line2AlgoControlsA;
+				let line2B = state.line2AlgoControlsB;
+				for (const change of algoChanges) {
+					if (change.value == null) continue;
+					if (change.line === 1 && change.section === "A") {
+						line1A = upsertAlgoControlValue(
+							line1A,
+							change.controlId,
+							change.value,
+						);
+					} else if (change.line === 1) {
+						line1B = upsertAlgoControlValue(
+							line1B,
+							change.controlId,
+							change.value,
+						);
+					} else if (change.line === 2 && change.section === "A") {
+						line2A = upsertAlgoControlValue(
+							line2A,
+							change.controlId,
+							change.value,
+						);
+					} else if (change.line === 2) {
+						line2B = upsertAlgoControlValue(
+							line2B,
+							change.controlId,
+							change.value,
+						);
+					}
+				}
+				return {
+					line1AlgoControlsA: line1A,
+					line1AlgoControlsB: line1B,
+					line2AlgoControlsA: line2A,
+					line2AlgoControlsB: line2B,
+				};
+			});
+		},
+
+		// --- applyPreset ---
 		applyPreset(preset: SynthPresetV1) {
 			if (
 				typeof preset !== "object" ||
@@ -910,7 +1087,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				octave: safe(p.octave, 0),
 				modMatrix:
 					p.modMatrix && typeof p.modMatrix === "object"
-						? (p.modMatrix as ModMatrix)
+						? normalizeModMatrix(p.modMatrix as ModMatrix)
 						: { routes: [] },
 				fxSlots:
 					Array.isArray(p.fxSlots) && p.fxSlots.length === 6

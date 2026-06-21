@@ -27,7 +27,7 @@ pub use cosmo_synth_engine::processor::state::{
 pub use editor::EditorState;
 pub use ipc::{
     AddPresetPayload, LoadPresetPayload, PluginIpcEnvelope, PluginIpcRequest, PluginIpcResponse,
-    SaveFxModulePresetPayload, SavePresetPayload,
+    SaveFxModulePresetPayload, SavePresetPayload, UiAlgoControlSection, UiParamChange,
 };
 pub use midi::{MidiLearnBinding, MidiLearnState};
 pub use preset::{

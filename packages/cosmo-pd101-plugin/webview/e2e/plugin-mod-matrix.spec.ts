@@ -79,13 +79,13 @@ test.describe("Mod matrix plugin bridge", () => {
 		});
 	});
 
-	test("adding a route from an algo control should target line 1 algo params", async ({
+	test("adding a route from an algo control should target the canonical line 1 algo control", async ({
 		page,
 	}) => {
 		await expectAddRouteForDestination(page, {
 			controlName: /^curve$/i,
 			dialogName: /modulation for curve/i,
-			expectedDestination: "line1AlgoParam1",
+			expectedDestination: "line1AlgoControl1",
 			beforeAdd: async () => {
 				const algoPicker = page
 					.getByRole("button", { name: /algorithm \d+:/i })

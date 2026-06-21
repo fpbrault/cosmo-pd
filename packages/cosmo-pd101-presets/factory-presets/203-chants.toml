@@ -192,12 +192,12 @@ warmth = 0.2
 
 [[params.mod.routes]]
 source = "lfo1"
-destination = "line1AlgoParam3"
+destination = "line1AlgoControl3"
 amount = 0.21906248
 enabled = true
 
 [[params.mod.routes]]
 source = "lfo1"
-destination = "line1AlgoParam2"
+destination = "line1AlgoControl2"
 amount = 0.5
 enabled = true

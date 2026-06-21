@@ -1,6 +1,7 @@
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { i18n } from "@/i18n";
 import {
+	ENGINE_MIDI_PARAM_RANGES_V1,
 	ENGINE_PARAM_RANGES_V1,
 	ENGINE_PARAM_UI_META_V1,
 	type EngineParamRangeV1,
@@ -19,6 +20,19 @@ export type EngineParamUiMetaWithRangeV1 = EngineParamUiMetaV1 & {
 const ENGINE_PARAM_RANGES_BY_KEY = new Map<string, EngineParamRangeV1>(
 	ENGINE_PARAM_RANGES_V1.map((range) => [range.key, range] as const),
 );
+
+export const ENGINE_MIDI_PARAM_RANGES_BY_KEY = new Map<
+	string,
+	EngineParamRangeV1
+>(ENGINE_MIDI_PARAM_RANGES_V1.map((range) => [range.key, range] as const));
+
+const ALGO_CONTROL_SLOT_KEY = /^line[12]AlgoControl[1-8]$/;
+
+export function isNativeMidiMappingParamKey(key: string): boolean {
+	return (
+		ENGINE_MIDI_PARAM_RANGES_BY_KEY.has(key) || ALGO_CONTROL_SLOT_KEY.test(key)
+	);
+}
 
 export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 	Record<SynthParamKey, EngineParamUiMetaWithRangeV1>

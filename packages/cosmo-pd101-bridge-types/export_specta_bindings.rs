@@ -7,7 +7,8 @@ use cosmo_pd101_bridge_types::{
     PresetLibraryActionResponse, PresetLibraryEntry, PresetLibraryResponse, PresetLibraryStatus,
     PresetLibrarySummaryEntry, PresetSession, RuntimeModSources, RuntimeVoiceDebugState,
     RuntimeVoiceEnvState, RuntimeVoiceLineState, SaveFxModulePresetPayload, SavePresetPayload,
-    SavePresetResponse, ScopeDataResponse, TransportInfoResponse,
+    SavePresetResponse, ScopeDataResponse, TransportInfoResponse, UiAlgoControlSection,
+    UiParamChange,
 };
 use cosmo_synth_engine::params::SynthParams;
 use specta::Types;
@@ -38,6 +39,8 @@ fn main() {
     types.register_mut::<RuntimeVoiceDebugState>();
     types.register_mut::<PluginIpcRequest>();
     types.register_mut::<PluginIpcResponse>();
+    types.register_mut::<UiParamChange>();
+    types.register_mut::<UiAlgoControlSection>();
     types.register_mut::<LoadPresetPayload>();
     types.register_mut::<AddPresetPayload>();
     types.register_mut::<SavePresetPayload>();

@@ -45,6 +45,11 @@ type MidiLearnActions = {
 	setLearnMode: (on: boolean) => void;
 	setPendingLearnParam: (paramKey: string | null) => void;
 	addBinding: (paramKey: string, channel: number, cc: number) => void;
+	captureBindingLocally: (
+		paramKey: string,
+		channel: number,
+		cc: number,
+	) => void;
 	removeBinding: (binding: MidiBindingIdentity) => void;
 	clearBindings: () => void;
 	getBindingsForMidi: (channel: number, cc: number) => MidiBinding[];
@@ -220,6 +225,15 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 		});
 	},
 
+	captureBindingLocally: (paramKey, channel, cc) => {
+		set((state) => ({
+			bindings: [
+				...state.bindings.filter((binding) => binding.paramKey !== paramKey),
+				{ paramKey, channel, cc },
+			],
+		}));
+	},
+
 	initFromEngineState: (engineState) => {
 		set({
 			learnMode: engineState.learnMode,
@@ -234,7 +248,9 @@ export const useMidiLearnStore = create<MidiLearnStore>()((set, get) => ({
 
 	getBindingsForMidi: (channel, cc) => {
 		return get().bindings.filter(
-			(binding) => binding.channel === channel && binding.cc === cc,
+			(binding) =>
+				(binding.channel === -1 || binding.channel === channel) &&
+				binding.cc === cc,
 		);
 	},
 

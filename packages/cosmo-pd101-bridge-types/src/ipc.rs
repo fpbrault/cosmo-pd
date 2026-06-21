@@ -14,6 +14,33 @@ use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugS
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+pub enum UiAlgoControlSection {
+    A,
+    B,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum UiParamChange {
+    Scalar {
+        key: String,
+        value: f32,
+    },
+    AlgoControl {
+        line: u8,
+        section: UiAlgoControlSection,
+        control_id: String,
+        value: f32,
+    },
+}
+
 /// Tagged IPC request envelope deserialized from `{ method, payload }`.
 ///
 /// Wire format (adjacently tagged by serde):
@@ -56,6 +83,8 @@ pub enum PluginIpcRequest {
     SetParams(Box<SynthParams>),
     #[serde(rename = "getParamsVersion")]
     GetParamsVersion,
+    #[serde(rename = "getPendingParamChanges")]
+    GetPendingParamChanges,
     #[serde(rename = "getRuntimeModSources")]
     GetRuntimeModSources,
     #[serde(rename = "getRuntimeVoiceStates")]
@@ -175,6 +204,8 @@ pub enum PluginIpcResponse {
     SetParams,
     #[serde(rename = "getParamsVersion")]
     GetParamsVersion(u32),
+    #[serde(rename = "getPendingParamChanges")]
+    GetPendingParamChanges(Vec<UiParamChange>),
     #[serde(rename = "getRuntimeModSources")]
     GetRuntimeModSources(RuntimeModSources),
     #[serde(rename = "getRuntimeVoiceStates")]

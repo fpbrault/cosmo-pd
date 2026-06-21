@@ -14,8 +14,6 @@ use crate::diagnostics::{
 };
 #[cfg(test)]
 use crate::params::CzPluginParamsParamId;
-#[cfg(any(feature = "vst3", test))]
-use crate::params::resolve_vst3_midi_mapping_param_id;
 use crate::params::{CzPluginParams, apply_daw_params, sync_all_daw_params_from_synth};
 use crate::preset_library::PresetLibrary;
 use crate::rt_safety::{ControlContext, RtContext};
@@ -91,6 +89,12 @@ fn handle_ipc_invoke(
             render_control_diagnostics: Arc::new(
                 crate::runtime_state::RenderControlDiagnostics::default(),
             ),
+            ui_param_change_queue: Arc::new(ArrayQueue::new(
+                crate::runtime_state::UI_PARAM_CHANGE_QUEUE_CAPACITY,
+            )),
+            pending_param_changes_flushed_via_ipc: Arc::new(std::sync::atomic::AtomicBool::new(
+                false,
+            )),
         },
         editor: crate::runtime_state::EditorSessionState {
             editor_state: editor_state.clone(),
@@ -100,13 +104,10 @@ fn handle_ipc_invoke(
             preset_session.clone(),
         ),
         midi_learn: crate::midi_learn::MidiLearnService::new(
-            midi_learn_state.clone(),
-            crate::midi_learn::new_shared_mapping_snapshot(
-                &midi_learn_state
-                    .lock()
-                    .map(|state| state.clone())
-                    .unwrap_or_default(),
-            ),
+            midi_learn_state
+                .lock()
+                .map(|state| state.clone())
+                .unwrap_or_default(),
         ),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
@@ -199,7 +200,7 @@ impl CzPlugin {
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
-        self.cache_current_daw_params();
+        self.audio.daw_params_dirty = false;
 
         if let Ok(mut session) = self.shared_state.presets.session.lock() {
             if preset_name.is_some() || preset_id.is_some() {
@@ -317,7 +318,7 @@ impl PluginLogic for CzPlugin {
         processor.set_voice_limit(self.audio.voice_limit);
         self.audio.processor = Some(processor);
         self.audio.mono_output.resize(max_block_size, 0.0);
-        self.cache_current_daw_params();
+        self.audio.daw_params_dirty = false;
         self.shared_state
             .telemetry
             .transport_snapshot
@@ -414,17 +415,6 @@ impl PluginLogic for CzPlugin {
 truce::plugin! {
     logic: CzPlugin,
     params: CzPluginParams,
-}
-
-#[cfg(feature = "vst3")]
-impl truce_vst3::Vst3PluginExt for Plugin {
-    fn midi_mapping_get_param_id(&self, bus_index: i32, channel: i16, cc: i16) -> Option<u32> {
-        let _ = self;
-        let bindings = crate::global_settings::load_or_init_global_settings()
-            .map(|settings| settings.midi_learn_bindings)
-            .unwrap_or_else(|_| crate::session_state::default_midi_bindings());
-        resolve_vst3_midi_mapping_param_id(&bindings, bus_index, channel, cc)
-    }
 }
 
 // =============================================================================

@@ -198,6 +198,6 @@ enabled = true
 
 [[params.mod.routes]]
 source = "macro2"
-destination = "line1AlgoParam2"
+destination = "line1AlgoControl2"
 amount = -0.49
 enabled = true

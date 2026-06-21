@@ -1,9 +1,15 @@
-import type { PluginIpcMethods } from "@/lib/synth/bindings/plugin-bridge";
+import type {
+	PluginIpcMethods,
+	UiParamChange,
+} from "@/lib/synth/bindings/plugin-bridge";
 
 export type PluginBridgeWindowFacade = {
 	__czGetParams?: () => Promise<PluginIpcMethods["getParams"]["response"]>;
 	__czGetParamsVersion?: () => Promise<
 		PluginIpcMethods["getParamsVersion"]["response"]
+	>;
+	__czGetPendingParamChanges?: () => Promise<
+		PluginIpcMethods["getPendingParamChanges"]["response"]
 	>;
 	__czSetParams?: (params: PluginIpcMethods["setParams"]["request"]) => void;
 	__czGetTransportInfo?: () => Promise<
@@ -126,6 +132,8 @@ declare global {
 			hz: number,
 		) => void;
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
+		__czOnMidiCcBatch?: (events: Array<[number, number, number]>) => void;
 		__czOnMidiLearnState?: (json: string) => void;
+		__czOnParamChanges?: (changes: UiParamChange[]) => void;
 	}
 }

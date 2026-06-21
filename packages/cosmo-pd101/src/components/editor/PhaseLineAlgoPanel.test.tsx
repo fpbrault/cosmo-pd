@@ -59,8 +59,10 @@ function createAlgo(overrides = {}) {
 		setBaseWaveformB: vi.fn(),
 		controlsA: [] as AlgoControlValueV1[],
 		setControlsA: vi.fn(),
+		updateControlA: vi.fn(),
 		controlsB: [] as AlgoControlValueV1[],
 		setControlsB: vi.fn(),
+		updateControlB: vi.fn(),
 		...overrides,
 	};
 }

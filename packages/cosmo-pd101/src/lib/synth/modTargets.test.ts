@@ -13,6 +13,17 @@ describe("modTargets", () => {
 			expect(isRegisteredModDestination("volume")).toBe(true);
 			expect(isRegisteredModDestination("pitch")).toBe(true);
 			expect(isRegisteredModDestination("line1DcwBase")).toBe(true);
+			for (const line of [1, 2]) {
+				for (let slot = 1; slot <= 8; slot++) {
+					expect(
+						isRegisteredModDestination(
+							`line${line}AlgoControl${slot}` as Parameters<
+								typeof isRegisteredModDestination
+							>[0],
+						),
+					).toBe(true);
+				}
+			}
 		});
 
 		it("returns false for unregistered targets", () => {
@@ -25,6 +36,9 @@ describe("modTargets", () => {
 		it("returns correct label for registered targets", () => {
 			expect(getModDestinationLabel("volume")).toBe("Volume");
 			expect(getModDestinationLabel("pitch")).toBe("Pitch");
+			expect(getModDestinationLabel("line1AlgoControl1")).toBe(
+				"Line 1 Algo Control 1",
+			);
 		});
 
 		it("returns target ID for unregistered targets", () => {

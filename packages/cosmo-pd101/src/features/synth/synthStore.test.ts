@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_ALGO_REF } from "@/lib/synth/algoRef";
-import type { FxSlotConfig, SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import type {
+	FxSlotConfig,
+	ModDestination,
+	SynthPresetV1,
+} from "@/lib/synth/bindings/synth";
 import { useSynthStore } from "./synthStore";
 
 describe("useSynthStore", () => {
@@ -58,6 +62,92 @@ describe("useSynthStore", () => {
 			setLineOctave(-5); // Min -2
 		});
 		expect(useSynthStore.getState().lineOctave).toBe(-2);
+	});
+
+	it("updates multiple algo controls against current state", () => {
+		const { updateAlgoControlValue } = useSynthStore.getState();
+		act(() => {
+			updateAlgoControlValue(1, "A", "depth", 0.25);
+			updateAlgoControlValue(1, "A", "feedback", 0.75);
+		});
+
+		expect(useSynthStore.getState().line1AlgoControlsA).toEqual(
+			expect.arrayContaining([
+				{ id: "depth", value: 0.25 },
+				{ id: "feedback", value: 0.75 },
+			]),
+		);
+	});
+
+	it("applies scalar and concrete algo-control host UI patches", () => {
+		act(() => {
+			useSynthStore.getState().applyHostUiParamChanges([
+				{ type: "scalar", key: "volume", value: 0.7 },
+				{
+					type: "algoControl",
+					line: 1,
+					section: "A",
+					controlId: "depth",
+					value: 0.72,
+				},
+			]);
+		});
+
+		expect(useSynthStore.getState().volume).toBe(0.7);
+		expect(useSynthStore.getState().line1AlgoControlsA).toContainEqual({
+			id: "depth",
+			value: 0.72,
+		});
+	});
+
+	it("coalesces repeated algo-control host UI patches in the store", () => {
+		act(() => {
+			useSynthStore.getState().applyHostUiParamChanges([
+				{
+					type: "algoControl",
+					line: 2,
+					section: "B",
+					controlId: "feedback",
+					value: 0.25,
+				},
+				{
+					type: "algoControl",
+					line: 2,
+					section: "B",
+					controlId: "feedback",
+					value: 0.9,
+				},
+			]);
+		});
+
+		const matches = useSynthStore
+			.getState()
+			.line2AlgoControlsB.filter((entry) => entry.id === "feedback");
+		expect(matches).toEqual([{ id: "feedback", value: 0.9 }]);
+	});
+
+	it("normalizes legacy algo-param modulation destinations when loading", () => {
+		const preset = useSynthStore.getState().gatherState();
+		preset.params.modMatrix = {
+			routes: [
+				{
+					source: "lfo1",
+					destination: "line1AlgoParam1" as ModDestination,
+					amount: 0.5,
+					enabled: true,
+				},
+			],
+		};
+
+		act(() => useSynthStore.getState().applyPreset(preset));
+
+		expect(useSynthStore.getState().modMatrix.routes?.[0]?.destination).toBe(
+			"line1AlgoControl1",
+		);
+		expect(
+			useSynthStore.getState().gatherState().params.modMatrix?.routes?.[0]
+				?.destination,
+		).toBe("line1AlgoControl1");
 	});
 
 	it("gathers state into a preset structure", () => {

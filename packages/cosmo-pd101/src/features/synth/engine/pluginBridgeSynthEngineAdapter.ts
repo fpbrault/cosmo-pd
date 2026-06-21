@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { useSynthStore } from "@/features/synth/synthStore";
+import type { UiParamChange } from "@/lib/synth/bindings/plugin-bridge";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 import {
@@ -22,8 +23,6 @@ export type PluginPresetSession = {
 };
 
 type StepEnv = SynthPresetV1["params"]["line1"]["dcoEnv"];
-
-const PARAMS_VERSION_POLL_INTERVAL_MS = 200;
 
 function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
 	return {
@@ -111,13 +110,15 @@ export function usePluginBridgeSynthEngine(
 } {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
+	const applyHostUiParamChanges = useSynthStore(
+		(s) => s.applyHostUiParamChanges,
+	);
 	const enabled = options.enabled ?? true;
 	const onExternalParamChange = options.onExternalParamChange;
 	const outboundEnabledRef = useRef(false);
 	const sentParamsRef = useRef("");
 	const syncRef = useRef<(() => void) | null>(null);
 	const applyingHostParamsRef = useRef(false);
-	const lastSeenParamsVersionRef = useRef<number | null>(null);
 	const initialHydrationCompleteRef = useRef(false);
 
 	const send = useCallback((params: SynthPresetV1["params"]) => {
@@ -150,13 +151,36 @@ export function usePluginBridgeSynthEngine(
 		[applyPreset],
 	);
 
+	const applyNativeUiParamChanges = useCallback(
+		(changes: UiParamChange[]) => {
+			if (changes.length === 0) return;
+			applyingHostParamsRef.current = true;
+			try {
+				applyHostUiParamChanges(changes);
+			} finally {
+				applyingHostParamsRef.current = false;
+			}
+			if (initialHydrationCompleteRef.current) {
+				onExternalParamChange?.();
+			}
+		},
+		[applyHostUiParamChanges, onExternalParamChange],
+	);
+
 	// Inbound: Rust → React state
 	useEffect(() => {
 		if (!enabled) return;
 		window.__czOnParams = (json: string) => {
 			try {
 				const params = JSON.parse(json) as SynthPresetV1["params"];
+				const incomingJson = JSON.stringify(
+					sanitizeSynthParamsForEngine(params),
+				);
+				const externallyChanged = incomingJson !== sentParamsRef.current;
 				applyHostParams(params);
+				if (externallyChanged && initialHydrationCompleteRef.current) {
+					onExternalParamChange?.();
+				}
 			} catch (e) {
 				console.error("[PluginBridge] Failed to parse params from Rust:", e);
 			}
@@ -164,7 +188,61 @@ export function usePluginBridgeSynthEngine(
 		return () => {
 			window.__czOnParams = undefined;
 		};
-	}, [enabled, applyHostParams]);
+	}, [enabled, applyHostParams, onExternalParamChange]);
+
+	// Native-origin param changes via push (cz-param-changes event)
+	useEffect(() => {
+		if (!enabled) return;
+		const handler = (event: Event) => {
+			if (applyingHostParamsRef.current) return;
+			const changes = (event as CustomEvent).detail as
+				| UiParamChange[]
+				| undefined;
+			if (!changes) return;
+			applyNativeUiParamChanges(changes);
+		};
+		window.addEventListener("cz-param-changes", handler);
+		return () => window.removeEventListener("cz-param-changes", handler);
+	}, [enabled, applyNativeUiParamChanges]);
+
+	// Native-origin param changes via IPC pull (rAF).
+	// Independent of host idle() cadence for lower-latency knob updates.
+	useEffect(() => {
+		if (!enabled) return;
+		let rafId = 0;
+		let inFlight = false;
+		let cancelled = false;
+		const poll = () => {
+			if (cancelled) return;
+			const getPendingParamChanges = window.__czGetPendingParamChanges;
+			if (
+				getPendingParamChanges &&
+				!inFlight &&
+				!applyingHostParamsRef.current
+			) {
+				inFlight = true;
+				void getPendingParamChanges()
+					.then((changes) => {
+						if (cancelled) return;
+						if (changes && changes.length > 0) {
+							applyNativeUiParamChanges(changes);
+						}
+					})
+					.catch(() => {
+						// native bridge may be unavailable during startup/shutdown
+					})
+					.finally(() => {
+						inFlight = false;
+					});
+			}
+			rafId = requestAnimationFrame(poll);
+		};
+		rafId = requestAnimationFrame(poll);
+		return () => {
+			cancelled = true;
+			cancelAnimationFrame(rafId);
+		};
+	}, [enabled, applyNativeUiParamChanges]);
 
 	// Outbound: React state → Rust
 	useEffect(() => {
@@ -182,54 +260,6 @@ export function usePluginBridgeSynthEngine(
 		};
 	}, [enabled, gatherState, send]);
 
-	// Host automation and MIDI mappings can change plugin params without going
-	// through React. Poll the cheap native version and hydrate only on changes.
-	useEffect(() => {
-		if (!enabled) return;
-		let cancelled = false;
-		let intervalId = 0;
-
-		const parseVersion = (value: unknown) => {
-			if (typeof value === "number" && Number.isFinite(value)) return value;
-			if (typeof value === "string") {
-				const parsed = Number(value);
-				return Number.isFinite(parsed) ? parsed : null;
-			}
-			return null;
-		};
-
-		const refreshIfChanged = async () => {
-			const getVersion = window.__czGetParamsVersion;
-			const getParams = window.__czGetParams;
-			if (!getVersion || !getParams) return;
-			try {
-				const version = parseVersion(await getVersion());
-				if (version === null || version === lastSeenParamsVersionRef.current) {
-					return;
-				}
-				lastSeenParamsVersionRef.current = version;
-				const result = await getParams();
-				if (cancelled || !result || typeof result !== "object") return;
-				applyHostParams(result as SynthPresetV1["params"]);
-				if (initialHydrationCompleteRef.current) {
-					onExternalParamChange?.();
-				}
-			} catch {
-				// The native bridge may not be ready during editor startup.
-			}
-		};
-
-		intervalId = window.setInterval(() => {
-			void refreshIfChanged();
-		}, PARAMS_VERSION_POLL_INTERVAL_MS);
-		void refreshIfChanged();
-
-		return () => {
-			cancelled = true;
-			window.clearInterval(intervalId);
-		};
-	}, [enabled, applyHostParams, onExternalParamChange]);
-
 	// Hydration: getParams from Rust once on mount
 	useEffect(() => {
 		if (!enabled) return;
@@ -239,6 +269,8 @@ export function usePluginBridgeSynthEngine(
 		const RETRY_DELAY_MS = 500;
 		let retryId = 0;
 		let fallbackId = 0;
+		let pollId = 0;
+		let lastParamsVersion = 0;
 
 		const applyResult = (result: unknown) => {
 			if (result && typeof result === "object") {
@@ -313,10 +345,41 @@ export function usePluginBridgeSynthEngine(
 
 		tryGetParams();
 
+		// Params-version polling fallback: poll ~200ms for native version bumps
+		// (e.g., host MIDI mapping changes params). Only hydrate when version
+		// changes, and never echo back to native.
+		const startPolling = () => {
+			const poll = () => {
+				if (cancelled) return;
+				const getParamsVersion = window.__czGetParamsVersion;
+				const getParams = window.__czGetParams;
+				if (getParamsVersion && getParams) {
+					void getParamsVersion().then((version: number) => {
+						if (cancelled) return;
+						if (version !== lastParamsVersion) {
+							lastParamsVersion = version;
+							if (!applyingHostParamsRef.current) {
+								void getParams().then((result) => {
+									if (cancelled) return;
+									applyResult(result);
+								});
+							}
+						}
+					});
+				}
+				if (!cancelled) {
+					pollId = window.setTimeout(poll, 200);
+				}
+			};
+			pollId = window.setTimeout(poll, 200);
+		};
+		startPolling();
+
 		return () => {
 			cancelled = true;
 			window.clearTimeout(retryId);
 			window.clearTimeout(fallbackId);
+			window.clearTimeout(pollId);
 		};
 	}, [enabled, applyHostParams]);
 
