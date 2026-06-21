@@ -79,6 +79,53 @@ describe("useSynthStore", () => {
 		);
 	});
 
+	it("applies scalar and concrete algo-control host UI patches", () => {
+		act(() => {
+			useSynthStore.getState().applyHostUiParamChanges([
+				{ type: "scalar", key: "volume", value: 0.7 },
+				{
+					type: "algoControl",
+					line: 1,
+					section: "A",
+					controlId: "depth",
+					value: 0.72,
+				},
+			]);
+		});
+
+		expect(useSynthStore.getState().volume).toBe(0.7);
+		expect(useSynthStore.getState().line1AlgoControlsA).toContainEqual({
+			id: "depth",
+			value: 0.72,
+		});
+	});
+
+	it("coalesces repeated algo-control host UI patches in the store", () => {
+		act(() => {
+			useSynthStore.getState().applyHostUiParamChanges([
+				{
+					type: "algoControl",
+					line: 2,
+					section: "B",
+					controlId: "feedback",
+					value: 0.25,
+				},
+				{
+					type: "algoControl",
+					line: 2,
+					section: "B",
+					controlId: "feedback",
+					value: 0.9,
+				},
+			]);
+		});
+
+		const matches = useSynthStore
+			.getState()
+			.line2AlgoControlsB.filter((entry) => entry.id === "feedback");
+		expect(matches).toEqual([{ id: "feedback", value: 0.9 }]);
+	});
+
 	it("normalizes legacy algo-param modulation destinations when loading", () => {
 		const preset = useSynthStore.getState().gatherState();
 		preset.params.modMatrix = {

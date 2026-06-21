@@ -19,6 +19,23 @@ pub struct MidiMappingBinding<'a> {
 pub struct AppliedMidiParamChange {
     pub key: String,
     pub value: f32,
+    pub target: AppliedMidiParamTarget,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppliedMidiAlgoControlSection {
+    A,
+    B,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppliedMidiParamTarget {
+    Scalar,
+    AlgoControl {
+        line: u8,
+        section: AppliedMidiAlgoControlSection,
+        control_id: AlgoControlId,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -168,6 +185,14 @@ fn apply_virtual_algo_control_midi_mapping(
     Some(AppliedMidiParamChange {
         key: key.to_string(),
         value: mapped,
+        target: AppliedMidiParamTarget::AlgoControl {
+            line: target.line_index as u8 + 1,
+            section: match target.section {
+                AlgoControlSection::A => AppliedMidiAlgoControlSection::A,
+                AlgoControlSection::B => AppliedMidiAlgoControlSection::B,
+            },
+            control_id: target.control_id,
+        },
     })
 }
 
@@ -542,6 +567,7 @@ pub fn apply_midi_mapping_binding(
         Some(AppliedMidiParamChange {
             key: param_key.to_string(),
             value: quantized,
+            target: AppliedMidiParamTarget::Scalar,
         })
     } else {
         None

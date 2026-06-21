@@ -4,6 +4,7 @@ import {
 	DEFAULT_ALGO_REF,
 	toAlgoRefV1,
 } from "@/lib/synth/algoRef";
+import type { UiParamChange } from "@/lib/synth/bindings/plugin-bridge";
 import type {
 	Algo,
 	AlgoControlValueV1,
@@ -340,6 +341,8 @@ type SynthActions = {
 	applyPreset: (preset: SynthPresetV1) => void;
 	/** Apply targeted param changes from host MIDI mapping (no engine echo). */
 	applyHostParamChanges: (changes: Record<string, number>) => void;
+	/** Apply typed native-origin UI patches (no engine echo). */
+	applyHostUiParamChanges: (changes: UiParamChange[]) => void;
 };
 
 export type SynthStore = SynthState & SynthActions;
@@ -843,6 +846,60 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 			if (Object.keys(patch).length > 0) {
 				set(patch);
 			}
+		},
+		applyHostUiParamChanges(changes: UiParamChange[]) {
+			const scalarChanges: Record<string, number> = {};
+			const algoChanges = changes.filter(
+				(change): change is Extract<UiParamChange, { type: "algoControl" }> =>
+					change.type === "algoControl",
+			);
+			for (const change of changes) {
+				if (change.type === "scalar" && change.value != null) {
+					scalarChanges[change.key] = change.value;
+				}
+			}
+			get().applyHostParamChanges(scalarChanges);
+			if (algoChanges.length === 0) return;
+			set((state) => {
+				let line1A = state.line1AlgoControlsA;
+				let line1B = state.line1AlgoControlsB;
+				let line2A = state.line2AlgoControlsA;
+				let line2B = state.line2AlgoControlsB;
+				for (const change of algoChanges) {
+					if (change.value == null) continue;
+					if (change.line === 1 && change.section === "A") {
+						line1A = upsertAlgoControlValue(
+							line1A,
+							change.controlId,
+							change.value,
+						);
+					} else if (change.line === 1) {
+						line1B = upsertAlgoControlValue(
+							line1B,
+							change.controlId,
+							change.value,
+						);
+					} else if (change.line === 2 && change.section === "A") {
+						line2A = upsertAlgoControlValue(
+							line2A,
+							change.controlId,
+							change.value,
+						);
+					} else if (change.line === 2) {
+						line2B = upsertAlgoControlValue(
+							line2B,
+							change.controlId,
+							change.value,
+						);
+					}
+				}
+				return {
+					line1AlgoControlsA: line1A,
+					line1AlgoControlsB: line1B,
+					line2AlgoControlsA: line2A,
+					line2AlgoControlsB: line2B,
+				};
+			});
 		},
 
 		// --- applyPreset ---

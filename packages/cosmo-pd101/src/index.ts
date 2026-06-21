@@ -120,6 +120,7 @@ export type {
 	ScopeDataResponse,
 	SynthParams,
 	TransportInfoResponse,
+	UiParamChange,
 } from "./lib/synth/bindings/plugin-bridge";
 export type {
 	AlgoControlValueV1,

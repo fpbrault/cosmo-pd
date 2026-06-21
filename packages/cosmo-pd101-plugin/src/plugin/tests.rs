@@ -4,8 +4,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::*;
 use crate::diagnostics::set_test_log_level;
-use crate::runtime_state::SCOPE_CAPACITY;
-use cosmo_pd101_bridge_types::{MidiLearnBinding, PluginIpcRequest, SavePresetPayload};
+use crate::runtime_state::{SCOPE_CAPACITY, drain_and_coalesce_ui_param_changes};
+use cosmo_pd101_bridge_types::{
+    MidiLearnBinding, PluginIpcRequest, SavePresetPayload, UiAlgoControlSection, UiParamChange,
+};
 
 fn clear_test_global_settings() {
     let path = crate::global_settings::get_global_settings_path();
@@ -449,6 +451,13 @@ fn midi_mapping_applies_in_plugin_core_without_editor() {
 
     assert!((plugin.shared_state.synth.synth_params.load().macro1 - 1.0).abs() < 0.000_001);
     assert!((plugin.audio.cached_rt_synth_params.macro1 - 1.0).abs() < 0.000_001);
+    assert_eq!(
+        drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue),
+        vec![UiParamChange::Scalar {
+            key: "macro1".to_string(),
+            value: 1.0,
+        }]
+    );
 }
 
 #[test]
@@ -515,7 +524,15 @@ fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
             .load(Ordering::Acquire)
             > initial_version
     );
-    assert!(plugin.shared_state.ui.midi_param_change_queue.is_empty());
+    assert_eq!(
+        drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue),
+        vec![UiParamChange::AlgoControl {
+            line: 1,
+            section: UiAlgoControlSection::A,
+            control_id: "bendBias".to_string(),
+            value: 1.0,
+        }]
+    );
 }
 
 #[test]
@@ -644,6 +661,34 @@ fn host_param_value_drift_updates_runtime_snapshot_and_version() {
             .synth
             .synth_params_version
             .load(Ordering::Acquire)
+    );
+    assert_eq!(
+        drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue),
+        vec![UiParamChange::Scalar {
+            key: "line1Level".to_string(),
+            value: 0.37,
+        }]
+    );
+}
+
+#[test]
+fn daw_param_change_enqueues_scalar_ui_patch() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+
+    plugin.handle_host_event(&EventBody::ParamChange {
+        id: CzPluginParamsParamId::Volume as u32,
+        value: 0.42,
+    });
+
+    assert!((plugin.shared_state.synth.synth_params.load().volume - 0.42).abs() < 0.000_001);
+    assert_eq!(
+        drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue),
+        vec![UiParamChange::Scalar {
+            key: "volume".to_string(),
+            value: 0.42,
+        }]
     );
 }
 

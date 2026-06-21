@@ -1,8 +1,9 @@
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use arc_swap::ArcSwap;
-use cosmo_synth_engine::params::SynthParams;
+use cosmo_synth_engine::params::{AlgoControlId, SynthParams};
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use crossbeam_queue::ArrayQueue;
@@ -11,17 +12,40 @@ use truce_core::events::TransportInfo;
 use crate::midi_learn::MidiLearnService;
 use crate::preset_library::PresetLibrary;
 use crate::preset_service::PresetService;
-use cosmo_pd101_bridge_types::{EditorState, MidiLearnState, PresetSession, TransportInfoResponse};
+use cosmo_pd101_bridge_types::{
+    EditorState, MidiLearnState, PresetSession, TransportInfoResponse, UiAlgoControlSection,
+    UiParamChange,
+};
 
 pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
-pub const MIDI_PARAM_CHANGE_QUEUE_CAPACITY: usize = 128;
+pub const UI_PARAM_CHANGE_QUEUE_CAPACITY: usize = 128;
 
 pub type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
 pub type MidiCcQueue = Arc<ArrayQueue<(u8, u8, u8)>>;
-pub type MidiParamChangeQueue = Arc<ArrayQueue<(String, f32)>>;
+#[derive(Debug)]
+pub enum NativeUiParamKey {
+    Static(&'static str),
+    Owned(String),
+}
+
+#[derive(Debug)]
+pub enum NativeUiParamChange {
+    Scalar {
+        key: NativeUiParamKey,
+        value: f32,
+    },
+    AlgoControl {
+        line: u8,
+        section: UiAlgoControlSection,
+        control_id: AlgoControlId,
+        value: f32,
+    },
+}
+
+pub type UiParamChangeQueue = Arc<ArrayQueue<NativeUiParamChange>>;
 pub type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
@@ -31,6 +55,51 @@ pub type SynthParamsVersion = Arc<AtomicU64>;
 pub type SharedPresetSession = Arc<Mutex<PresetSession>>;
 pub type SharedEditorState = Arc<Mutex<Option<EditorState>>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
+
+pub fn drain_and_coalesce_ui_param_changes(queue: &UiParamChangeQueue) -> Vec<UiParamChange> {
+    let mut scalar_changes = HashMap::<String, f32>::new();
+    let mut algo_changes = HashMap::<(u8, UiAlgoControlSection, AlgoControlId), f32>::new();
+
+    while let Some(change) = queue.pop() {
+        match change {
+            NativeUiParamChange::Scalar { key, value } => {
+                let key = match key {
+                    NativeUiParamKey::Static(key) => key.to_string(),
+                    NativeUiParamKey::Owned(key) => key,
+                };
+                scalar_changes.insert(key, value);
+            }
+            NativeUiParamChange::AlgoControl {
+                line,
+                section,
+                control_id,
+                value,
+            } => {
+                algo_changes.insert((line, section, control_id), value);
+            }
+        }
+    }
+
+    let mut changes = Vec::with_capacity(scalar_changes.len() + algo_changes.len());
+    changes.extend(
+        scalar_changes
+            .into_iter()
+            .map(|(key, value)| UiParamChange::Scalar { key, value }),
+    );
+    changes.extend(
+        algo_changes
+            .into_iter()
+            .map(
+                |((line, section, control_id), value)| UiParamChange::AlgoControl {
+                    line,
+                    section,
+                    control_id: control_id.as_str().to_string(),
+                    value,
+                },
+            ),
+    );
+    changes
+}
 
 pub struct ScopeFrame {
     samples: Vec<f32>,
@@ -214,11 +283,11 @@ pub struct RuntimeTelemetry {
 pub struct UiEventQueues {
     pub ui_input_queue: UiInputQueue,
     pub midi_cc_queue: MidiCcQueue,
-    pub midi_param_change_queue: MidiParamChangeQueue,
-    /// Set to true when IPC handler drains `midi_param_change_queue` via
+    pub ui_param_change_queue: UiParamChangeQueue,
+    /// Set to true when IPC handler drains `ui_param_change_queue` via
     /// `GetPendingParamChanges`. Checked by `idle()` to skip redundant
     /// full-params sync when the JS rAF pull path is actively consuming
-    /// MIDI-mapped param patches. Reset to false by `idle()` each cycle.
+    /// native param patches. Reset to false by `idle()` each cycle.
     pub pending_param_changes_flushed_via_ipc: Arc<AtomicBool>,
 }
 
@@ -267,9 +336,7 @@ impl PluginSharedState {
             ui: UiEventQueues {
                 ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
                 midi_cc_queue: Arc::new(ArrayQueue::new(MIDI_CC_QUEUE_CAPACITY)),
-                midi_param_change_queue: Arc::new(ArrayQueue::new(
-                    MIDI_PARAM_CHANGE_QUEUE_CAPACITY,
-                )),
+                ui_param_change_queue: Arc::new(ArrayQueue::new(UI_PARAM_CHANGE_QUEUE_CAPACITY)),
                 pending_param_changes_flushed_via_ipc: Arc::new(AtomicBool::new(false)),
             },
             editor: EditorSessionState {

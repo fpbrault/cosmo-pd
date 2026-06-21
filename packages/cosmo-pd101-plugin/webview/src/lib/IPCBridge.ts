@@ -18,6 +18,7 @@
 import type {
 	ScopeDataResponse,
 	TransportInfoResponse,
+	UiParamChange,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
 import { installPluginIpcWindowBridge } from "./installPluginIpcWindowBridge";
@@ -275,7 +276,7 @@ function installParamChangesHandler() {
 		Object.defineProperty(window, "__czOnParamChanges", {
 			configurable: true,
 			writable: true,
-			value: (changes: Record<string, number>) => {
+			value: (changes: UiParamChange[]) => {
 				window.dispatchEvent(
 					new CustomEvent("cz-param-changes", { detail: changes }),
 				);

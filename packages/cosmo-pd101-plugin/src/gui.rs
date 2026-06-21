@@ -35,10 +35,10 @@ use crate::ipc::IpcContext;
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
 use crate::runtime_state::MidiCcQueue;
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-use crate::runtime_state::MidiParamChangeQueue;
+use crate::runtime_state::drain_and_coalesce_ui_param_changes;
 use crate::runtime_state::{PluginSharedState, ScopeBuffer};
 use crate::{append_log, append_log_debug, append_log_error, append_log_warn};
-use cosmo_pd101_bridge_types::PluginIpcEnvelope;
+use cosmo_pd101_bridge_types::{PluginIpcEnvelope, UiParamChange};
 use cosmo_synth_engine::params::SynthParams;
 
 // ─── Size constants ──────────────────────────────────────────────────────────
@@ -449,7 +449,7 @@ impl Editor for CzEditor {
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
             let midi_cc_queue = self.shared_state.ui.midi_cc_queue.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
-            let midi_param_change_queue = self.shared_state.ui.midi_param_change_queue.clone();
+            let ui_param_change_queue = self.shared_state.ui.ui_param_change_queue.clone();
             #[cfg(not(any(target_os = "ios", target_os = "android")))]
             let pending_param_changes_flushed_via_ipc = self
                 .shared_state
@@ -466,12 +466,12 @@ impl Editor for CzEditor {
                 // to avoid the race between GetPendingParamChanges and idle().
                 #[cfg(not(any(target_os = "ios", target_os = "android")))]
                 let param_changes = if r_af_active {
-                    serde_json::Map::new()
+                    Vec::new()
                 } else {
-                    drain_and_coalesce_param_changes(&midi_param_change_queue)
+                    drain_and_coalesce_ui_param_changes(&ui_param_change_queue)
                 };
                 #[cfg(any(target_os = "ios", target_os = "android"))]
-                let param_changes = drain_and_coalesce_param_changes(&midi_param_change_queue);
+                let param_changes = drain_and_coalesce_ui_param_changes(&ui_param_change_queue);
                 // Skip redundant full-params sync when param patches were sent
                 #[cfg(not(any(target_os = "ios", target_os = "android")))]
                 let should_push = param_changes.is_empty() && !r_af_active;
@@ -522,9 +522,9 @@ impl Editor for CzEditor {
             .swap(false, Ordering::AcqRel);
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
         let param_changes = if r_af_active {
-            serde_json::Map::new()
+            Vec::new()
         } else {
-            drain_and_coalesce_param_changes(&self.shared_state.ui.midi_param_change_queue)
+            drain_and_coalesce_ui_param_changes(&self.shared_state.ui.ui_param_change_queue)
         };
         #[cfg(not(any(target_os = "ios", target_os = "android")))]
         let should_push_params = param_changes.is_empty() && !r_af_active;
@@ -664,25 +664,9 @@ fn push_midi_cc_batch_to_webview(
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-fn drain_and_coalesce_param_changes(
-    midi_param_change_queue: &MidiParamChangeQueue,
-) -> serde_json::Map<String, serde_json::Value> {
-    use std::collections::HashMap;
-    let mut coalesced: HashMap<String, f32> = HashMap::new();
-    while let Some((key, value)) = midi_param_change_queue.pop() {
-        coalesced.insert(key, value);
-    }
-    let mut map = serde_json::Map::with_capacity(coalesced.len());
-    for (key, value) in coalesced {
-        map.insert(key, serde_json::Value::from(value));
-    }
-    map
-}
-
-#[cfg(not(any(target_os = "ios", target_os = "android")))]
 fn push_param_changes_to_webview(
     webview_state: &Arc<Mutex<WebViewContainer>>,
-    changes: &serde_json::Map<String, serde_json::Value>,
+    changes: &[UiParamChange],
 ) {
     if changes.is_empty() {
         return;

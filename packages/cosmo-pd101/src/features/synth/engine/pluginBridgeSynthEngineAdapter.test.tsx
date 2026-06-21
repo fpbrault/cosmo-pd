@@ -23,6 +23,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czOnParams = undefined;
 		window.__czGetParams = undefined;
 		window.__czGetParamsVersion = undefined;
+		window.__czGetPendingParamChanges = undefined;
 		window.__czSetParams = undefined;
 	});
 
@@ -31,6 +32,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czOnParams = undefined;
 		window.__czGetParams = undefined;
 		window.__czGetParamsVersion = undefined;
+		window.__czGetPendingParamChanges = undefined;
 		window.__czSetParams = undefined;
 	});
 
@@ -156,6 +158,43 @@ describe("usePluginBridgeSynthEngine", () => {
 		});
 		expect(outboundJsons).toHaveLength(0);
 		expect(window.__czGetParamsVersion).toBeUndefined();
+		expect(onExternalParamChange).toHaveBeenCalledOnce();
+
+		unmount();
+	});
+
+	it("applies scalar and algo-control patches through the rAF pull path", async () => {
+		window.__czGetParams = vi.fn(async () => makeParams(0.42));
+		const pendingChanges = vi.fn().mockResolvedValue([]);
+		window.__czGetPendingParamChanges = pendingChanges;
+		const onExternalParamChange = vi.fn();
+		captureSetParams([]);
+
+		const { unmount } = renderHook(() =>
+			usePluginBridgeSynthEngine({ onExternalParamChange }),
+		);
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.42, 6);
+		});
+		pendingChanges.mockResolvedValueOnce([
+			{ type: "scalar", key: "volume", value: 0.7 },
+			{
+				type: "algoControl",
+				line: 1,
+				section: "A",
+				controlId: "depth",
+				value: 0.72,
+			},
+		]);
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.7, 6);
+			expect(useSynthStore.getState().line1AlgoControlsA).toContainEqual({
+				id: "depth",
+				value: 0.72,
+			});
+		});
 		expect(onExternalParamChange).toHaveBeenCalledOnce();
 
 		unmount();

@@ -1,8 +1,10 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
+use cosmo_pd101_bridge_types::UiAlgoControlSection;
 use cosmo_synth_engine::params::{
-    SynthParams, apply_midi_mapping_binding, is_algo_control_slot_key,
+    AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget, SynthParams,
+    apply_midi_mapping_binding,
 };
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
@@ -16,6 +18,7 @@ use crate::params::{
     read_daw_param_by_id, sync_all_daw_params_from_synth, write_daw_param_by_id,
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
+use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
@@ -93,7 +96,7 @@ impl CzPlugin {
         channel: u8,
         cc: u8,
         value: u8,
-    ) -> Vec<(String, f32)> {
+    ) -> Vec<AppliedMidiParamChange> {
         let bindings = self.shared_state.midi_learn.bindings_snapshot();
 
         if bindings.is_empty() {
@@ -112,7 +115,7 @@ impl CzPlugin {
                 cc,
                 normalized,
             ) {
-                changes.push((change.key, change.value));
+                changes.push(change);
             }
         }
 
@@ -175,24 +178,30 @@ impl CzPlugin {
     pub(crate) fn sync_runtime_params_from_host(&mut self, events: &EventList) {
         let tracked_param_changes = Self::tracked_param_changes(events);
         let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
-        let host_params_changed = (0..Self::TRACKED_PARAM_ID_CAPACITY).any(|id| {
-            if tracked_param_changes[id] {
-                return false;
-            }
-            let id = id as u32;
-            let Some(current) = read_current_daw_param_by_id(&self.params, id) else {
-                return false;
-            };
-            let Some(cached) = read_daw_param_by_id(&self.audio.cached_rt_synth_params, id) else {
-                return false;
-            };
-            (current - cached).abs() > 0.000_001
-        });
         let params_version = self
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
+        let mut host_param_changes = [false; Self::TRACKED_PARAM_ID_CAPACITY];
+        if params_version == self.audio.cached_synth_params_version {
+            for (id, changed) in host_param_changes.iter_mut().enumerate() {
+                if tracked_param_changes[id] {
+                    continue;
+                }
+                let param_id = id as u32;
+                let Some(current) = read_current_daw_param_by_id(&self.params, param_id) else {
+                    continue;
+                };
+                let Some(cached) =
+                    read_daw_param_by_id(&self.audio.cached_rt_synth_params, param_id)
+                else {
+                    continue;
+                };
+                *changed = (current - cached).abs() > 0.000_001;
+            }
+        }
+        let host_params_changed = host_param_changes.iter().any(|changed| *changed);
         let params_changed = params_version != self.audio.cached_synth_params_version
             || self.audio.daw_params_dirty
             || host_params_changed;
@@ -240,6 +249,27 @@ impl CzPlugin {
         } else {
             params_version
         };
+        for (id, changed) in host_param_changes.iter().enumerate() {
+            if !*changed {
+                continue;
+            }
+            let param_id = id as u32;
+            let (Some(key), Some(value)) = (
+                daw_param_key_by_id(param_id),
+                read_daw_param_by_id(&merged, param_id),
+            ) else {
+                continue;
+            };
+            let _ = self
+                .shared_state
+                .ui
+                .ui_param_change_queue
+                .push(NativeUiParamChange::Scalar {
+                    key: NativeUiParamKey::Static(key),
+                    value,
+                });
+        }
+
         let rt_merged = Arc::new(merged);
         self.audio.cached_rt_synth_params = rt_merged.clone();
         if self
@@ -278,15 +308,27 @@ impl CzPlugin {
             .midi_learn
             .capture_pending_binding(channel, cc);
         let changes = self.apply_midi_mapping(channel, cc, value);
-        for change in &changes {
-            if is_algo_control_slot_key(&change.0) {
-                continue;
-            }
-            let _ = self
-                .shared_state
-                .ui
-                .midi_param_change_queue
-                .push(change.clone());
+        for change in changes {
+            let ui_change = match change.target {
+                AppliedMidiParamTarget::Scalar => NativeUiParamChange::Scalar {
+                    key: NativeUiParamKey::Owned(change.key),
+                    value: change.value,
+                },
+                AppliedMidiParamTarget::AlgoControl {
+                    line,
+                    section,
+                    control_id,
+                } => NativeUiParamChange::AlgoControl {
+                    line,
+                    section: match section {
+                        AppliedMidiAlgoControlSection::A => UiAlgoControlSection::A,
+                        AppliedMidiAlgoControlSection::B => UiAlgoControlSection::B,
+                    },
+                    control_id,
+                    value: change.value,
+                },
+            };
+            let _ = self.shared_state.ui.ui_param_change_queue.push(ui_change);
         }
         let _ = self
             .shared_state
@@ -309,6 +351,14 @@ impl CzPlugin {
             EventBody::ParamChange { id, value } => {
                 self.audio.daw_params_dirty = true;
                 self.apply_rt_param_change(*id, *value, false);
+                if let Some(key) = daw_param_key_by_id(*id) {
+                    let _ = self.shared_state.ui.ui_param_change_queue.push(
+                        NativeUiParamChange::Scalar {
+                            key: NativeUiParamKey::Static(key),
+                            value: *value as f32,
+                        },
+                    );
+                }
             }
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. }

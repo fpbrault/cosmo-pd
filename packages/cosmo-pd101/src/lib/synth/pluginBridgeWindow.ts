@@ -1,4 +1,7 @@
-import type { PluginIpcMethods } from "@/lib/synth/bindings/plugin-bridge";
+import type {
+	PluginIpcMethods,
+	UiParamChange,
+} from "@/lib/synth/bindings/plugin-bridge";
 
 export type PluginBridgeWindowFacade = {
 	__czGetParams?: () => Promise<PluginIpcMethods["getParams"]["response"]>;
@@ -131,6 +134,6 @@ declare global {
 		__czOnMidiCc?: (channel: number, cc: number, value: number) => void;
 		__czOnMidiCcBatch?: (events: Array<[number, number, number]>) => void;
 		__czOnMidiLearnState?: (json: string) => void;
-		__czOnParamChanges?: (changes: Record<string, number>) => void;
+		__czOnParamChanges?: (changes: UiParamChange[]) => void;
 	}
 }

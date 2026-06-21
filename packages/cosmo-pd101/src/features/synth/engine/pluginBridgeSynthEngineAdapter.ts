@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { useSynthStore } from "@/features/synth/synthStore";
+import type { UiParamChange } from "@/lib/synth/bindings/plugin-bridge";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 import {
@@ -109,7 +110,9 @@ export function usePluginBridgeSynthEngine(
 } {
 	const gatherState = useSynthStore((s) => s.gatherState);
 	const applyPreset = useSynthStore((s) => s.applyPreset);
-	const applyHostParamChanges = useSynthStore((s) => s.applyHostParamChanges);
+	const applyHostUiParamChanges = useSynthStore(
+		(s) => s.applyHostUiParamChanges,
+	);
 	const enabled = options.enabled ?? true;
 	const onExternalParamChange = options.onExternalParamChange;
 	const outboundEnabledRef = useRef(false);
@@ -148,6 +151,22 @@ export function usePluginBridgeSynthEngine(
 		[applyPreset],
 	);
 
+	const applyNativeUiParamChanges = useCallback(
+		(changes: UiParamChange[]) => {
+			if (changes.length === 0) return;
+			applyingHostParamsRef.current = true;
+			try {
+				applyHostUiParamChanges(changes);
+			} finally {
+				applyingHostParamsRef.current = false;
+			}
+			if (initialHydrationCompleteRef.current) {
+				onExternalParamChange?.();
+			}
+		},
+		[applyHostUiParamChanges, onExternalParamChange],
+	);
+
 	// Inbound: Rust → React state
 	useEffect(() => {
 		if (!enabled) return;
@@ -171,27 +190,22 @@ export function usePluginBridgeSynthEngine(
 		};
 	}, [enabled, applyHostParams, onExternalParamChange]);
 
-	// Param changes from native MIDI mapping via push (cz-param-changes event)
+	// Native-origin param changes via push (cz-param-changes event)
 	useEffect(() => {
 		if (!enabled) return;
 		const handler = (event: Event) => {
 			if (applyingHostParamsRef.current) return;
 			const changes = (event as CustomEvent).detail as
-				| Record<string, number>
+				| UiParamChange[]
 				| undefined;
 			if (!changes) return;
-			applyingHostParamsRef.current = true;
-			try {
-				applyHostParamChanges(changes);
-			} finally {
-				applyingHostParamsRef.current = false;
-			}
+			applyNativeUiParamChanges(changes);
 		};
 		window.addEventListener("cz-param-changes", handler);
 		return () => window.removeEventListener("cz-param-changes", handler);
-	}, [enabled, applyHostParamChanges]);
+	}, [enabled, applyNativeUiParamChanges]);
 
-	// Param changes from native MIDI mapping via IPC pull (rAF).
+	// Native-origin param changes via IPC pull (rAF).
 	// Independent of host idle() cadence for lower-latency knob updates.
 	useEffect(() => {
 		if (!enabled) return;
@@ -210,18 +224,8 @@ export function usePluginBridgeSynthEngine(
 				void getPendingParamChanges()
 					.then((changes) => {
 						if (cancelled) return;
-						if (changes && Object.keys(changes).length > 0) {
-							applyingHostParamsRef.current = true;
-							try {
-								const clean = Object.fromEntries(
-									Object.entries(changes).filter(
-										(e): e is [string, number] => e[1] != null,
-									),
-								);
-								applyHostParamChanges(clean);
-							} finally {
-								applyingHostParamsRef.current = false;
-							}
+						if (changes && changes.length > 0) {
+							applyNativeUiParamChanges(changes);
 						}
 					})
 					.catch(() => {
@@ -238,7 +242,7 @@ export function usePluginBridgeSynthEngine(
 			cancelled = true;
 			cancelAnimationFrame(rafId);
 		};
-	}, [enabled, applyHostParamChanges]);
+	}, [enabled, applyNativeUiParamChanges]);
 
 	// Outbound: React state → Rust
 	useEffect(() => {

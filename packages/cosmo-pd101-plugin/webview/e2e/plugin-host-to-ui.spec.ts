@@ -73,4 +73,44 @@ test.describe("Host to UI inbound updates", () => {
 			timeout: 2000,
 		});
 	});
+
+	test("typed native scalar patch updates the volume without a full params push", async ({
+		page,
+	}) => {
+		await page.evaluate(() =>
+			window.__czOnParamChanges?.([
+				{ type: "scalar", key: "volume", value: 0.67 },
+			]),
+		);
+
+		await expect(await revealMainVolumeValueBubble(page)).toHaveText("67%", {
+			timeout: 2000,
+		});
+	});
+
+	test("typed native algo-control patch updates the concrete knob", async ({
+		page,
+	}) => {
+		await page.evaluate(() => window.__testSetAlgo?.(1, "bend"));
+		const curveKnob = page
+			.getByRole("spinbutton", { name: /^curve$/i })
+			.first();
+		await expect(curveKnob).toBeVisible();
+
+		await page.evaluate(() =>
+			window.__czOnParamChanges?.([
+				{
+					type: "algoControl",
+					line: 1,
+					section: "A",
+					controlId: "bendCurve",
+					value: 0.72,
+				},
+			]),
+		);
+
+		await expect(curveKnob).toHaveAttribute("aria-valuenow", "0.72", {
+			timeout: 2000,
+		});
+	});
 });
