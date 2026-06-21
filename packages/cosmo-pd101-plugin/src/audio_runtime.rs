@@ -420,9 +420,6 @@ impl CzPlugin {
             }
         }
         let host_params_changed = host_param_changes.iter().any(|changed| *changed);
-        let _params_changed = params_version != self.audio.cached_synth_params_version
-            || self.audio.daw_params_dirty
-            || host_params_changed;
 
         let previous_rt = (*self.audio.cached_rt_synth_params).clone();
         let merged = if params_version != self.audio.cached_synth_params_version {
@@ -463,13 +460,31 @@ impl CzPlugin {
 
         let rt_merged = Arc::new(merged);
         self.audio.cached_rt_synth_params = rt_merged.clone();
+
+        let params_changed = params_version != self.audio.cached_synth_params_version
+            || self.audio.daw_params_dirty
+            || host_params_changed;
+        if params_changed {
+            if let Some(ref mut proc) = self.audio.processor {
+                proc.set_shared_params(&rt_merged);
+            }
+            self.audio.cached_synth_params_version = self
+                .shared_state
+                .synth
+                .synth_params_version
+                .load(Ordering::Acquire);
+        }
+
+        self.audio.daw_params_dirty = false;
+
         if self
             .shared_state
             .preset_reset_pending
             .swap(false, Ordering::Acquire)
-            && let Some(ref mut proc) = self.audio.processor {
-                proc.reset_audio_state();
-            }
+            && let Some(ref mut proc) = self.audio.processor
+        {
+            proc.reset_audio_state();
+        }
     }
 
     pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
