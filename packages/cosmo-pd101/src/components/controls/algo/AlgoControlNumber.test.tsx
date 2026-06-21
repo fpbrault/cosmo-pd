@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getMidiLearnTargetRegistration } from "@/features/synth/midiLearnRegistry";
 import AlgoControlNumber from "./AlgoControlNumber";
 
 const knobSpy = vi.fn();
@@ -90,6 +91,80 @@ describe("AlgoControlNumber", () => {
 		expect(props.valueFormatter(0.61)).toBe("61%");
 		props.onChange(0.2);
 		expect(setAlgoControlValue).toHaveBeenCalledWith("res", 0.2);
+	});
+
+	it("registers generic slot-based MIDI learn target key (not algo-specific)", () => {
+		algoParamTargetFromSlotMock.mockReturnValue("algoParam2");
+		render(
+			<AlgoControlNumber
+				control={{
+					id: "depth",
+					label: "Depth",
+					min: 0,
+					max: 2,
+					default: 0.5,
+					algo: "cz101",
+				}}
+				lineIndex={1}
+				algoParamSlotIndex={{ depth: 2 }}
+				getAlgoControlValue={vi.fn()}
+				setAlgoControlValue={vi.fn()}
+			/>,
+		);
+
+		const registration = getMidiLearnTargetRegistration("line1AlgoControl2");
+		expect(registration).toBeDefined();
+		expect(registration?.label).toBe("Line 1 Algo Control 2");
+
+		const algoSpecific = getMidiLearnTargetRegistration(
+			"line1AlgoAControldepth",
+		);
+		expect(algoSpecific).toBeUndefined();
+	});
+
+	it("does not register MIDI target when slot index is absent", () => {
+		algoParamTargetFromSlotMock.mockReturnValue(undefined);
+		render(
+			<AlgoControlNumber
+				control={{
+					id: "depth",
+					label: "Depth",
+					min: 0,
+					max: 2,
+					default: 0.5,
+					algo: "cz101",
+				}}
+				lineIndex={2}
+				algoParamSlotIndex={{}}
+				getAlgoControlValue={vi.fn()}
+				setAlgoControlValue={vi.fn()}
+			/>,
+		);
+
+		const reg = getMidiLearnTargetRegistration("line2AlgoControl1");
+		expect(reg).toBeUndefined();
+	});
+
+	it("does not register MIDI target for slots > 8", () => {
+		algoParamTargetFromSlotMock.mockReturnValue(undefined);
+		render(
+			<AlgoControlNumber
+				control={{
+					id: "overflow",
+					label: "Overflow",
+					min: 0,
+					max: 1,
+					algo: "cz101",
+				}}
+				lineIndex={1}
+				algoParamSlotIndex={{ overflow: 9 }}
+				getAlgoControlValue={vi.fn()}
+				setAlgoControlValue={vi.fn()}
+			/>,
+		);
+
+		const reg = getMidiLearnTargetRegistration("line1AlgoControl9");
+		expect(reg).toBeUndefined();
 	});
 
 	it("uses curated units for phase and detune controls", () => {

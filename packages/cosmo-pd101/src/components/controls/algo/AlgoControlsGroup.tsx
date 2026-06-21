@@ -32,7 +32,6 @@ type AlgoControlsGroupSlot = {
 };
 
 interface AlgoControlsGroupProps {
-	sectionId?: "a" | "b";
 	disabled?: boolean;
 	slot: AlgoControlsGroupSlot;
 	color?: string;
@@ -67,7 +66,6 @@ function buildCzStructuredControls(
 function AlgoControlsGroupInner({
 	slot,
 	disabled = false,
-	sectionId = "a",
 	color,
 }: AlgoControlsGroupProps) {
 	const {
@@ -93,7 +91,6 @@ function AlgoControlsGroupInner({
 			key={control.id}
 			control={control}
 			disabled={disabled}
-			sectionId={sectionId}
 			binding={controlBindings[control.id]}
 			lineIndex={lineIndex}
 			algoParamSlotIndex={algoParamSlotIndex}

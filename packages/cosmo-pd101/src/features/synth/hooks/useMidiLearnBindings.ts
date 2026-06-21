@@ -27,8 +27,13 @@ export function useMidiLearnBindings({
 		}
 
 		if (typeof bridgeAddBinding === "function") {
-			// Plugin mode: native/plugin host path captures MIDI learn.
-			// Do NOT create local authoritative binding — native owns it.
+			const pending = store.pendingLearnParam;
+			const isNativeBacked = pending
+				? ENGINE_MIDI_PARAM_RANGES_BY_KEY.has(pending)
+				: false;
+			if (!isNativeBacked && pending) {
+				store.captureBindingLocally(pending, channel, cc);
+			}
 			return true;
 		}
 

@@ -12,7 +12,6 @@ import type {
 interface AlgoControlNumberProps {
 	control: AlgoControlRuntime;
 	disabled?: boolean;
-	sectionId?: "a" | "b";
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
 	algoParamSlotIndex: Record<string, number>;
@@ -78,7 +77,6 @@ function formatAlgoControlValue(
 function AlgoControlNumberInner({
 	control,
 	disabled = false,
-	sectionId = "a",
 	binding,
 	lineIndex,
 	algoParamSlotIndex,
@@ -89,7 +87,6 @@ function AlgoControlNumberInner({
 	const translated = useAlgoControl(control.algo, control.id);
 	const label = translated.label || control.label || control.id;
 	const description = translated.description || control.description || "";
-	const resolvedSectionId = sectionId === "b" ? "B" : "A";
 	const min = control.min ?? 0;
 	const max = control.max ?? 1;
 	const value =
@@ -99,9 +96,15 @@ function AlgoControlNumberInner({
 	const algoParamTarget = slotIdx
 		? algoParamTargetFromSlot(slotIdx)
 		: undefined;
+	const midiTargetKey =
+		slotIdx && slotIdx >= 1 && slotIdx <= 8
+			? `line${lineIndex}AlgoControl${slotIdx}`
+			: undefined;
 	const midiLearn = useMidiLearnTarget({
-		targetKey: `line${lineIndex}Algo${resolvedSectionId}Control${control.id}`,
-		label: `Line ${lineIndex} Algo ${resolvedSectionId} ${label}`,
+		targetKey: midiTargetKey,
+		label: midiTargetKey
+			? `Line ${lineIndex} Algo Control ${slotIdx}`
+			: undefined,
 		apply: (rawValue) => {
 			const normalized = rawValue / 127;
 			const mappedValue = min + normalized * (max - min);

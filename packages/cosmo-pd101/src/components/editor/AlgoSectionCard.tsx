@@ -39,7 +39,6 @@ function AlgoSectionCard({ slot, lineIndex, color }: AlgoSectionCardProps) {
 					applyOptionAssignments: slot.applyOptionAssignments,
 				}}
 				disabled={slot.disabled}
-				sectionId={slot.slotId}
 				color={color}
 			/>
 		</Card>

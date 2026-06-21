@@ -144,7 +144,7 @@ describe("useMidiLearnBindings", () => {
 		});
 	});
 
-	it("defers to native capture in plugin mode without local binding or RPC", () => {
+	it("defers to native capture for native-backed params in plugin mode", () => {
 		(
 			window as Window & {
 				__czAddMidiBinding?: (key: string, channel: number, cc: number) => void;
@@ -152,7 +152,7 @@ describe("useMidiLearnBindings", () => {
 		).__czAddMidiBinding = vi.fn();
 		useMidiLearnStore.setState({
 			learnMode: true,
-			pendingLearnParam: "line1AlgoAControlsyncRatio",
+			pendingLearnParam: "volume",
 		});
 
 		renderHook(() => useMidiLearnBindings());
@@ -162,10 +162,32 @@ describe("useMidiLearnBindings", () => {
 			}),
 		);
 
-		// In plugin mode, native handles capture — no local binding created.
 		expect(useMidiLearnStore.getState().bindings).toEqual([]);
 		expect(window.__czAddMidiBinding).not.toHaveBeenCalled();
 		expect(useMidiLearnStore.getState().learnMode).toBe(true);
+	});
+
+	it("captures UI-only targets locally in plugin mode", () => {
+		(
+			window as Window & {
+				__czAddMidiBinding?: (key: string, channel: number, cc: number) => void;
+			}
+		).__czAddMidiBinding = vi.fn();
+		useMidiLearnStore.setState({
+			learnMode: true,
+			pendingLearnParam: "line1AlgoControl1",
+		});
+
+		renderHook(() => useMidiLearnBindings());
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 2, cc: 14, rawValue: 100 },
+			}),
+		);
+
+		expect(useMidiLearnStore.getState().bindings).toEqual([
+			{ paramKey: "line1AlgoControl1", channel: 2, cc: 14 },
+		]);
 	});
 
 	it("does not duplicate native engine-backed mapping in plugin mode", () => {
