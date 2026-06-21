@@ -693,6 +693,58 @@ fn daw_param_change_enqueues_scalar_ui_patch() {
 }
 
 #[test]
+fn daw_line1_octave_change_enqueues_frontend_octave_patches() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    let line2_octave = plugin.shared_state.synth.synth_params.load().line2.octave;
+
+    plugin.handle_host_event(&EventBody::ParamChange {
+        id: CzPluginParamsParamId::Line1Octave as u32,
+        value: 1.0,
+    });
+
+    let changes =
+        drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue);
+    assert!(changes.contains(&UiParamChange::Scalar {
+        key: "lineOctave".to_string(),
+        value: 1.0,
+    }));
+    assert!(changes.contains(&UiParamChange::Scalar {
+        key: "line2DetuneOctave".to_string(),
+        value: line2_octave - 1.0,
+    }));
+    assert!(
+        !changes.iter().any(
+            |change| matches!(change, UiParamChange::Scalar { key, .. } if key == "line1Octave")
+        )
+    );
+}
+
+#[test]
+fn daw_line2_octave_change_enqueues_frontend_detune_patch() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    let line1_octave = plugin.shared_state.synth.synth_params.load().line1.octave;
+
+    plugin.handle_host_event(&EventBody::ParamChange {
+        id: CzPluginParamsParamId::Line2Octave as u32,
+        value: 2.0,
+    });
+
+    let changes =
+        drain_and_coalesce_ui_param_changes(&plugin.shared_state.ui.ui_param_change_queue);
+    assert_eq!(
+        changes,
+        vec![UiParamChange::Scalar {
+            key: "line2DetuneOctave".to_string(),
+            value: 2.0 - line1_octave,
+        }]
+    );
+}
+
+#[test]
 fn host_side_midi_learn_captures_in_cc_side_effects() {
     clear_test_global_settings();
     let params = Arc::new(CzPluginParams::new());

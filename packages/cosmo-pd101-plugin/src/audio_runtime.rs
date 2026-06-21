@@ -59,6 +59,40 @@ impl AudioRuntime {
 }
 
 impl CzPlugin {
+    fn enqueue_static_ui_scalar(&self, key: &'static str, value: f32) {
+        let _ = self
+            .shared_state
+            .ui
+            .ui_param_change_queue
+            .push(NativeUiParamChange::Scalar {
+                key: NativeUiParamKey::Static(key),
+                value,
+            });
+    }
+
+    fn enqueue_daw_ui_param_changes(&self, id: u32, params: &SynthParams) {
+        if id == CzPluginParamsParamId::Line1Octave as u32 {
+            self.enqueue_static_ui_scalar("lineOctave", params.line1.octave);
+            self.enqueue_static_ui_scalar(
+                "line2DetuneOctave",
+                params.line2.octave - params.line1.octave,
+            );
+            return;
+        }
+        if id == CzPluginParamsParamId::Line2Octave as u32 {
+            self.enqueue_static_ui_scalar(
+                "line2DetuneOctave",
+                params.line2.octave - params.line1.octave,
+            );
+            return;
+        }
+        let (Some(key), Some(value)) = (daw_param_key_by_id(id), read_daw_param_by_id(params, id))
+        else {
+            return;
+        };
+        self.enqueue_static_ui_scalar(key, value);
+    }
+
     pub(crate) fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
         let mut next_params = (*self.shared_state.synth.synth_params.load_full()).clone();
         if !write_daw_param_by_id(&mut next_params, id, value) {
@@ -253,21 +287,7 @@ impl CzPlugin {
             if !*changed {
                 continue;
             }
-            let param_id = id as u32;
-            let (Some(key), Some(value)) = (
-                daw_param_key_by_id(param_id),
-                read_daw_param_by_id(&merged, param_id),
-            ) else {
-                continue;
-            };
-            let _ = self
-                .shared_state
-                .ui
-                .ui_param_change_queue
-                .push(NativeUiParamChange::Scalar {
-                    key: NativeUiParamKey::Static(key),
-                    value,
-                });
+            self.enqueue_daw_ui_param_changes(id as u32, &merged);
         }
 
         let rt_merged = Arc::new(merged);
@@ -351,14 +371,8 @@ impl CzPlugin {
             EventBody::ParamChange { id, value } => {
                 self.audio.daw_params_dirty = true;
                 self.apply_rt_param_change(*id, *value, false);
-                if let Some(key) = daw_param_key_by_id(*id) {
-                    let _ = self.shared_state.ui.ui_param_change_queue.push(
-                        NativeUiParamChange::Scalar {
-                            key: NativeUiParamKey::Static(key),
-                            value: *value as f32,
-                        },
-                    );
-                }
+                let synth_params = self.shared_state.synth.synth_params.load();
+                self.enqueue_daw_ui_param_changes(*id, synth_params.as_ref());
             }
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. }

@@ -77,11 +77,12 @@ test.describe("Host to UI inbound updates", () => {
 	test("typed native scalar patch updates the volume without a full params push", async ({
 		page,
 	}) => {
-		await page.evaluate(() =>
+		await page.evaluate(() => {
+			window.__MOCK_BRIDGE__?.setParamSnapshot("volume", 0.67);
 			window.__czOnParamChanges?.([
 				{ type: "scalar", key: "volume", value: 0.67 },
-			]),
-		);
+			]);
+		});
 
 		await expect(await revealMainVolumeValueBubble(page)).toHaveText("67%", {
 			timeout: 2000,
