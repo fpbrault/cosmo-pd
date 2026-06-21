@@ -28,7 +28,7 @@ describe("AlgoSectionCard", () => {
 			disabled: false,
 			controls: [],
 			controlBindings: {},
-			algoParamSlotIndex: {},
+			algoControlSlotIndex: {},
 			getControlValue: vi.fn(),
 			setControlValue: vi.fn(),
 			getActiveSelectOption: vi.fn(),

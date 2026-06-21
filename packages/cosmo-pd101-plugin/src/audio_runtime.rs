@@ -1,9 +1,10 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
+use cosmo_pd101_bridge_types::UiAlgoControlSection;
 use cosmo_synth_engine::params::{
-    MidiMappingBinding, SynthParams, apply_midi_mapping as apply_engine_midi_mapping,
-    parameter_range_for_key,
+    AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget, SynthParams,
+    apply_midi_mapping_binding,
 };
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
@@ -12,13 +13,12 @@ use truce::prelude::*;
 use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
-use crate::diagnostics::append_log_debug;
-use crate::midi_learn::persist_midi_learn_bindings;
 use crate::params::{
     CzPluginParamsParamId, apply_daw_params, daw_param_key_by_id, read_current_daw_param_by_id,
     read_daw_param_by_id, sync_all_daw_params_from_synth, write_daw_param_by_id,
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
+use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
@@ -59,6 +59,40 @@ impl AudioRuntime {
 }
 
 impl CzPlugin {
+    fn enqueue_static_ui_scalar(&self, key: &'static str, value: f32) {
+        let _ = self
+            .shared_state
+            .ui
+            .ui_param_change_queue
+            .push(NativeUiParamChange::Scalar {
+                key: NativeUiParamKey::Static(key),
+                value,
+            });
+    }
+
+    fn enqueue_daw_ui_param_changes(&self, id: u32, params: &SynthParams) {
+        if id == CzPluginParamsParamId::Line1Octave as u32 {
+            self.enqueue_static_ui_scalar("lineOctave", params.line1.octave);
+            self.enqueue_static_ui_scalar(
+                "line2DetuneOctave",
+                params.line2.octave - params.line1.octave,
+            );
+            return;
+        }
+        if id == CzPluginParamsParamId::Line2Octave as u32 {
+            self.enqueue_static_ui_scalar(
+                "line2DetuneOctave",
+                params.line2.octave - params.line1.octave,
+            );
+            return;
+        }
+        let (Some(key), Some(value)) = (daw_param_key_by_id(id), read_daw_param_by_id(params, id))
+        else {
+            return;
+        };
+        self.enqueue_static_ui_scalar(key, value);
+    }
+
     pub(crate) fn apply_rt_param_change(&mut self, id: u32, value: f64, update_processor: bool) {
         let mut next_params = (*self.shared_state.synth.synth_params.load_full()).clone();
         if !write_daw_param_by_id(&mut next_params, id, value) {
@@ -91,100 +125,36 @@ impl CzPlugin {
         }
     }
 
-    pub(crate) fn apply_midi_mapping(&mut self, channel: u8, cc: u8, value: u8) -> bool {
-        let state_snapshot = self
-            .shared_state
-            .midi_learn
-            .state
-            .lock()
-            .ok()
-            .map(|guard| guard.clone());
-        let Some(state_snapshot) = state_snapshot else {
-            return false;
-        };
-        let bindings = state_snapshot
-            .bindings
-            .iter()
-            .map(|binding| MidiMappingBinding {
-                param_key: binding.param_key.as_str(),
-                channel: binding.channel,
-                cc: binding.cc,
-            })
-            .collect::<Vec<_>>();
+    pub(crate) fn apply_midi_mapping(
+        &mut self,
+        channel: u8,
+        cc: u8,
+        value: u8,
+    ) -> Vec<AppliedMidiParamChange> {
+        let bindings = self.shared_state.midi_learn.bindings_snapshot();
 
         if bindings.is_empty() {
-            append_log_debug(&format!(
-                "apply_midi_mapping miss ch={} cc={} value={} stored_mappings={:?}",
-                channel, cc, value, state_snapshot
-            ));
-            return false;
+            return Vec::new();
         }
         let mut synth_params = (*self.shared_state.synth.synth_params.load_full()).clone();
-        let applied = apply_engine_midi_mapping(&mut synth_params, &bindings, channel, cc, value);
-
-        if !applied {
-            let incoming_channel = i32::from(channel);
-            let incoming_cc = i32::from(cc);
-            let mut cc_match_count = 0usize;
-            let mut channel_match_count = 0usize;
-            let mut omni_channel_count = 0usize;
-            let mut full_match_count = 0usize;
-            let mut invalid_param_keys: Vec<&str> = Vec::new();
-            let mut binding_sample: Vec<String> = Vec::new();
-
-            for binding in &state_snapshot.bindings {
-                let cc_match = binding.cc == incoming_cc;
-                let channel_match = binding.channel == -1 || binding.channel == incoming_channel;
-
-                if cc_match {
-                    cc_match_count += 1;
-                }
-                if channel_match {
-                    channel_match_count += 1;
-                    if binding.channel == -1 {
-                        omni_channel_count += 1;
-                    }
-                }
-                if cc_match && channel_match {
-                    full_match_count += 1;
-                    if parameter_range_for_key(&binding.param_key).is_none() {
-                        invalid_param_keys.push(binding.param_key.as_str());
-                    }
-                }
-
-                if binding_sample.len() < 8 {
-                    binding_sample.push(format!(
-                        "{}(ch={},cc={})",
-                        binding.param_key, binding.channel, binding.cc
-                    ));
-                }
-            }
-
-            let reject_reason = if cc_match_count == 0 {
-                "no_cc_match"
-            } else if full_match_count == 0 {
-                "channel_mismatch"
-            } else if !invalid_param_keys.is_empty() {
-                "invalid_param_key"
-            } else {
-                "set_parameter_rejected"
-            };
-
-            append_log_debug(&format!(
-                "apply_midi_mapping miss ch={} cc={} value={} reason={} bindings={} cc_matches={} channel_matches={} omni_matches={} full_matches={} invalid_param_keys={:?} binding_sample={:?}",
+        let normalized = f32::from(value) / 127.0;
+        let mut changes = Vec::with_capacity(bindings.len());
+        for binding in bindings.iter() {
+            if let Some(change) = apply_midi_mapping_binding(
+                &mut synth_params,
+                &binding.param_key,
+                binding.channel,
+                binding.cc,
                 channel,
                 cc,
-                value,
-                reject_reason,
-                state_snapshot.bindings.len(),
-                cc_match_count,
-                channel_match_count,
-                omni_channel_count,
-                full_match_count,
-                invalid_param_keys,
-                binding_sample
-            ));
-            return false;
+                normalized,
+            ) {
+                changes.push(change);
+            }
+        }
+
+        if changes.is_empty() {
+            return Vec::new();
         }
 
         let rt_params = Arc::new(build_rt_synth_params(&synth_params));
@@ -210,40 +180,7 @@ impl CzPlugin {
             proc.set_shared_params(rt_params);
         }
 
-        true
-    }
-
-    pub(crate) fn capture_pending_midi_learn_binding(&mut self, channel: u8, cc: u8) {
-        let mut bindings_changed = false;
-        {
-            let mut state = self.shared_state.midi_learn.state.lock().unwrap();
-            if state.learn_mode
-                && let Some(ref pending) = state.pending_param_key.clone()
-            {
-                state
-                    .bindings
-                    .retain(|binding| binding.param_key != *pending);
-                state.bindings.push(crate::session_state::MidiLearnBinding {
-                    param_key: pending.clone(),
-                    channel: i32::from(channel),
-                    cc: i32::from(cc),
-                });
-                state.version += 1;
-                bindings_changed = true;
-                // TODO: remove this diagnostic once host-side learn capture behavior is verified across plugin formats.
-                append_log_debug(&format!(
-                    "host_capture_pending_midi_binding pending={} channel={} cc={} version={} bindings_count={}",
-                    pending,
-                    channel,
-                    cc,
-                    state.version,
-                    state.bindings.len()
-                ));
-            }
-        }
-        if bindings_changed {
-            persist_midi_learn_bindings(&self.shared_state.midi_learn.state);
-        }
+        changes
     }
 
     pub(crate) fn tracked_param_changes(
@@ -275,24 +212,30 @@ impl CzPlugin {
     pub(crate) fn sync_runtime_params_from_host(&mut self, events: &EventList) {
         let tracked_param_changes = Self::tracked_param_changes(events);
         let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
-        let host_params_changed = (0..Self::TRACKED_PARAM_ID_CAPACITY).any(|id| {
-            if tracked_param_changes[id] {
-                return false;
-            }
-            let id = id as u32;
-            let Some(current) = read_current_daw_param_by_id(&self.params, id) else {
-                return false;
-            };
-            let Some(cached) = read_daw_param_by_id(&self.audio.cached_rt_synth_params, id) else {
-                return false;
-            };
-            (current - cached).abs() > 0.000_001
-        });
         let params_version = self
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
+        let mut host_param_changes = [false; Self::TRACKED_PARAM_ID_CAPACITY];
+        if params_version == self.audio.cached_synth_params_version {
+            for (id, changed) in host_param_changes.iter_mut().enumerate() {
+                if tracked_param_changes[id] {
+                    continue;
+                }
+                let param_id = id as u32;
+                let Some(current) = read_current_daw_param_by_id(&self.params, param_id) else {
+                    continue;
+                };
+                let Some(cached) =
+                    read_daw_param_by_id(&self.audio.cached_rt_synth_params, param_id)
+                else {
+                    continue;
+                };
+                *changed = (current - cached).abs() > 0.000_001;
+            }
+        }
+        let host_params_changed = host_param_changes.iter().any(|changed| *changed);
         let params_changed = params_version != self.audio.cached_synth_params_version
             || self.audio.daw_params_dirty
             || host_params_changed;
@@ -340,6 +283,13 @@ impl CzPlugin {
         } else {
             params_version
         };
+        for (id, changed) in host_param_changes.iter().enumerate() {
+            if !*changed {
+                continue;
+            }
+            self.enqueue_daw_ui_param_changes(id as u32, &merged);
+        }
+
         let rt_merged = Arc::new(merged);
         self.audio.cached_rt_synth_params = rt_merged.clone();
         if self
@@ -373,8 +323,33 @@ impl CzPlugin {
     }
 
     pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
-        self.capture_pending_midi_learn_binding(channel, cc);
-        let _ = self.apply_midi_mapping(channel, cc, value);
+        let _ = self
+            .shared_state
+            .midi_learn
+            .capture_pending_binding(channel, cc);
+        let changes = self.apply_midi_mapping(channel, cc, value);
+        for change in changes {
+            let ui_change = match change.target {
+                AppliedMidiParamTarget::Scalar => NativeUiParamChange::Scalar {
+                    key: NativeUiParamKey::Owned(change.key),
+                    value: change.value,
+                },
+                AppliedMidiParamTarget::AlgoControl {
+                    line,
+                    section,
+                    control_id,
+                } => NativeUiParamChange::AlgoControl {
+                    line,
+                    section: match section {
+                        AppliedMidiAlgoControlSection::A => UiAlgoControlSection::A,
+                        AppliedMidiAlgoControlSection::B => UiAlgoControlSection::B,
+                    },
+                    control_id,
+                    value: change.value,
+                },
+            };
+            let _ = self.shared_state.ui.ui_param_change_queue.push(ui_change);
+        }
         let _ = self
             .shared_state
             .ui
@@ -386,23 +361,18 @@ impl CzPlugin {
         match body {
             EventBody::ControlChange {
                 channel, cc, value, ..
-            } => {
-                append_log_debug(&format!("host_cc ch={} cc={} value={}", channel, cc, value));
-                self.handle_cc_side_effects(*channel, *cc, *value);
-            }
+            } => self.handle_cc_side_effects(*channel, *cc, *value),
             EventBody::ControlChange2 {
                 channel, cc, value, ..
             } => {
                 let raw_value = (*value / 128) as u8;
-                append_log_debug(&format!(
-                    "host_cc2 ch={} cc={} value={} raw={}",
-                    channel, cc, value, raw_value
-                ));
                 self.handle_cc_side_effects(*channel, *cc, raw_value);
             }
             EventBody::ParamChange { id, value } => {
                 self.audio.daw_params_dirty = true;
                 self.apply_rt_param_change(*id, *value, false);
+                let synth_params = self.shared_state.synth.synth_params.load();
+                self.enqueue_daw_ui_param_changes(*id, synth_params.as_ref());
             }
             EventBody::ProgramChange { program, .. }
             | EventBody::ProgramChange2 { program, .. }

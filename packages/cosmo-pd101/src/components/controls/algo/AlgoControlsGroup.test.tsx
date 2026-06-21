@@ -30,7 +30,7 @@ const sharedSlot = {
 	controls: [],
 	controlBindings: {},
 	lineIndex: 1 as const,
-	algoParamSlotIndex: {},
+	algoControlSlotIndex: {},
 	getAlgoControlValue: () => 0,
 	setAlgoControlValue: () => {},
 	getActiveSelectOption: () => null,

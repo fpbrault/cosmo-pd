@@ -192,19 +192,19 @@ enabled = true
 
 [[params.mod.routes]]
 source = "aftertouch"
-destination = "line1AlgoParam1"
+destination = "line1AlgoControl1"
 amount = 0.5
 enabled = true
 
 [[params.mod.routes]]
 source = "modWheel"
-destination = "line1AlgoParam1"
+destination = "line1AlgoControl1"
 amount = 0.5
 enabled = true
 
 [[params.mod.routes]]
 source = "macro1"
-destination = "line1AlgoParam1"
+destination = "line1AlgoControl1"
 amount = 0.5
 enabled = true
 

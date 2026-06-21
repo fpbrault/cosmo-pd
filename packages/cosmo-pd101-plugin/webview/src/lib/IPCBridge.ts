@@ -18,6 +18,7 @@
 import type {
 	ScopeDataResponse,
 	TransportInfoResponse,
+	UiParamChange,
 } from "@cosmo/cosmo-pd101";
 import { postHostLog } from "./hostLogger";
 import { installPluginIpcWindowBridge } from "./installPluginIpcWindowBridge";
@@ -241,20 +242,48 @@ let _nativePostMessage: (msg: string) => void = (msg) => {
 // ─── MIDI CC handler ──────────────────────────────────────────────────────────
 
 function installMidiCcHandler() {
+	const dispatchMidiCc = (channel: number, cc: number, value: number) => {
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel, cc, rawValue: value },
+			}),
+		);
+	};
 	try {
 		Object.defineProperty(window, "__czOnMidiCc", {
 			configurable: true,
 			writable: true,
-			value: (channel: number, cc: number, value: number) => {
-				window.dispatchEvent(
-					new CustomEvent("cz-midi-cc", {
-						detail: { channel, cc, rawValue: value },
-					}),
-				);
+			value: dispatchMidiCc,
+		});
+		Object.defineProperty(window, "__czOnMidiCcBatch", {
+			configurable: true,
+			writable: true,
+			value: (events: Array<[number, number, number]>) => {
+				for (const [channel, cc, value] of events) {
+					dispatchMidiCc(channel, cc, value);
+				}
 			},
 		});
 	} catch {
 		// Host may prevent definition; MIDI Learn will fall back to Web MIDI API.
+	}
+}
+
+// ─── Param changes handler ─────────────────────────────────────────────────────
+
+function installParamChangesHandler() {
+	try {
+		Object.defineProperty(window, "__czOnParamChanges", {
+			configurable: true,
+			writable: true,
+			value: (changes: UiParamChange[]) => {
+				window.dispatchEvent(
+					new CustomEvent("cz-param-changes", { detail: changes }),
+				);
+			},
+		});
+	} catch {
+		// Host may prevent definition; param changes visual updates will not work.
 	}
 }
 
@@ -316,7 +345,7 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 }
 
 function installScopePolling() {
-	const INTERVAL_MS = 50; // ~20 fps
+	const INTERVAL_MS = 16; // ~60 fps
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -408,7 +437,7 @@ function installScopePolling() {
 
 function installRuntimeModSourcesPolling() {
 	const eventName = "cz-runtime-mod-sources";
-	const INTERVAL_MS = 100; // ~10 fps
+	const INTERVAL_MS = 16; // ~10 fps
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -488,7 +517,7 @@ function installRuntimeModSourcesPolling() {
 
 function installRuntimeVoiceStatesPolling() {
 	const eventName = "cz-runtime-voice-states";
-	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 100;
+	const RUNTIME_VOICE_STATES_POLL_INTERVAL_MS = 16;
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
@@ -677,6 +706,7 @@ export function ensureIPCBridge(): boolean {
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
+	installParamChangesHandler();
 	installMidiLearnStateHandler();
 	installIpcRouter();
 	installScopePolling();

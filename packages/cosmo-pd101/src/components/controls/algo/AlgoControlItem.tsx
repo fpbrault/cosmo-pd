@@ -14,10 +14,9 @@ import CzControlSelect from "./CzControlSelect";
 interface AlgoControlItemProps {
 	control: AlgoControlRuntime;
 	disabled?: boolean;
-	sectionId?: "a" | "b";
 	binding?: AlgoControlBinding;
 	lineIndex: LineIndex;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	getActiveSelectOption: (
@@ -30,10 +29,9 @@ interface AlgoControlItemProps {
 function AlgoControlItemInner({
 	control,
 	disabled = false,
-	sectionId = "a",
 	binding,
 	lineIndex,
-	algoParamSlotIndex,
+	algoControlSlotIndex,
 	getAlgoControlValue,
 	setAlgoControlValue,
 	getActiveSelectOption,
@@ -88,10 +86,9 @@ function AlgoControlItemInner({
 			<AlgoControlNumber
 				control={control}
 				disabled={disabled}
-				sectionId={sectionId}
 				binding={binding}
 				lineIndex={lineIndex}
-				algoParamSlotIndex={algoParamSlotIndex}
+				algoControlSlotIndex={algoControlSlotIndex}
 				getAlgoControlValue={getAlgoControlValue}
 				setAlgoControlValue={setAlgoControlValue}
 				color={color}

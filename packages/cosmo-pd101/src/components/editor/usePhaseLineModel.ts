@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import type {
 	Algo,
 	AlgoControlValueV1,
@@ -16,6 +17,9 @@ const isLineAudible = (lineIndex: LineIndex, lineSelect: unknown): boolean => {
 };
 
 export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
+	const updateAlgoControlValue = useSynthStore(
+		(state) => state.updateAlgoControlValue,
+	);
 	const { value: warpAAmount, setValue: setWarpAAmount } =
 		useSynthParam("warpAAmount");
 	const { value: warpBAmount, setValue: setWarpBAmount } =
@@ -122,10 +126,14 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 					? line1AlgoControlsA
 					: line2AlgoControlsA) as AlgoControlValueV1[],
 				setControlsA: isLine1 ? setLine1AlgoControlsA : setLine2AlgoControlsA,
+				updateControlA: (id, value) =>
+					updateAlgoControlValue(lineIndex, "A", id, value),
 				controlsB: (isLine1
 					? line1AlgoControlsB
 					: line2AlgoControlsB) as AlgoControlValueV1[],
 				setControlsB: isLine1 ? setLine1AlgoControlsB : setLine2AlgoControlsB,
+				updateControlB: (id, value) =>
+					updateAlgoControlValue(lineIndex, "B", id, value),
 			},
 			parameters: {
 				warpAmount: (isLine1 ? warpAAmount : warpBAmount) as number,
@@ -238,6 +246,7 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 		setLine1AlgoControlsB,
 		line2AlgoControlsB,
 		setLine2AlgoControlsB,
+		updateAlgoControlValue,
 		line1BaseWaveformA,
 		setLine1BaseWaveformA,
 		line2BaseWaveformA,

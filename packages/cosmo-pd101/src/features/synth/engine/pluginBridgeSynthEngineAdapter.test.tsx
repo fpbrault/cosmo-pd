@@ -23,6 +23,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czOnParams = undefined;
 		window.__czGetParams = undefined;
 		window.__czGetParamsVersion = undefined;
+		window.__czGetPendingParamChanges = undefined;
 		window.__czSetParams = undefined;
 	});
 
@@ -31,6 +32,7 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czOnParams = undefined;
 		window.__czGetParams = undefined;
 		window.__czGetParamsVersion = undefined;
+		window.__czGetPendingParamChanges = undefined;
 		window.__czSetParams = undefined;
 	});
 
@@ -130,29 +132,70 @@ describe("usePluginBridgeSynthEngine", () => {
 		unmount();
 	});
 
-	it("hydrates host-side param changes from params version polling without echoing outbound", async () => {
-		let version = 1;
-		let hostParams = makeParams(0.42);
-		window.__czGetParamsVersion = vi.fn(async () => version);
+	it("hydrates pushed host-side param changes without polling or echoing outbound", async () => {
+		const hostParams = makeParams(0.42);
 		window.__czGetParams = vi.fn(async () => hostParams);
+		const onExternalParamChange = vi.fn();
 
 		const outboundJsons: string[] = [];
 		captureSetParams(outboundJsons);
 
-		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
+		const { unmount } = renderHook(() =>
+			usePluginBridgeSynthEngine({ onExternalParamChange }),
+		);
 
 		await waitFor(() => {
 			expect(useSynthStore.getState().volume).toBeCloseTo(0.42, 6);
 		});
 		expect(outboundJsons).toHaveLength(0);
 
-		hostParams = makeParams(0.73);
-		version = 2;
+		act(() => {
+			window.__czOnParams?.(JSON.stringify(makeParams(0.73)));
+		});
 
 		await waitFor(() => {
 			expect(useSynthStore.getState().volume).toBeCloseTo(0.73, 6);
 		});
 		expect(outboundJsons).toHaveLength(0);
+		expect(window.__czGetParamsVersion).toBeUndefined();
+		expect(onExternalParamChange).toHaveBeenCalledOnce();
+
+		unmount();
+	});
+
+	it("applies scalar and algo-control patches through the rAF pull path", async () => {
+		window.__czGetParams = vi.fn(async () => makeParams(0.42));
+		const pendingChanges = vi.fn().mockResolvedValue([]);
+		window.__czGetPendingParamChanges = pendingChanges;
+		const onExternalParamChange = vi.fn();
+		captureSetParams([]);
+
+		const { unmount } = renderHook(() =>
+			usePluginBridgeSynthEngine({ onExternalParamChange }),
+		);
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.42, 6);
+		});
+		pendingChanges.mockResolvedValueOnce([
+			{ type: "scalar", key: "volume", value: 0.7 },
+			{
+				type: "algoControl",
+				line: 1,
+				section: "A",
+				controlId: "depth",
+				value: 0.72,
+			},
+		]);
+
+		await waitFor(() => {
+			expect(useSynthStore.getState().volume).toBeCloseTo(0.7, 6);
+			expect(useSynthStore.getState().line1AlgoControlsA).toContainEqual({
+				id: "depth",
+				value: 0.72,
+			});
+		});
+		expect(onExternalParamChange).toHaveBeenCalledOnce();
 
 		unmount();
 	});

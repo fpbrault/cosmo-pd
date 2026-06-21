@@ -32,14 +32,13 @@ function AlgoSectionCard({ slot, lineIndex, color }: AlgoSectionCardProps) {
 					controls: slot.controls,
 					controlBindings: slot.controlBindings,
 					lineIndex,
-					algoParamSlotIndex: slot.algoParamSlotIndex,
+					algoControlSlotIndex: slot.algoControlSlotIndex,
 					getAlgoControlValue: slot.getControlValue,
 					setAlgoControlValue: slot.setControlValue,
 					getActiveSelectOption: slot.getActiveSelectOption,
 					applyOptionAssignments: slot.applyOptionAssignments,
 				}}
 				disabled={slot.disabled}
-				sectionId={slot.slotId}
 				color={color}
 			/>
 		</Card>

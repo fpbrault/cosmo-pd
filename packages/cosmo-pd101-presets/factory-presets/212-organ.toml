@@ -179,6 +179,6 @@ space = 0.845918
 
 [[params.mod.routes]]
 source = "lfo1"
-destination = "line1AlgoParam2"
+destination = "line1AlgoControl2"
 amount = 0.5
 enabled = true

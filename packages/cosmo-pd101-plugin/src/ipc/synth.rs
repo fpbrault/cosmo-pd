@@ -1,6 +1,7 @@
 use cosmo_pd101_bridge_types::ScopeDataResponse;
 
 use super::*;
+use crate::runtime_state::drain_and_coalesce_ui_param_changes;
 
 pub(super) fn handle(
     context: &IpcContext,
@@ -75,6 +76,18 @@ pub(super) fn handle(
                 _ => append_log(&format!("[webview:{level}] {message}")),
             }
             Ok(PluginIpcResponse::ClientLog)
+        }
+        PluginIpcRequest::GetPendingParamChanges => {
+            let changes =
+                drain_and_coalesce_ui_param_changes(&context.shared_state.ui.ui_param_change_queue);
+            if !changes.is_empty() {
+                context
+                    .shared_state
+                    .ui
+                    .pending_param_changes_flushed_via_ipc
+                    .store(true, Ordering::Release);
+            }
+            Ok(PluginIpcResponse::GetPendingParamChanges(changes))
         }
         _ => unreachable!("method routed to wrong IPC domain"),
     }

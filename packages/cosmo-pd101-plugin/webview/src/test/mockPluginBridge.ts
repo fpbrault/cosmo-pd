@@ -152,6 +152,8 @@ export interface MockBridgeHandle {
 	 * @param value     Plain (un-normalized) value
 	 */
 	pushParamUpdate(idOrStringId: string | number, value: number): void;
+	/** Update the native full-params snapshot without notifying the UI. */
+	setParamSnapshot(idOrStringId: string | number, value: number): void;
 
 	/**
 	 * Push an inbound full param update through the mock host path.
@@ -1090,6 +1092,15 @@ export function installMockPluginBridge(): void {
 				// Fallback before first setParams — sends partial JSON (may log an error)
 				window.__czOnParams(JSON.stringify({ [stringId]: value }));
 			}
+		},
+
+		setParamSnapshot(idOrStringId: string | number, value: number): void {
+			if (virtualFullParams === null) return;
+			const stringId =
+				typeof idOrStringId === "number"
+					? (paramsById[idOrStringId]?.stringId ?? String(idOrStringId))
+					: idOrStringId;
+			virtualFullParams = applyParamToBlob(virtualFullParams, stringId, value);
 		},
 
 		pushPluginParamUpdate(update: PluginParamUpdate): void {

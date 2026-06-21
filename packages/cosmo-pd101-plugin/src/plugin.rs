@@ -79,6 +79,12 @@ fn handle_ipc_invoke(
             midi_cc_queue: Arc::new(ArrayQueue::new(
                 crate::runtime_state::MIDI_CC_QUEUE_CAPACITY,
             )),
+            ui_param_change_queue: Arc::new(ArrayQueue::new(
+                crate::runtime_state::UI_PARAM_CHANGE_QUEUE_CAPACITY,
+            )),
+            pending_param_changes_flushed_via_ipc: Arc::new(std::sync::atomic::AtomicBool::new(
+                false,
+            )),
         },
         editor: crate::runtime_state::EditorSessionState {
             editor_state: editor_state.clone(),
@@ -87,7 +93,12 @@ fn handle_ipc_invoke(
             preset_library.clone(),
             preset_session.clone(),
         ),
-        midi_learn: crate::midi_learn::MidiLearnService::new(midi_learn_state.clone()),
+        midi_learn: crate::midi_learn::MidiLearnService::new(
+            midi_learn_state
+                .lock()
+                .map(|state| state.clone())
+                .unwrap_or_default(),
+        ),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });

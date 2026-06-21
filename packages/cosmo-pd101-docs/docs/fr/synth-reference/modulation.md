@@ -25,8 +25,8 @@ Route les sources de modulation vers les paramètres de tout le synthétiseur av
 | Catégorie | Nb | Exemples |
 |-----------|-----|----------|
 | **Global** | 2 | Volume, Hauteur |
-| **Ligne 1** | 13 | DcwBase, DcaBase, AlgoBlend, Octave, AlgoParam1-8 |
-| **Ligne 2** | 12 | DcwBase, DcaBase, AlgoBlend, Désaccord, AlgoParam1-8 |
+| **Ligne 1** | 13 | DcwBase, DcaBase, AlgoBlend, Octave, AlgoControl1-8 |
+| **Ligne 2** | 12 | DcwBase, DcaBase, AlgoBlend, Désaccord, AlgoControl1-8 |
 
 :::warning
 AlgoBlend et Octave/Désaccord sont listés comme destinations de modulation mais ne modulent pas encore le signal. La prise en charge de la modulation pour ces destinations est prévue dans une future mise à jour.

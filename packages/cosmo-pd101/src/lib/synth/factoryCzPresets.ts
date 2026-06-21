@@ -405,19 +405,19 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 						{
 							source: "aftertouch",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 0.5,
 							enabled: true,
 						},
 						{
 							source: "modWheel",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 0.5,
 							enabled: true,
 						},
 						{
 							source: "macro1",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 0.5,
 							enabled: true,
 						},
@@ -1402,7 +1402,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 						{
 							source: "macro1",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 1.0,
 							enabled: true,
 						},
@@ -3578,7 +3578,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 						{
 							source: "macro2",
-							destination: "line1AlgoParam2",
+							destination: "line1AlgoControl2",
 							amount: -0.49,
 							enabled: true,
 						},
@@ -20113,13 +20113,13 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 						{
 							source: "macro2",
-							destination: "line2AlgoParam2",
+							destination: "line2AlgoControl2",
 							amount: -0.5,
 							enabled: true,
 						},
 						{
 							source: "macro2",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 0.5,
 							enabled: true,
 						},
@@ -23473,13 +23473,13 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					routes: [
 						{
 							source: "lfo1",
-							destination: "line1AlgoParam3",
+							destination: "line1AlgoControl3",
 							amount: 0.21906248,
 							enabled: true,
 						},
 						{
 							source: "lfo1",
-							destination: "line1AlgoParam2",
+							destination: "line1AlgoControl2",
 							amount: 0.5,
 							enabled: true,
 						},
@@ -47120,7 +47120,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					routes: [
 						{
 							source: "modWheel",
-							destination: "line1AlgoParam4",
+							destination: "line1AlgoControl4",
 							amount: -0.6846875,
 							enabled: true,
 						},
@@ -48389,7 +48389,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					routes: [
 						{
 							source: "lfo1",
-							destination: "line1AlgoParam2",
+							destination: "line1AlgoControl2",
 							amount: 0.5,
 							enabled: true,
 						},
@@ -50504,13 +50504,13 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 						{
 							source: "aftertouch",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 0.5,
 							enabled: true,
 						},
 						{
 							source: "modWheel",
-							destination: "line1AlgoParam1",
+							destination: "line1AlgoControl1",
 							amount: 0.5,
 							enabled: true,
 						},

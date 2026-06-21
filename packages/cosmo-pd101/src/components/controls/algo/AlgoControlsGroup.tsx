@@ -22,7 +22,7 @@ type AlgoControlsGroupSlot = {
 	controls: AlgoControlRuntime[];
 	controlBindings: Record<string, AlgoControlBinding>;
 	lineIndex: LineIndex;
-	algoParamSlotIndex: Record<string, number>;
+	algoControlSlotIndex: Record<string, number>;
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	getActiveSelectOption: (
@@ -32,7 +32,6 @@ type AlgoControlsGroupSlot = {
 };
 
 interface AlgoControlsGroupProps {
-	sectionId?: "a" | "b";
 	disabled?: boolean;
 	slot: AlgoControlsGroupSlot;
 	color?: string;
@@ -67,7 +66,6 @@ function buildCzStructuredControls(
 function AlgoControlsGroupInner({
 	slot,
 	disabled = false,
-	sectionId = "a",
 	color,
 }: AlgoControlsGroupProps) {
 	const {
@@ -75,7 +73,7 @@ function AlgoControlsGroupInner({
 		controls,
 		controlBindings,
 		lineIndex,
-		algoParamSlotIndex,
+		algoControlSlotIndex,
 		getAlgoControlValue,
 		setAlgoControlValue,
 		getActiveSelectOption,
@@ -93,10 +91,9 @@ function AlgoControlsGroupInner({
 			key={control.id}
 			control={control}
 			disabled={disabled}
-			sectionId={sectionId}
 			binding={controlBindings[control.id]}
 			lineIndex={lineIndex}
-			algoParamSlotIndex={algoParamSlotIndex}
+			algoControlSlotIndex={algoControlSlotIndex}
 			getAlgoControlValue={getAlgoControlValue}
 			setAlgoControlValue={setAlgoControlValue}
 			getActiveSelectOption={getActiveSelectOption}

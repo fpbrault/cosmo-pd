@@ -361,7 +361,7 @@ export type LoFiPresetV1 = {
 };
 
 /**  Modulation destination selector for modulation matrix routes. */
-export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoParam1" | "line1AlgoParam2" | "line1AlgoParam3" | "line1AlgoParam4" | "line1AlgoParam5" | "line1AlgoParam6" | "line1AlgoParam7" | "line1AlgoParam8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoParam1" | "line2AlgoParam2" | "line2AlgoParam3" | "line2AlgoParam4" | "line2AlgoParam5" | "line2AlgoParam6" | "line2AlgoParam7" | "line2AlgoParam8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiWow" | "loFiFlutter" | "loFiDegrade" | "loFiFilter" | "loFiCrackle" | "loFiNoise" | "loFiMix" | "loFiSaturation" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
+export type ModDestination = "volume" | "pitch" | "line1DcwBase" | "line1DcaBase" | "line1AlgoBlend" | "line2DetuneNote" | "line1Octave" | "line1AlgoControl1" | "line1AlgoControl2" | "line1AlgoControl3" | "line1AlgoControl4" | "line1AlgoControl5" | "line1AlgoControl6" | "line1AlgoControl7" | "line1AlgoControl8" | "line2DcwBase" | "line2DcaBase" | "line2AlgoBlend" | "line2DetuneFine" | "line2DetuneOctave" | "line2AlgoControl1" | "line2AlgoControl2" | "line2AlgoControl3" | "line2AlgoControl4" | "line2AlgoControl5" | "line2AlgoControl6" | "line2AlgoControl7" | "line2AlgoControl8" | "filterCutoff" | "filterResonance" | "filterEnvAmount" | "chorusMix" | "delayMix" | "reverbMix" | "vibratoDepth" | "vibratoRate" | "intPmRatio" | "line1DcoEnvStep1Level" | "line1DcoEnvStep1Rate" | "line1DcoEnvStep2Level" | "line1DcoEnvStep2Rate" | "line1DcoEnvStep3Level" | "line1DcoEnvStep3Rate" | "line1DcoEnvStep4Level" | "line1DcoEnvStep4Rate" | "line1DcoEnvStep5Level" | "line1DcoEnvStep5Rate" | "line1DcoEnvStep6Level" | "line1DcoEnvStep6Rate" | "line1DcoEnvStep7Level" | "line1DcoEnvStep7Rate" | "line1DcoEnvStep8Level" | "line1DcoEnvStep8Rate" | "line1DcwEnvStep1Level" | "line1DcwEnvStep1Rate" | "line1DcwEnvStep2Level" | "line1DcwEnvStep2Rate" | "line1DcwEnvStep3Level" | "line1DcwEnvStep3Rate" | "line1DcwEnvStep4Level" | "line1DcwEnvStep4Rate" | "line1DcwEnvStep5Level" | "line1DcwEnvStep5Rate" | "line1DcwEnvStep6Level" | "line1DcwEnvStep6Rate" | "line1DcwEnvStep7Level" | "line1DcwEnvStep7Rate" | "line1DcwEnvStep8Level" | "line1DcwEnvStep8Rate" | "line1DcaEnvStep1Level" | "line1DcaEnvStep1Rate" | "line1DcaEnvStep2Level" | "line1DcaEnvStep2Rate" | "line1DcaEnvStep3Level" | "line1DcaEnvStep3Rate" | "line1DcaEnvStep4Level" | "line1DcaEnvStep4Rate" | "line1DcaEnvStep5Level" | "line1DcaEnvStep5Rate" | "line1DcaEnvStep6Level" | "line1DcaEnvStep6Rate" | "line1DcaEnvStep7Level" | "line1DcaEnvStep7Rate" | "line1DcaEnvStep8Level" | "line1DcaEnvStep8Rate" | "line2DcoEnvStep1Level" | "line2DcoEnvStep1Rate" | "line2DcoEnvStep2Level" | "line2DcoEnvStep2Rate" | "line2DcoEnvStep3Level" | "line2DcoEnvStep3Rate" | "line2DcoEnvStep4Level" | "line2DcoEnvStep4Rate" | "line2DcoEnvStep5Level" | "line2DcoEnvStep5Rate" | "line2DcoEnvStep6Level" | "line2DcoEnvStep6Rate" | "line2DcoEnvStep7Level" | "line2DcoEnvStep7Rate" | "line2DcoEnvStep8Level" | "line2DcoEnvStep8Rate" | "line2DcwEnvStep1Level" | "line2DcwEnvStep1Rate" | "line2DcwEnvStep2Level" | "line2DcwEnvStep2Rate" | "line2DcwEnvStep3Level" | "line2DcwEnvStep3Rate" | "line2DcwEnvStep4Level" | "line2DcwEnvStep4Rate" | "line2DcwEnvStep5Level" | "line2DcwEnvStep5Rate" | "line2DcwEnvStep6Level" | "line2DcwEnvStep6Rate" | "line2DcwEnvStep7Level" | "line2DcwEnvStep7Rate" | "line2DcwEnvStep8Level" | "line2DcwEnvStep8Rate" | "line2DcaEnvStep1Level" | "line2DcaEnvStep1Rate" | "line2DcaEnvStep2Level" | "line2DcaEnvStep2Rate" | "line2DcaEnvStep3Level" | "line2DcaEnvStep3Rate" | "line2DcaEnvStep4Level" | "line2DcaEnvStep4Rate" | "line2DcaEnvStep5Level" | "line2DcaEnvStep5Rate" | "line2DcaEnvStep6Level" | "line2DcaEnvStep6Rate" | "line2DcaEnvStep7Level" | "line2DcaEnvStep7Rate" | "line2DcaEnvStep8Level" | "line2DcaEnvStep8Rate" | "chorusRate" | "chorusDepth" | "delayTime" | "delayFeedback" | "delayWarmth" | "reverbSpace" | "reverbPredelay" | "reverbDistance" | "reverbCharacter" | "phaserRate" | "phaserDepth" | "phaserFeedback" | "phaserMix" | "lfo1Rate" | "lfo1Depth" | "lfo1Symmetry" | "lfo1Offset" | "lfo2Rate" | "lfo2Depth" | "lfo2Symmetry" | "lfo2Offset" | "randomRate" | "vibratoDelay" | "compressorThreshold" | "compressorRatio" | "compressorMakeup" | "compressorMix" | "grainDelayTime" | "grainDelayFeedback" | "grainDelayScatter" | "grainDelayDensity" | "grainDelayMix" | "bitcrusherBits" | "bitcrusherRateReduction" | "bitcrusherMix" | "shimmerVerbShimmer" | "shimmerVerbSpace" | "shimmerVerbMix" | "distortionDrive" | "distortionTone" | "distortionMix" | "junoChorusMix" | "ringModCarrierHz" | "ringModMix" | "tremoloRate" | "tremoloDepth" | "tremoloMix" | "wavefolderDrive" | "wavefolderFolds" | "wavefolderMix" | "loFiWow" | "loFiFlutter" | "loFiDegrade" | "loFiFilter" | "loFiCrackle" | "loFiNoise" | "loFiMix" | "loFiSaturation" | "multimodeFilterCutoffHz" | "multimodeFilterResonance" | "multimodeFilterDrive" | "multimodeFilterMix" | "flangerRate" | "flangerDepth" | "flangerDelayMs" | "flangerFeedback" | "flangerMix" | "eqGainBand1" | "eqGainBand2" | "eqGainBand3" | "eqGainBand4" | "eqGainBand5" | "eqGainBand6" | "eqGainBand7" | "eqGainBand8";
 
 /**  ADSR mod envelope parameters. */
 export type ModEnvParams = {
@@ -4769,7 +4769,7 @@ export const MOD_ENV_PRESET_DATA: ModEnvPresetV1[] = [
 ];
 
 export type EngineParamUiMetaV1 = { key: string; readoutFormat: EngineParamReadoutFormatV1; paramDefault: number | null };
-export type EngineParamRangeV1 = { key: string; min: number; max: number };
+export type EngineParamRangeV1 = { key: string; min: number; max: number; step?: number };
 /** Rust-owned engine parameter tooltip and readout metadata. */
 export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
   {
@@ -5305,6 +5305,191 @@ export const ENGINE_PARAM_RANGES_V1: EngineParamRangeV1[] = [
     "key": "randomRate",
     "min": 0.0,
     "max": 200.0
+  }
+];
+
+/** Rust-owned numeric ranges for native MIDI mapping targets. */
+export const ENGINE_MIDI_PARAM_RANGES_V1: EngineParamRangeV1[] = [
+  {
+    "key": "volume",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "warpAAmount",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "warpBAmount",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "algoBlendA",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "algoBlendB",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "line1Level",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "line2Level",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "line1Octave",
+    "min": -2.0,
+    "max": 2.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2Octave",
+    "min": -2.0,
+    "max": 2.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2DetuneNote",
+    "min": -11.0,
+    "max": 11.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2DetuneFine",
+    "min": -60.0,
+    "max": 60.0
+  },
+  {
+    "key": "velocityCurve",
+    "min": -1.0,
+    "max": 1.0
+  },
+  {
+    "key": "pitchBendRange",
+    "min": 1.0,
+    "max": 24.0,
+    "step": 1.0
+  },
+  {
+    "key": "portamentoRate",
+    "min": 0.0,
+    "max": 127.0
+  },
+  {
+    "key": "portamentoTime",
+    "min": 0.0,
+    "max": 5.0
+  },
+  {
+    "key": "lfoRate",
+    "min": 0.01,
+    "max": 30.0
+  },
+  {
+    "key": "lfoDepth",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfoOffset",
+    "min": -1.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfo2Rate",
+    "min": 0.01,
+    "max": 30.0
+  },
+  {
+    "key": "lfo2Depth",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfo2Offset",
+    "min": -1.0,
+    "max": 1.0
+  },
+  {
+    "key": "randomRate",
+    "min": 0.01,
+    "max": 30.0
+  },
+  {
+    "key": "modEnvAttack",
+    "min": 0.0,
+    "max": 10.0
+  },
+  {
+    "key": "modEnvDecay",
+    "min": 0.0,
+    "max": 10.0
+  },
+  {
+    "key": "modEnvSustain",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "modEnvRelease",
+    "min": 0.0,
+    "max": 10.0
+  },
+  {
+    "key": "tempoBpm",
+    "min": 20.0,
+    "max": 300.0
+  },
+  {
+    "key": "lineOctave",
+    "min": -2.0,
+    "max": 2.0,
+    "step": 1.0
+  },
+  {
+    "key": "line2DetuneOctave",
+    "min": -3.0,
+    "max": 3.0,
+    "step": 1.0
+  },
+  {
+    "key": "lfoSymmetry",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "lfo2Symmetry",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro1",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro2",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro3",
+    "min": 0.0,
+    "max": 1.0
+  },
+  {
+    "key": "macro4",
+    "min": 0.0,
+    "max": 1.0
   }
 ];
 

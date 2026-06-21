@@ -8,7 +8,7 @@ use crate::params::{
 };
 use crate::render_cache::CompiledLinePlan;
 
-use super::modulation::{ModSources, algo_param_slot_mods_for_line};
+use super::modulation::{ModSources, algo_control_slot_mods_for_line};
 use super::{
     ANTI_CLICK_ATTACK_SAMPLES, ANTI_CLICK_FADE_MAX_SAMPLES, ANTI_CLICK_FADE_SAMPLES,
     DCA_LEVEL_CURVE_EXPONENT, DCW_DEZIPPER_TIME_SECONDS, DCW_LEVEL_CURVE_EXPONENT,
@@ -154,12 +154,12 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         ctx.macro4,
     );
     let line1_algo_param_mods = if modulation_active {
-        algo_param_slot_mods_for_line(1, cache, &mod_sources)
+        algo_control_slot_mods_for_line(1, cache, &mod_sources)
     } else {
         [0.0; 8]
     };
     let line2_algo_param_mods = if modulation_active {
-        algo_param_slot_mods_for_line(2, cache, &mod_sources)
+        algo_control_slot_mods_for_line(2, cache, &mod_sources)
     } else {
         [0.0; 8]
     };
