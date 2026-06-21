@@ -729,7 +729,7 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
         .processor
         .as_ref()
         .unwrap()
-        .params
+        .params()
         .line1
         .dcw_base;
     assert!((rt_value - 64.0 / 127.0).abs() < 0.000_001);
@@ -767,7 +767,7 @@ fn host_param_value_drift_updates_runtime_snapshot_and_version() {
             .processor
             .as_ref()
             .unwrap()
-            .params
+            .params()
             .line1
             .dca_base
             - 0.37)
