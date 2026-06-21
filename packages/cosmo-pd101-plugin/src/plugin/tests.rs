@@ -42,8 +42,6 @@ fn synth_params_json(params: &SynthParams) -> serde_json::Value {
     serde_json::to_value(params).unwrap()
 }
 
-
-
 #[test]
 fn debug_logs_follow_global_settings_log_level() {
     with_test_data_dir(|_| {

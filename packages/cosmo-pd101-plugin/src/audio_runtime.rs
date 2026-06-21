@@ -21,7 +21,9 @@ use crate::params::{
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
 use crate::rt_safety::ControlContext;
-use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey, PluginSharedState, RenderControlEvent};
+use crate::runtime_state::{
+    NativeUiParamChange, NativeUiParamKey, PluginSharedState, RenderControlEvent,
+};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 pub(crate) const MAX_BLOCK_INPUT_EVENTS: usize = 1024;
@@ -144,7 +146,7 @@ pub(crate) fn drain_render_control_events(
                 let next_params = pending_params.get_or_insert_with(|| {
                     shared_state.synth.synth_params.load_full().as_ref().clone()
                 });
-                let _ = set_parameter_value_by_key(next_params, &param_key, value);
+                let _ = set_parameter_value_by_key(next_params, param_key, value);
             }
             RenderControlEvent::ProgramChangeRequest { program } => {
                 publish_pending_mapped_params(ctx, shared_state, params, &mut pending_params);
@@ -465,11 +467,9 @@ impl CzPlugin {
             .shared_state
             .preset_reset_pending
             .swap(false, Ordering::Acquire)
-        {
-            if let Some(ref mut proc) = self.audio.processor {
+            && let Some(ref mut proc) = self.audio.processor {
                 proc.reset_audio_state();
             }
-        }
     }
 
     pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
@@ -488,7 +488,7 @@ impl CzPlugin {
 
     pub(crate) fn handle_host_event_side_effects(
         &mut self,
-        sample_offset: usize,
+        _sample_offset: usize,
         body: &EventBody,
     ) {
         match body {
