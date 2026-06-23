@@ -1,4 +1,4 @@
-use crate::params::ModEnvParams;
+use crate::params::{ModEnvMode, ModEnvParams};
 
 /// Phase state for the per-voice ADSR mod envelope.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -52,20 +52,29 @@ impl AdsrEnv {
                 }
             }
             AdsrPhase::Decay => {
-                let range = 1.0 - p.sustain;
+                let target = if matches!(p.mode, ModEnvMode::Adr) {
+                    0.0
+                } else {
+                    p.sustain
+                };
+                let range = 1.0 - target;
                 let rate = if p.decay > 0.0 && range > 0.0 {
                     range / (p.decay * sr)
                 } else {
                     range
                 };
-                self.output = (self.output - rate).max(p.sustain);
-                if self.output <= p.sustain {
-                    self.output = p.sustain;
+                self.output = (self.output - rate).max(target);
+                if self.output <= target {
+                    self.output = target;
                     self.phase = AdsrPhase::Sustain;
                 }
             }
             AdsrPhase::Sustain => {
-                self.output = p.sustain;
+                self.output = if matches!(p.mode, ModEnvMode::Adr) {
+                    0.0
+                } else {
+                    p.sustain
+                };
             }
             AdsrPhase::Release => {
                 if self.release_start <= 0.0 {
@@ -86,5 +95,83 @@ impl AdsrEnv {
             }
         }
         self.output
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::params::ModEnvMode;
+
+    fn params(mode: ModEnvMode) -> ModEnvParams {
+        ModEnvParams {
+            attack: 0.0,
+            decay: 0.1,
+            sustain: 0.5,
+            release: 0.2,
+            mode,
+        }
+    }
+
+    #[test]
+    fn adr_decay_reaches_zero_and_sustain_holds_zero() {
+        let sr = 44_100.0;
+        let mut env = AdsrEnv::default();
+        env.note_on();
+
+        let samples = (0.1_f32 * sr).ceil() as usize + 4;
+        for _ in 0..samples {
+            env.advance(&params(ModEnvMode::Adr), sr);
+        }
+
+        assert!(env.output.abs() < 1e-6, "ADR decay should reach zero");
+        env.advance(&params(ModEnvMode::Adr), sr);
+        assert!(
+            env.output.abs() < 1e-6,
+            "ADR sustain phase should hold at zero"
+        );
+    }
+
+    #[test]
+    fn adsr_decay_reaches_sustain_and_holds_it() {
+        let sr = 44_100.0;
+        let mut env = AdsrEnv::default();
+        env.note_on();
+
+        let samples = (0.1_f32 * sr).ceil() as usize + 4;
+        for _ in 0..samples {
+            env.advance(&params(ModEnvMode::Adsr), sr);
+        }
+
+        assert!(
+            (env.output - 0.5).abs() < 1e-6,
+            "ADSR decay should reach sustain level"
+        );
+        env.advance(&params(ModEnvMode::Adsr), sr);
+        assert!(
+            (env.output - 0.5).abs() < 1e-6,
+            "ADSR sustain phase should hold sustain level"
+        );
+    }
+
+    #[test]
+    fn adr_release_starts_from_current_decay_value() {
+        let sr = 44_100.0;
+        let mut env = AdsrEnv::default();
+        env.note_on();
+
+        let samples = (0.05_f32 * sr).ceil() as usize;
+        for _ in 0..samples {
+            env.advance(&params(ModEnvMode::Adr), sr);
+        }
+        let held = env.output;
+        assert!(held > 0.0 && held < 1.0, "should be partway through decay");
+
+        env.note_off();
+        let first_release_sample = env.advance(&params(ModEnvMode::Adr), sr);
+        assert!(
+            first_release_sample <= held,
+            "release should ramp down from current value"
+        );
     }
 }

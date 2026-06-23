@@ -27,6 +27,16 @@ impl Default for RandomParams {
     }
 }
 
+/// Modulation envelope mode: ADSR (sustain hold) or ADR (no sustain).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum ModEnvMode {
+    #[default]
+    Adsr,
+    Adr,
+}
+
 /// ADSR mod envelope parameters.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -35,6 +45,8 @@ pub struct ModEnvParams {
     pub decay: f32,
     pub sustain: f32,
     pub release: f32,
+    #[serde(default)]
+    pub mode: ModEnvMode,
 }
 
 impl Default for ModEnvParams {
@@ -44,6 +56,7 @@ impl Default for ModEnvParams {
             decay: 0.1,
             sustain: 0.5,
             release: 0.2,
+            mode: ModEnvMode::default(),
         }
     }
 }
@@ -176,6 +189,40 @@ impl Default for SynthParams {
             macro3: 0.0,
             macro4: 0.0,
             macro_labels: default_macro_labels(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mod_env_params_default_mode_is_adsr() {
+        assert_eq!(ModEnvParams::default().mode, ModEnvMode::Adsr);
+    }
+
+    #[test]
+    fn mod_env_params_legacy_json_defaults_mode_to_adsr() {
+        let json = r#"{"attack":0.01,"decay":0.1,"sustain":0.5,"release":0.2}"#;
+        let params: ModEnvParams = serde_json::from_str(json).expect("valid legacy mod env json");
+        assert_eq!(params.mode, ModEnvMode::Adsr);
+    }
+
+    #[test]
+    fn mod_env_params_mode_roundtrips_through_serde() {
+        for mode in [ModEnvMode::Adsr, ModEnvMode::Adr] {
+            let params = ModEnvParams {
+                attack: 0.0,
+                decay: 0.0,
+                sustain: 0.0,
+                release: 0.0,
+                mode,
+            };
+            let json = serde_json::to_string(&params).expect("serialize mod env params");
+            let back: ModEnvParams =
+                serde_json::from_str(&json).expect("deserialize mod env params");
+            assert_eq!(back.mode, mode);
         }
     }
 }

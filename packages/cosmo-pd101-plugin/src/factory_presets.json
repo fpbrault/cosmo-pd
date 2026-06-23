@@ -479,7 +479,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -973,7 +974,8 @@
 					"attack": 0.4505869,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -1449,7 +1451,8 @@
 					"attack": 1.1107421,
 					"decay": 2.2159376,
 					"sustain": 0.90310544,
-					"release": 2.7615235
+					"release": 2.7615235,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -1921,7 +1924,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -2352,7 +2356,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -2785,7 +2790,8 @@
 					"attack": 0.01,
 					"decay": 0.2,
 					"sustain": 0.5,
-					"release": 0.4
+					"release": 0.4,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -3236,7 +3242,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -3697,7 +3704,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -4135,7 +4143,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -4586,7 +4595,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -4987,7 +4997,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -5466,7 +5477,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -5917,7 +5929,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -6352,7 +6365,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -6787,7 +6801,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -7221,7 +7236,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -7673,7 +7689,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -8090,7 +8107,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -8541,7 +8559,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -8975,7 +8994,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -9392,7 +9412,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -9826,7 +9847,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -10243,7 +10265,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -10677,7 +10700,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -11128,7 +11152,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -11580,7 +11605,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -12032,7 +12058,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -12484,7 +12511,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -12919,7 +12947,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -13355,7 +13384,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -13774,7 +13804,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -14209,7 +14240,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -14660,7 +14692,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -15094,7 +15127,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -15528,7 +15562,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -15980,7 +16015,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -16398,7 +16434,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -16849,7 +16886,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -17283,7 +17321,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -17717,7 +17756,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -18151,7 +18191,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -18585,7 +18626,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -19002,7 +19044,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -19453,7 +19496,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -19870,7 +19914,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -20321,7 +20366,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -20829,7 +20875,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -21288,7 +21335,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -21705,7 +21753,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -22123,7 +22172,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -22557,7 +22607,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -22974,7 +23025,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -23391,7 +23443,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -23809,7 +23862,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -24273,7 +24327,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -24740,7 +24795,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -25157,7 +25213,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -25608,7 +25665,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -26042,7 +26100,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -26459,7 +26518,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -26910,7 +26970,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -27344,7 +27405,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -27761,7 +27823,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -28195,7 +28258,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -28646,7 +28710,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -29080,7 +29145,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -29514,7 +29580,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -29948,7 +30015,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -30382,7 +30450,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -30833,7 +30902,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -31267,7 +31337,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -31718,7 +31789,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -32169,7 +32241,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -32603,7 +32676,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -33021,7 +33095,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -33438,7 +33513,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -33855,7 +33931,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -34272,7 +34349,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -34689,7 +34767,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -35141,7 +35220,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -35576,7 +35656,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -36011,7 +36092,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -36428,7 +36510,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -36862,7 +36945,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -37313,7 +37397,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -37731,7 +37816,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -38148,7 +38234,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -38582,7 +38669,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -39034,7 +39122,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -39451,7 +39540,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -39902,7 +39992,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -40319,7 +40410,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -40770,7 +40862,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -41221,7 +41314,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -41672,7 +41766,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -42123,7 +42218,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -42557,7 +42653,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -43008,7 +43105,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -43459,7 +43557,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -43893,7 +43992,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -44344,7 +44444,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -44778,7 +44879,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -45212,7 +45314,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -45663,7 +45766,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -46114,7 +46218,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -46531,7 +46636,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -46955,7 +47061,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -47397,7 +47504,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -47831,7 +47939,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -48249,7 +48358,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -48707,7 +48817,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -49179,7 +49290,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -49614,7 +49726,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -50021,7 +50134,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -50463,7 +50577,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -50880,7 +50995,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -51314,7 +51430,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -51752,7 +51869,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -52220,7 +52338,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -52706,7 +52825,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -53158,7 +53278,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -53622,7 +53743,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -54099,7 +54221,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{
@@ -54533,7 +54656,8 @@
 					"attack": 0.01,
 					"decay": 0.1,
 					"sustain": 0.5,
-					"release": 0.2
+					"release": 0.2,
+					"mode": "adsr"
 				},
 				"fxSlots": [
 					{

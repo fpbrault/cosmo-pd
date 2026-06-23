@@ -23,11 +23,12 @@ use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, BaseWaveform, BitcrusherParams, ChorusParams, CompressorParams,
     CzAlgo, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
     GrainDelayParams, JunoChorusParams, LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform,
-    LineParams, LineSelect, LoFiParams, ModDestination, ModEnvParams, ModMatrix, ModMode, ModRoute,
-    ModSource, PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams,
-    RandomParams, ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData, SynthParams,
-    TremoloParams, VibratoParams, WavefolderParams, WindowType, default_synth_params_v1,
-    engine_param_ranges_v1, engine_param_ui_meta_v1, midi_mapping_param_ranges_v1,
+    LineParams, LineSelect, LoFiParams, ModDestination, ModEnvMode, ModEnvParams, ModMatrix,
+    ModMode, ModRoute, ModSource, PhaseModParams, PhaserParams, PolyMode, PortamentoMode,
+    PortamentoParams, RandomParams, ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData,
+    SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
+    default_synth_params_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
+    midi_mapping_param_ranges_v1,
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
@@ -92,6 +93,7 @@ fn main() {
     types.register_mut::<VibratoParams>();
     types.register_mut::<PhaseModParams>();
     types.register_mut::<RandomParams>();
+    types.register_mut::<ModEnvMode>();
     types.register_mut::<ModEnvParams>();
     types.register_mut::<PortamentoParams>();
     types.register_mut::<LfoParams>();

@@ -95,6 +95,7 @@ export const SYNTH_PARAM_SETTERS = {
 	modEnvDecay: "setModEnvDecay",
 	modEnvSustain: "setModEnvSustain",
 	modEnvRelease: "setModEnvRelease",
+	modEnvMode: "setModEnvMode",
 	macro1: "setMacro1",
 	macro2: "setMacro2",
 	macro3: "setMacro3",

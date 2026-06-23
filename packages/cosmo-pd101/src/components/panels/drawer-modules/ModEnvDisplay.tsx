@@ -4,6 +4,7 @@ import {
 	adsrPreviewPath,
 	type buildAdsrGeometry,
 	type estimateEnvelopeMarker,
+	type ModEnvPreviewMode,
 } from "./modEnvelopePreview";
 
 interface ModEnvDisplayProps {
@@ -14,6 +15,7 @@ interface ModEnvDisplayProps {
 	decay: number;
 	sustain: number;
 	release: number;
+	mode: ModEnvPreviewMode;
 	onDragHandle: (handle: "attack" | "decaySustain" | "release") => void;
 }
 
@@ -25,11 +27,12 @@ export default function ModEnvDisplay({
 	decay,
 	sustain,
 	release,
+	mode,
 	onDragHandle,
 }: ModEnvDisplayProps) {
 	const { t } = useTranslation("synth");
 	return (
-		<div className="col-span-4 rounded-md border border-cz-border/55 bg-cz-bg/35 px-2 py-1.5">
+		<div className="col-span-full rounded-md border border-cz-border/55 bg-cz-bg/35 px-2 py-1.5">
 			<svg ref={previewSvgRef} viewBox="0 0 220 64" className="h-16 w-full">
 				<title>{t("modEnv.displayTitle")}</title>
 				<defs>
@@ -47,7 +50,7 @@ export default function ModEnvDisplay({
 					strokeWidth="1"
 				/>
 				<path
-					d={adsrPreviewPath(attack, decay, sustain, release)}
+					d={adsrPreviewPath(attack, decay, sustain, release, mode)}
 					fill="none"
 					stroke="url(#mod-env-preview)"
 					strokeWidth="2"

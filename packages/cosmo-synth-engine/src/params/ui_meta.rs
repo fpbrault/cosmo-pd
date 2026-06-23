@@ -68,6 +68,17 @@ const POLY_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
+const MOD_ENV_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
+    EngineEnumValueLabelV1 {
+        value: "adsr",
+        label: "ADSR",
+    },
+    EngineEnumValueLabelV1 {
+        value: "adr",
+        label: "ADR",
+    },
+];
+
 const LFO_RATE_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     EngineEnumValueLabelV1 {
         value: "hz",
@@ -122,7 +133,7 @@ const LFO_SYNC_DIVISION_LABELS_V1: [EngineEnumValueLabelV1; 10] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 58] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 59] = [
     EngineParamUiMetaV1 {
         key: "volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
@@ -288,6 +299,12 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 58] = [
     EngineParamUiMetaV1 {
         key: "modEnvRelease",
         readout_format: EngineParamReadoutFormatV1::Seconds2,
+    },
+    EngineParamUiMetaV1 {
+        key: "modEnvMode",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &MOD_ENV_MODE_LABELS_V1,
+        },
     },
     EngineParamUiMetaV1 {
         key: "chorusRate",

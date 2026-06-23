@@ -52,11 +52,14 @@ export function formatEnvTime(seconds: number): string {
 	return `${formatCompactValue(seconds)}s`;
 }
 
+export type ModEnvPreviewMode = "adsr" | "adr";
+
 export function buildAdsrGeometry(
 	attack: number,
 	decay: number,
 	sustain: number,
 	release: number,
+	mode: ModEnvPreviewMode = "adsr",
 ) {
 	const top = MOD_ENV_TOP;
 	const bottom = MOD_ENV_BOTTOM;
@@ -71,7 +74,8 @@ export function buildAdsrGeometry(
 	const x3 = x2;
 	const x4 = Math.min(xMax, x3 + rW);
 
-	const ySustain = bottom - clamp01(sustain) * MOD_ENV_SUSTAIN_SPAN;
+	const effectiveSustain = mode === "adr" ? 0 : clamp01(sustain);
+	const ySustain = bottom - effectiveSustain * MOD_ENV_SUSTAIN_SPAN;
 
 	return { x0, x1, x2, x3, x4, top, bottom, ySustain };
 }
@@ -81,12 +85,14 @@ export function adsrPreviewPath(
 	decay: number,
 	sustain: number,
 	release: number,
+	mode: ModEnvPreviewMode = "adsr",
 ): string {
 	const { x0, x1, x2, x3, x4, top, bottom, ySustain } = buildAdsrGeometry(
 		attack,
 		decay,
 		sustain,
 		release,
+		mode,
 	);
 
 	return [

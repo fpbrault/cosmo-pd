@@ -163,6 +163,9 @@
 		"modEnvRelease": {
 			"tooltip": "Sets modulation envelope release time after note off."
 		},
+		"modEnvMode": {
+			"tooltip": "Switches the modulation envelope between ADSR (sustained) and ADR (one-shot decay) shapes."
+		},
 		"filterType": {
 			"tooltip": "Selects the filter response shape."
 		},
@@ -254,6 +257,10 @@
 		"portamentoMode": {
 			"rate": "Portamento time scales with note interval distance.",
 			"time": "Portamento uses a fixed glide time between notes."
+		},
+		"modEnvMode": {
+			"adsr": "Sustained ADSR envelope: decay falls to the sustain level and holds while the note is played.",
+			"adr": "One-shot ADR envelope: decay continues to zero; release triggers from the current level on note off."
 		}
 	},
 	"czPresets": {
@@ -1058,6 +1065,11 @@
 		"ring": "Ring",
 		"noise": "Noise"
 	},
+	"modEnvMode": {
+		"label": "Mode",
+		"adsr": "ADSR",
+		"adr": "ADR"
+	},
 	"lineSelect": {
 		"label": "Line Select"
 	},
@@ -1113,7 +1125,9 @@
 		"decayMidi": "Mod Env Decay",
 		"sustain": "Sus",
 		"release": "Rel",
-		"releaseMidi": "Mod Env Release"
+		"releaseMidi": "Mod Env Release",
+		"mode": "Mode",
+		"modeMidi": "Mod Env Mode"
 	},
 	"macro": {
 		"title": "Macro Controls",

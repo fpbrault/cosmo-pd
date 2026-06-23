@@ -24,7 +24,7 @@ export default function BadgeToggle({
 			onClick={onClick}
 			data-hover-info={tooltip}
 			{...hoverHandlers}
-			className={`btn btn-xs h-8 min-h-0 justify-self-center px-4 ${
+			className={`btn btn-xs min-h-0 justify-self-center px-2 ${
 				active
 					? "border-amber-500/60 bg-amber-500/20 text-amber-300"
 					: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
