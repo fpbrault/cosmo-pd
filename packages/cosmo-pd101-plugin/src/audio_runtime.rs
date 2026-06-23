@@ -5,8 +5,8 @@ use arrayvec::ArrayVec;
 use cosmo_pd101_bridge_types::UiAlgoControlSection;
 use cosmo_synth_engine::params::{
     AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget,
-    RealtimeParameterImpact, SynthParams, apply_midi_mapping_binding,
-    apply_midi_mapping_binding_rt, set_parameter_value_by_key,
+    RealtimeParameterImpact, RealtimeParameterWrite, SynthParams, apply_midi_mapping_binding,
+    set_parameter_value_by_key,
 };
 use cosmo_synth_engine::processor::{
     CosmoInputEvent, CosmoProcessor, CosmoTimedInputEvent, CosmoTransportState,
@@ -481,18 +481,12 @@ impl CzPlugin {
             let bindings = self.shared_state.midi_learn.bindings();
             if !bindings.is_empty() {
                 let normalized = f32::from(value) / 127.0;
+                let mut any_applied = false;
                 let mut impact = RealtimeParameterImpact::NONE;
-                let Some(rt_params) = proc.realtime_params_mut() else {
-                    self.shared_state
-                        .ui
-                        .render_control_diagnostics
-                        .parameter_snapshot_rejections
-                        .fetch_add(1, Ordering::Relaxed);
-                    return;
-                };
                 for binding in bindings.iter() {
-                    if let Some(binding_impact) = apply_midi_mapping_binding_rt(
-                        rt_params,
+                    if let RealtimeParameterWrite::Applied {
+                        impact: binding_impact,
+                    } = proc.write_midi_mapping_binding_realtime(
                         &binding.param_key,
                         binding.channel,
                         binding.cc,
@@ -500,11 +494,14 @@ impl CzPlugin {
                         cc,
                         normalized,
                     ) {
+                        any_applied = true;
                         impact = impact.union(binding_impact);
                     }
                 }
-                if impact != RealtimeParameterImpact::NONE {
-                    proc.apply_realtime_parameter_impact(impact);
+                if any_applied {
+                    if impact != RealtimeParameterImpact::NONE {
+                        proc.apply_realtime_parameter_impact(impact);
+                    }
                 } else {
                     self.shared_state
                         .ui

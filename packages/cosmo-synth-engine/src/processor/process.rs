@@ -1,8 +1,4 @@
-#[cfg(feature = "std")]
-use std::sync::Arc;
-
-#[cfg(not(feature = "std"))]
-use alloc::sync::Arc;
+use core::ops::{Deref, DerefMut};
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
@@ -41,6 +37,25 @@ struct VoiceLinesFrame {
     line2: LineParams,
 }
 
+struct ProcessorRenderView<'a> {
+    processor: &'a mut CosmoProcessor,
+    params: &'a SynthParams,
+}
+
+impl Deref for ProcessorRenderView<'_> {
+    type Target = CosmoProcessor;
+
+    fn deref(&self) -> &Self::Target {
+        self.processor
+    }
+}
+
+impl DerefMut for ProcessorRenderView<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.processor
+    }
+}
+
 impl CosmoProcessor {
     /// Fill `output` with mono samples.
     ///
@@ -61,23 +76,36 @@ impl CosmoProcessor {
 
     #[allow(unsafe_code)]
     fn process_with_denormal_guard(&mut self, output: &mut [f32]) {
-        #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
-        unsafe {
-            no_denormals(|| self.process_inner(output));
-        }
-
-        #[cfg(not(all(feature = "no_denormals", not(target_arch = "wasm32"))))]
-        self.process_inner(output);
-    }
-
-    fn process_inner(&mut self, output: &mut [f32]) {
         if self.compiled_params_dirty {
             self.update_fx();
             self.rebuild_compiled_params();
         }
 
-        let params = Arc::clone(&self.params);
-        let p = params.as_ref();
+        let params = self
+            .params
+            .take()
+            .expect("processor parameters cannot already be rendering");
+        {
+            let mut render = ProcessorRenderView {
+                processor: self,
+                params: &params,
+            };
+
+            #[cfg(all(feature = "no_denormals", not(target_arch = "wasm32")))]
+            unsafe {
+                no_denormals(|| render.process_inner(output));
+            }
+
+            #[cfg(not(all(feature = "no_denormals", not(target_arch = "wasm32"))))]
+            render.process_inner(output);
+        }
+        self.params = Some(params);
+    }
+}
+
+impl ProcessorRenderView<'_> {
+    fn process_inner(&mut self, output: &mut [f32]) {
+        let p = self.params;
         let manual_tempo_bpm = p.tempo_bpm;
         let base_lfo1_rate = p.lfo.rate;
         let lfo1_rate_mode = p.lfo.rate_mode;
@@ -196,7 +224,8 @@ impl CosmoProcessor {
                 line2_plan,
             );
 
-            self.process_pending_mono_retrigger_after_sample();
+            self.processor
+                .process_pending_mono_retrigger_after_sample(p);
 
             let (mod_env, velocity) = self
                 .runtime_mod_source_voice_index()
@@ -388,6 +417,8 @@ impl CosmoProcessor {
         line1_plan: CompiledLinePlan,
         line2_plan: CompiledLinePlan,
     ) -> f32 {
+        let processor = &mut *self.processor;
+        let voices = &mut processor.voices;
         let render_ctx = VoiceRenderContext {
             p,
             lfo_mod_val: lfos.lfo1,
@@ -396,47 +427,48 @@ impl CosmoProcessor {
             line1_modded: &lines.line1,
             line2_modded: &lines.line2,
             sr,
-            timing: &self.envelope_timing,
-            pitch_bend_semitones: self.pitch_bend * p.pitch_bend_range,
-            mod_wheel: self.mod_wheel,
-            macro1: self.macro1,
-            macro2: self.macro2,
-            macro3: self.macro3,
-            macro4: self.macro4,
+            timing: &processor.envelope_timing,
+            pitch_bend_semitones: processor.pitch_bend * p.pitch_bend_range,
+            mod_wheel: processor.mod_wheel,
+            macro1: processor.macro1,
+            macro2: processor.macro2,
+            macro3: processor.macro3,
+            macro4: processor.macro4,
             cache: mod_cache,
             modulation_active: has_active_mod_routes,
             effective_tempo_bpm,
             line1_plan: &line1_plan,
             line2_plan: &line2_plan,
         };
-        let render_limit = self.render_voice_limit();
+        let render_limit = processor.render_voice_limit;
+        let simd_backend = processor.simd_backend;
         let mut mixed = 0.0_f32;
         let mut v = 0;
-        if matches!(self.simd_backend, crate::simd::SimdBackend::Scalar) {
+        if matches!(simd_backend, crate::simd::SimdBackend::Scalar) {
             while v + 4 <= render_limit {
-                mixed += crate::voice::render_voice(&mut self.voices[v], &render_ctx);
-                mixed += crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx);
-                mixed += crate::voice::render_voice(&mut self.voices[v + 2], &render_ctx);
-                mixed += crate::voice::render_voice(&mut self.voices[v + 3], &render_ctx);
+                mixed += crate::voice::render_voice(&mut voices[v], &render_ctx);
+                mixed += crate::voice::render_voice(&mut voices[v + 1], &render_ctx);
+                mixed += crate::voice::render_voice(&mut voices[v + 2], &render_ctx);
+                mixed += crate::voice::render_voice(&mut voices[v + 3], &render_ctx);
                 v += 4;
             }
         } else {
             let mut vector_acc = [0.0_f32; 4];
             while v + 4 <= render_limit {
                 let voice_samples = [
-                    crate::voice::render_voice(&mut self.voices[v], &render_ctx),
-                    crate::voice::render_voice(&mut self.voices[v + 1], &render_ctx),
-                    crate::voice::render_voice(&mut self.voices[v + 2], &render_ctx),
-                    crate::voice::render_voice(&mut self.voices[v + 3], &render_ctx),
+                    crate::voice::render_voice(&mut voices[v], &render_ctx),
+                    crate::voice::render_voice(&mut voices[v + 1], &render_ctx),
+                    crate::voice::render_voice(&mut voices[v + 2], &render_ctx),
+                    crate::voice::render_voice(&mut voices[v + 3], &render_ctx),
                 ];
-                vector_acc = self.simd_backend.add4(vector_acc, voice_samples);
+                vector_acc = simd_backend.add4(vector_acc, voice_samples);
                 v += 4;
             }
-            mixed += self.simd_backend.horizontal_sum4(vector_acc);
+            mixed += simd_backend.horizontal_sum4(vector_acc);
         }
 
         while v < render_limit {
-            mixed += crate::voice::render_voice(&mut self.voices[v], &render_ctx);
+            mixed += crate::voice::render_voice(&mut voices[v], &render_ctx);
             v += 1;
         }
         mixed

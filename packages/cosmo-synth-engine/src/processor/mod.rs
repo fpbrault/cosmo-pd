@@ -12,7 +12,6 @@ pub mod utils;
 pub use self::input::{CosmoInputEvent, CosmoTimedInputEvent, CosmoTransportState};
 pub use utils::midi_note_to_freq;
 
-use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
@@ -22,7 +21,7 @@ use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{
     DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, RealtimeParameterImpact,
-    SynthParams,
+    RealtimeParameterWrite, SynthParams,
 };
 use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};
@@ -63,10 +62,10 @@ pub struct CosmoProcessor {
     pub random_phase: f32,
     pub random_step: i32,
     pub random_hold: f32,
-    /// Processor-private parameter storage. This Arc is never published or
-    /// replaced: rendering holds a temporary clone for optimizer-visible
-    /// immutable access, and RT mutation requires the root to be unique.
-    params: Arc<SynthParams>,
+    /// Processor-owned parameter storage. Rendering temporarily moves this
+    /// value into a private render view so the immutable parameters and
+    /// mutable DSP state can be borrowed independently without shared ownership.
+    params: Option<SynthParams>,
     pub sample_rate: f32,
     pub pitch_bend: f32,
     pub mod_wheel: f32,
@@ -113,7 +112,7 @@ impl CosmoProcessor {
             random_phase: 0.0,
             random_step: 0,
             random_hold: random_hold_value(0),
-            params: Arc::new(initial_params),
+            params: Some(initial_params),
             sample_rate,
             pitch_bend: 0.0,
             mod_wheel: 0.0,
@@ -221,11 +220,15 @@ impl CosmoProcessor {
 
     /// Copy FX-relevant fields from `self.params` into the `FxChain`.
     pub fn update_fx(&mut self) {
-        self.fx.sync_from_params(&self.params);
+        let params = self
+            .params
+            .as_ref()
+            .expect("processor parameters are unavailable only while rendering");
+        self.fx.sync_from_params(params);
     }
 
     pub(crate) fn rebuild_compiled_params(&mut self) {
-        self.compiled_params = CompiledSynthParams::from_params(&self.params);
+        self.compiled_params = CompiledSynthParams::from_params(self.params());
         self.compiled_params_dirty = false;
     }
 
@@ -246,9 +249,10 @@ impl CosmoProcessor {
         self.macro4 = params.macro4;
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
-        let destination = Arc::get_mut(&mut self.params)
-            .expect("processor parameter storage must be unique outside rendering");
-        destination.clone_from(params);
+        self.params
+            .as_mut()
+            .expect("processor parameters are unavailable only while rendering")
+            .clone_from(params);
         self.rebuild_compiled_params();
         self.update_fx();
     }
@@ -257,28 +261,34 @@ impl CosmoProcessor {
     /// parameter storage. Returns `false` if the snapshot exceeds the
     /// bounded realtime capacities.
     pub fn copy_params_for_realtime(&mut self, params: &SynthParams) -> bool {
-        if params.mod_matrix.routes.len() > self.params.mod_matrix.routes.capacity()
+        let destination = self
+            .params
+            .as_mut()
+            .expect("processor parameters are unavailable only while rendering");
+        if params.mod_matrix.routes.len() > destination.mod_matrix.routes.capacity()
             || params
                 .macro_labels
                 .iter()
-                .zip(&self.params.macro_labels)
+                .zip(&destination.macro_labels)
                 .any(|(source, destination)| source.len() > destination.capacity())
         {
             return false;
         }
 
-        let Some(destination) = Arc::get_mut(&mut self.params) else {
-            return false;
-        };
         destination.copy_from_preserving_capacity(params);
         self.refresh_parameter_caches();
         true
     }
 
     pub fn apply_parameter_change_realtime(&mut self, param_key: &'static str, value: f32) -> bool {
-        let Some(impact) = Arc::get_mut(&mut self.params).and_then(|params| {
-            crate::params::set_parameter_value_by_key_rt(params, param_key, value)
-        }) else {
+        let write = crate::params::set_parameter_value_by_key_rt(
+            self.params
+                .as_mut()
+                .expect("processor parameters are unavailable only while rendering"),
+            param_key,
+            value,
+        );
+        let crate::params::RealtimeParameterWrite::Applied { impact } = write else {
             return false;
         };
 
@@ -287,39 +297,62 @@ impl CosmoProcessor {
     }
 
     pub fn params(&self) -> &SynthParams {
-        self.params.as_ref()
+        self.params
+            .as_ref()
+            .expect("processor parameters are unavailable only while rendering")
     }
 
-    /// Borrow the uniquely owned parameter storage for a bounded RT update.
-    /// Returns `None` if a render snapshot is unexpectedly still alive.
-    pub fn realtime_params_mut(&mut self) -> Option<&mut SynthParams> {
-        Arc::get_mut(&mut self.params)
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_midi_mapping_binding_realtime(
+        &mut self,
+        param_key: &str,
+        binding_channel: i32,
+        binding_cc: i32,
+        channel: u8,
+        cc: u8,
+        normalized_value: f32,
+    ) -> RealtimeParameterWrite {
+        crate::params::apply_midi_mapping_binding_rt(
+            self.params
+                .as_mut()
+                .expect("processor parameters are unavailable only while rendering"),
+            param_key,
+            binding_channel,
+            binding_cc,
+            channel,
+            cc,
+            normalized_value,
+        )
     }
 
     pub fn apply_realtime_parameter_impact(&mut self, impact: RealtimeParameterImpact) {
+        let params = self
+            .params
+            .as_ref()
+            .expect("processor parameters are unavailable only while rendering");
         if impact.contains(RealtimeParameterImpact::NORMALIZATION) {
-            self.compiled_params.refresh_normalization(&self.params);
+            self.compiled_params.refresh_normalization(params);
         }
         if impact.contains(RealtimeParameterImpact::MACRO1) {
-            self.macro1 = self.params.macro1;
+            self.macro1 = params.macro1;
         }
         if impact.contains(RealtimeParameterImpact::MACRO2) {
-            self.macro2 = self.params.macro2;
+            self.macro2 = params.macro2;
         }
         if impact.contains(RealtimeParameterImpact::MACRO3) {
-            self.macro3 = self.params.macro3;
+            self.macro3 = params.macro3;
         }
         if impact.contains(RealtimeParameterImpact::MACRO4) {
-            self.macro4 = self.params.macro4;
+            self.macro4 = params.macro4;
         }
         if impact.contains(RealtimeParameterImpact::LINE1_PLAN) {
-            self.compiled_params.refresh_line1(&self.params);
+            self.compiled_params.refresh_line1(params);
         }
         if impact.contains(RealtimeParameterImpact::LINE2_PLAN) {
-            self.compiled_params.refresh_line2(&self.params);
+            self.compiled_params.refresh_line2(params);
         }
         if impact.contains(RealtimeParameterImpact::MOD_MATRIX) {
-            self.compiled_params.refresh_mod_matrix(&self.params);
+            self.compiled_params.refresh_mod_matrix(params);
         }
         if impact.contains(RealtimeParameterImpact::FX) {
             self.update_fx();
@@ -327,12 +360,12 @@ impl CosmoProcessor {
     }
 
     pub fn refresh_parameter_caches(&mut self) {
-        self.macro1 = self.params.macro1;
-        self.macro2 = self.params.macro2;
-        self.macro3 = self.params.macro3;
-        self.macro4 = self.params.macro4;
-        self.line1_scratch = self.params.line1;
-        self.line2_scratch = self.params.line2;
+        self.macro1 = self.params().macro1;
+        self.macro2 = self.params().macro2;
+        self.macro3 = self.params().macro3;
+        self.macro4 = self.params().macro4;
+        self.line1_scratch = self.params().line1;
+        self.line2_scratch = self.params().line2;
         self.rebuild_compiled_params();
         self.update_fx();
     }
@@ -340,8 +373,9 @@ impl CosmoProcessor {
     /// Mutable parameter access for non-real-time mutation paths and tests.
     pub fn params_mut(&mut self) -> &mut SynthParams {
         self.compiled_params_dirty = true;
-        Arc::get_mut(&mut self.params)
-            .expect("processor parameter storage must be unique outside rendering")
+        self.params
+            .as_mut()
+            .expect("processor parameters are unavailable only while rendering")
     }
 
     fn debug_assert_note_storage_bounds(&self) {
@@ -382,8 +416,8 @@ impl CosmoProcessor {
         self.host_transport_tempo_bpm = None;
         self.host_transport_playing = false;
         self.host_transport_position_beats = 0.0;
-        self.line1_scratch = self.params.line1;
-        self.line2_scratch = self.params.line2;
+        self.line1_scratch = self.params().line1;
+        self.line2_scratch = self.params().line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
         self.render_voice_limit = self.voice_limit;
         self.rebuild_compiled_params();
@@ -400,7 +434,7 @@ impl CosmoProcessor {
 
     /// Return the current FX slot type layout.
     pub fn get_fx_slot_types(&self) -> [FxSlotType; 6] {
-        core::array::from_fn(|i| self.params.fx_slots[i].slot_type())
+        core::array::from_fn(|i| self.params().fx_slots[i].slot_type())
     }
 
     /// Apply a named module preset to the current parameters.
@@ -547,11 +581,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn processor_parameter_storage_is_unique_after_rendering() {
+    fn processor_parameter_storage_is_mutable_after_rendering() {
         let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().macro1 = 0.25;
         proc.process(&mut [0.0; 8]);
-        assert_eq!(Arc::strong_count(&proc.params), 1);
-        assert!(proc.realtime_params_mut().is_some());
+        proc.params_mut().macro1 = 0.75;
+        assert_eq!(proc.params().macro1, 0.75);
     }
     use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
     use crate::params::{
@@ -673,7 +708,7 @@ mod tests {
             enabled: true,
         }];
 
-        let base_rate = proc.params.lfo.rate;
+        let base_rate = proc.params().lfo.rate;
         let mut out = [0.0_f32; 1];
         proc.process(&mut out);
 
@@ -1381,7 +1416,7 @@ mod tests {
             enabled: true,
         }];
 
-        let base_rate = proc.params.random.rate;
+        let base_rate = proc.params().random.rate;
         let mut out = [0.0_f32; 1];
         proc.process(&mut out);
 

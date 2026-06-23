@@ -14,7 +14,10 @@ impl CosmoProcessor {
     }
 
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
-        let p = &self.params;
+        let p = self
+            .params
+            .as_ref()
+            .expect("processor parameters are unavailable only while rendering");
         let voice = &mut self.voices[voice_idx];
         voice.line1_env.dco.start_release(&p.line1.dco_env);
         voice.line1_env.dcw.start_release(&p.line1.dcw_env);
@@ -43,7 +46,7 @@ impl CosmoProcessor {
         voice.zero_cross_stop_wait = 0;
     }
 
-    pub(crate) fn reset_voice_runtime(&mut self, voice_idx: usize) {
+    fn reset_voice_runtime_with_vibrato(&mut self, voice_idx: usize, vibrato_delay: Option<f32>) {
         let voice = &mut self.voices[voice_idx];
         let was_active = !voice.is_silent;
         let prev_output_sample = voice.last_output_sample;
@@ -78,22 +81,25 @@ impl CosmoProcessor {
         voice.smoothed_dcw1 = if was_active { prev_smoothed_dcw1 } else { 0.0 };
         voice.smoothed_dcw2 = if was_active { prev_smoothed_dcw2 } else { 0.0 };
 
-        if let Some(vib) = self.params.vibrato_params()
-            && vib.enabled
-        {
+        if let Some(delay_ms) = vibrato_delay {
             voice.vibrato_phase = 0.0;
-            let delay_ms = vib.delay;
             voice.vibrato_delay_counter = (delay_ms * self.sample_rate / 1000.0).round() as u32;
         }
     }
-    pub(crate) fn configure_voice_pitch(&mut self, voice_idx: usize, note: u8, frequency: f32) {
+    fn configure_voice_pitch_with_portamento(
+        &mut self,
+        voice_idx: usize,
+        note: u8,
+        frequency: f32,
+        portamento_enabled: bool,
+    ) {
         let voice = &mut self.voices[voice_idx];
         voice.note = Some(note);
         voice.env_note = note;
         voice.frequency = frequency;
         voice.target_freq = frequency;
 
-        if self.params.portamento.enabled && !voice.is_silent {
+        if portamento_enabled && !voice.is_silent {
             voice.glide_start_freq = voice.current_freq;
             voice.glide_progress = 0.0;
         } else {
@@ -110,9 +116,57 @@ impl CosmoProcessor {
         frequency: f32,
         velocity: f32,
     ) {
-        self.configure_voice_pitch(voice_idx, note, frequency);
+        let params = self.params();
+        let portamento_enabled = params.portamento.enabled;
+        let vibrato_delay = params
+            .vibrato_params()
+            .filter(|vibrato| vibrato.enabled)
+            .map(|vibrato| vibrato.delay);
+        self.initialize_voice_for_note_with_settings(
+            voice_idx,
+            note,
+            frequency,
+            velocity,
+            portamento_enabled,
+            vibrato_delay,
+        );
+    }
+
+    fn initialize_voice_for_note_from_params(
+        &mut self,
+        voice_idx: usize,
+        note: u8,
+        frequency: f32,
+        velocity: f32,
+        params: &crate::params::SynthParams,
+    ) {
+        let vibrato_delay = params
+            .vibrato_params()
+            .filter(|vibrato| vibrato.enabled)
+            .map(|vibrato| vibrato.delay);
+        self.initialize_voice_for_note_with_settings(
+            voice_idx,
+            note,
+            frequency,
+            velocity,
+            params.portamento.enabled,
+            vibrato_delay,
+        );
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn initialize_voice_for_note_with_settings(
+        &mut self,
+        voice_idx: usize,
+        note: u8,
+        frequency: f32,
+        velocity: f32,
+        portamento_enabled: bool,
+        vibrato_delay: Option<f32>,
+    ) {
+        self.configure_voice_pitch_with_portamento(voice_idx, note, frequency, portamento_enabled);
         self.voices[voice_idx].velocity = velocity;
-        self.reset_voice_runtime(voice_idx);
+        self.reset_voice_runtime_with_vibrato(voice_idx, vibrato_delay);
         self.voices[voice_idx].note_on_sequence = self.next_note_on_sequence();
         self.voices[voice_idx].noise_step = 0;
         self.reset_voice_envs(voice_idx);
@@ -312,17 +366,21 @@ impl CosmoProcessor {
         true
     }
 
-    pub(crate) fn process_pending_mono_retrigger_after_sample(&mut self) {
+    pub(crate) fn process_pending_mono_retrigger_after_sample(
+        &mut self,
+        params: &crate::params::SynthParams,
+    ) {
         let Some(mut pending) = self.pending_mono_retrigger else {
             return;
         };
 
         if pending.source_voice_idx >= MAX_VOICES {
-            self.initialize_voice_for_note(
+            self.initialize_voice_for_note_from_params(
                 self.find_poly_voice_for_note_on(),
                 pending.note,
                 pending.frequency,
                 pending.velocity,
+                params,
             );
             return self.clear_pending_mono_retrigger();
         }
@@ -337,14 +395,15 @@ impl CosmoProcessor {
 
         if should_trigger {
             let keep_voice_idx = pending.source_voice_idx.min(MAX_VOICES - 1);
-            self.initialize_voice_for_note(
+            self.initialize_voice_for_note_from_params(
                 keep_voice_idx,
                 pending.note,
                 pending.frequency,
                 pending.velocity,
+                params,
             );
             self.replace_active_note_entry(keep_voice_idx, pending.note);
-            self.quick_fade_other_mono_voices(keep_voice_idx);
+            self.quick_fade_other_mono_voices_from_params(keep_voice_idx, params);
             self.clear_pending_mono_retrigger();
             return;
         }
@@ -354,11 +413,28 @@ impl CosmoProcessor {
         self.pending_mono_retrigger = Some(pending);
     }
 
-    fn quick_fade_other_mono_voices(&mut self, keep_voice_idx: usize) {
+    fn quick_fade_other_mono_voices_from_params(
+        &mut self,
+        keep_voice_idx: usize,
+        params: &crate::params::SynthParams,
+    ) {
         for idx in 0..MAX_VOICES {
-            if idx != keep_voice_idx && !self.voices[idx].is_silent {
-                self.start_quick_release(idx);
+            if idx == keep_voice_idx || self.voices[idx].is_silent {
+                continue;
             }
+            self.voices[idx].is_releasing = true;
+            let voice = &mut self.voices[idx];
+            voice.line1_env.dco.start_release(&params.line1.dco_env);
+            voice.line1_env.dcw.start_release(&params.line1.dcw_env);
+            voice.line1_env.dca.start_release(&params.line1.dca_env);
+            voice.line2_env.dco.start_release(&params.line2.dco_env);
+            voice.line2_env.dcw.start_release(&params.line2.dcw_env);
+            voice.line2_env.dca.start_release(&params.line2.dca_env);
+            voice.mod_env.note_off();
+            voice.anti_click_fade = MONO_RETRIGGER_QUICK_FADE_SAMPLES;
+            voice.anti_click_fade_len = MONO_RETRIGGER_QUICK_FADE_SAMPLES;
+            voice.zero_cross_stop_pending = false;
+            voice.zero_cross_stop_wait = 0;
         }
     }
 
@@ -442,7 +518,7 @@ impl CosmoProcessor {
             return;
         }
 
-        if self.params.portamento.enabled
+        if self.params().portamento.enabled
             && self.try_handle_mono_note_change_no_retrigger(note, frequency, velocity)
         {
             return;
@@ -491,7 +567,7 @@ impl CosmoProcessor {
     pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
         let vel = if velocity <= 0.0 { 1.0 } else { velocity };
         let vel = {
-            let curve = self.params.velocity_curve;
+            let curve = self.params().velocity_curve;
             if curve.abs() < 0.001 {
                 vel
             } else {
@@ -500,14 +576,14 @@ impl CosmoProcessor {
             }
         };
 
-        if self.params.lfo.retrigger {
+        if self.params().lfo.retrigger {
             self.lfo_phase = 0.0;
         }
-        if self.params.lfo2.retrigger {
+        if self.params().lfo2.retrigger {
             self.lfo2_phase = 0.0;
         }
 
-        if self.params.poly_mode == PolyMode::Mono {
+        if self.params().poly_mode == PolyMode::Mono {
             self.handle_mono_note_on(note, frequency, vel);
         } else {
             self.handle_poly_note_on(note, frequency, vel);
@@ -516,7 +592,7 @@ impl CosmoProcessor {
 
     /// Handle a note-off event.
     pub fn note_off(&mut self, note: u8) {
-        if self.params.poly_mode == PolyMode::Mono {
+        if self.params().poly_mode == PolyMode::Mono {
             self.release_mono_held_note(note);
             self.remove_mono_stack_note(note);
             if self
@@ -541,13 +617,13 @@ impl CosmoProcessor {
         if self.sustain_on {
             self.voices[voice_idx].sustained = true;
             self.voices[voice_idx].mod_env.note_off();
-            if self.params.poly_mode == PolyMode::Mono {
+            if self.params().poly_mode == PolyMode::Mono {
                 self.mono_stack.clear();
             }
             return;
         }
 
-        if self.params.poly_mode == PolyMode::Mono {
+        if self.params().poly_mode == PolyMode::Mono {
             if !self.queue_mono_resume_previous_held_note(voice_idx) {
                 self.start_release(voice_idx);
             }

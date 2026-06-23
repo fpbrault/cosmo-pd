@@ -95,6 +95,16 @@ impl RealtimeParameterImpact {
     }
 }
 
+/// Outcome of a realtime parameter write.
+///
+/// A successful write may not require any derived-state refresh, so success
+/// is represented separately from [`RealtimeParameterImpact::NONE`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RealtimeParameterWrite {
+    Miss,
+    Applied { impact: RealtimeParameterImpact },
+}
+
 fn parse_algo_control_midi_slot(key: &str) -> Option<AlgoControlMidiSlot> {
     let suffix = key.strip_prefix("line")?;
     let (line, slot) = suffix.split_once("AlgoControl")?;
@@ -514,18 +524,19 @@ pub fn set_parameter_value_by_key_rt(
     params: &mut SynthParams,
     key: &str,
     value: f32,
-) -> Option<RealtimeParameterImpact> {
+) -> RealtimeParameterWrite {
     if !set_parameter_value_by_key(params, key, value) {
-        return None;
+        return RealtimeParameterWrite::Miss;
     }
-    Some(match key {
+    let impact = match key {
         "volume" => RealtimeParameterImpact::NORMALIZATION,
         "macro1" => RealtimeParameterImpact::MACRO1,
         "macro2" => RealtimeParameterImpact::MACRO2,
         "macro3" => RealtimeParameterImpact::MACRO3,
         "macro4" => RealtimeParameterImpact::MACRO4,
         _ => RealtimeParameterImpact::NONE,
-    })
+    };
+    RealtimeParameterWrite::Applied { impact }
 }
 
 /// Returns the canonical static key accepted by realtime parameter events.
@@ -692,7 +703,7 @@ pub fn apply_midi_mapping_binding(
 }
 
 /// RT-safe (non-allocating) variant: applies a single MIDI mapping binding
-/// directly without building `AppliedMidiParamChange`. Returns `true` if applied.
+/// directly without building `AppliedMidiParamChange`.
 pub fn apply_midi_mapping_binding_rt(
     params: &mut SynthParams,
     param_key: &str,
@@ -701,16 +712,18 @@ pub fn apply_midi_mapping_binding_rt(
     channel: u8,
     cc: u8,
     normalized_value: f32,
-) -> Option<RealtimeParameterImpact> {
+) -> RealtimeParameterWrite {
     if binding_cc != i32::from(cc)
         || (binding_channel != -1 && binding_channel != i32::from(channel))
     {
-        return None;
+        return RealtimeParameterWrite::Miss;
     }
     if let Some(impact) = apply_virtual_algo_control_rt(params, param_key, normalized_value) {
-        return Some(impact);
+        return RealtimeParameterWrite::Applied { impact };
     }
-    let (min, max) = parameter_range_for_key(param_key)?;
+    let Some((min, max)) = parameter_range_for_key(param_key) else {
+        return RealtimeParameterWrite::Miss;
+    };
     let mapped = min + normalized_value.clamp(0.0, 1.0) * (max - min);
     let step = parameter_step_for_key(param_key);
     let quantized = quantize_midi_mapped_value(mapped, step, min);
@@ -727,19 +740,27 @@ mod tests {
 
         assert_eq!(
             set_parameter_value_by_key_rt(&mut params, "volume", 0.5),
-            Some(RealtimeParameterImpact::NORMALIZATION)
+            RealtimeParameterWrite::Applied {
+                impact: RealtimeParameterImpact::NORMALIZATION
+            }
         );
         assert_eq!(
             set_parameter_value_by_key_rt(&mut params, "macro3", 0.75),
-            Some(RealtimeParameterImpact::MACRO3)
+            RealtimeParameterWrite::Applied {
+                impact: RealtimeParameterImpact::MACRO3
+            }
         );
         assert_eq!(
             set_parameter_value_by_key_rt(&mut params, "lfoRate", 4.0),
-            Some(RealtimeParameterImpact::NONE)
+            RealtimeParameterWrite::Applied {
+                impact: RealtimeParameterImpact::NONE
+            }
         );
         assert_eq!(
             set_parameter_value_by_key_rt(&mut params, "line1Level", 0.25),
-            Some(RealtimeParameterImpact::NONE)
+            RealtimeParameterWrite::Applied {
+                impact: RealtimeParameterImpact::NONE
+            }
         );
     }
 
@@ -751,11 +772,15 @@ mod tests {
 
         assert_eq!(
             apply_midi_mapping_binding_rt(&mut params, "line1AlgoControl1", 0, 74, 0, 74, 1.0,),
-            Some(RealtimeParameterImpact::LINE1_PLAN)
+            RealtimeParameterWrite::Applied {
+                impact: RealtimeParameterImpact::LINE1_PLAN
+            }
         );
         assert_eq!(
             apply_midi_mapping_binding_rt(&mut params, "line2AlgoControl1", 0, 74, 0, 74, 1.0,),
-            Some(RealtimeParameterImpact::LINE2_PLAN)
+            RealtimeParameterWrite::Applied {
+                impact: RealtimeParameterImpact::LINE2_PLAN
+            }
         );
     }
 

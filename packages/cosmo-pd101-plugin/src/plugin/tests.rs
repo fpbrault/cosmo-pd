@@ -1083,6 +1083,176 @@ fn process_test_block(plugin: &mut CzPlugin, events: &EventList) -> ProcessStatu
     <CzPlugin as PluginLogic>::process(plugin, &mut buffer, events, &mut context)
 }
 
+fn process_mapped_cc(plugin: &mut CzPlugin, cc: u8, value: u8) {
+    let mut events = EventList::default();
+    events.push(Event {
+        sample_offset: 0,
+        body: EventBody::ControlChange {
+            group: 0,
+            channel: 0,
+            cc,
+            value,
+        },
+    });
+    process_test_block(plugin, &events);
+}
+
+fn assert_midi_mapping_diagnostics_zero(plugin: &CzPlugin) {
+    let diagnostics = &plugin.shared_state.ui.render_control_diagnostics;
+    assert_eq!(diagnostics.midi_mapping_misses.load(Ordering::Acquire), 0);
+    assert_eq!(
+        diagnostics
+            .parameter_snapshot_rejections
+            .load(Ordering::Acquire),
+        0
+    );
+    assert_eq!(diagnostics.ui_queue_overflows.load(Ordering::Acquire), 0);
+}
+
+fn plugin_process_applies_macro_midi_mapping() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
+            param_key: "macro1".to_string(),
+            channel: 0,
+            cc: 74,
+        }]);
+
+    process_mapped_cc(&mut plugin, 74, 127);
+
+    assert!((plugin.audio.processor.as_ref().unwrap().params().macro1 - 1.0).abs() < 0.000_001);
+    assert_midi_mapping_diagnostics_zero(&plugin);
+}
+
+fn plugin_process_applies_volume_midi_mapping() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
+            param_key: "volume".to_string(),
+            channel: 0,
+            cc: 75,
+        }]);
+
+    process_mapped_cc(&mut plugin, 75, 32);
+
+    let expected = 32.0 / 127.0;
+    assert!(
+        (plugin.audio.processor.as_ref().unwrap().params().volume - expected).abs() < 0.000_001
+    );
+    assert_midi_mapping_diagnostics_zero(&plugin);
+}
+
+fn plugin_process_counts_none_impact_mapping_as_applied() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
+            param_key: "line1Level".to_string(),
+            channel: 0,
+            cc: 76,
+        }]);
+
+    process_mapped_cc(&mut plugin, 76, 48);
+
+    let expected = 48.0 / 127.0;
+    assert!(
+        (plugin
+            .audio
+            .processor
+            .as_ref()
+            .unwrap()
+            .params()
+            .line1
+            .dca_base
+            - expected)
+            .abs()
+            < 0.000_001
+    );
+    assert_midi_mapping_diagnostics_zero(&plugin);
+}
+
+fn plugin_process_applies_all_mappings_for_one_cc() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+    plugin
+        .shared_state
+        .midi_learn
+        .replace_bindings_for_test(vec![
+            crate::session_state::MidiLearnBinding {
+                param_key: "macro1".to_string(),
+                channel: 0,
+                cc: 77,
+            },
+            crate::session_state::MidiLearnBinding {
+                param_key: "macro2".to_string(),
+                channel: 0,
+                cc: 77,
+            },
+        ]);
+
+    process_mapped_cc(&mut plugin, 77, 127);
+
+    let rt_params = plugin.audio.processor.as_ref().unwrap().params();
+    assert!((rt_params.macro1 - 1.0).abs() < 0.000_001);
+    assert!((rt_params.macro2 - 1.0).abs() < 0.000_001);
+    assert_midi_mapping_diagnostics_zero(&plugin);
+}
+
+fn plugin_process_forwards_cc_and_captures_learn_without_processor() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    plugin.shared_state.midi_learn.set_learn_mode(true);
+    plugin
+        .shared_state
+        .midi_learn
+        .set_pending_param_key(Some("macro1".to_string()));
+    plugin.audio.processor = None;
+
+    process_mapped_cc(&mut plugin, 78, 91);
+
+    let state = plugin.shared_state.midi_learn.snapshot();
+    assert!(state.bindings.iter().any(|binding| {
+        binding.param_key == "macro1" && binding.channel == 0 && binding.cc == 78
+    }));
+    crate::audio_runtime::drain_render_control_events(
+        &crate::rt_safety::ControlContext::new(),
+        &plugin.shared_state,
+        &params,
+    );
+    assert_eq!(
+        plugin.shared_state.ui.midi_cc_queue.pop(),
+        Some((0, 78, 91))
+    );
+    assert_midi_mapping_diagnostics_zero(&plugin);
+}
+
+#[test]
+fn plugin_process_midi_mapping_regressions() {
+    plugin_process_applies_macro_midi_mapping();
+    plugin_process_applies_volume_midi_mapping();
+    plugin_process_counts_none_impact_mapping_as_applied();
+    plugin_process_applies_all_mappings_for_one_cc();
+    plugin_process_forwards_cc_and_captures_learn_without_processor();
+}
+
 #[cfg(debug_assertions)]
 #[test]
 fn audio_thread_does_not_allocate_processing_empty_block() {
