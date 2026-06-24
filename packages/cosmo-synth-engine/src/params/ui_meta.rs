@@ -79,6 +79,21 @@ const MOD_ENV_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     },
 ];
 
+const MOD_ENV_RETRIG_MODE_LABELS_V1: [EngineEnumValueLabelV1; 3] = [
+    EngineEnumValueLabelV1 {
+        value: "poly",
+        label: "Poly",
+    },
+    EngineEnumValueLabelV1 {
+        value: "mono",
+        label: "Mono",
+    },
+    EngineEnumValueLabelV1 {
+        value: "legato",
+        label: "Legato",
+    },
+];
+
 const LFO_RATE_MODE_LABELS_V1: [EngineEnumValueLabelV1; 2] = [
     EngineEnumValueLabelV1 {
         value: "hz",
@@ -133,7 +148,7 @@ const LFO_SYNC_DIVISION_LABELS_V1: [EngineEnumValueLabelV1; 10] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 59] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 60] = [
     EngineParamUiMetaV1 {
         key: "volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
@@ -304,6 +319,12 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 59] = [
         key: "modEnvMode",
         readout_format: EngineParamReadoutFormatV1::EnumMap {
             values: &MOD_ENV_MODE_LABELS_V1,
+        },
+    },
+    EngineParamUiMetaV1 {
+        key: "modEnvRetrigMode",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &MOD_ENV_RETRIG_MODE_LABELS_V1,
         },
     },
     EngineParamUiMetaV1 {

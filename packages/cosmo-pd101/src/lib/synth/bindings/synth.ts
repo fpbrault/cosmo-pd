@@ -373,6 +373,7 @@ export type ModEnvParams = {
 	sustain: number | null,
 	release: number | null,
 	mode?: ModEnvMode,
+	retrigMode?: ModEnvRetrigMode,
 };
 
 export type ModEnvPresetV1 = {
@@ -380,6 +381,14 @@ export type ModEnvPresetV1 = {
 	label: string,
 	params: ModEnvParams,
 };
+
+/**
+ *  Modulation envelope retrigger mode:
+ *  - `Mono` -> envelope re-attacks on every note-on.
+ *  - `Legato` -> envelope continues its current phase when a new note is played
+ *    while other notes are still held (only retriggers after all keys are released).
+ */
+export type ModEnvRetrigMode = "poly" | "mono" | "legato";
 
 /**  Collection of modulation routes. */
 export type ModMatrix = {
@@ -4748,7 +4757,8 @@ export const MOD_ENV_PRESET_DATA: ModEnvPresetV1[] = [
       "decay": 0.16,
       "sustain": 0.08,
       "release": 0.14,
-      "mode": "adsr"
+      "mode": "adsr",
+      "retrigMode": "mono"
     }
   },
   {
@@ -4759,7 +4769,8 @@ export const MOD_ENV_PRESET_DATA: ModEnvPresetV1[] = [
       "decay": 1.2,
       "sustain": 0.75,
       "release": 1.5,
-      "mode": "adsr"
+      "mode": "adsr",
+      "retrigMode": "mono"
     }
   },
   {
@@ -4770,7 +4781,8 @@ export const MOD_ENV_PRESET_DATA: ModEnvPresetV1[] = [
       "decay": 0.28,
       "sustain": 0.66,
       "release": 0.95,
-      "mode": "adsr"
+      "mode": "adsr",
+      "retrigMode": "mono"
     }
   }
 ];
@@ -5179,6 +5191,27 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
         {
           "label": "ADR",
           "value": "adr"
+        }
+      ]
+    }
+  },
+  {
+    "key": "modEnvRetrigMode",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "Poly",
+          "value": "poly"
+        },
+        {
+          "label": "Mono",
+          "value": "mono"
+        },
+        {
+          "label": "Legato",
+          "value": "legato"
         }
       ]
     }
@@ -5838,7 +5871,8 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "decay": 0.1,
     "sustain": 0.5,
     "release": 0.2,
-    "mode": "adsr"
+    "mode": "adsr",
+    "retrigMode": "poly"
   },
   "fxSlots": [
     {

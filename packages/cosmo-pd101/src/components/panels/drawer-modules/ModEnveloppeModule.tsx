@@ -6,9 +6,12 @@ import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import type { ModEnvMode } from "@/lib/synth/bindings/synth";
+import type { ModEnvMode, ModEnvRetrigMode } from "@/lib/synth/bindings/synth";
 import { MOD_ENV_PRESET_DATA } from "@/lib/synth/bindings/synth";
-import { MOD_ENV_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
+import {
+	MOD_ENV_MODE_TOOLTIPS,
+	MOD_ENV_RETRIG_MODE_TOOLTIPS,
+} from "@/lib/synth/paramMeta";
 import {
 	buildAdsrGeometry,
 	envSecondsToNorm,
@@ -35,6 +38,8 @@ export default function ModEnveloppeModule() {
 		useSynthParam("modEnvRelease");
 	const { value: modEnvMode, setValue: setModEnvMode } =
 		useSynthParam("modEnvMode");
+	const { value: modEnvRetrigMode, setValue: setModEnvRetrigMode } =
+		useSynthParam("modEnvRetrigMode");
 	const isAdr = modEnvMode === "adr";
 
 	useEffect(() => {
@@ -106,6 +111,9 @@ export default function ModEnveloppeModule() {
 		setModEnvSustain(preset.params.sustain as number);
 		setModEnvRelease(preset.params.release as number);
 		setModEnvMode((preset.params.mode ?? "adsr") as ModEnvMode);
+		setModEnvRetrigMode(
+			(preset.params.retrigMode ?? "poly") as ModEnvRetrigMode,
+		);
 		requestApplyModulePreset({
 			module: "modEnv",
 			preset: preset.id,
@@ -123,13 +131,30 @@ export default function ModEnveloppeModule() {
 			presetOptions={MOD_ENV_PRESET_DATA}
 			onPresetChange={handlePresetChange}
 		>
+			<div className="col-span-full flex gap-2">
 				<BadgeToggle
-				active={isAdr}
-				label="ADR"
-				className="col-span-full text-nowrap px-0"
-				onClick={() => setModEnvMode(isAdr ? "adsr" : "adr")}
-				tooltip={MOD_ENV_MODE_TOOLTIPS[isAdr ? "adr" : "adsr"]}
-			/>
+					active={isAdr}
+					label="ADR"
+					className="text-nowrap px-0"
+					onClick={() => setModEnvMode(isAdr ? "adsr" : "adr")}
+					tooltip={MOD_ENV_MODE_TOOLTIPS[isAdr ? "adr" : "adsr"]}
+				/>
+				<div className="join">
+					{(["poly", "mono", "legato"] as const).map((mode) => (
+						<button
+							key={mode}
+							type="button"
+							className={`join-item btn btn-xs ${
+								modEnvRetrigMode === mode ? "btn-primary" : ""
+							}`}
+							onClick={() => setModEnvRetrigMode(mode)}
+							title={MOD_ENV_RETRIG_MODE_TOOLTIPS[mode]}
+						>
+							{mode === "poly" ? "Poly" : mode === "mono" ? "Mono" : "Legato"}
+						</button>
+					))}
+				</div>
+			</div>
 			<ModEnvDisplay
 				previewSvgRef={previewSvgRef}
 				envGeometry={envGeometry}
@@ -176,7 +201,6 @@ export default function ModEnveloppeModule() {
 						formatEnvTime(engineValue),
 				}}
 			/>
-		
 
 			<SynthParamKnob
 				paramKey="modEnvSustain"

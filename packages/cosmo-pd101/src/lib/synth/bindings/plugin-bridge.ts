@@ -260,7 +260,16 @@ export type ModEnvParams = {
 	sustain: number | null,
 	release: number | null,
 	mode?: ModEnvMode,
+	retrigMode?: ModEnvRetrigMode,
 };
+
+/**
+ *  Modulation envelope retrigger mode:
+ *  - `Mono` -> envelope re-attacks on every note-on.
+ *  - `Legato` -> envelope continues its current phase when a new note is played
+ *    while other notes are still held (only retriggers after all keys are released).
+ */
+export type ModEnvRetrigMode = "poly" | "mono" | "legato";
 
 /**  Collection of modulation routes. */
 export type ModMatrix = {

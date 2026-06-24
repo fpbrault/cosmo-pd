@@ -101,7 +101,7 @@ impl AdsrEnv {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::params::ModEnvMode;
+    use crate::params::{ModEnvMode, ModEnvRetrigMode};
 
     fn params(mode: ModEnvMode) -> ModEnvParams {
         ModEnvParams {
@@ -110,6 +110,7 @@ mod tests {
             sustain: 0.5,
             release: 0.2,
             mode,
+            retrig_mode: ModEnvRetrigMode::default(),
         }
     }
 

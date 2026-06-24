@@ -37,9 +37,24 @@ pub enum ModEnvMode {
     Adr,
 }
 
+/// Modulation envelope retrigger mode:
+/// - `Mono` -> envelope re-attacks on every note-on.
+/// - `Legato` -> envelope continues its current phase when a new note is played
+///   while other notes are still held (only retriggers after all keys are released).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum ModEnvRetrigMode {
+    #[default]
+    Poly,
+    Mono,
+    Legato,
+}
+
 /// ADSR mod envelope parameters.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
 pub struct ModEnvParams {
     pub attack: f32,
     pub decay: f32,
@@ -47,6 +62,8 @@ pub struct ModEnvParams {
     pub release: f32,
     #[serde(default)]
     pub mode: ModEnvMode,
+    #[serde(default)]
+    pub retrig_mode: ModEnvRetrigMode,
 }
 
 impl Default for ModEnvParams {
@@ -57,6 +74,7 @@ impl Default for ModEnvParams {
             sustain: 0.5,
             release: 0.2,
             mode: ModEnvMode::default(),
+            retrig_mode: ModEnvRetrigMode::default(),
         }
     }
 }
@@ -203,10 +221,16 @@ mod tests {
     }
 
     #[test]
+    fn mod_env_params_default_retrig_mode_is_poly() {
+        assert_eq!(ModEnvParams::default().retrig_mode, ModEnvRetrigMode::Poly);
+    }
+
+    #[test]
     fn mod_env_params_legacy_json_defaults_mode_to_adsr() {
         let json = r#"{"attack":0.01,"decay":0.1,"sustain":0.5,"release":0.2}"#;
         let params: ModEnvParams = serde_json::from_str(json).expect("valid legacy mod env json");
         assert_eq!(params.mode, ModEnvMode::Adsr);
+        assert_eq!(params.retrig_mode, ModEnvRetrigMode::Poly);
     }
 
     #[test]
@@ -218,11 +242,34 @@ mod tests {
                 sustain: 0.0,
                 release: 0.0,
                 mode,
+                retrig_mode: ModEnvRetrigMode::default(),
             };
             let json = serde_json::to_string(&params).expect("serialize mod env params");
             let back: ModEnvParams =
                 serde_json::from_str(&json).expect("deserialize mod env params");
             assert_eq!(back.mode, mode);
+        }
+    }
+
+    #[test]
+    fn mod_env_params_retrig_mode_roundtrips_through_serde() {
+        for retrig in [
+            ModEnvRetrigMode::Poly,
+            ModEnvRetrigMode::Mono,
+            ModEnvRetrigMode::Legato,
+        ] {
+            let params = ModEnvParams {
+                attack: 0.0,
+                decay: 0.0,
+                sustain: 0.0,
+                release: 0.0,
+                mode: ModEnvMode::default(),
+                retrig_mode: retrig,
+            };
+            let json = serde_json::to_string(&params).expect("serialize mod env params");
+            let back: ModEnvParams =
+                serde_json::from_str(&json).expect("deserialize mod env params");
+            assert_eq!(back.retrig_mode, retrig);
         }
     }
 }

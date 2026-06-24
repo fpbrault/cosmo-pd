@@ -474,6 +474,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -956,6 +957,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -1419,6 +1421,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.90310544,
 					release: 2.7615235,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -1878,6 +1881,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -2295,6 +2299,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -2715,6 +2720,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.4,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -3152,6 +3158,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -3600,6 +3607,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -4025,6 +4033,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -4463,6 +4472,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -4850,6 +4860,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -5316,6 +5327,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -5754,6 +5766,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -6175,6 +6188,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -6596,6 +6610,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -7017,6 +7032,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -7455,6 +7471,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -7859,6 +7876,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -8297,6 +8315,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -8718,6 +8737,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -9122,6 +9142,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -9543,6 +9564,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -9947,6 +9969,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -10368,6 +10391,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -10806,6 +10830,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -11244,6 +11269,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -11682,6 +11708,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -12120,6 +12147,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -12541,6 +12569,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -12962,6 +12991,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -13366,6 +13396,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -13787,6 +13818,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -14225,6 +14257,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -14646,6 +14679,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -15067,6 +15101,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -15505,6 +15540,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -15909,6 +15945,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -16347,6 +16384,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -16768,6 +16806,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -17189,6 +17228,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -17610,6 +17650,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -18031,6 +18072,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -18435,6 +18477,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -18873,6 +18916,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -19277,6 +19321,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -19715,6 +19760,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -20210,6 +20256,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -20656,6 +20703,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -21060,6 +21108,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -21464,6 +21513,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -21885,6 +21935,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -22289,6 +22340,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -22693,6 +22745,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -23097,6 +23150,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -23548,6 +23602,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -24001,6 +24056,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -24405,6 +24461,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -24843,6 +24900,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -25264,6 +25322,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -25668,6 +25727,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -26106,6 +26166,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -26527,6 +26588,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -26931,6 +26993,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -27352,6 +27415,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -27790,6 +27854,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -28211,6 +28276,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -28632,6 +28698,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -29053,6 +29120,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -29474,6 +29542,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -29912,6 +29981,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -30333,6 +30403,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -30771,6 +30842,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -31209,6 +31281,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -31630,6 +31703,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -32034,6 +32108,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -32438,6 +32513,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -32842,6 +32918,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -33246,6 +33323,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -33650,6 +33728,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -34088,6 +34167,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -34509,6 +34589,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -34930,6 +35011,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -35334,6 +35416,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -35755,6 +35838,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -36193,6 +36277,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -36597,6 +36682,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -37001,6 +37087,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -37422,6 +37509,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -37860,6 +37948,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -38264,6 +38353,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -38702,6 +38792,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -39106,6 +39197,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -39544,6 +39636,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -39982,6 +40075,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -40420,6 +40514,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -40858,6 +40953,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -41279,6 +41375,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -41717,6 +41814,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -42155,6 +42253,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -42576,6 +42675,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -43014,6 +43114,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -43435,6 +43536,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -43856,6 +43958,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -44294,6 +44397,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -44732,6 +44836,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -45136,6 +45241,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -45547,6 +45653,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -45975,6 +46082,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -46396,6 +46504,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -46800,6 +46909,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -47245,6 +47355,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -47702,6 +47813,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -48123,6 +48235,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -48517,6 +48630,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -48945,6 +49059,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -49349,6 +49464,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -49770,6 +49886,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -50194,6 +50311,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -50649,6 +50767,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -51121,6 +51240,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -51559,6 +51679,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -52010,6 +52131,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -52474,6 +52596,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{
@@ -52895,6 +53018,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					sustain: 0.5,
 					release: 0.2,
 					mode: "adsr",
+					retrigMode: "mono",
 				},
 				fxSlots: [
 					{

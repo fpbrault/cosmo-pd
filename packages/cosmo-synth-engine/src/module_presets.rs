@@ -14,7 +14,7 @@ use crate::{
         shimmer_verb::apply_shimmer_verb_preset, tremolo::apply_tremolo_preset,
         vibrato::apply_vibrato_preset, wavefolder::apply_wavefolder_preset,
     },
-    params::{LfoParams, LfoWaveform, ModEnvMode, ModEnvParams, SynthParams},
+    params::{LfoParams, LfoWaveform, ModEnvMode, ModEnvParams, ModEnvRetrigMode, SynthParams},
 };
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -128,6 +128,7 @@ const MOD_ENV_PRESET_DATA: [ModEnvPresetV1; 3] = [
             sustain: 0.08,
             release: 0.14,
             mode: ModEnvMode::Adsr,
+            retrig_mode: ModEnvRetrigMode::Mono,
         },
     },
     ModEnvPresetV1 {
@@ -139,6 +140,7 @@ const MOD_ENV_PRESET_DATA: [ModEnvPresetV1; 3] = [
             sustain: 0.75,
             release: 1.5,
             mode: ModEnvMode::Adsr,
+            retrig_mode: ModEnvRetrigMode::Mono,
         },
     },
     ModEnvPresetV1 {
@@ -150,6 +152,7 @@ const MOD_ENV_PRESET_DATA: [ModEnvPresetV1; 3] = [
             sustain: 0.66,
             release: 0.95,
             mode: ModEnvMode::Adsr,
+            retrig_mode: ModEnvRetrigMode::Mono,
         },
     },
 ];

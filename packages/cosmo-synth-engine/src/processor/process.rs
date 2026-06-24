@@ -6,8 +6,8 @@ use alloc::sync::Arc;
 
 use crate::dsp_utils::{lfo_output_with_symmetry, random_hold_value};
 use crate::params::{
-    LfoRateMode, LfoSyncDivision, LineParams, MAX_VOICES, ModDestination, ModMatrixCache,
-    SynthParams,
+    LfoRateMode, LfoSyncDivision, LineParams, MAX_VOICES, ModDestination, ModEnvRetrigMode,
+    ModMatrixCache, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
 use crate::voice::{ModSources, VoiceRenderContext};
@@ -109,11 +109,21 @@ impl CosmoProcessor {
         let mut prev_random = self.last_runtime_mod_sources.random;
 
         for sample_out in output.iter_mut() {
+            let is_shared_retrig = p.mod_env.retrig_mode != ModEnvRetrigMode::Poly;
+            if is_shared_retrig {
+                self.shared_mod_env.advance(&p.mod_env, sr);
+            }
+
             let (source_mod_env, source_velocity) = self
                 .runtime_mod_source_voice_index()
                 .map(|voice_idx| {
                     let voice = &self.voices[voice_idx];
-                    (voice.mod_env.output, voice.velocity)
+                    let mod_env = if is_shared_retrig {
+                        self.shared_mod_env.output
+                    } else {
+                        voice.mod_env.output
+                    };
+                    (mod_env, voice.velocity)
                 })
                 .unwrap_or((0.0, 0.0));
 
@@ -202,7 +212,12 @@ impl CosmoProcessor {
                 .runtime_mod_source_voice_index()
                 .map(|voice_idx| {
                     let voice = &self.voices[voice_idx];
-                    (voice.mod_env.output, voice.velocity)
+                    let mod_env = if is_shared_retrig {
+                        self.shared_mod_env.output
+                    } else {
+                        voice.mod_env.output
+                    };
+                    (mod_env, voice.velocity)
                 })
                 .unwrap_or((0.0, 0.0));
             self.last_runtime_mod_sources = RuntimeModSources {
@@ -388,6 +403,7 @@ impl CosmoProcessor {
         line1_plan: CompiledLinePlan,
         line2_plan: CompiledLinePlan,
     ) -> f32 {
+        let is_shared_retrig = p.mod_env.retrig_mode != ModEnvRetrigMode::Poly;
         let render_ctx = VoiceRenderContext {
             p,
             lfo_mod_val: lfos.lfo1,
@@ -408,6 +424,11 @@ impl CosmoProcessor {
             effective_tempo_bpm,
             line1_plan: &line1_plan,
             line2_plan: &line2_plan,
+            shared_mod_env_val: if is_shared_retrig {
+                self.shared_mod_env.output
+            } else {
+                0.0
+            },
         };
         let render_limit = self.render_voice_limit();
         let mut mixed = 0.0_f32;

@@ -25,7 +25,7 @@ use crate::params::{
 };
 use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};
-use crate::voice::Voice;
+use crate::voice::{AdsrEnv, Voice};
 
 use self::cz_dac::CzDacColor;
 pub use self::state::{
@@ -81,6 +81,7 @@ pub struct CosmoProcessor {
     envelope_timing: EnvelopeTimingCache,
     voice_limit: usize,
     render_voice_limit: usize,
+    pub shared_mod_env: AdsrEnv,
 }
 
 impl CosmoProcessor {
@@ -124,6 +125,7 @@ impl CosmoProcessor {
             envelope_timing: EnvelopeTimingCache::new(sample_rate),
             voice_limit: DEFAULT_VOICE_LIMIT,
             render_voice_limit: DEFAULT_VOICE_LIMIT,
+            shared_mod_env: AdsrEnv::default(),
         };
         proc.update_fx();
         proc
@@ -447,8 +449,8 @@ mod tests {
     use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
     use crate::params::{
         Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,
-        ModDestination, ModRoute, ModSource, PolyMode, ShimmerVerbParams, StepEnvData,
-        VibratoParams,
+        ModDestination, ModEnvRetrigMode, ModRoute, ModSource, PolyMode, ShimmerVerbParams,
+        StepEnvData, VibratoParams,
     };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
@@ -1520,6 +1522,76 @@ mod tests {
             delta > 0.1,
             "expected transient mistracking color to alter output (delta={})",
             delta,
+        );
+    }
+
+    #[test]
+    fn mono_legato_preserves_mod_env_on_overlapping_note() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        proc.params_mut().mod_env.retrig_mode = ModEnvRetrigMode::Legato;
+        proc.params_mut().mod_env.attack = 0.0;
+        proc.params_mut().mod_env.decay = 0.5;
+        proc.params_mut().mod_env.sustain = 0.7;
+        proc.params_mut().mod_env.release = 0.5;
+
+        let first_note = 60_u8;
+        proc.note_on(first_note, midi_note_to_freq(first_note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(first_note)
+            .expect("missing first note");
+
+        let mut scratch = [0.0_f32; 1];
+        for _ in 0..1024 {
+            proc.process(&mut scratch);
+        }
+        let held = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            held > 0.0,
+            "mod env should be in decay/sustain (>0) before overlap, got {held}",
+        );
+
+        let next_note = 67_u8;
+        proc.note_on(next_note, midi_note_to_freq(next_note), 1.0);
+        process_until_pending_mono_retrigger_clears(&mut proc);
+
+        let preserved = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            preserved > 0.0,
+            "legato overlap should preserve mod env (not reset to zero), got {preserved}",
+        );
+    }
+
+    #[test]
+    fn mono_default_retrig_resets_mod_env_on_overlapping_note() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        proc.params_mut().mod_env.attack = 0.0;
+        proc.params_mut().mod_env.decay = 0.5;
+        proc.params_mut().mod_env.sustain = 0.7;
+        proc.params_mut().mod_env.release = 0.5;
+
+        let first_note = 60_u8;
+        proc.note_on(first_note, midi_note_to_freq(first_note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(first_note)
+            .expect("missing first note");
+
+        let mut scratch = [0.0_f32; 1];
+        for _ in 0..1024 {
+            proc.process(&mut scratch);
+        }
+        let held = proc.voices[voice_idx].mod_env.output;
+        assert!(held > 0.0, "mod env should be > 0 before overlap");
+
+        let next_note = 67_u8;
+        proc.note_on(next_note, midi_note_to_freq(next_note), 1.0);
+        process_until_pending_mono_retrigger_clears(&mut proc);
+
+        let retrigged = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            retrigged < held,
+            "default mono retrig should restart mod env from a lower value (retrigged={retrigged}, held={held})",
         );
     }
 }

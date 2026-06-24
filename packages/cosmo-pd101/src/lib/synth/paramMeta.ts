@@ -95,6 +95,7 @@ const ENUM_VALUE_KEYS: Partial<Record<string, readonly string[]>> = {
 	filterType: ["lp", "hp", "bp"],
 	portamentoMode: ["rate", "time"],
 	modEnvMode: ["adsr", "adr"],
+	modEnvRetrigMode: ["poly", "mono", "legato"],
 };
 
 function buildEnumTooltipMap(key: string): Partial<Record<string, string>> {
@@ -128,3 +129,7 @@ export const PORTAMENTO_MODE_TOOLTIPS = buildEnumTooltipMap("portamentoMode");
 
 /** Canonical tooltips for `modEnvMode` enum values. */
 export const MOD_ENV_MODE_TOOLTIPS = buildEnumTooltipMap("modEnvMode");
+
+/** Canonical tooltips for `modEnvRetrigMode` enum values. */
+export const MOD_ENV_RETRIG_MODE_TOOLTIPS =
+	buildEnumTooltipMap("modEnvRetrigMode");
