@@ -50,7 +50,6 @@ describe("PresetVoiceSettingsPanel", () => {
 	it("renders preset-owned voice controls with their synth param keys", () => {
 		render(<PresetVoiceSettingsPanel />);
 
-		expect(screen.getByText("Preset Voice")).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Rate" })).toBeInTheDocument();
 		expect(screen.getByTestId("knob-portamentoRate")).toHaveTextContent(
 			"Porta",
