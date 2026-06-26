@@ -158,7 +158,7 @@
 			"tooltip": "Sets modulation envelope decay time."
 		},
 		"modEnvSustain": {
-			"tooltip": "Sets sustained modulation level while note is held."
+			"tooltip": "In ADSR: level held while note is down. In ADR: decay target; release starts from this level."
 		},
 		"modEnvRelease": {
 			"tooltip": "Sets modulation envelope release time after note off."
@@ -263,7 +263,7 @@
 		},
 		"modEnvMode": {
 			"adsr": "Sustained ADSR envelope: decay falls to the sustain level and holds while the note is played.",
-			"adr": "One-shot ADR envelope: decay continues to zero; release triggers from the current level on note off."
+			"adr": "One-shot ADR envelope: attack rises to maximum, decay falls to the sustain level, then release falls to zero. Note release does not interrupt the contour."
 		},
 		"modEnvRetrigMode": {
 			"poly": "Each voice has its own independent modulation envelope (default).",

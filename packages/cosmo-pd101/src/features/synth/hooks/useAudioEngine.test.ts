@@ -389,6 +389,12 @@ describe("useAudioEngine", () => {
 					note: 60,
 					envNote: 60,
 					velocity: 100,
+					modEnv: {
+						value: 0.4,
+						phase: "release",
+						releasing: true,
+						releaseStart: 0.5,
+					},
 					line1: {
 						dco: {
 							value: 0.5,
@@ -450,6 +456,46 @@ describe("useAudioEngine", () => {
 					detail: voices,
 				}),
 			);
+		});
+
+		it("normalizes missing mod env telemetry on runtime voice states", async () => {
+			const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+
+			const { result } = renderUseAudioEngine();
+
+			await startAudio(result);
+			await waitForWorkletInit();
+
+			act(() => {
+				mocks.mockWorkletNode.port.onmessage?.({
+					data: {
+						type: "runtimeVoiceStates",
+						voices: [
+							{
+								index: 0,
+								active: true,
+								isReleasing: false,
+								sustained: false,
+								note: 60,
+								envNote: 60,
+								velocity: 1,
+								line1: {},
+								line2: {},
+							},
+						],
+					},
+				});
+			});
+
+			const event = dispatchSpy.mock.calls.find(
+				([arg]) => (arg as CustomEvent).type === "cz-runtime-voice-states",
+			)?.[0] as CustomEvent | undefined;
+			expect(event?.detail[0].modEnv).toEqual({
+				value: 0,
+				phase: "idle",
+				releasing: false,
+				releaseStart: 0,
+			});
 		});
 
 		it("handles 'performanceMetrics' message: dispatches custom event", async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	adsrPreviewPath,
 	buildAdsrGeometry,
+	estimateEnvelopeMarkerForPhase,
 	type ModEnvPreviewMode,
 } from "./modEnvelopePreview";
 
@@ -21,14 +22,17 @@ describe("buildAdsrGeometry", () => {
 		expect(geo.x4).toBeGreaterThanOrEqual(geo.x3);
 	});
 
-	it("ADR: ySustain equals bottom (decay hits baseline)", () => {
+	it("ADR: ySustain reflects the sustain level (not baseline)", () => {
 		const geo = buildAdsrGeometry(ATTACK, DECAY, SUSTAIN, RELEASE, "adr");
-		expect(geo.ySustain).toBe(geo.bottom);
+		const span = (56 - 8) * 0.78;
+		expect(geo.ySustain).toBeCloseTo(56 - SUSTAIN * span, 6);
+		expect(geo.ySustain).toBeLessThan(geo.bottom);
 	});
 
-	it("ADR: ignores sustain when computing ySustain even with sustain=1", () => {
+	it("ADR: ySustain tracks sustain value (sustain=1 → ySustain at top)", () => {
 		const geo = buildAdsrGeometry(ATTACK, DECAY, 1, RELEASE, "adr");
-		expect(geo.ySustain).toBe(geo.bottom);
+		const span = (56 - 8) * 0.78;
+		expect(geo.ySustain).toBeCloseTo(56 - 1 * span, 6);
 	});
 
 	it("default mode is ADSR (ySustain reflects sustain)", () => {
@@ -69,7 +73,7 @@ describe("adsrPreviewPath", () => {
 		expect(coords[4].y).toBeCloseTo(geo.bottom, 1);
 	});
 
-	it("ADR path lands decay at the baseline", () => {
+	it("ADR path lands decay at sustain level and immediately releases", () => {
 		const geo = buildAdsrGeometry(ATTACK, DECAY, SUSTAIN, RELEASE, "adr");
 		const path = adsrPreviewPath(ATTACK, DECAY, SUSTAIN, RELEASE, "adr");
 		const coords = parseCoords(path);
@@ -78,8 +82,8 @@ describe("adsrPreviewPath", () => {
 		expect(coords[0].y).toBeCloseTo(geo.bottom, 1);
 		expect(coords[1].x).toBeCloseTo(geo.x1, 1);
 		expect(coords[1].y).toBeCloseTo(geo.top, 1);
-		expect(coords[2].y).toBe(geo.bottom);
-		expect(coords[3].y).toBe(geo.bottom);
+		expect(coords[2].y).toBeCloseTo(geo.ySustain, 1);
+		expect(coords[3].y).toBeCloseTo(geo.ySustain, 1);
 		expect(coords[4].x).toBeCloseTo(geo.x4, 1);
 		expect(coords[4].y).toBeCloseTo(geo.bottom, 1);
 	});
@@ -91,5 +95,22 @@ describe("adsrPreviewPath", () => {
 				adsrPreviewPath(ATTACK, DECAY, SUSTAIN, RELEASE, mode),
 			).not.toThrow();
 		}
+	});
+});
+
+describe("estimateEnvelopeMarkerForPhase", () => {
+	it("places release markers on the release segment without using value deltas", () => {
+		const geo = buildAdsrGeometry(ATTACK, DECAY, SUSTAIN, RELEASE, "adsr");
+		const marker = estimateEnvelopeMarkerForPhase(
+			geo,
+			SUSTAIN / 2,
+			SUSTAIN,
+			"release",
+		);
+
+		expect(marker.x).toBeGreaterThan(geo.x3);
+		expect(marker.x).toBeLessThan(geo.x4);
+		expect(marker.y).toBeGreaterThan(geo.ySustain);
+		expect(marker.y).toBeLessThan(geo.bottom);
 	});
 });

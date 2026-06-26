@@ -21,7 +21,8 @@ use crate::envelope::{EnvelopeTimingCache, normalize_synth_params_envelopes_to_r
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{
-    DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, SynthParams,
+    DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, ModEnvRetrigMode,
+    SynthParams,
 };
 use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};
@@ -29,8 +30,8 @@ use crate::voice::{AdsrEnv, Voice};
 
 use self::cz_dac::CzDacColor;
 pub use self::state::{
-    MonoStackEntry, NoteEntry, RuntimeModSources, RuntimeVoiceDebugState, RuntimeVoiceEnvState,
-    RuntimeVoiceLineState,
+    MonoStackEntry, NoteEntry, RuntimeModEnvState, RuntimeModSources, RuntimeVoiceDebugState,
+    RuntimeVoiceEnvState, RuntimeVoiceLineState,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -136,6 +137,13 @@ impl CosmoProcessor {
     }
 
     pub fn runtime_voice_debug_state(&self) -> Vec<RuntimeVoiceDebugState> {
+        let is_shared_mod_env = self.params.mod_env.retrig_mode != ModEnvRetrigMode::Poly;
+        let shared_mod_env = RuntimeModEnvState {
+            value: self.shared_mod_env.output,
+            phase: self.shared_mod_env.phase(),
+            releasing: self.shared_mod_env.is_releasing(),
+            release_start: self.shared_mod_env.release_start(),
+        };
         self.voices
             .iter()
             .enumerate()
@@ -155,6 +163,16 @@ impl CosmoProcessor {
                 anti_click_fade: voice.anti_click_fade,
                 anti_click_attack: voice.anti_click_attack,
                 release_tail_level: voice.release_tail_level,
+                mod_env: if is_shared_mod_env {
+                    shared_mod_env
+                } else {
+                    RuntimeModEnvState {
+                        value: voice.mod_env.output,
+                        phase: voice.mod_env.phase(),
+                        releasing: voice.mod_env.is_releasing(),
+                        release_start: voice.mod_env.release_start(),
+                    }
+                },
                 line1: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
                         value: voice.line1_env.dco.output,
@@ -449,8 +467,8 @@ mod tests {
     use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
     use crate::params::{
         Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,
-        ModDestination, ModEnvRetrigMode, ModRoute, ModSource, PolyMode, ShimmerVerbParams,
-        StepEnvData, VibratoParams,
+        ModDestination, ModEnvMode, ModEnvRetrigMode, ModRoute, ModSource, PolyMode,
+        ShimmerVerbParams, StepEnvData, VibratoParams,
     };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
@@ -1592,6 +1610,379 @@ mod tests {
         assert!(
             retrigged < held,
             "default mono retrig should restart mod env from a lower value (retrigged={retrigged}, held={held})",
+        );
+    }
+
+    #[test]
+    fn adsr_mod_env_releases_over_time_after_note_off() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        // Default Poly retrig, ADSR with generous release time
+        proc.params_mut().mod_env.attack = 0.001;
+        proc.params_mut().mod_env.decay = 0.1;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let note = 60_u8;
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("voice should be active");
+
+        // Process past attack+decay into sustain
+        let sustain_samples = ((0.001 + 0.1) * proc.sample_rate) as usize + 100;
+        let mut scratch = [0.0_f32; 64];
+        for _ in 0..sustain_samples / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+
+        let pre_release = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            (pre_release - 0.5).abs() < 0.01,
+            "mod env should be at sustain level before note-off, got {pre_release}",
+        );
+
+        // Note-off → should start releasing at release rate
+        proc.note_off(note);
+
+        // Process a few samples — output should drop from sustain
+        proc.process(&mut scratch);
+        let one_block = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            one_block < pre_release,
+            "mod env should decrease after note-off: {one_block} >= {pre_release}",
+        );
+
+        // Process enough samples for a full release (release=0.2s = 9600 @ 48kHz)
+        // Add margin — should hit zero within 0.25s
+        let release_samples = (0.25 * proc.sample_rate) as usize;
+        for _ in 0..release_samples / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+
+        let after_release = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            after_release.abs() < 1e-4,
+            "mod env should reach near-zero after full release time, got {after_release}",
+        );
+    }
+
+    #[test]
+    fn adsr_release_during_decay_jumps_to_sustain() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_env.attack = 0.001;
+        proc.params_mut().mod_env.decay = 0.3;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let note = 60_u8;
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("voice should be active");
+
+        // Process just past attack into decay (0.005s = ~240 samples)
+        let midway_samples = (0.005 * proc.sample_rate) as usize;
+        let mut scratch = [0.0_f32; 64];
+        for _ in 0..midway_samples / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+
+        // Should still be in decay, above sustain
+        let decay_level = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            decay_level > 0.5 && decay_level < 1.0,
+            "should be in decay (between 0.5 and 1.0), got {decay_level}",
+        );
+
+        // Note-off during decay — should jump to sustain level 0.5
+        proc.note_off(note);
+
+        proc.process(&mut scratch);
+        let release_start = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            (release_start - 0.5).abs() < 0.01,
+            "release should jump to sustain level (0.5), got {release_start}",
+        );
+
+        // After full release (0.2s), should be near zero
+        let release_samples = (0.3 * proc.sample_rate) as usize;
+        for _ in 0..release_samples / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+        let after = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            after.abs() < 1e-4,
+            "mod env should reach zero after release time, got {after}",
+        );
+    }
+
+    #[test]
+    fn adsr_release_during_attack_jumps_to_sustain() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_env.attack = 0.1;
+        proc.params_mut().mod_env.decay = 0.3;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let note = 60_u8;
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("voice should be active");
+
+        // Process a few samples into attack (0.01s = ~480 samples at 48kHz)
+        let attack_midway = (0.01 * proc.sample_rate) as usize;
+        let mut scratch = [0.0_f32; 64];
+        for _ in 0..attack_midway / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+
+        // Should be in attack, not yet at peak
+        let attack_level = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            attack_level > 0.0 && attack_level < 1.0,
+            "should be in attack (between 0 and 1.0), got {attack_level}",
+        );
+
+        // Note-off during attack — should jump to sustain level 0.5
+        proc.note_off(note);
+
+        proc.process(&mut scratch);
+        let release_start = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            (release_start - 0.5).abs() < 0.01,
+            "release should jump to sustain level (0.5), got {release_start}",
+        );
+
+        // After full release (0.2s), should be near zero
+        let release_samples = (0.3 * proc.sample_rate) as usize;
+        for _ in 0..release_samples / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+        let after = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            after.abs() < 1e-4,
+            "mod env should reach zero after release time, got {after}",
+        );
+    }
+
+    #[test]
+    fn adr_note_off_does_not_interrupt_env_progression() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_env.attack = 0.001;
+        proc.params_mut().mod_env.decay = 0.1;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+        proc.params_mut().mod_env.mode = ModEnvMode::Adr;
+
+        let note = 60_u8;
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("voice should be active");
+
+        // Process past attack into decay (0.005s)
+        let midway = (0.005 * proc.sample_rate) as usize;
+        let mut scratch = [0.0_f32; 64];
+        for _ in 0..midway / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+
+        let before = proc.voices[voice_idx].mod_env.output;
+        assert!(before > 0.0, "ADR should be active before note_off");
+
+        // Note-off — ADR ignores this
+        proc.note_off(note);
+
+        // Next sample should still show progression (not reset to 0)
+        proc.process(&mut scratch);
+        let after_note_off = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            after_note_off > 0.0,
+            "ADR note_off should NOT silence envelope, got {after_note_off}",
+        );
+
+        // Envelope should complete its natural progression through decay→release
+        // Without being cut short by note_off
+        let total_samples = ((0.001 + 0.3) * proc.sample_rate) as usize;
+        for _ in 0..total_samples / 64 + 2 {
+            proc.process(&mut scratch);
+        }
+
+        // Should eventually reach zero (natural progression)
+        let final_val = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            final_val.abs() < 1e-4,
+            "ADR should reach zero naturally, got {final_val}",
+        );
+
+        // But should NOT go to zero instantly — verify progression continues
+        // by checking values during the progression
+        // Replay with samples captured
+    }
+
+    #[test]
+    fn adr_note_off_during_decay_leaves_env_untouched_on_first_advance() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_env.attack = 0.001;
+        proc.params_mut().mod_env.decay = 0.3;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+        proc.params_mut().mod_env.mode = ModEnvMode::Adr;
+
+        let note = 60_u8;
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc
+            .find_voice_for_note(note)
+            .expect("voice should be active");
+
+        // Process into decay where output > sustain
+        let into_decay = (0.01 * proc.sample_rate) as usize;
+        let mut scratch = [0.0_f32; 64];
+        for _ in 0..into_decay / 64 + 1 {
+            proc.process(&mut scratch);
+        }
+
+        let decay_val = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            decay_val < 1.0 && decay_val > 0.5,
+            "ADR should be in decay: {decay_val}",
+        );
+
+        // Note-off — ADR ignores
+        proc.note_off(note);
+
+        // Next advance should continue decaying, NOT start release
+        proc.process(&mut scratch);
+        let next = proc.voices[voice_idx].mod_env.output;
+        assert!(
+            next < decay_val,
+            "ADR should continue decaying after note_off: {next} >= {decay_val}",
+        );
+    }
+
+    #[test]
+    fn adr_mono_mod_env_retriggers_from_zero() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        proc.params_mut().mod_env.retrig_mode = ModEnvRetrigMode::Mono;
+        proc.params_mut().mod_env.mode = ModEnvMode::Adr;
+        proc.params_mut().mod_env.attack = 0.05;
+        proc.params_mut().mod_env.decay = 0.3;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let mut scratch = [0.0_f32; 64];
+        proc.note_on(60, midi_note_to_freq(60), 1.0);
+        for _ in 0..4 {
+            proc.process(&mut scratch);
+        }
+        let previous = proc.shared_mod_env.output;
+        assert!(previous > 0.0, "first ADR trigger should have advanced");
+
+        proc.note_on(62, midi_note_to_freq(62), 1.0);
+        assert_eq!(
+            proc.shared_mod_env.output, 0.0,
+            "mono ADR retrigger must restart from zero, not from {previous}",
+        );
+    }
+
+    #[test]
+    fn adsr_mono_mod_env_retriggers_from_zero() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().poly_mode = PolyMode::Mono;
+        proc.params_mut().mod_env.retrig_mode = ModEnvRetrigMode::Mono;
+        proc.params_mut().mod_env.mode = ModEnvMode::Adsr;
+        proc.params_mut().mod_env.attack = 0.05;
+        proc.params_mut().mod_env.decay = 0.3;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let mut scratch = [0.0_f32; 64];
+        proc.note_on(60, midi_note_to_freq(60), 1.0);
+        for _ in 0..4 {
+            proc.process(&mut scratch);
+        }
+        let previous = proc.shared_mod_env.output;
+        assert!(previous > 0.0, "first ADSR trigger should have advanced");
+
+        proc.note_on(62, midi_note_to_freq(62), 1.0);
+        assert_eq!(
+            proc.shared_mod_env.output, 0.0,
+            "mono ADSR retrigger must restart from zero, not from {previous}",
+        );
+    }
+
+    #[test]
+    fn adsr_poly_sustain_note_off_does_not_release_mod_env() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_env.attack = 0.001;
+        proc.params_mut().mod_env.decay = 0.02;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let note = 60_u8;
+        let mut scratch = [0.0_f32; 64];
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc.find_voice_for_note(note).expect("voice should exist");
+        for _ in 0..24 {
+            proc.process(&mut scratch);
+        }
+        assert!(
+            (proc.voices[voice_idx].mod_env.output - 0.5).abs() < 0.01,
+            "mod env should reach sustain before pedal-held note-off",
+        );
+
+        proc.set_sustain(true);
+        proc.note_off(note);
+        proc.process(&mut scratch);
+
+        assert!(
+            proc.voices[voice_idx].sustained,
+            "voice should be held by sustain pedal",
+        );
+        assert!(
+            !proc.voices[voice_idx].mod_env.is_releasing(),
+            "sustain-held note-off must not release mod env",
+        );
+        assert!(
+            (proc.voices[voice_idx].mod_env.output - 0.5).abs() < 0.01,
+            "mod env should remain at sustain while pedal holds the voice",
+        );
+    }
+
+    #[test]
+    fn adsr_poly_sustain_pedal_up_releases_audio_without_mod_env_release() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().mod_env.attack = 0.001;
+        proc.params_mut().mod_env.decay = 0.02;
+        proc.params_mut().mod_env.sustain = 0.5;
+        proc.params_mut().mod_env.release = 0.2;
+
+        let note = 60_u8;
+        let mut scratch = [0.0_f32; 64];
+        proc.note_on(note, midi_note_to_freq(note), 1.0);
+        let voice_idx = proc.find_voice_for_note(note).expect("voice should exist");
+        for _ in 0..24 {
+            proc.process(&mut scratch);
+        }
+
+        proc.set_sustain(true);
+        proc.note_off(note);
+        proc.set_sustain(false);
+        proc.process(&mut scratch);
+
+        assert!(
+            proc.voices[voice_idx].is_releasing,
+            "pedal-up should release the sustained audio voice",
+        );
+        assert!(
+            !proc.voices[voice_idx].mod_env.is_releasing(),
+            "pedal-up must not newly trigger mod env release",
+        );
+        assert!(
+            (proc.voices[voice_idx].mod_env.output - 0.5).abs() < 0.01,
+            "mod env should remain at sustain when pedal-up releases the audio voice",
         );
     }
 }

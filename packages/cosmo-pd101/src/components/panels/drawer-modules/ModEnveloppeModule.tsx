@@ -5,7 +5,14 @@ import ModEnvDisplay from "@/components/panels/drawer-modules/ModEnvDisplay";
 import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import {
+	EMPTY_RUNTIME_VOICE_STATES,
+	type RuntimeVoiceDebugState,
+} from "@/features/synth/hooks/useAudioEngine";
+import {
+	useOptionalSynthController,
+	useSynthParam,
+} from "@/features/synth/SynthParamController";
 import type { ModEnvMode, ModEnvRetrigMode } from "@/lib/synth/bindings/synth";
 import { MOD_ENV_PRESET_DATA } from "@/lib/synth/bindings/synth";
 import {
@@ -15,7 +22,7 @@ import {
 import {
 	buildAdsrGeometry,
 	envSecondsToNorm,
-	estimateEnvelopeMarker,
+	estimateEnvelopeMarkerForPhase,
 	formatEnvTime,
 	normToEnvSeconds,
 } from "./modEnvelopePreview";
@@ -23,11 +30,12 @@ import { useModEnvelopePreviewDrag } from "./useModEnvelopePreviewDrag";
 
 export default function ModEnveloppeModule() {
 	const { t } = useTranslation("synth");
+	const synthController = useOptionalSynthController();
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const [liveEnvValue, setLiveEnvValue] = useState(0);
+	const [liveVoiceStates, setLiveVoiceStates] = useState<
+		ReadonlyArray<RuntimeVoiceDebugState>
+	>(() => synthController?.getLiveVoiceStates() ?? EMPTY_RUNTIME_VOICE_STATES);
 	const previewSvgRef = useRef<SVGSVGElement | null>(null);
-	const prevLiveEnvValueRef = useRef(0);
-	const prevMarkerXRef = useRef<number | null>(null);
 	const { value: modEnvAttack, setValue: setModEnvAttack } =
 		useSynthParam("modEnvAttack");
 	const { value: modEnvDecay, setValue: setModEnvDecay } =
@@ -43,23 +51,31 @@ export default function ModEnveloppeModule() {
 	const isAdr = modEnvMode === "adr";
 
 	useEffect(() => {
-		const onRuntimeModSources = (event: Event) => {
-			const detail = (event as CustomEvent<{ modEnv?: number } | undefined>)
-				.detail;
-			if (!detail || !Number.isFinite(detail.modEnv)) {
+		const unregisterLiveVoiceStates =
+			synthController?.registerLiveVoiceStatesConsumer();
+		setLiveVoiceStates(
+			synthController?.getLiveVoiceStates() ?? EMPTY_RUNTIME_VOICE_STATES,
+		);
+
+		const onRuntimeVoiceStates = (event: Event) => {
+			const detail = (
+				event as CustomEvent<RuntimeVoiceDebugState[] | undefined>
+			).detail;
+			if (!detail) {
 				return;
 			}
-			setLiveEnvValue((previous) => {
-				prevLiveEnvValueRef.current = previous;
-				return Math.max(0, Math.min(1, detail.modEnv ?? 0));
-			});
+			setLiveVoiceStates(detail);
 		};
 
-		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		window.addEventListener("cz-runtime-voice-states", onRuntimeVoiceStates);
 		return () => {
-			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+			unregisterLiveVoiceStates?.();
+			window.removeEventListener(
+				"cz-runtime-voice-states",
+				onRuntimeVoiceStates,
+			);
 		};
-	}, []);
+	}, [synthController]);
 
 	const envGeometry = useMemo(
 		() =>
@@ -72,22 +88,28 @@ export default function ModEnveloppeModule() {
 			),
 		[modEnvAttack, modEnvDecay, modEnvMode, modEnvRelease, modEnvSustain],
 	);
-	const effectiveSustain = isAdr ? 0 : (modEnvSustain as number);
-	const envMarker = useMemo(
-		() =>
-			estimateEnvelopeMarker(
+	const effectiveSustain = modEnvSustain as number;
+	const envMarkers = useMemo(() => {
+		const activeVoices = liveVoiceStates.filter(
+			(voice) =>
+				voice.active ||
+				voice.isReleasing ||
+				voice.modEnv.value > 0.001 ||
+				voice.modEnv.phase !== "idle",
+		);
+		const markerVoices =
+			modEnvRetrigMode === "poly" ? activeVoices : activeVoices.slice(0, 1);
+		return markerVoices.map((voice) => ({
+			id: modEnvRetrigMode === "poly" ? voice.index : "shared",
+			releasing: voice.modEnv.releasing || voice.modEnv.phase === "release",
+			...estimateEnvelopeMarkerForPhase(
 				envGeometry,
-				liveEnvValue,
-				prevLiveEnvValueRef.current,
+				voice.modEnv.value,
 				effectiveSustain,
-				prevMarkerXRef.current,
+				voice.modEnv.phase,
 			),
-		[effectiveSustain, envGeometry, liveEnvValue],
-	);
-
-	useEffect(() => {
-		prevMarkerXRef.current = envMarker.x;
-	}, [envMarker.x]);
+		}));
+	}, [effectiveSustain, envGeometry, liveVoiceStates, modEnvRetrigMode]);
 
 	const { setDragHandle } = useModEnvelopePreviewDrag({
 		envGeometry,
@@ -158,7 +180,7 @@ export default function ModEnveloppeModule() {
 			<ModEnvDisplay
 				previewSvgRef={previewSvgRef}
 				envGeometry={envGeometry}
-				envMarker={envMarker}
+				envMarkers={envMarkers}
 				attack={modEnvAttack as number}
 				decay={modEnvDecay as number}
 				sustain={modEnvSustain as number}
@@ -206,7 +228,6 @@ export default function ModEnveloppeModule() {
 				paramKey="modEnvSustain"
 				color="#c24587"
 				size={64}
-				disabled={isAdr}
 				label={t("modEnv.sustain")}
 				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 			/>

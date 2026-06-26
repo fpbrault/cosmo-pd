@@ -14,6 +14,11 @@ impl CosmoProcessor {
     }
 
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
+        self.start_line_env_release_for_voice(voice_idx);
+        self.start_mod_env_release_for_voice(voice_idx);
+    }
+
+    pub(crate) fn start_line_env_release_for_voice(&mut self, voice_idx: usize) {
         let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
         voice.line1_env.dco.start_release(&p.line1.dco_env);
@@ -22,6 +27,11 @@ impl CosmoProcessor {
         voice.line2_env.dco.start_release(&p.line2.dco_env);
         voice.line2_env.dcw.start_release(&p.line2.dcw_env);
         voice.line2_env.dca.start_release(&p.line2.dca_env);
+    }
+
+    pub(crate) fn start_mod_env_release_for_voice(&mut self, voice_idx: usize) {
+        let p = self.params.as_ref();
+        let voice = &mut self.voices[voice_idx];
         if p.mod_env.retrig_mode == ModEnvRetrigMode::Poly && p.mod_env.mode == ModEnvMode::Adsr {
             voice.mod_env.note_off();
         }
@@ -30,6 +40,11 @@ impl CosmoProcessor {
     pub(crate) fn start_release(&mut self, voice_idx: usize) {
         self.voices[voice_idx].is_releasing = true;
         self.start_env_release_for_voice(voice_idx);
+    }
+
+    pub(crate) fn start_release_without_mod_env(&mut self, voice_idx: usize) {
+        self.voices[voice_idx].is_releasing = true;
+        self.start_line_env_release_for_voice(voice_idx);
     }
 
     pub(crate) fn start_quick_release(&mut self, voice_idx: usize) {
@@ -561,11 +576,6 @@ impl CosmoProcessor {
 
         if self.sustain_on {
             self.voices[voice_idx].sustained = true;
-            if self.params.mod_env.retrig_mode == ModEnvRetrigMode::Poly
-                && self.params.mod_env.mode == ModEnvMode::Adsr
-            {
-                self.voices[voice_idx].mod_env.note_off();
-            }
             if self.params.poly_mode == PolyMode::Mono {
                 self.mono_stack.clear();
             }
@@ -599,7 +609,7 @@ impl CosmoProcessor {
                     let still_held = self.active_notes.iter().any(|e| e.voice_idx == i);
                     if !still_held {
                         self.voices[i].sustained = false;
-                        self.start_release(i);
+                        self.start_release_without_mod_env(i);
                     } else {
                         self.voices[i].sustained = false;
                     }

@@ -6,7 +6,7 @@ mod adsr;
 mod modulation;
 mod render;
 
-pub use adsr::AdsrEnv;
+pub use adsr::{AdsrEnv, AdsrPhase};
 pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 

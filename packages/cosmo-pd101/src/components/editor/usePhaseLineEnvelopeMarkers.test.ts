@@ -52,6 +52,12 @@ describe("usePhaseLineEnvelopeMarkers", () => {
 			index: 3,
 			active: true,
 			isReleasing: false,
+			modEnv: {
+				value: 0,
+				phase: "idle",
+				releasing: false,
+				releaseStart: 0,
+			},
 			line1: {
 				dco: { step: 0, value: 0, releasing: false },
 				dcw: { step: 0, value: 0, releasing: false },

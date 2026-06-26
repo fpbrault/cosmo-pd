@@ -13,6 +13,9 @@ export type AddPresetResponse = {
 	id: string,
 };
 
+/**  Phase state for the per-voice ADSR mod envelope. */
+export type AdsrPhase = "idle" | "attack" | "decay" | "sustain" | "release";
+
 /**  Flat algorithm selector — unifies CZ waveforms and warp variants. */
 export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "terrain" | "cheby" | "stutter";
 
@@ -492,6 +495,14 @@ export type RingModParams = {
 	mix?: number | null,
 };
 
+/**  Snapshot of the ADSR/ADR modulation envelope runtime state. */
+export type RuntimeModEnvState = {
+	value: number | null,
+	phase: AdsrPhase,
+	releasing: boolean,
+	releaseStart: number | null,
+};
+
 /**  Snapshot of modulation source values for UI telemetry. */
 export type RuntimeModSources = {
 	pitchBend: number | null,
@@ -526,6 +537,7 @@ export type RuntimeVoiceDebugState = {
 	antiClickFade: number,
 	antiClickAttack: number,
 	releaseTailLevel: number | null,
+	modEnv: RuntimeModEnvState,
 	line1: RuntimeVoiceLineState,
 	line2: RuntimeVoiceLineState,
 };

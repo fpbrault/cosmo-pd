@@ -3,14 +3,19 @@ import { useTranslation } from "react-i18next";
 import {
 	adsrPreviewPath,
 	type buildAdsrGeometry,
-	type estimateEnvelopeMarker,
+	type estimateEnvelopeMarkerForPhase,
 	type ModEnvPreviewMode,
 } from "./modEnvelopePreview";
+
+type ModEnvVoiceMarker = ReturnType<typeof estimateEnvelopeMarkerForPhase> & {
+	id: number | string;
+	releasing: boolean;
+};
 
 interface ModEnvDisplayProps {
 	previewSvgRef: Ref<SVGSVGElement>;
 	envGeometry: ReturnType<typeof buildAdsrGeometry>;
-	envMarker: ReturnType<typeof estimateEnvelopeMarker>;
+	envMarkers: ModEnvVoiceMarker[];
 	attack: number;
 	decay: number;
 	sustain: number;
@@ -22,7 +27,7 @@ interface ModEnvDisplayProps {
 export default function ModEnvDisplay({
 	previewSvgRef,
 	envGeometry,
-	envMarker,
+	envMarkers,
 	attack,
 	decay,
 	sustain,
@@ -109,14 +114,18 @@ export default function ModEnvDisplay({
 						pointerEvents="none"
 					/>
 				</g>
-				<circle
-					cx={envMarker.x}
-					cy={envMarker.y}
-					r={3}
-					fill="#c24587"
-					stroke="rgba(10,10,10,0.85)"
-					strokeWidth="1"
-				/>
+				{envMarkers.map((marker) => (
+					<circle
+						key={marker.id}
+						data-testid="mod-env-voice-marker"
+						cx={marker.x}
+						cy={marker.y}
+						r={3}
+						fill={marker.releasing ? "#f59e0b" : "#c24587"}
+						stroke="rgba(10,10,10,0.85)"
+						strokeWidth="1"
+					/>
+				))}
 			</svg>
 		</div>
 	);

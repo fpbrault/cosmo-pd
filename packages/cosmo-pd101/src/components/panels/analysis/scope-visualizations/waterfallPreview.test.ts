@@ -62,6 +62,12 @@ describe("waterfallPreview", () => {
 				note: 60,
 				envNote: 60,
 				velocity: 100,
+				modEnv: {
+					value: 0,
+					phase: "idle",
+					releasing: false,
+					releaseStart: 0,
+				},
 				line1: {
 					dco: {
 						value: 0,
