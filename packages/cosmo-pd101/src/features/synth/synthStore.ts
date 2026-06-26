@@ -17,6 +17,8 @@ import type {
 	LfoWaveform,
 	LineSelect,
 	ModDestination,
+	ModEnvMode,
+	ModEnvRetrigMode,
 	ModMatrix,
 	ModMode,
 	PolyMode,
@@ -214,6 +216,8 @@ type SynthState = {
 	modEnvDecay: number;
 	modEnvSustain: number;
 	modEnvRelease: number;
+	modEnvMode: ModEnvMode;
+	modEnvRetrigMode: ModEnvRetrigMode;
 
 	pitchBendRange: number;
 	octave: number;
@@ -315,6 +319,8 @@ type SynthActions = {
 	setModEnvDecay: (v: number) => void;
 	setModEnvSustain: (v: number) => void;
 	setModEnvRelease: (v: number) => void;
+	setModEnvMode: (v: ModEnvMode) => void;
+	setModEnvRetrigMode: (v: ModEnvRetrigMode) => void;
 
 	setPitchBendRange: (v: number) => void;
 	setOctave: (v: number) => void;
@@ -429,6 +435,8 @@ const DEFAULT_STATE: SynthState = {
 	modEnvDecay: requireEngineParamDefault("modEnvDecay"),
 	modEnvSustain: requireEngineParamDefault("modEnvSustain"),
 	modEnvRelease: requireEngineParamDefault("modEnvRelease"),
+	modEnvMode: "adsr" as ModEnvMode,
+	modEnvRetrigMode: "poly" as ModEnvRetrigMode,
 
 	pitchBendRange: requireEngineParamDefault("pitchBendRange"),
 	octave: 0,
@@ -595,6 +603,9 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setModEnvDecay: (v) => setEditedState({ modEnvDecay: v }),
 		setModEnvSustain: (v) => setEditedState({ modEnvSustain: v }),
 		setModEnvRelease: (v) => setEditedState({ modEnvRelease: v }),
+		setModEnvMode: (v: ModEnvMode) => setEditedState({ modEnvMode: v }),
+		setModEnvRetrigMode: (v: ModEnvRetrigMode) =>
+			setEditedState({ modEnvRetrigMode: v }),
 
 		setPitchBendRange: (v) => setEditedState({ pitchBendRange: v }),
 		setOctave: (v) => setEditedState({ octave: toIntegerInRange(v, -2, 2) }),
@@ -772,6 +783,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					decay: s.modEnvDecay,
 					sustain: s.modEnvSustain,
 					release: s.modEnvRelease,
+					mode: s.modEnvMode,
+					retrigMode: s.modEnvRetrigMode,
 				},
 				pitchBendRange: s.pitchBendRange,
 				modMatrix: s.modMatrix,
@@ -1076,6 +1089,11 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					p.modEnv?.release,
 					requireEngineParamDefault("modEnvRelease"),
 				),
+				modEnvMode: ((p.modEnv?.mode as ModEnvMode | undefined) ??
+					"adsr") as ModEnvMode,
+				modEnvRetrigMode: ((p.modEnv?.retrigMode as
+					| ModEnvRetrigMode
+					| undefined) ?? "poly") as ModEnvRetrigMode,
 				pitchBendRange: safe(
 					p.pitchBendRange,
 					requireEngineParamDefault("pitchBendRange"),

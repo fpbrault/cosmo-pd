@@ -6,7 +6,7 @@ mod adsr;
 mod modulation;
 mod render;
 
-pub use adsr::AdsrEnv;
+pub use adsr::{AdsrEnv, AdsrPhase};
 pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
@@ -189,6 +189,7 @@ mod tests {
                     effective_tempo_bpm: 120.0,
                     line1_plan: &plan.line1,
                     line2_plan: &plan.line2,
+                    shared_mod_env_val: 0.0,
                 };
                 render_voice(&mut voice, &ctx)
             })
@@ -301,6 +302,7 @@ mod tests {
             effective_tempo_bpm: 120.0,
             line1_plan: &plan.line1,
             line2_plan: &plan.line2,
+            shared_mod_env_val: 0.0,
         };
         let out = render_voice(&mut voice, &ctx);
         assert_eq!(out, 0.0);
@@ -341,6 +343,7 @@ mod tests {
                 effective_tempo_bpm: 120.0,
                 line1_plan: &plan.line1,
                 line2_plan: &plan.line2,
+                shared_mod_env_val: 0.0,
             };
             let out = render_voice(&mut voice, &ctx);
             if out.abs() > 1e-6 {

@@ -52,11 +52,20 @@ export function formatEnvTime(seconds: number): string {
 	return `${formatCompactValue(seconds)}s`;
 }
 
+export type ModEnvPreviewMode = "adsr" | "adr";
+export type ModEnvMarkerPhase =
+	| "idle"
+	| "attack"
+	| "decay"
+	| "sustain"
+	| "release";
+
 export function buildAdsrGeometry(
 	attack: number,
 	decay: number,
 	sustain: number,
 	release: number,
+	_mode: ModEnvPreviewMode = "adsr",
 ) {
 	const top = MOD_ENV_TOP;
 	const bottom = MOD_ENV_BOTTOM;
@@ -71,7 +80,8 @@ export function buildAdsrGeometry(
 	const x3 = x2;
 	const x4 = Math.min(xMax, x3 + rW);
 
-	const ySustain = bottom - clamp01(sustain) * MOD_ENV_SUSTAIN_SPAN;
+	const effectiveSustain = clamp01(sustain);
+	const ySustain = bottom - effectiveSustain * MOD_ENV_SUSTAIN_SPAN;
 
 	return { x0, x1, x2, x3, x4, top, bottom, ySustain };
 }
@@ -81,12 +91,14 @@ export function adsrPreviewPath(
 	decay: number,
 	sustain: number,
 	release: number,
+	mode: ModEnvPreviewMode = "adsr",
 ): string {
 	const { x0, x1, x2, x3, x4, top, bottom, ySustain } = buildAdsrGeometry(
 		attack,
 		decay,
 		sustain,
 		release,
+		mode,
 	);
 
 	return [
@@ -144,6 +156,56 @@ function envelopeYAtX(geo: ReturnType<typeof buildAdsrGeometry>, x: number) {
 	return interpolateY(clampedX, geo.x3, geo.ySustain, geo.x4, geo.bottom);
 }
 
+function envelopeMarkerCandidates(
+	geo: ReturnType<typeof buildAdsrGeometry>,
+	value: number,
+	sustain: number,
+) {
+	const envValue = clamp01(value);
+	const effectiveSustain = clamp01(sustain);
+	const attackX = geo.x0 + (geo.x1 - geo.x0) * envValue;
+	const decayX =
+		geo.x1 +
+		(geo.x2 - geo.x1) *
+			clamp01((1 - envValue) / Math.max(0.001, 1 - effectiveSustain));
+	const releaseX =
+		geo.x3 +
+		(geo.x4 - geo.x3) *
+			clamp01(
+				(effectiveSustain - envValue) / Math.max(0.001, effectiveSustain),
+			);
+
+	return { envValue, attackX, decayX, releaseX };
+}
+
+export function estimateEnvelopeMarkerForPhase(
+	geo: ReturnType<typeof buildAdsrGeometry>,
+	value: number,
+	sustain: number,
+	phase: ModEnvMarkerPhase,
+) {
+	const { envValue, attackX, decayX, releaseX } = envelopeMarkerCandidates(
+		geo,
+		value,
+		sustain,
+	);
+
+	let x = geo.x0;
+	if (envValue <= 0.001 || phase === "idle") {
+		x = geo.x0;
+	} else if (phase === "attack") {
+		x = attackX;
+	} else if (phase === "decay") {
+		x = decayX;
+	} else if (phase === "sustain") {
+		x = geo.x3;
+	} else if (phase === "release") {
+		x = releaseX;
+	}
+
+	return { x, y: envelopeYAtX(geo, x) };
+}
+
 export function estimateEnvelopeMarker(
 	geo: ReturnType<typeof buildAdsrGeometry>,
 	value: number,
@@ -155,15 +217,11 @@ export function estimateEnvelopeMarker(
 	const prev = clamp01(prevValue);
 	const delta = envValue - prev;
 	const slopeEpsilon = 0.00001;
-
-	const attackX = geo.x0 + (geo.x1 - geo.x0) * envValue;
-	const decayX =
-		geo.x1 +
-		(geo.x2 - geo.x1) * clamp01((1 - envValue) / Math.max(0.001, 1 - sustain));
-	const releaseX =
-		geo.x3 +
-		(geo.x4 - geo.x3) *
-			clamp01((sustain - envValue) / Math.max(0.001, sustain));
+	const { attackX, decayX, releaseX } = envelopeMarkerCandidates(
+		geo,
+		envValue,
+		sustain,
+	);
 
 	let x = geo.x0;
 	if (envValue <= 0.001) {

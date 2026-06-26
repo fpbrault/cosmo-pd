@@ -473,6 +473,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -954,6 +956,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -1416,6 +1420,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 2.2159376,
 					sustain: 0.90310544,
 					release: 2.7615235,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -1874,6 +1880,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -2290,6 +2298,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -2709,6 +2719,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.2,
 					sustain: 0.5,
 					release: 0.4,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -3145,6 +3157,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -3592,6 +3606,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -4016,6 +4032,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -4453,6 +4471,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -4839,6 +4859,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -5304,6 +5326,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -5741,6 +5765,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -6161,6 +6187,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -6581,6 +6609,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -7001,6 +7031,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -7438,6 +7470,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -7841,6 +7875,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -8278,6 +8314,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -8698,6 +8736,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -9101,6 +9141,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -9521,6 +9563,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -9924,6 +9968,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -10344,6 +10390,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -10781,6 +10829,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -11218,6 +11268,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -11655,6 +11707,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -12092,6 +12146,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -12512,6 +12568,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -12932,6 +12990,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -13335,6 +13395,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -13755,6 +13817,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -14192,6 +14256,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -14612,6 +14678,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -15032,6 +15100,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -15469,6 +15539,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -15872,6 +15944,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -16309,6 +16383,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -16729,6 +16805,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -17149,6 +17227,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -17569,6 +17649,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -17989,6 +18071,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -18392,6 +18476,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -18829,6 +18915,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -19232,6 +19320,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -19669,6 +19759,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -20163,6 +20255,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -20608,6 +20702,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -21011,6 +21107,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -21414,6 +21512,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -21834,6 +21934,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -22237,6 +22339,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -22640,6 +22744,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -23043,6 +23149,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -23493,6 +23601,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -23945,6 +24055,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -24348,6 +24460,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -24785,6 +24899,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -25205,6 +25321,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -25608,6 +25726,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -26045,6 +26165,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -26465,6 +26587,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -26868,6 +26992,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -27288,6 +27414,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -27725,6 +27853,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -28145,6 +28275,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -28565,6 +28697,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -28985,6 +29119,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -29405,6 +29541,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -29842,6 +29980,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -30262,6 +30402,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -30699,6 +30841,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -31136,6 +31280,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -31556,6 +31702,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -31959,6 +32107,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -32362,6 +32512,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -32765,6 +32917,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -33168,6 +33322,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -33571,6 +33727,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -34008,6 +34166,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -34428,6 +34588,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -34848,6 +35010,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -35251,6 +35415,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -35671,6 +35837,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -36108,6 +36276,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -36511,6 +36681,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -36914,6 +37086,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -37334,6 +37508,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -37771,6 +37947,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -38174,6 +38352,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -38611,6 +38791,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -39014,6 +39196,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -39451,6 +39635,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -39888,6 +40074,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -40325,6 +40513,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -40762,6 +40952,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -41182,6 +41374,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -41619,6 +41813,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -42056,6 +42252,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -42476,6 +42674,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -42913,6 +43113,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -43333,6 +43535,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -43753,6 +43957,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -44190,6 +44396,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -44627,6 +44835,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -45030,6 +45240,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -45440,6 +45652,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -45867,6 +46081,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -46287,6 +46503,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -46690,6 +46908,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -47134,6 +47354,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -47590,6 +47812,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -48010,6 +48234,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -48403,6 +48629,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -48830,6 +49058,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -49233,6 +49463,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -49653,6 +49885,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -50076,6 +50310,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -50530,6 +50766,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -51001,6 +51239,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -51438,6 +51678,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -51888,6 +52130,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -52351,6 +52595,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{
@@ -52771,6 +53017,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					decay: 0.1,
 					sustain: 0.5,
 					release: 0.2,
+					mode: "adsr",
+					retrigMode: "poly",
 				},
 				fxSlots: [
 					{

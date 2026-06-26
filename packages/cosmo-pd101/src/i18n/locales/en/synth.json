@@ -158,10 +158,16 @@
 			"tooltip": "Sets modulation envelope decay time."
 		},
 		"modEnvSustain": {
-			"tooltip": "Sets sustained modulation level while note is held."
+			"tooltip": "In ADSR: level held while note is down. In ADR: decay target; release starts from this level."
 		},
 		"modEnvRelease": {
 			"tooltip": "Sets modulation envelope release time after note off."
+		},
+		"modEnvMode": {
+			"tooltip": "Switches the modulation envelope between ADSR (sustained) and ADR (one-shot decay) shapes."
+		},
+		"modEnvRetrigMode": {
+			"tooltip": "Switches between poly (independent per-voice), mono (retrigger on every note), and legato (don't retrigger while keys are held)."
 		},
 		"filterType": {
 			"tooltip": "Selects the filter response shape."
@@ -254,6 +260,15 @@
 		"portamentoMode": {
 			"rate": "Portamento time scales with note interval distance.",
 			"time": "Portamento uses a fixed glide time between notes."
+		},
+		"modEnvMode": {
+			"adsr": "Sustained ADSR envelope: decay falls to the sustain level and holds while the note is played.",
+			"adr": "One-shot ADR envelope: attack rises to maximum, decay falls to the sustain level, then release falls to zero. Note release does not interrupt the contour."
+		},
+		"modEnvRetrigMode": {
+			"poly": "Each voice has its own independent modulation envelope (default).",
+			"mono": "Modulation envelope retriggers from attack on every note-on.",
+			"legato": "Modulation envelope continues its current phase when notes overlap; only retriggers after all keys are released."
 		}
 	},
 	"czPresets": {
@@ -1058,6 +1073,17 @@
 		"ring": "Ring",
 		"noise": "Noise"
 	},
+	"modEnvMode": {
+		"label": "Mode",
+		"adsr": "ADSR",
+		"adr": "ADR"
+	},
+	"modEnvRetrigMode": {
+		"label": "Retrig",
+		"poly": "Poly",
+		"mono": "Mono",
+		"legato": "Legato"
+	},
 	"lineSelect": {
 		"label": "Line Select"
 	},
@@ -1113,7 +1139,11 @@
 		"decayMidi": "Mod Env Decay",
 		"sustain": "Sus",
 		"release": "Rel",
-		"releaseMidi": "Mod Env Release"
+		"releaseMidi": "Mod Env Release",
+		"mode": "Mode",
+		"modeMidi": "Mod Env Mode",
+		"retrigMode": "Retrig",
+		"retrigModeMidi": "Mod Env Retrig"
 	},
 	"macro": {
 		"title": "Macro Controls",

@@ -5,10 +5,10 @@ use cosmo_pd101_bridge_types::{
     FxModulePresetEntry, LoadPresetPayload, LoadPresetResponse, MidiLearnBinding, MidiLearnState,
     PluginIpcRequest, PluginIpcResponse, PresetBankBundle, PresetBankEntry, PresetBankMetadata,
     PresetLibraryActionResponse, PresetLibraryEntry, PresetLibraryResponse, PresetLibraryStatus,
-    PresetLibrarySummaryEntry, PresetSession, RuntimeModSources, RuntimeVoiceDebugState,
-    RuntimeVoiceEnvState, RuntimeVoiceLineState, SaveFxModulePresetPayload, SavePresetPayload,
-    SavePresetResponse, ScopeDataResponse, TransportInfoResponse, UiAlgoControlSection,
-    UiParamChange,
+    PresetLibrarySummaryEntry, PresetSession, RuntimeModEnvState, RuntimeModSources,
+    RuntimeVoiceDebugState, RuntimeVoiceEnvState, RuntimeVoiceLineState, SaveFxModulePresetPayload,
+    SavePresetPayload, SavePresetResponse, ScopeDataResponse, TransportInfoResponse,
+    UiAlgoControlSection, UiParamChange,
 };
 use cosmo_synth_engine::params::SynthParams;
 use specta::Types;
@@ -34,6 +34,7 @@ fn main() {
     types.register_mut::<ScopeDataResponse>();
     types.register_mut::<TransportInfoResponse>();
     types.register_mut::<RuntimeModSources>();
+    types.register_mut::<RuntimeModEnvState>();
     types.register_mut::<RuntimeVoiceEnvState>();
     types.register_mut::<RuntimeVoiceLineState>();
     types.register_mut::<RuntimeVoiceDebugState>();

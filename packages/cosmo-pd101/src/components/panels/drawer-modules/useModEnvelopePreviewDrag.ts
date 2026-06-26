@@ -6,6 +6,7 @@ import {
 	DECAY_WIDTH_SCALE,
 	type EnvelopeHandle,
 	MOD_ENV_X_MAX,
+	type ModEnvPreviewMode,
 	RELEASE_WIDTH_SCALE,
 	widthToSeconds,
 } from "./modEnvelopePreview";
@@ -21,6 +22,7 @@ type UseModEnvelopePreviewDragOptions = {
 		bottom: number;
 	};
 	previewSvgRef: React.RefObject<SVGSVGElement | null>;
+	mode: ModEnvPreviewMode;
 	setModEnvAttack: (value: number) => void;
 	setModEnvDecay: (value: number) => void;
 	setModEnvSustain: (value: number) => void;
@@ -32,6 +34,7 @@ const MOD_ENV_SUSTAIN_SPAN = (56 - 8) * 0.78;
 export function useModEnvelopePreviewDrag({
 	envGeometry,
 	previewSvgRef,
+	mode,
 	setModEnvAttack,
 	setModEnvDecay,
 	setModEnvSustain,
@@ -61,9 +64,11 @@ export function useModEnvelopePreviewDrag({
 
 			if (dragHandle === "decaySustain") {
 				const x = Math.max(geo.x1 + 2, Math.min(geo.x4 - 2, point.x));
-				const y = Math.max(geo.top, Math.min(geo.bottom, point.y));
 				setModEnvDecay(widthToSeconds(x - geo.x1, DECAY_WIDTH_SCALE));
-				setModEnvSustain(clamp01((geo.bottom - y) / MOD_ENV_SUSTAIN_SPAN));
+				if (mode === "adsr") {
+					const y = Math.max(geo.top, Math.min(geo.bottom, point.y));
+					setModEnvSustain(clamp01((geo.bottom - y) / MOD_ENV_SUSTAIN_SPAN));
+				}
 				return;
 			}
 
@@ -84,6 +89,7 @@ export function useModEnvelopePreviewDrag({
 	}, [
 		dragHandle,
 		envGeometry,
+		mode,
 		previewSvgRef,
 		setModEnvAttack,
 		setModEnvDecay,

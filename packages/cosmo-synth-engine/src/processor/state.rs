@@ -1,4 +1,4 @@
-use crate::voice::Voice;
+use crate::voice::{AdsrPhase, Voice};
 use serde::Serialize;
 
 #[cfg(feature = "specta-bindings")]
@@ -37,6 +37,17 @@ pub struct RuntimeVoiceEnvState {
     pub prev_level: f32,
 }
 
+/// Snapshot of the ADSR/ADR modulation envelope runtime state.
+#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeModEnvState {
+    pub value: f32,
+    pub phase: AdsrPhase,
+    pub releasing: bool,
+    pub release_start: f32,
+}
+
 /// Snapshot of one oscillator line's envelope generators.
 #[derive(Debug, Clone, Copy, Default, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -67,6 +78,7 @@ pub struct RuntimeVoiceDebugState {
     pub anti_click_fade: u32,
     pub anti_click_attack: u32,
     pub release_tail_level: f32,
+    pub mod_env: RuntimeModEnvState,
     pub line1: RuntimeVoiceLineState,
     pub line2: RuntimeVoiceLineState,
 }

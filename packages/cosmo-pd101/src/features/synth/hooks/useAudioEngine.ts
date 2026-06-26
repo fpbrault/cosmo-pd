@@ -14,6 +14,20 @@ export type RuntimeVoiceEnvState = {
 	prevLevel: number;
 };
 
+export type RuntimeModEnvPhase =
+	| "idle"
+	| "attack"
+	| "decay"
+	| "sustain"
+	| "release";
+
+export type RuntimeModEnvState = {
+	value: number;
+	phase: RuntimeModEnvPhase;
+	releasing: boolean;
+	releaseStart: number;
+};
+
 type RuntimeVoiceLineState = {
 	dco: RuntimeVoiceEnvState;
 	dcw: RuntimeVoiceEnvState;
@@ -28,6 +42,7 @@ export type RuntimeVoiceDebugState = {
 	note: number | null;
 	envNote: number;
 	velocity: number;
+	modEnv: RuntimeModEnvState;
 	line1: RuntimeVoiceLineState;
 	line2: RuntimeVoiceLineState;
 };
@@ -171,6 +186,25 @@ export function useAudioEngine({
 					prevLevel: readNumber(detail.prevLevel),
 				};
 			};
+			const readModEnv = (source: unknown): RuntimeModEnvState => {
+				const detail =
+					source && typeof source === "object"
+						? (source as Record<string, unknown>)
+						: {};
+				const phase = detail.phase;
+				return {
+					value: readNumber(detail.value),
+					phase:
+						phase === "attack" ||
+						phase === "decay" ||
+						phase === "sustain" ||
+						phase === "release"
+							? phase
+							: "idle",
+					releasing: detail.releasing === true,
+					releaseStart: readNumber(detail.releaseStart),
+				};
+			};
 
 			return value.map((entry, index) => {
 				const detail =
@@ -194,6 +228,7 @@ export function useAudioEngine({
 					note: typeof detail.note === "number" ? detail.note : null,
 					envNote: readNumber(detail.envNote, 60),
 					velocity: readNumber(detail.velocity, 0),
+					modEnv: readModEnv(detail.modEnv),
 					line1: {
 						dco: readEnv(line1.dco),
 						dcw: readEnv(line1.dcw),

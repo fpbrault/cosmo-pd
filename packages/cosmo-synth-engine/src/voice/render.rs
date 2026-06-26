@@ -3,8 +3,8 @@ use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
 use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
 use crate::params::{
-    LfoRateMode, LfoWaveform, LineParams, LineSelect, ModDestination, ModMatrixCache, ModMode,
-    PortamentoMode, SynthParams,
+    LfoRateMode, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvRetrigMode,
+    ModMatrixCache, ModMode, PortamentoMode, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
 
@@ -75,6 +75,7 @@ pub struct VoiceRenderContext<'a> {
     pub effective_tempo_bpm: f32,
     pub line1_plan: &'a CompiledLinePlan,
     pub line2_plan: &'a CompiledLinePlan,
+    pub shared_mod_env_val: f32,
 }
 
 ///
@@ -137,8 +138,13 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         return 0.0;
     }
 
-    // Advance per-voice ADSR mod envelope.
-    let mod_env_val = voice.mod_env.advance(&p.mod_env, sr);
+    // Advance per-voice ADSR mod envelope (Poly) or use shared env (Mono/Legato).
+    let mod_env_val = if p.mod_env.retrig_mode != ModEnvRetrigMode::Poly {
+        voice.mod_env.output = ctx.shared_mod_env_val;
+        ctx.shared_mod_env_val
+    } else {
+        voice.mod_env.advance(&p.mod_env, sr)
+    };
 
     let mod_sources = ModSources::new(
         ctx.lfo_mod_val,

@@ -2,14 +2,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import ModEnvDisplay from "@/components/panels/drawer-modules/ModEnvDisplay";
+import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
-import { useSynthParam } from "@/features/synth/SynthParamController";
+import {
+	EMPTY_RUNTIME_VOICE_STATES,
+	type RuntimeVoiceDebugState,
+} from "@/features/synth/hooks/useAudioEngine";
+import {
+	useOptionalSynthController,
+	useSynthParam,
+} from "@/features/synth/SynthParamController";
+import type { ModEnvMode, ModEnvRetrigMode } from "@/lib/synth/bindings/synth";
 import { MOD_ENV_PRESET_DATA } from "@/lib/synth/bindings/synth";
+import {
+	MOD_ENV_MODE_TOOLTIPS,
+	MOD_ENV_RETRIG_MODE_TOOLTIPS,
+} from "@/lib/synth/paramMeta";
 import {
 	buildAdsrGeometry,
 	envSecondsToNorm,
-	estimateEnvelopeMarker,
+	estimateEnvelopeMarkerForPhase,
 	formatEnvTime,
 	normToEnvSeconds,
 } from "./modEnvelopePreview";
@@ -17,11 +30,12 @@ import { useModEnvelopePreviewDrag } from "./useModEnvelopePreviewDrag";
 
 export default function ModEnveloppeModule() {
 	const { t } = useTranslation("synth");
+	const synthController = useOptionalSynthController();
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const [liveEnvValue, setLiveEnvValue] = useState(0);
+	const [liveVoiceStates, setLiveVoiceStates] = useState<
+		ReadonlyArray<RuntimeVoiceDebugState>
+	>(() => synthController?.getLiveVoiceStates() ?? EMPTY_RUNTIME_VOICE_STATES);
 	const previewSvgRef = useRef<SVGSVGElement | null>(null);
-	const prevLiveEnvValueRef = useRef(0);
-	const prevMarkerXRef = useRef<number | null>(null);
 	const { value: modEnvAttack, setValue: setModEnvAttack } =
 		useSynthParam("modEnvAttack");
 	const { value: modEnvDecay, setValue: setModEnvDecay } =
@@ -30,25 +44,38 @@ export default function ModEnveloppeModule() {
 		useSynthParam("modEnvSustain");
 	const { value: modEnvRelease, setValue: setModEnvRelease } =
 		useSynthParam("modEnvRelease");
+	const { value: modEnvMode, setValue: setModEnvMode } =
+		useSynthParam("modEnvMode");
+	const { value: modEnvRetrigMode, setValue: setModEnvRetrigMode } =
+		useSynthParam("modEnvRetrigMode");
+	const isAdr = modEnvMode === "adr";
 
 	useEffect(() => {
-		const onRuntimeModSources = (event: Event) => {
-			const detail = (event as CustomEvent<{ modEnv?: number } | undefined>)
-				.detail;
-			if (!detail || !Number.isFinite(detail.modEnv)) {
+		const unregisterLiveVoiceStates =
+			synthController?.registerLiveVoiceStatesConsumer();
+		setLiveVoiceStates(
+			synthController?.getLiveVoiceStates() ?? EMPTY_RUNTIME_VOICE_STATES,
+		);
+
+		const onRuntimeVoiceStates = (event: Event) => {
+			const detail = (
+				event as CustomEvent<RuntimeVoiceDebugState[] | undefined>
+			).detail;
+			if (!detail) {
 				return;
 			}
-			setLiveEnvValue((previous) => {
-				prevLiveEnvValueRef.current = previous;
-				return Math.max(0, Math.min(1, detail.modEnv ?? 0));
-			});
+			setLiveVoiceStates(detail);
 		};
 
-		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		window.addEventListener("cz-runtime-voice-states", onRuntimeVoiceStates);
 		return () => {
-			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+			unregisterLiveVoiceStates?.();
+			window.removeEventListener(
+				"cz-runtime-voice-states",
+				onRuntimeVoiceStates,
+			);
 		};
-	}, []);
+	}, [synthController]);
 
 	const envGeometry = useMemo(
 		() =>
@@ -57,28 +84,37 @@ export default function ModEnveloppeModule() {
 				modEnvDecay as number,
 				modEnvSustain as number,
 				modEnvRelease as number,
+				modEnvMode,
 			),
-		[modEnvAttack, modEnvDecay, modEnvRelease, modEnvSustain],
+		[modEnvAttack, modEnvDecay, modEnvMode, modEnvRelease, modEnvSustain],
 	);
-	const envMarker = useMemo(
-		() =>
-			estimateEnvelopeMarker(
+	const effectiveSustain = modEnvSustain as number;
+	const envMarkers = useMemo(() => {
+		const activeVoices = liveVoiceStates.filter(
+			(voice) =>
+				voice.active ||
+				voice.isReleasing ||
+				voice.modEnv.value > 0.001 ||
+				voice.modEnv.phase !== "idle",
+		);
+		const markerVoices =
+			modEnvRetrigMode === "poly" ? activeVoices : activeVoices.slice(0, 1);
+		return markerVoices.map((voice) => ({
+			id: modEnvRetrigMode === "poly" ? voice.index : "shared",
+			releasing: voice.modEnv.releasing || voice.modEnv.phase === "release",
+			...estimateEnvelopeMarkerForPhase(
 				envGeometry,
-				liveEnvValue,
-				prevLiveEnvValueRef.current,
-				modEnvSustain as number,
-				prevMarkerXRef.current,
+				voice.modEnv.value,
+				effectiveSustain,
+				voice.modEnv.phase,
 			),
-		[envGeometry, liveEnvValue, modEnvSustain],
-	);
-
-	useEffect(() => {
-		prevMarkerXRef.current = envMarker.x;
-	}, [envMarker.x]);
+		}));
+	}, [effectiveSustain, envGeometry, liveVoiceStates, modEnvRetrigMode]);
 
 	const { setDragHandle } = useModEnvelopePreviewDrag({
 		envGeometry,
 		previewSvgRef,
+		mode: modEnvMode,
 		setModEnvAttack,
 		setModEnvDecay,
 		setModEnvSustain,
@@ -96,6 +132,10 @@ export default function ModEnveloppeModule() {
 		setModEnvDecay(preset.params.decay as number);
 		setModEnvSustain(preset.params.sustain as number);
 		setModEnvRelease(preset.params.release as number);
+		setModEnvMode((preset.params.mode ?? "adsr") as ModEnvMode);
+		setModEnvRetrigMode(
+			(preset.params.retrigMode ?? "poly") as ModEnvRetrigMode,
+		);
 		requestApplyModulePreset({
 			module: "modEnv",
 			preset: preset.id,
@@ -113,22 +153,49 @@ export default function ModEnveloppeModule() {
 			presetOptions={MOD_ENV_PRESET_DATA}
 			onPresetChange={handlePresetChange}
 		>
+			<div className="col-span-full flex gap-2">
+				<BadgeToggle
+					active={isAdr}
+					label="ADR"
+					className="text-nowrap px-0"
+					onClick={() => setModEnvMode(isAdr ? "adsr" : "adr")}
+					tooltip={MOD_ENV_MODE_TOOLTIPS[isAdr ? "adr" : "adsr"]}
+				/>
+				<div className="join">
+					{(["poly", "mono", "legato"] as const).map((mode) => (
+						<button
+							key={mode}
+							type="button"
+							className={`join-item btn btn-xs ${
+								modEnvRetrigMode === mode ? "btn-primary" : ""
+							}`}
+							onClick={() => setModEnvRetrigMode(mode)}
+							title={MOD_ENV_RETRIG_MODE_TOOLTIPS[mode]}
+						>
+							{mode === "poly" ? "Poly" : mode === "mono" ? "Mono" : "Legato"}
+						</button>
+					))}
+				</div>
+			</div>
 			<ModEnvDisplay
 				previewSvgRef={previewSvgRef}
 				envGeometry={envGeometry}
-				envMarker={envMarker}
+				envMarkers={envMarkers}
 				attack={modEnvAttack as number}
 				decay={modEnvDecay as number}
 				sustain={modEnvSustain as number}
 				release={modEnvRelease as number}
+				mode={modEnvMode}
 				onDragHandle={setDragHandle}
 			/>
+
 			<SynthParamKnob
 				paramKey="modEnvAttack"
 				color="#c24587"
 				label={t("modEnv.attack")}
 				midiTargetKey="modEnvAttackKnob"
 				midiLabel={t("modEnv.attackMidi")}
+				size={64}
 				uiTransform={{
 					toControlValue: envSecondsToNorm,
 					fromControlValue: normToEnvSeconds,
@@ -145,6 +212,7 @@ export default function ModEnveloppeModule() {
 				label={t("modEnv.decay")}
 				midiTargetKey="modEnvDecayKnob"
 				midiLabel={t("modEnv.decayMidi")}
+				size={64}
 				uiTransform={{
 					toControlValue: envSecondsToNorm,
 					fromControlValue: normToEnvSeconds,
@@ -155,18 +223,22 @@ export default function ModEnveloppeModule() {
 						formatEnvTime(engineValue),
 				}}
 			/>
+
 			<SynthParamKnob
 				paramKey="modEnvSustain"
 				color="#c24587"
+				size={64}
 				label={t("modEnv.sustain")}
 				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 			/>
+
 			<SynthParamKnob
 				paramKey="modEnvRelease"
 				color="#c24587"
 				label={t("modEnv.release")}
 				midiTargetKey="modEnvReleaseKnob"
 				midiLabel={t("modEnv.releaseMidi")}
+				size={64}
 				uiTransform={{
 					toControlValue: envSecondsToNorm,
 					fromControlValue: normToEnvSeconds,

@@ -1,6 +1,6 @@
 extern crate alloc;
 
-use crate::params::{MAX_VOICES, PolyMode};
+use crate::params::{MAX_VOICES, ModEnvMode, ModEnvRetrigMode, PolyMode};
 
 use super::CosmoProcessor;
 use super::state::{MonoStackEntry, NoteEntry};
@@ -14,6 +14,11 @@ impl CosmoProcessor {
     }
 
     pub(crate) fn start_env_release_for_voice(&mut self, voice_idx: usize) {
+        self.start_line_env_release_for_voice(voice_idx);
+        self.start_mod_env_release_for_voice(voice_idx);
+    }
+
+    pub(crate) fn start_line_env_release_for_voice(&mut self, voice_idx: usize) {
         let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
         voice.line1_env.dco.start_release(&p.line1.dco_env);
@@ -22,12 +27,24 @@ impl CosmoProcessor {
         voice.line2_env.dco.start_release(&p.line2.dco_env);
         voice.line2_env.dcw.start_release(&p.line2.dcw_env);
         voice.line2_env.dca.start_release(&p.line2.dca_env);
-        voice.mod_env.note_off();
+    }
+
+    pub(crate) fn start_mod_env_release_for_voice(&mut self, voice_idx: usize) {
+        let p = self.params.as_ref();
+        let voice = &mut self.voices[voice_idx];
+        if p.mod_env.retrig_mode == ModEnvRetrigMode::Poly && p.mod_env.mode == ModEnvMode::Adsr {
+            voice.mod_env.note_off();
+        }
     }
 
     pub(crate) fn start_release(&mut self, voice_idx: usize) {
         self.voices[voice_idx].is_releasing = true;
         self.start_env_release_for_voice(voice_idx);
+    }
+
+    pub(crate) fn start_release_without_mod_env(&mut self, voice_idx: usize) {
+        self.voices[voice_idx].is_releasing = true;
+        self.start_line_env_release_for_voice(voice_idx);
     }
 
     pub(crate) fn start_quick_release(&mut self, voice_idx: usize) {
@@ -117,7 +134,12 @@ impl CosmoProcessor {
         self.voices[voice_idx].noise_step = 0;
         self.reset_voice_envs(voice_idx);
         self.reset_generator_runtime_for_note(voice_idx, note);
-        self.voices[voice_idx].mod_env.note_on();
+
+        if self.params.mod_env.retrig_mode == ModEnvRetrigMode::Poly {
+            self.voices[voice_idx].mod_env.note_on();
+        } else {
+            self.voices[voice_idx].mod_env = self.shared_mod_env.clone();
+        }
     }
 
     pub(crate) fn reset_generator_runtime_for_note(&mut self, voice_idx: usize, note: u8) {
@@ -210,9 +232,11 @@ impl CosmoProcessor {
         self.active_notes
             .retain(|entry| entry.voice_idx != source_voice_idx);
         self.voices[source_voice_idx].sustained = false;
+
         if !self.voices[source_voice_idx].is_releasing {
             self.start_release(source_voice_idx);
         }
+
         self.queue_pending_mono_retrigger(note, frequency, velocity, source_voice_idx);
     }
 
@@ -507,6 +531,18 @@ impl CosmoProcessor {
             self.lfo2_phase = 0.0;
         }
 
+        match self.params.mod_env.retrig_mode {
+            ModEnvRetrigMode::Poly => {}
+            ModEnvRetrigMode::Mono => {
+                self.shared_mod_env.note_on();
+            }
+            ModEnvRetrigMode::Legato => {
+                if self.active_notes.is_empty() {
+                    self.shared_mod_env.note_on();
+                }
+            }
+        }
+
         if self.params.poly_mode == PolyMode::Mono {
             self.handle_mono_note_on(note, frequency, vel);
         } else {
@@ -540,19 +576,26 @@ impl CosmoProcessor {
 
         if self.sustain_on {
             self.voices[voice_idx].sustained = true;
-            self.voices[voice_idx].mod_env.note_off();
             if self.params.poly_mode == PolyMode::Mono {
                 self.mono_stack.clear();
             }
             return;
         }
 
-        if self.params.poly_mode == PolyMode::Mono {
-            if !self.queue_mono_resume_previous_held_note(voice_idx) {
-                self.start_release(voice_idx);
-            }
+        let will_release = if self.params.poly_mode == PolyMode::Mono {
+            !self.queue_mono_resume_previous_held_note(voice_idx)
         } else {
+            true
+        };
+
+        if will_release {
             self.start_release(voice_idx);
+            if self.params.mod_env.retrig_mode != ModEnvRetrigMode::Poly
+                && self.params.mod_env.mode == ModEnvMode::Adsr
+                && self.active_notes.is_empty()
+            {
+                self.shared_mod_env.note_off();
+            }
         }
     }
 
@@ -566,7 +609,7 @@ impl CosmoProcessor {
                     let still_held = self.active_notes.iter().any(|e| e.voice_idx == i);
                     if !still_held {
                         self.voices[i].sustained = false;
-                        self.start_release(i);
+                        self.start_release_without_mod_env(i);
                     } else {
                         self.voices[i].sustained = false;
                     }
