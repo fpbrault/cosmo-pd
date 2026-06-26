@@ -52,6 +52,7 @@ function PerLineParametersCardInner({
 					min={-2}
 					max={2}
 					step={1}
+					modDestination="line1Octave"
 					onChange={(v) => parameters.setOctave(Math.round(v))}
 				/>
 				<SynthParamKnob
@@ -66,6 +67,7 @@ function PerLineParametersCardInner({
 					min={-3}
 					max={3}
 					step={1}
+					modDestination="line2DetuneOctave"
 					onChange={(v) => parameters.setDetuneOctave?.(Math.round(v))}
 				/>
 				<SynthParamKnob

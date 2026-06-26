@@ -249,4 +249,30 @@ mod tests {
             31
         );
     }
+
+    #[test]
+    fn line1_blend_and_octave_modulation_clamp_to_safe_range() {
+        let base = LineParams::default();
+        let mut scratch = base;
+        let mut mod_values = vec![0.0; crate::params::NUM_MOD_DESTINATIONS];
+        mod_values[ModDestination::Line1AlgoBlend as usize] = 1.0;
+        mod_values[ModDestination::Line1Octave as usize] = 1.0;
+
+        scratch.apply_line1_mods(&base, &mod_values, false);
+
+        assert_eq!(scratch.algo_blend, 1.0);
+        assert_eq!(scratch.octave, 2.0);
+    }
+
+    #[test]
+    fn line2_octave_modulation_reaches_full_relative_span() {
+        let base = LineParams::default();
+        let mut scratch = base;
+        let mut mod_values = vec![0.0; crate::params::NUM_MOD_DESTINATIONS];
+        mod_values[ModDestination::Line2DetuneOctave as usize] = 1.0;
+
+        scratch.apply_line2_mods(&base, &mod_values, false);
+
+        assert_eq!(scratch.octave, 5.0);
+    }
 }

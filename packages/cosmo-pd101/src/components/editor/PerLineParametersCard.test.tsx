@@ -6,13 +6,16 @@ vi.mock("@/components/controls/SynthParamKnob", () => ({
 	default: ({
 		label,
 		onChange,
+		modDestination,
 	}: {
 		label: string;
 		onChange: (value: number) => void;
+		modDestination?: string;
 	}) => (
 		<button
 			type="button"
 			data-testid={`knob-${label}`}
+			data-mod-destination={modDestination}
 			onClick={() => onChange(1)}
 		>
 			{label}
@@ -47,5 +50,13 @@ describe("PerLineParametersCard", () => {
 		);
 		fireEvent.click(screen.getByTestId("knob-L2 Note"));
 		expect(setDetuneNote).toHaveBeenCalledWith(1);
+		expect(screen.getByTestId("knob-Oct")).toHaveAttribute(
+			"data-mod-destination",
+			"line1Octave",
+		);
+		expect(screen.getByTestId("knob-L2 Oct")).toHaveAttribute(
+			"data-mod-destination",
+			"line2DetuneOctave",
+		);
 	});
 });

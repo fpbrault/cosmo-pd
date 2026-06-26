@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
-import Card from "@/components/primitives/Card";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";

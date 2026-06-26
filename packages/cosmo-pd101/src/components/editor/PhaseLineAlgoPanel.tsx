@@ -63,7 +63,11 @@ export function PhaseLineAlgoPanel({
 					<SynthParamSlider
 						paramKey={lineIndex === 2 ? "algoBlendB" : "algoBlendA"}
 						orientation="horizontal"
+						trackLength={240}
 						label=""
+						modDestination={
+							lineIndex === 2 ? "line2AlgoBlend" : "line1AlgoBlend"
+						}
 						labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
 						value={algo.blend}
 						onChange={algo.setBlend}

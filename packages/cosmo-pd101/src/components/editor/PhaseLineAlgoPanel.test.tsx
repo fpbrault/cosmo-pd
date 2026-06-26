@@ -34,10 +34,17 @@ vi.mock("./PerLineParametersCard", () => ({
 }));
 
 vi.mock("@/components/controls/SynthParamSlider", () => ({
-	default: ({ onChange }: { onChange: (value: number) => void }) => (
+	default: ({
+		onChange,
+		modDestination,
+	}: {
+		onChange: (value: number) => void;
+		modDestination?: string;
+	}) => (
 		<button
 			type="button"
 			aria-label="BlendSlider"
+			data-mod-destination={modDestination}
 			onClick={() => onChange(0.3)}
 		>
 			BlendSlider
@@ -95,8 +102,29 @@ describe("PhaseLineAlgoPanel", () => {
 		expect(screen.getByText("Algo B")).toBeInTheDocument();
 		expect(screen.getByTestId("cycle-display")).toBeInTheDocument();
 		expect(screen.getByTestId("per-line-params")).toBeInTheDocument();
-		fireEvent.click(screen.getByRole("button", { name: "BlendSlider" }));
+		const blendSlider = screen.getByRole("button", { name: "BlendSlider" });
+		expect(blendSlider).toHaveAttribute(
+			"data-mod-destination",
+			"line1AlgoBlend",
+		);
+		fireEvent.click(blendSlider);
 		expect(algo.setBlend).toHaveBeenCalledWith(0.3);
+	});
+
+	it("wires line 2 blend slider to line2 modulation destination", () => {
+		render(
+			<PhaseLineAlgoPanel
+				algo={createAlgo()}
+				parameters={parameters}
+				lineIndex={2}
+				color="#fff"
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "BlendSlider" })).toHaveAttribute(
+			"data-mod-destination",
+			"line2AlgoBlend",
+		);
 	});
 
 	it("disables algo B when blend is zero", () => {

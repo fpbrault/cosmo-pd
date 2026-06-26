@@ -126,4 +126,60 @@ describe("presetTomlExchange", () => {
 		]);
 		expect(parsed?.data.params.modMatrix?.routes).toEqual([]);
 	});
+
+	it("round-trips blend and octave modulation destinations", () => {
+		const toml = exportPresetToToml({
+			name: "Mod Targets",
+			data: {
+				...DEFAULT_PRESET,
+				params: {
+					...DEFAULT_PRESET.params,
+					modMatrix: {
+						routes: [
+							{
+								source: "lfo1",
+								destination: "line1AlgoBlend",
+								amount: 0.4,
+								enabled: true,
+							},
+							{
+								source: "modWheel",
+								destination: "line1Octave",
+								amount: 0.75,
+								enabled: true,
+							},
+							{
+								source: "lfo2",
+								destination: "line2DetuneOctave",
+								amount: -0.5,
+								enabled: true,
+							},
+						],
+					},
+				},
+			},
+		});
+
+		const parsed = parsePresetToml(toml);
+		expect(parsed?.data.params.modMatrix?.routes).toEqual([
+			{
+				source: "lfo1",
+				destination: "line1AlgoBlend",
+				amount: 0.4,
+				enabled: true,
+			},
+			{
+				source: "modWheel",
+				destination: "line1Octave",
+				amount: 0.75,
+				enabled: true,
+			},
+			{
+				source: "lfo2",
+				destination: "line2DetuneOctave",
+				amount: -0.5,
+				enabled: true,
+			},
+		]);
+	});
 });

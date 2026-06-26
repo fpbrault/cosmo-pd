@@ -3,6 +3,7 @@ import {
 	memo,
 	type PointerEvent,
 	useCallback,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -12,6 +13,7 @@ import { ControlValueTooltipPortal } from "@/components/controls/ControlValueToo
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
+import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
 import type { KnobCurve } from "./knob/knobGeometry";
 import {
@@ -164,11 +166,59 @@ function SynthParamSliderInner({
 	const valueText = state.valueFormatter
 		? state.valueFormatter(state.displayedValue)
 		: Number(state.displayedValue.toFixed(3)).toString();
+	const maybeSynthController = useOptionalSynthController();
+	const [, setModulationTick] = useState(0);
+	const hasActiveModRoutes =
+		state.modDestinationResolved !== undefined &&
+		(maybeSynthController?.hasActiveRoutes(state.modDestinationResolved) ??
+			false);
+
+	const effectiveModulatedValue =
+		hasActiveModRoutes && state.modDestinationResolved
+			? maybeSynthController?.getModulatedValue({
+					destination: state.modDestinationResolved,
+					baseValue: state.displayedValue,
+					min: state.controlMin,
+					max: state.controlMax,
+				})
+			: undefined;
+	const modulatedNormalized =
+		effectiveModulatedValue !== undefined &&
+		Number.isFinite(effectiveModulatedValue)
+			? clamp((effectiveModulatedValue - state.controlMin) / safeRange, 0, 1)
+			: undefined;
+	const showModulatedIndicator =
+		modulatedNormalized !== undefined &&
+		Number.isFinite(modulatedNormalized) &&
+		Math.abs(modulatedNormalized - normalized) > 0.0005;
+	const modulatedFillStart =
+		modulatedNormalized === undefined
+			? 0
+			: Math.min(normalized, modulatedNormalized);
+	const modulatedFillSpan =
+		modulatedNormalized === undefined
+			? 0
+			: Math.abs(modulatedNormalized - normalized);
 
 	const centerValue = (state.controlMin + state.controlMax) / 2;
 	const detentThreshold =
 		centerDetentThreshold ??
 		Math.max((state.controlStep ?? safeRange / 100) * 1.2, 0.001);
+
+	useEffect(() => {
+		if (!hasActiveModRoutes) {
+			return;
+		}
+
+		const onRuntimeModSources = () => {
+			setModulationTick((tick) => (tick + 1) % 1_000_000);
+		};
+
+		window.addEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		return () => {
+			window.removeEventListener("cz-runtime-mod-sources", onRuntimeModSources);
+		};
+	}, [hasActiveModRoutes]);
 
 	const controlToValue = useCallback(
 		(
@@ -491,6 +541,83 @@ function SynthParamSliderInner({
 					/>
 				) : null}
 			</div>
+
+			{showModulatedIndicator && modulatedNormalized !== undefined ? (
+				<div
+					aria-hidden="true"
+					className={`pointer-events-none relative ${
+						orientation === "vertical" ? "ml-1 h-full w-2" : "mt-1 h-2 w-full"
+					}`}
+					style={orientation === "vertical" ? { height: length } : undefined}
+				>
+					<div
+						className="absolute rounded-full bg-cz-light-blue/20"
+						style={
+							orientation === "vertical"
+								? {
+										top: 0,
+										bottom: 0,
+										left: "50%",
+										width: 1,
+										transform: "translateX(-50%)",
+									}
+								: {
+										left: 0,
+										right: 0,
+										top: "50%",
+										height: 1,
+										transform: "translateY(-50%)",
+									}
+						}
+					/>
+					<div
+						data-testid="slider-modulated-trail"
+						className="absolute rounded-full"
+						style={
+							orientation === "vertical"
+								? {
+										left: "50%",
+										width: 2,
+										bottom: `${modulatedFillStart * 100}%`,
+										height: `max(${modulatedFillSpan * 100}%, 1px)`,
+										transform: "translateX(-50%)",
+										background: "rgba(125, 211, 252, 0.95)",
+										boxShadow: "0 0 8px rgba(125, 211, 252, 0.6)",
+									}
+								: {
+										top: "50%",
+										height: 2,
+										left: `${modulatedFillStart * 100}%`,
+										width: `max(${modulatedFillSpan * 100}%, 1px)`,
+										transform: "translateY(-50%)",
+										background: "rgba(125, 211, 252, 0.95)",
+										boxShadow: "0 0 8px rgba(125, 211, 252, 0.6)",
+									}
+						}
+					/>
+					<div
+						data-testid="slider-modulated-marker"
+						className="absolute z-20 rounded-full border border-cz-light-blue/80 bg-cz-light-blue shadow-[0_0_8px_rgba(125,211,252,0.8)]"
+						style={
+							orientation === "vertical"
+								? {
+										width: 7,
+										height: 7,
+										left: "50%",
+										bottom: `calc(${modulatedNormalized * 100}% - 3.5px)`,
+										transform: "translateX(-50%)",
+									}
+								: {
+										width: 7,
+										height: 7,
+										top: "50%",
+										left: `calc(${modulatedNormalized * 100}% - 3.5px)`,
+										transform: "translateY(-50%)",
+									}
+						}
+					/>
+				</div>
+			) : null}
 
 			{showTicks ? (
 				<div
