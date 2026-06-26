@@ -1018,19 +1018,20 @@
 		"transportSection": "Transport",
 		"tempo": "Tempo",
 		"bpm": "BPM",
-		"portamentoSection": "Portamento",
-		"portamento": "Portamento",
-		"expressionSection": "Expression",
-		"pitchBend": "Pitch Bend",
-		"velCurve": "Vel Curve",
-		"velCurveAria": "Velocity curve preview. Curve value: {{value}}",
-		"rateMode": "Rate Mode",
-		"timeMode": "Time Mode",
 		"voiceSection": "Voice Allocation",
 		"voiceLimit": "Voices",
 		"voiceLimitAria": "Voice limit: {{value}}",
 		"voiceLimitDec": "Decrease voice limit",
 		"voiceLimitInc": "Increase voice limit"
+	},
+	"presetVoice": {
+		"title": "Voice Settings",
+		"portamento": "Porta",
+		"pitchBend": "Bend",
+		"velCurve": "Vel",
+		"velCurveAria": "Velocity curve preview. Curve value: {{value}}",
+		"rateMode": "Rate",
+		"timeMode": "Time"
 	},
 	"modMatrix": {
 		"title": "Mod Matrix",

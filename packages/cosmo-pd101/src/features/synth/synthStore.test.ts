@@ -157,6 +157,11 @@ describe("useSynthStore", () => {
 			setLfoRateMode,
 			setLfoSyncDivision,
 			setCzDacEnabled,
+			setPortamentoMode,
+			setPortamentoRate,
+			setPortamentoTime,
+			setPitchBendRange,
+			setVelocityCurve,
 			gatherState,
 			gatherPresetState,
 		} = useSynthStore.getState();
@@ -167,6 +172,11 @@ describe("useSynthStore", () => {
 			setLfoRateMode("sync");
 			setLfoSyncDivision("eighth");
 			setCzDacEnabled(true);
+			setPortamentoMode("rate");
+			setPortamentoRate(42);
+			setPortamentoTime(0.85);
+			setPitchBendRange(12);
+			setVelocityCurve(-0.3);
 		});
 
 		const preset = gatherState();
@@ -175,10 +185,21 @@ describe("useSynthStore", () => {
 		expect(preset.params.lfo.rateMode).toBe("sync");
 		expect(preset.params.lfo.syncDivision).toBe("eighth");
 		expect(preset.params.czDacEnabled).toBe(true);
+		expect(preset.params.portamento).toEqual({
+			enabled: false,
+			mode: "rate",
+			rate: 42,
+			time: 0.85,
+		});
+		expect(preset.params.pitchBendRange).toBe(12);
+		expect(preset.params.velocityCurve).toBe(-0.3);
 		expect(preset.schemaVersion).toBe(1);
 
 		const presetState = gatherPresetState();
 		expect(presetState.params.czDacEnabled).toBeUndefined();
+		expect(presetState.params.portamento).toEqual(preset.params.portamento);
+		expect(presetState.params.pitchBendRange).toBe(12);
+		expect(presetState.params.velocityCurve).toBe(-0.3);
 	});
 
 	it("applies a preset to the state", () => {
@@ -223,6 +244,73 @@ describe("useSynthStore", () => {
 		expect(state.warpBAmount).toBe(0.4);
 		expect(state.lfoRateMode).toBe("sync");
 		expect(state.lfoSyncDivision).toBe("quarter");
+	});
+
+	it("restores preset-specific voice settings when applying different presets", () => {
+		const { applyPreset, gatherPresetState } = useSynthStore.getState();
+		const basePreset = gatherPresetState();
+		const presetA: SynthPresetV1 = {
+			...basePreset,
+			params: {
+				...basePreset.params,
+				portamento: {
+					enabled: true,
+					mode: "rate",
+					rate: 12,
+					time: 0.2,
+				},
+				pitchBendRange: 5,
+				velocityCurve: -0.4,
+			},
+		};
+		const presetB: SynthPresetV1 = {
+			...basePreset,
+			params: {
+				...basePreset.params,
+				portamento: {
+					enabled: false,
+					mode: "time",
+					rate: 80,
+					time: 1.5,
+				},
+				pitchBendRange: 14,
+				velocityCurve: 0.65,
+			},
+		};
+
+		act(() => applyPreset(presetA));
+		expect(useSynthStore.getState().portamentoEnabled).toBe(true);
+		expect(useSynthStore.getState().portamentoMode).toBe("rate");
+		expect(useSynthStore.getState().portamentoRate).toBe(12);
+		expect(useSynthStore.getState().portamentoTime).toBe(0.2);
+		expect(useSynthStore.getState().pitchBendRange).toBe(5);
+		expect(useSynthStore.getState().velocityCurve).toBe(-0.4);
+
+		act(() => applyPreset(presetB));
+		expect(useSynthStore.getState().portamentoEnabled).toBe(false);
+		expect(useSynthStore.getState().portamentoMode).toBe("time");
+		expect(useSynthStore.getState().portamentoRate).toBe(80);
+		expect(useSynthStore.getState().portamentoTime).toBe(1.5);
+		expect(useSynthStore.getState().pitchBendRange).toBe(14);
+		expect(useSynthStore.getState().velocityCurve).toBe(0.65);
+	});
+
+	it("defaults missing legacy preset voice fields without crashing", () => {
+		const { applyPreset, gatherPresetState } = useSynthStore.getState();
+		const legacyPreset = gatherPresetState() as SynthPresetV1;
+		delete (legacyPreset.params as Record<string, unknown>).portamento;
+		delete (legacyPreset.params as Record<string, unknown>).pitchBendRange;
+		delete (legacyPreset.params as Record<string, unknown>).velocityCurve;
+
+		act(() => applyPreset(legacyPreset));
+
+		const state = useSynthStore.getState();
+		expect(state.portamentoEnabled).toBe(false);
+		expect(state.portamentoMode).toBe("time");
+		expect(state.portamentoRate).toBe(85);
+		expect(state.portamentoTime).toBe(0.10000000149011612);
+		expect(state.pitchBendRange).toBe(2);
+		expect(state.velocityCurve).toBe(0);
 	});
 
 	it("handles invalid presets gracefully in applyPreset", () => {

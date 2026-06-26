@@ -270,6 +270,14 @@ mod tests {
     }
 
     #[test]
+    fn global_settings_json_excludes_preset_voice_fields() {
+        let json = serde_json::to_value(PluginGlobalSettings::default()).unwrap();
+        assert!(json.get("portamento").is_none());
+        assert!(json.get("pitchBendRange").is_none());
+        assert!(json.get("velocityCurve").is_none());
+    }
+
+    #[test]
     fn deserializing_without_log_level_uses_default() {
         let settings: PluginGlobalSettings = serde_json::from_str(
             r#"{"midiLearnBindings":[{"paramKey":"macro1","channel":-1,"cc":1}]}"#,
