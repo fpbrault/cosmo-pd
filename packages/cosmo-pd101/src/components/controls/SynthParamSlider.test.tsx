@@ -7,6 +7,10 @@ const { mockUseSynthParamControl } = vi.hoisted(() => ({
 	mockUseSynthParamControl: vi.fn(),
 }));
 
+const { mockUseOptionalSynthController } = vi.hoisted(() => ({
+	mockUseOptionalSynthController: vi.fn(),
+}));
+
 vi.mock("@/components/controls/modulation/ModulatableControl", () => ({
 	default: ({ children }: { children: ReactNode }) => (
 		<div data-testid="modulatable-wrapper">{children}</div>
@@ -16,6 +20,16 @@ vi.mock("@/components/controls/modulation/ModulatableControl", () => ({
 vi.mock("@/components/layout/HoverInfo", () => ({
 	useHoverInfoHandlers: () => ({}),
 }));
+
+vi.mock("@/features/synth/SynthParamController", async () => {
+	const actual = await vi.importActual<
+		typeof import("@/features/synth/SynthParamController")
+	>("@/features/synth/SynthParamController");
+	return {
+		...actual,
+		useOptionalSynthController: () => mockUseOptionalSynthController(),
+	};
+});
 
 vi.mock("./synthParamControlShared", async () => {
 	const actual = await vi.importActual<
@@ -31,6 +45,8 @@ vi.mock("./synthParamControlShared", async () => {
 describe("SynthParamSlider", () => {
 	beforeEach(() => {
 		mockUseSynthParamControl.mockReset();
+		mockUseOptionalSynthController.mockReset();
+		mockUseOptionalSynthController.mockReturnValue(null);
 		mockUseSynthParamControl.mockReturnValue({
 			syncConfig: null,
 			syncMode: false,
@@ -173,5 +189,40 @@ describe("SynthParamSlider", () => {
 		});
 		render(<SynthParamSlider paramKey="volume" orientation="vertical" />);
 		expect(screen.getByTestId("modulatable-wrapper")).toBeInTheDocument();
+	});
+
+	it("renders modulation marker and trail when runtime modulation differs", () => {
+		mockUseOptionalSynthController.mockReturnValue({
+			hasActiveRoutes: vi.fn().mockReturnValue(true),
+			getModulatedValue: vi.fn().mockReturnValue(8),
+		});
+		mockUseSynthParamControl.mockReturnValue({
+			syncConfig: null,
+			syncMode: false,
+			syncTooltip: "",
+			boundTooltip: "",
+			valueFormatter: (value: number) => `${value.toFixed(1)}`,
+			midiLearn: {
+				onClick: vi.fn(),
+				onContextMenu: vi.fn(),
+				interactionLocked: false,
+				midiLearnState: null,
+			},
+			displayedValue: 2,
+			controlMin: -12,
+			controlMax: 12,
+			controlStep: 0.1,
+			controlDefaultValue: 0,
+			controlBipolar: true,
+			controlCurve: "linear",
+			modDestinationResolved: "eqGain80",
+			handleControlChange: vi.fn(),
+			setSyncMode: vi.fn(),
+		});
+
+		render(<SynthParamSlider paramKey="volume" orientation="horizontal" />);
+
+		expect(screen.getByTestId("slider-modulated-trail")).toBeInTheDocument();
+		expect(screen.getByTestId("slider-modulated-marker")).toBeInTheDocument();
 	});
 });

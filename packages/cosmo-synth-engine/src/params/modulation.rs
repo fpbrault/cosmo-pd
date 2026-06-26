@@ -302,6 +302,19 @@ mod tests {
             ModDestination::Line2AlgoControl8
         );
     }
+
+    #[test]
+    fn blend_and_octave_destinations_round_trip_through_json() {
+        for destination in [
+            ModDestination::Line1AlgoBlend,
+            ModDestination::Line1Octave,
+            ModDestination::Line2DetuneOctave,
+        ] {
+            let serialized = serde_json::to_string(&destination).unwrap();
+            let deserialized = serde_json::from_str::<ModDestination>(&serialized).unwrap();
+            assert_eq!(deserialized, destination);
+        }
+    }
 }
 
 impl Default for ModRoute {

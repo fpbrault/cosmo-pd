@@ -36,6 +36,9 @@ describe("modTargets", () => {
 		it("returns correct label for registered targets", () => {
 			expect(getModDestinationLabel("volume")).toBe("Volume");
 			expect(getModDestinationLabel("pitch")).toBe("Pitch");
+			expect(getModDestinationLabel("line1AlgoBlend")).toBe("Blend");
+			expect(getModDestinationLabel("line1Octave")).toBe("Oct (L1 Oct)");
+			expect(getModDestinationLabel("line2DetuneOctave")).toBe("L2 Oct");
 			expect(getModDestinationLabel("line1AlgoControl1")).toBe(
 				"Line 1 Algo Control 1",
 			);
@@ -56,6 +59,19 @@ describe("modTargets", () => {
 			expect(globalGroup?.destinations.some((d) => d.value === "volume")).toBe(
 				true,
 			);
+
+			const line1Group = groups.find((g) => g.label === "Line 1");
+			expect(
+				line1Group?.destinations.some((d) => d.value === "line1AlgoBlend"),
+			).toBe(true);
+			expect(
+				line1Group?.destinations.some((d) => d.value === "line1Octave"),
+			).toBe(true);
+
+			const line2Group = groups.find((g) => g.label === "Line 2");
+			expect(
+				line2Group?.destinations.some((d) => d.value === "line2DetuneOctave"),
+			).toBe(true);
 		});
 	});
 
