@@ -1,17 +1,10 @@
-import { AnimatePresence, motion } from "motion/react";
 import { memo } from "react";
 import { ScopeMiniDisplay } from "@/components/panels/analysis/ScopeDisplay";
 
 import MidiLearnPanel from "@/components/panels/midi/MidiLearnPanel";
+import PresetVoiceSettingsPanel from "@/components/panels/voice/PresetVoiceSettingsPanel";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import SynthSidebarButtons from "./SynthSidebarButtons";
-
-const MIDI_LEARN_PANEL_TRANSITION = {
-	type: "spring",
-	stiffness: 260,
-	damping: 28,
-	mass: 0.95,
-} as const;
 
 export default memo(function SynthSidebar() {
 	const midiLearnOpen = useSynthUiStore((s) => s.midiLearnOpen);
@@ -28,20 +21,9 @@ export default memo(function SynthSidebar() {
 				</div>
 			</div>
 			<SynthSidebarButtons />
-			<AnimatePresence initial={false}>
-				{midiLearnOpen ? (
-					<motion.div
-						key="midi-learn-panel"
-						initial={{ opacity: 0, y: -8 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -8 }}
-						transition={MIDI_LEARN_PANEL_TRANSITION}
-						className="flex min-h-0 flex-1 flex-col overflow-hidden"
-					>
-						<MidiLearnPanel />
-					</motion.div>
-				) : null}
-			</AnimatePresence>
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+				{midiLearnOpen ? <MidiLearnPanel /> : <PresetVoiceSettingsPanel />}
+			</div>
 		</aside>
 	);
 });

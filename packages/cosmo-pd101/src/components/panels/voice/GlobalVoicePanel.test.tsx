@@ -1,5 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import type React from "react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import GlobalVoicePanel from "./GlobalVoicePanel";
 
@@ -9,35 +8,6 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	useSynthParam: (key: string) => useSynthParamMock(key),
 }));
 
-const { MockSynthParamKnob } = vi.hoisted(() => {
-	const MockSynthParamKnob = ({
-		label,
-		paramKey,
-	}: {
-		label?: string;
-		paramKey?: string;
-	}) => <div data-testid={`knob-${paramKey ?? label}`}>{label}</div>;
-	return { MockSynthParamKnob };
-});
-
-vi.mock("@/components/controls/SynthParamKnob", () => ({
-	default: MockSynthParamKnob,
-}));
-
-vi.mock("@/components/controls/Button", () => ({
-	default: ({
-		children,
-		onClick,
-	}: {
-		children: React.ReactNode;
-		onClick?: () => void;
-	}) => (
-		<button type="button" onClick={onClick}>
-			{children}
-		</button>
-	),
-}));
-
 describe("GlobalVoicePanel", () => {
 	const setters = new Map<string, ReturnType<typeof vi.fn>>();
 	const values = new Map<string, unknown>();
@@ -45,13 +15,7 @@ describe("GlobalVoicePanel", () => {
 	beforeEach(() => {
 		setters.clear();
 		values.clear();
-		values.set("polyMode", "poly8");
-		values.set("velocityCurve", 0);
-		values.set("pitchBendRange", 2);
-		values.set("portamentoEnabled", false);
-		values.set("portamentoMode", "rate");
-		values.set("portamentoRate", 50);
-		values.set("portamentoTime", 0.5);
+		values.set("tempoBpm", 120);
 		useSynthParamMock.mockImplementation((key: string) => {
 			const setValue = vi.fn();
 			setters.set(key, setValue);
@@ -59,47 +23,32 @@ describe("GlobalVoicePanel", () => {
 		});
 	});
 
-	it("groups portamento and bend range controls", () => {
+	it("renders transport and voice allocation settings", () => {
 		render(<GlobalVoicePanel />);
-		const portamentoSection = screen
-			.getByText("Portamento", { selector: "legend" })
-			.closest("fieldset");
 
 		expect(
-			screen.getByText("Portamento", { selector: "legend" }),
+			screen.getByText("Transport", { selector: "legend" }),
 		).toBeInTheDocument();
-		expect(portamentoSection).not.toBeNull();
-		// The portamento mode toggle shows "Rate Mode" when in rate mode
 		expect(
-			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "Rate Mode",
-			}),
+			screen.getByText("Voice Allocation", { selector: "legend" }),
 		).toBeInTheDocument();
-		expect(screen.getByTestId("knob-portamentoRate")).toBeInTheDocument();
-		expect(screen.getByTestId("knob-pitchBendRange")).toBeInTheDocument();
+		expect(screen.getByRole("spinbutton")).toHaveValue(120);
+		expect(
+			screen.getByRole("combobox", { name: "Voice limit: 8" }),
+		).toBeInTheDocument();
 	});
 
-	it("does not render master volume or mod wheel vibrato controls", () => {
+	it("does not render preset-specific voice controls", () => {
 		render(<GlobalVoicePanel />);
 
-		expect(screen.queryByText("Volume")).not.toBeInTheDocument();
-		expect(screen.queryByText("Mod→Vib")).not.toBeInTheDocument();
-	});
-
-	it("updates portamento controls", () => {
-		render(<GlobalVoicePanel />);
-		const portamentoSection = screen
-			.getByText("Portamento", { selector: "legend" })
-			.closest("fieldset");
-
-		expect(portamentoSection).not.toBeNull();
-		// Click the mode toggle (currently showing "Rate Mode") to switch to time
-		fireEvent.click(
-			within(portamentoSection as HTMLElement).getByRole("button", {
-				name: "Rate Mode",
-			}),
-		);
-
-		expect(setters.get("portamentoMode")).toHaveBeenCalledWith("time");
+		expect(screen.queryByText("Portamento")).not.toBeInTheDocument();
+		expect(screen.queryByText("Pitch Bend")).not.toBeInTheDocument();
+		expect(screen.queryByText("Expression")).not.toBeInTheDocument();
+		expect(screen.queryByText("Vel Curve")).not.toBeInTheDocument();
+		expect(setters.has("portamentoMode")).toBe(false);
+		expect(setters.has("portamentoRate")).toBe(false);
+		expect(setters.has("portamentoTime")).toBe(false);
+		expect(setters.has("pitchBendRange")).toBe(false);
+		expect(setters.has("velocityCurve")).toBe(false);
 	});
 });
