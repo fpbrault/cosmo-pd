@@ -93,7 +93,7 @@ export default memo(function PresetVoiceSettingsPanel() {
 
 	return (
 		<SynthPanelContainer>
-			<div variant="panel-slanted" className="flex h-full min-h-0 flex-col">
+			<div className="flex h-full min-h-0 flex-col">
 				<div className="cz-collapse-header cz-section-slanted-title shrink-0 justify-center py-0">
 					{t("presetVoice.title")}
 				</div>
