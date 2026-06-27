@@ -25,11 +25,15 @@ export default function PresetNavigator({
 	const previousMidiLearn = useMidiLearnTarget({
 		targetKey: "presetPrevious",
 		label: t("presetNavigator.previousPresetMidi"),
+		mode: "edge-trigger",
+		threshold: 64,
 		apply: () => onStepPreset(-1),
 	});
 	const nextMidiLearn = useMidiLearnTarget({
 		targetKey: "presetNext",
 		label: t("presetNavigator.nextPresetMidi"),
+		mode: "edge-trigger",
+		threshold: 64,
 		apply: () => onStepPreset(1),
 	});
 
