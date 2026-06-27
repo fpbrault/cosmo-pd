@@ -130,7 +130,8 @@ jobs:
           default_branch="${{ github.event.repository.default_branch }}"
           git checkout -B "${default_branch}" "${{ steps.target.outputs.release_sha }}"
           node scripts/bump-version.mjs "${{ steps.resolve.outputs.version }}"
-          git add Cargo.toml package.json packages/cosmo-pd101/package.json packages/cosmo-pd101-plugin/package.json packages/cosmo-pd101-plugin-auv3/package.json packages/cosmo-pd101-docs/package.json packages/cosmo-synth-engine/package.json
+          cargo generate-lockfile
+          git add Cargo.toml Cargo.lock package.json packages/cosmo-pd101/package.json packages/cosmo-pd101-plugin/package.json packages/cosmo-pd101-plugin-auv3/package.json packages/cosmo-pd101-docs/package.json packages/cosmo-synth-engine/package.json
           git commit -m "chore(release): ${{ steps.resolve.outputs.tag }}"
 
       - name: Push commit and tag
