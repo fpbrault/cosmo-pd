@@ -188,9 +188,9 @@ function SynthParamSliderInner({
 			? clamp((effectiveModulatedValue - state.controlMin) / safeRange, 0, 1)
 			: undefined;
 	const showModulatedIndicator =
+		hasActiveModRoutes &&
 		modulatedNormalized !== undefined &&
-		Number.isFinite(modulatedNormalized) &&
-		Math.abs(modulatedNormalized - normalized) > 0.0005;
+		Number.isFinite(modulatedNormalized);
 	const modulatedFillStart =
 		modulatedNormalized === undefined
 			? 0
