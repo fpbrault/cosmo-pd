@@ -25,7 +25,7 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/fpbrault/truce.git", rev = "44b1c3095aa8efde21b3d71f25f10f3cd3bee437", default-features = false }
+truce = { git = "https://github.com/fpbrault/truce.git", rev = "466e8bf8439b30e12a50358624c89be8e7807eea", default-features = false }
 truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "44b1c3095aa8efde21b3d71f25f10f3cd3bee437" }
 truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "44b1c3095aa8efde21b3d71f25f10f3cd3bee437" }
 truce-clap = { git = "https://github.com/fpbrault/truce.git", rev = "44b1c3095aa8efde21b3d71f25f10f3cd3bee437" }
