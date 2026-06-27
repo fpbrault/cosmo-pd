@@ -73,8 +73,8 @@ export function useMidiLearnBindings({
 							continue;
 						}
 						const now = performance.now();
-						const last = edgeTriggerCooldowns.current[binding.paramKey] ?? 0;
-						if (now - last < 50) {
+						const last = edgeTriggerCooldowns.current[binding.paramKey];
+						if (last !== undefined && now - last < 50) {
 							continue;
 						}
 						edgeTriggerCooldowns.current[binding.paramKey] = now;

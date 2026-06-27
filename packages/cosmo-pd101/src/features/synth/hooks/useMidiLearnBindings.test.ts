@@ -321,7 +321,9 @@ describe("useMidiLearnBindings", () => {
 		cleanup();
 	});
 
-	it("edge-trigger fires again on next rising edge after falling below threshold", () => {
+	it("edge-trigger fires again on next rising edge after falling below threshold and cooldown expires", () => {
+		let fakeNow = 100;
+		vi.spyOn(performance, "now").mockImplementation(() => fakeNow);
 		const apply = vi.fn();
 		const cleanup = registerMidiLearnTarget("presetPrevious", {
 			apply,
@@ -344,6 +346,7 @@ describe("useMidiLearnBindings", () => {
 				detail: { channel: 0, cc: 13, rawValue: 0 },
 			}),
 		);
+		fakeNow = 151;
 		// Above again → fire (2nd)
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
@@ -354,7 +357,9 @@ describe("useMidiLearnBindings", () => {
 		cleanup();
 	});
 
-	it("edge-trigger debounce suppresses rapid re-trigger (button bounce)", () => {
+	it("edge-trigger suppresses the next rising edge while cooldown is active", () => {
+		let fakeNow = 100;
+		vi.spyOn(performance, "now").mockImplementation(() => fakeNow);
 		const apply = vi.fn();
 		const cleanup = registerMidiLearnTarget("presetNext", {
 			apply,
@@ -371,13 +376,14 @@ describe("useMidiLearnBindings", () => {
 				detail: { channel: 0, cc: 12, rawValue: 100 },
 			}),
 		);
-		// Bounce dip below threshold
+		// Dip below threshold
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
 				detail: { channel: 0, cc: 12, rawValue: 0 },
 			}),
 		);
-		// Second rising edge within cooldown → should NOT fire
+		// Second rising edge within cooldown (120 - 100 = 20 < 50) → should NOT fire
+		fakeNow = 120;
 		window.dispatchEvent(
 			new CustomEvent("cz-midi-cc", {
 				detail: { channel: 0, cc: 12, rawValue: 100 },
