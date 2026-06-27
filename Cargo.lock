@@ -598,8 +598,8 @@ dependencies = [
  "truce",
  "truce-au",
  "truce-clap",
- "truce-core",
- "truce-params",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-standalone",
  "truce-test",
  "truce-vst3",
@@ -3602,23 +3602,23 @@ name = "truce"
 version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 dependencies = [
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-derive",
  "truce-gui-types",
  "truce-loader",
- "truce-params",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-plugin",
 ]
 
 [[package]]
 name = "truce-au"
 version = "1.0.1"
-source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 dependencies = [
  "cc",
  "crossbeam-queue",
- "truce-core",
- "truce-params",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea)",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea)",
  "truce-shim-types",
 ]
 
@@ -3630,7 +3630,7 @@ dependencies = [
  "base64",
  "serde",
  "toml 1.1.2+spec-1.1.0",
- "truce-utils",
+ "truce-utils 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
@@ -3642,8 +3642,8 @@ dependencies = [
  "crossbeam-queue",
  "log",
  "objc",
- "truce-core",
- "truce-params",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
@@ -3652,8 +3652,18 @@ version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 dependencies = [
  "png",
- "truce-params",
- "truce-utils",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-utils 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+]
+
+[[package]]
+name = "truce-core"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "png",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea)",
+ "truce-utils 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea)",
 ]
 
 [[package]]
@@ -3663,7 +3673,7 @@ source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f
 dependencies = [
  "fontdue",
  "tiny-skia",
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-font",
  "truce-gui-types",
 ]
@@ -3678,8 +3688,8 @@ dependencies = [
  "syn 2.0.117",
  "toml 1.1.2+spec-1.1.0",
  "truce-build",
- "truce-params",
- "truce-utils",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-utils 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
@@ -3687,8 +3697,8 @@ name = "truce-driver"
 version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 dependencies = [
- "truce-core",
- "truce-params",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
@@ -3710,11 +3720,11 @@ dependencies = [
  "objc2-ui-kit",
  "pollster",
  "raw-window-handle 0.5.2",
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-cpu",
  "truce-gui-types",
  "truce-gui-utils",
- "truce-params",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-plugin",
  "wgpu",
 ]
@@ -3725,7 +3735,7 @@ version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 dependencies = [
  "objc2",
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
@@ -3746,9 +3756,9 @@ dependencies = [
  "libloading 0.9.0",
  "log",
  "parking_lot",
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-gui-types",
- "truce-params",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-plugin",
 ]
 
@@ -3761,19 +3771,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "truce-params"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "bitflags 2.13.0",
+]
+
+[[package]]
 name = "truce-plugin"
 version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 dependencies = [
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-gui-types",
- "truce-params",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
 name = "truce-shim-types"
 version = "1.0.1"
-source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 
 [[package]]
 name = "truce-standalone"
@@ -3790,10 +3808,10 @@ dependencies = [
  "pico-args",
  "raw-window-handle 0.5.2",
  "rfd",
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-gui",
- "truce-params",
- "truce-utils",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-utils 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "windows-sys 0.61.2",
  "x11-dl",
 ]
@@ -3806,9 +3824,9 @@ dependencies = [
  "png",
  "toml 1.1.2+spec-1.1.0",
  "truce-build",
- "truce-core",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
  "truce-driver",
- "truce-params",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
@@ -3817,14 +3835,19 @@ version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 
 [[package]]
+name = "truce-utils"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+
+[[package]]
 name = "truce-vst3"
 version = "1.0.1"
 source = "git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437#44b1c3095aa8efde21b3d71f25f10f3cd3bee437"
 dependencies = [
  "cc",
  "crossbeam-queue",
- "truce-core",
- "truce-params",
+ "truce-core 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
+ "truce-params 1.0.1 (git+https://github.com/fpbrault/truce.git?rev=44b1c3095aa8efde21b3d71f25f10f3cd3bee437)",
 ]
 
 [[package]]
