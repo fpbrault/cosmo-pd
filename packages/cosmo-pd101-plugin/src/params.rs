@@ -370,15 +370,48 @@ pub fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthPara
     params.macro4.set_value(synth.macro4 as f64);
 }
 
+pub const DAW_PARAM_IDS: &[u32] = &[
+    CzPluginParamsParamId::Volume as u32,
+    CzPluginParamsParamId::WarpAAmount as u32,
+    CzPluginParamsParamId::WarpBAmount as u32,
+    CzPluginParamsParamId::AlgoBlendA as u32,
+    CzPluginParamsParamId::AlgoBlendB as u32,
+    CzPluginParamsParamId::Line1Level as u32,
+    CzPluginParamsParamId::Line2Level as u32,
+    CzPluginParamsParamId::Line1Octave as u32,
+    CzPluginParamsParamId::Line2Octave as u32,
+    CzPluginParamsParamId::DetuneNote as u32,
+    CzPluginParamsParamId::DetuneFine as u32,
+    CzPluginParamsParamId::VelocityCurve as u32,
+    CzPluginParamsParamId::PitchBendRange as u32,
+    CzPluginParamsParamId::PortamentoRate as u32,
+    CzPluginParamsParamId::PortamentoTime as u32,
+    CzPluginParamsParamId::LfoRate as u32,
+    CzPluginParamsParamId::LfoDepth as u32,
+    CzPluginParamsParamId::LfoOffset as u32,
+    CzPluginParamsParamId::Lfo2Rate as u32,
+    CzPluginParamsParamId::Lfo2Depth as u32,
+    CzPluginParamsParamId::Lfo2Offset as u32,
+    CzPluginParamsParamId::RandomRate as u32,
+    CzPluginParamsParamId::ModEnvAttack as u32,
+    CzPluginParamsParamId::ModEnvDecay as u32,
+    CzPluginParamsParamId::ModEnvSustain as u32,
+    CzPluginParamsParamId::ModEnvRelease as u32,
+    CzPluginParamsParamId::Macro1 as u32,
+    CzPluginParamsParamId::Macro2 as u32,
+    CzPluginParamsParamId::Macro3 as u32,
+    CzPluginParamsParamId::Macro4 as u32,
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn daw_parameter_keys_and_ids_round_trip() {
-        for id in 0..64 {
+        for &id in DAW_PARAM_IDS {
             let Some(key) = daw_param_key_by_id(id) else {
-                continue;
+                panic!("no key for known param id {id}");
             };
             assert_eq!(daw_param_id_by_key(key), Some(id));
         }

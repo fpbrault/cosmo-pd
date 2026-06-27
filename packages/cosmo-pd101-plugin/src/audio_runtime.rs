@@ -14,8 +14,9 @@ use truce_core::events::TransportInfo;
 use truce_core::midi::{norm_7bit, norm_pitch_bend};
 
 use crate::params::{
-    CzPluginParamsParamId, apply_daw_params, daw_param_key_by_id, read_current_daw_param_by_id,
-    read_daw_param_by_id, sync_all_daw_params_from_synth, write_daw_param_by_id,
+    CzPluginParamsParamId, DAW_PARAM_IDS, apply_daw_params, daw_param_key_by_id,
+    read_current_daw_param_by_id, read_daw_param_by_id, sync_all_daw_params_from_synth,
+    write_daw_param_by_id,
 };
 use crate::plugin::{CzPlugin, build_rt_synth_params};
 use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey};
@@ -183,21 +184,17 @@ impl CzPlugin {
         changes
     }
 
-    pub(crate) fn tracked_param_changes(
-        events: &EventList,
-    ) -> [bool; Self::TRACKED_PARAM_ID_CAPACITY] {
-        let mut changed = [false; Self::TRACKED_PARAM_ID_CAPACITY];
+    pub(crate) fn changed_param_ids(events: &EventList) -> Vec<u32> {
+        let mut ids: Vec<u32> = Vec::new();
         for event in events.iter() {
-            if let EventBody::ParamChange { id, .. } = event.body {
-                let Ok(index) = usize::try_from(id) else {
-                    continue;
-                };
-                if index < changed.len() {
-                    changed[index] = true;
-                }
+            if let EventBody::ParamChange { id, .. } = event.body
+                && DAW_PARAM_IDS.contains(&id)
+                && !ids.contains(&id)
+            {
+                ids.push(id);
             }
         }
-        changed
+        ids
     }
 
     pub(crate) fn current_transport_state(transport: &TransportInfo) -> CosmoTransportState {
@@ -210,20 +207,19 @@ impl CzPlugin {
     }
 
     pub(crate) fn sync_runtime_params_from_host(&mut self, events: &EventList) {
-        let tracked_param_changes = Self::tracked_param_changes(events);
-        let has_param_change_events = tracked_param_changes.iter().any(|changed| *changed);
+        let changed_param_ids = Self::changed_param_ids(events);
+        let has_param_change_events = !changed_param_ids.is_empty();
         let params_version = self
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
-        let mut host_param_changes = [false; Self::TRACKED_PARAM_ID_CAPACITY];
+        let mut host_param_changes: Vec<u32> = Vec::new();
         if params_version == self.audio.cached_synth_params_version {
-            for (id, changed) in host_param_changes.iter_mut().enumerate() {
-                if tracked_param_changes[id] {
+            for &param_id in DAW_PARAM_IDS {
+                if changed_param_ids.contains(&param_id) {
                     continue;
                 }
-                let param_id = id as u32;
                 let Some(current) = read_current_daw_param_by_id(&self.params, param_id) else {
                     continue;
                 };
@@ -232,10 +228,12 @@ impl CzPlugin {
                 else {
                     continue;
                 };
-                *changed = (current - cached).abs() > 0.000_001;
+                if (current - cached).abs() > 0.000_001 {
+                    host_param_changes.push(param_id);
+                }
             }
         }
-        let host_params_changed = host_param_changes.iter().any(|changed| *changed);
+        let host_params_changed = !host_param_changes.is_empty();
         let params_changed = params_version != self.audio.cached_synth_params_version
             || self.audio.daw_params_dirty
             || host_params_changed;
@@ -263,14 +261,11 @@ impl CzPlugin {
 
         let mut merged = merged;
         if has_param_change_events {
-            for (id, changed) in tracked_param_changes.iter().enumerate() {
-                if !*changed {
-                    continue;
-                }
-                let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) else {
+            for &id in &changed_param_ids {
+                let Some(prev_value) = read_daw_param_by_id(&previous_rt, id) else {
                     continue;
                 };
-                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+                let _ = write_daw_param_by_id(&mut merged, id, f64::from(prev_value));
             }
         }
 
@@ -283,11 +278,8 @@ impl CzPlugin {
         } else {
             params_version
         };
-        for (id, changed) in host_param_changes.iter().enumerate() {
-            if !*changed {
-                continue;
-            }
-            self.enqueue_daw_ui_param_changes(id as u32, &merged);
+        for &id in &host_param_changes {
+            self.enqueue_daw_ui_param_changes(id, &merged);
         }
 
         let rt_merged = Arc::new(merged);

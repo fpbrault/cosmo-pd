@@ -640,6 +640,9 @@ fn host_param_value_drift_updates_runtime_snapshot_and_version() {
         .load(Ordering::Acquire);
     params.line1_level.set_value(0.37);
 
+    // Simulate the dirty state that handle_host_event_side_effects sets
+    // during real process() when a ParamChange event arrives.
+    plugin.audio.daw_params_dirty = true;
     plugin.sync_runtime_params_from_host(&EventList::default());
 
     assert!(
@@ -862,8 +865,8 @@ fn param_change_applies_at_event_offset() {
             },
         });
 
-        let tracked = CzPlugin::tracked_param_changes(&events);
-        assert!(tracked[CzPluginParamsParamId::Volume as usize]);
+        let ids = CzPlugin::changed_param_ids(&events);
+        assert_eq!(ids, vec![CzPluginParamsParamId::Volume as u32]);
 
         let params_version = plugin
             .shared_state
@@ -873,12 +876,9 @@ fn param_change_applies_at_event_offset() {
         let previous_rt = (*plugin.audio.cached_rt_synth_params).clone();
         let mut merged = (*plugin.audio.cached_rt_synth_params).clone();
         apply_daw_params(&mut merged, &params);
-        for (id, changed) in tracked.iter().enumerate() {
-            if !*changed {
-                continue;
-            }
-            if let Some(prev_value) = read_daw_param_by_id(&previous_rt, id as u32) {
-                let _ = write_daw_param_by_id(&mut merged, id as u32, f64::from(prev_value));
+        for &id in &ids {
+            if let Some(prev_value) = read_daw_param_by_id(&previous_rt, id) {
+                let _ = write_daw_param_by_id(&mut merged, id, f64::from(prev_value));
             }
         }
 

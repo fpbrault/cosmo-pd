@@ -120,8 +120,6 @@ pub struct CzPlugin {
 }
 
 impl CzPlugin {
-    pub(crate) const TRACKED_PARAM_ID_CAPACITY: usize = 64;
-
     fn new(params: Arc<CzPluginParams>) -> Self {
         init_panic_hook();
         let default_params = SynthParams::default();
