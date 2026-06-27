@@ -203,7 +203,7 @@ describe("useMidiLearnBindings", () => {
 		expect(setVolume).not.toHaveBeenCalled();
 	});
 
-	it("does not duplicate native algo-control mapping in plugin mode", () => {
+	it("does not duplicate native algo control mapping in plugin mode", () => {
 		window.__czAddMidiBinding = vi.fn();
 		const apply = vi.fn();
 		const cleanup = registerMidiLearnTarget("line1AlgoControl1", { apply });
