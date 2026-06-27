@@ -10,6 +10,7 @@ import {
 	type WheelEvent,
 } from "react";
 import { ControlValueTooltipPortal } from "@/components/controls/ControlValueTooltip";
+import { getMidiLearnOverlayStyle } from "@/components/controls/MidiLearnOverlay";
 import ModulatableControl from "@/components/controls/modulation/ModulatableControl";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
@@ -538,6 +539,13 @@ function SynthParamSliderInner({
 						aria-hidden="true"
 						className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cz-cream/80 bg-cz-panel shadow-[0_0_6px_rgba(255,255,255,0.35)]"
 						style={{ width: 6, height: 6 }}
+					/>
+				) : null}
+				{state.midiLearn.midiLearnState ? (
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute inset-0 z-10 rounded-md"
+						style={getMidiLearnOverlayStyle(state.midiLearn.midiLearnState)}
 					/>
 				) : null}
 			</div>
