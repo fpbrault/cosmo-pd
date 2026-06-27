@@ -235,6 +235,184 @@ describe("useMidiLearnBindings", () => {
 		expect(setLineOctave).toHaveBeenCalledWith(0);
 	});
 
+	it("edge-trigger fires once on rising edge above threshold", () => {
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("presetNext", {
+			apply,
+			mode: "edge-trigger",
+			threshold: 64,
+		});
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "presetNext", channel: 0, cc: 12 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		// Rising edge from below to above threshold → fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 40 },
+			}),
+		);
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 80 },
+			}),
+		);
+		expect(apply).toHaveBeenCalledTimes(1);
+		cleanup();
+	});
+
+	it("edge-trigger does not fire while holding above threshold", () => {
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("presetNext", {
+			apply,
+			mode: "edge-trigger",
+			threshold: 64,
+		});
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "presetNext", channel: 0, cc: 12 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		// First above-threshold → fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 100 },
+			}),
+		);
+		// Same above-threshold again → should NOT fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 127 },
+			}),
+		);
+		// Higher value, still above → should NOT fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 127 },
+			}),
+		);
+		expect(apply).toHaveBeenCalledTimes(1);
+		cleanup();
+	});
+
+	it("edge-trigger does not fire on falling edge below threshold", () => {
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("presetNext", {
+			apply,
+			mode: "edge-trigger",
+			threshold: 64,
+		});
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "presetNext", channel: 0, cc: 12 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		// Above threshold → fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 100 },
+			}),
+		);
+		// Below threshold → should NOT fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 0 },
+			}),
+		);
+		expect(apply).toHaveBeenCalledTimes(1);
+		cleanup();
+	});
+
+	it("edge-trigger fires again on next rising edge after falling below threshold", () => {
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("presetPrevious", {
+			apply,
+			mode: "edge-trigger",
+			threshold: 64,
+		});
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "presetPrevious", channel: 0, cc: 13 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		// Above → fire (1st)
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 13, rawValue: 100 },
+			}),
+		);
+		// Below
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 13, rawValue: 0 },
+			}),
+		);
+		// Above again → fire (2nd)
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 13, rawValue: 100 },
+			}),
+		);
+		expect(apply).toHaveBeenCalledTimes(2);
+		cleanup();
+	});
+
+	it("edge-trigger debounce suppresses rapid re-trigger (button bounce)", () => {
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("presetNext", {
+			apply,
+			mode: "edge-trigger",
+			threshold: 64,
+		});
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "presetNext", channel: 0, cc: 12 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		// First rising edge → fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 100 },
+			}),
+		);
+		// Bounce dip below threshold
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 0 },
+			}),
+		);
+		// Second rising edge within cooldown → should NOT fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 0, cc: 12, rawValue: 100 },
+			}),
+		);
+		expect(apply).toHaveBeenCalledTimes(1);
+		cleanup();
+	});
+
+	it("edge-trigger with default threshold 64 fires at 64 and above", () => {
+		const apply = vi.fn();
+		const cleanup = registerMidiLearnTarget("presetNext", {
+			apply,
+			mode: "edge-trigger",
+		});
+		useMidiLearnStore.setState({
+			bindings: [{ paramKey: "presetNext", channel: -1, cc: 14 }],
+		});
+		renderHook(() => useMidiLearnBindings());
+		// 63 → below default threshold (64) → no fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 3, cc: 14, rawValue: 63 },
+			}),
+		);
+		// 64 → at threshold → fire
+		window.dispatchEvent(
+			new CustomEvent("cz-midi-cc", {
+				detail: { channel: 3, cc: 14, rawValue: 64 },
+			}),
+		);
+		expect(apply).toHaveBeenCalledTimes(1);
+		cleanup();
+	});
+
 	it("does not quantize continuous controls in web mode", () => {
 		const setVolume = vi.spyOn(useSynthStore.getState(), "setVolume");
 		useMidiLearnStore.setState({

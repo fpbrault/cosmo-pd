@@ -22,6 +22,7 @@ export function useMidiLearnBindings({
 	applyBindings = true,
 }: UseMidiLearnBindingsOptions = {}) {
 	const edgeTriggeredStates = useRef<Record<string, boolean>>({});
+	const edgeTriggerCooldowns = useRef<Record<string, number>>({});
 	const learnBindingFromWebMidi = useCallback((channel: number, cc: number) => {
 		const bridgeAddBinding = window.__czAddMidiBinding;
 		const store = useMidiLearnStore.getState();
@@ -71,6 +72,12 @@ export function useMidiLearnBindings({
 						if (!isHigh || wasHigh) {
 							continue;
 						}
+						const now = performance.now();
+						const last = edgeTriggerCooldowns.current[binding.paramKey] ?? 0;
+						if (now - last < 50) {
+							continue;
+						}
+						edgeTriggerCooldowns.current[binding.paramKey] = now;
 					}
 					applyRegisteredMidiLearnTarget(binding.paramKey, rawValue);
 					continue;

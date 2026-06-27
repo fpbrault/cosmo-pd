@@ -55,4 +55,21 @@ describe("useMidiLearnTarget", () => {
 		unmount();
 		expect(getMidiLearnTargetRegistration("custom-target")).toBeUndefined();
 	});
+
+	it("passes mode and threshold to the registration", () => {
+		const apply = vi.fn();
+		renderHook(() =>
+			useMidiLearnTarget({
+				targetKey: "edge-target",
+				label: "Edge",
+				mode: "edge-trigger",
+				threshold: 64,
+				apply,
+			}),
+		);
+		const registration = getMidiLearnTargetRegistration("edge-target");
+		expect(registration).toBeDefined();
+		expect(registration?.mode).toBe("edge-trigger");
+		expect(registration?.threshold).toBe(64);
+	});
 });
