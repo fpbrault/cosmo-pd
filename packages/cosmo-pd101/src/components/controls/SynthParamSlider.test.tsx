@@ -191,6 +191,111 @@ describe("SynthParamSlider", () => {
 		expect(screen.getByTestId("modulatable-wrapper")).toBeInTheDocument();
 	});
 
+	it("renders MIDI learn overlay when midiLearnState is available", () => {
+		mockUseSynthParamControl.mockReturnValue({
+			syncConfig: null,
+			syncMode: false,
+			syncTooltip: "",
+			boundTooltip: "",
+			valueFormatter: (value: number) => `${value.toFixed(1)}`,
+			midiLearn: {
+				onClick: vi.fn(),
+				onContextMenu: vi.fn(),
+				interactionLocked: false,
+				midiLearnState: "available",
+			},
+			displayedValue: 0,
+			controlMin: 0,
+			controlMax: 1,
+			controlStep: 0.1,
+			controlDefaultValue: 0,
+			controlBipolar: false,
+			controlCurve: "linear",
+			modDestinationResolved: undefined,
+			handleControlChange: vi.fn(),
+			setSyncMode: vi.fn(),
+		});
+
+		const { container } = render(
+			<SynthParamSlider paramKey="volume" orientation="horizontal" />,
+		);
+
+		const overlays = container.querySelectorAll(
+			".pointer-events-none.absolute.inset-0",
+		);
+		expect(overlays.length).toBeGreaterThanOrEqual(1);
+	});
+
+	it("renders MIDI learn overlay when midiLearnState is mapped", () => {
+		mockUseSynthParamControl.mockReturnValue({
+			syncConfig: null,
+			syncMode: false,
+			syncTooltip: "",
+			boundTooltip: "",
+			valueFormatter: (value: number) => `${value.toFixed(1)}`,
+			midiLearn: {
+				onClick: vi.fn(),
+				onContextMenu: vi.fn(),
+				interactionLocked: false,
+				midiLearnState: "mapped",
+			},
+			displayedValue: 0,
+			controlMin: 0,
+			controlMax: 1,
+			controlStep: 0.1,
+			controlDefaultValue: 0,
+			controlBipolar: false,
+			controlCurve: "linear",
+			modDestinationResolved: undefined,
+			handleControlChange: vi.fn(),
+			setSyncMode: vi.fn(),
+		});
+
+		const { container } = render(
+			<SynthParamSlider paramKey="volume" orientation="horizontal" />,
+		);
+
+		const overlays = container.querySelectorAll(
+			".pointer-events-none.absolute.inset-0",
+		);
+		expect(overlays.length).toBeGreaterThanOrEqual(1);
+	});
+
+	it("does not render MIDI learn overlay when midiLearnState is null", () => {
+		mockUseSynthParamControl.mockReturnValue({
+			syncConfig: null,
+			syncMode: false,
+			syncTooltip: "",
+			boundTooltip: "",
+			valueFormatter: (value: number) => `${value.toFixed(1)}`,
+			midiLearn: {
+				onClick: vi.fn(),
+				onContextMenu: vi.fn(),
+				interactionLocked: false,
+				midiLearnState: null,
+			},
+			displayedValue: 0,
+			controlMin: 0,
+			controlMax: 1,
+			controlStep: 0.1,
+			controlDefaultValue: 0,
+			controlBipolar: false,
+			controlCurve: "linear",
+			modDestinationResolved: undefined,
+			handleControlChange: vi.fn(),
+			setSyncMode: vi.fn(),
+		});
+
+		const { container } = render(
+			<SynthParamSlider paramKey="volume" orientation="horizontal" />,
+		);
+
+		const overlays = container.querySelectorAll(
+			".pointer-events-none.absolute.inset-0",
+		);
+		expect(overlays.length).toBe(0);
+	});
+
 	it("renders modulation marker and trail when runtime modulation differs", () => {
 		mockUseOptionalSynthController.mockReturnValue({
 			hasActiveRoutes: vi.fn().mockReturnValue(true),
