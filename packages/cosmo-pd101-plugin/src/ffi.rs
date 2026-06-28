@@ -652,6 +652,26 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
     }
 }
 
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`].
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosmo_pd101_ffi_program_change(
+    engine: *mut CosmoPd101FfiEngine,
+    program: u8,
+) -> CosmoPd101FfiStatus {
+    let Ok(engine) = engine_mut(engine) else {
+        return CosmoPd101FfiStatus::NullPointer;
+    };
+    let index = program as usize;
+    let Some(params) = factory_preset_params(index).cloned() else {
+        return CosmoPd101FfiStatus::InvalidArgument;
+    };
+    engine.processor.set_params(params);
+    CosmoPd101FfiStatus::Ok
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_get_factory_preset_count() -> usize {
     factory_preset_count()

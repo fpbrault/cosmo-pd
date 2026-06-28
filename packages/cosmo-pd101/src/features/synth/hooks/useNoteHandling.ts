@@ -346,6 +346,16 @@ export function useNoteHandling({
 								return;
 							}
 
+							// Program change (status 0xC0, program in data1)
+							if (status === 0xc0) {
+								window.dispatchEvent(
+									new CustomEvent("cz-program-change", {
+										detail: { program: data[1] },
+									}),
+								);
+								return;
+							}
+
 							// Pitch bend
 							if (status === 0xe0 && data.length >= 3) {
 								const raw = (data[2] << 7) | data[1];

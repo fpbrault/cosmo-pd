@@ -367,10 +367,10 @@ impl CzPlugin {
                 self.enqueue_daw_ui_param_changes(*id, synth_params.as_ref());
             }
             EventBody::ProgramChange { program, .. }
-            | EventBody::ProgramChange2 { program, .. }
-                if usize::from(*program) < crate::ffi::factory_preset_count() =>
-            {
-                self.apply_factory_preset(usize::from(*program));
+            | EventBody::ProgramChange2 { program, .. } => {
+                self.shared_state
+                    .pending_program_change
+                    .store(*program as i16, Ordering::Release);
             }
             _ => {}
         }

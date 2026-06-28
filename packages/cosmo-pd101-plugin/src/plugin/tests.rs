@@ -417,6 +417,7 @@ fn program_change_applies_factory_preset() {
         channel: 0,
         program: 0,
     });
+    plugin.state_changed();
 
     assert!((params.volume.value() - expected.volume).abs() < 0.000_001);
     let synth_params = plugin.shared_state.synth.synth_params.load();
@@ -425,6 +426,68 @@ fn program_change_applies_factory_preset() {
     let session = plugin.shared_state.presets.session.lock().unwrap().clone();
     assert_eq!(session.loaded_preset_id.as_deref(), Some(expected_id));
     assert_eq!(session.active_preset_name_base, expected_name);
+}
+
+#[test]
+fn program_change_deferred_until_state_changed() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    let original = crate::ffi::factory_preset_params(1).map(|p| p.volume);
+    let Some(original_volume) = original else {
+        return;
+    };
+
+    params.volume.set_value(0.999);
+    plugin.handle_host_event(&EventBody::ProgramChange {
+        group: 0,
+        channel: 0,
+        program: 1,
+    });
+
+    // Params NOT yet applied — still pending
+    let pc = plugin
+        .shared_state
+        .pending_program_change
+        .load(Ordering::Acquire);
+    assert_eq!(pc, 1);
+    assert!((params.volume.value() - 0.999).abs() < 0.000_001);
+
+    plugin.state_changed();
+
+    // Params applied after state_changed drains the pending PC
+    assert!((params.volume.value() - original_volume).abs() < 0.000_001);
+    assert_eq!(
+        plugin
+            .shared_state
+            .pending_program_change
+            .load(Ordering::Acquire),
+        -1
+    );
+}
+
+#[test]
+fn program_change_ignores_out_of_range() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    let count = crate::ffi::factory_preset_count();
+
+    params.volume.set_value(0.42);
+    plugin.handle_host_event(&EventBody::ProgramChange {
+        group: 0,
+        channel: 0,
+        program: count as u8,
+    });
+    plugin.handle_host_event(&EventBody::ProgramChange {
+        group: 0,
+        channel: 0,
+        program: 200,
+    });
+    plugin.state_changed();
+
+    // Out-of-range programs leave params unchanged
+    assert!((params.volume.value() - 0.42).abs() < 0.000_001);
 }
 
 #[test]

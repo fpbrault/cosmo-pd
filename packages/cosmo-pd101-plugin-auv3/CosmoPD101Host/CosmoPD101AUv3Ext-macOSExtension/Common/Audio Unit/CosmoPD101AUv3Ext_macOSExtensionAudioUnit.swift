@@ -480,6 +480,8 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 			let raw = Int(data1) | (Int(data2) << 7)
 			let normalized = (Float(raw) - 8192.0) / 8192.0
 			_ = cosmo_pd101_ffi_set_pitch_bend(engine, normalized)
+		case 0xC0:
+			cosmo_pd101_ffi_program_change(engine, data1)
 		default:
 			break
 		}

@@ -269,6 +269,21 @@ export default function LivePage() {
 		presetManager.syncExternalSelection,
 	]);
 
+	// MIDI Program Change (from Web MIDI API via cz-program-change custom event)
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const detail = (e as CustomEvent<{ program: number }>).detail;
+			const program = detail?.program;
+			if (typeof program !== "number") return;
+			if (program < 0 || program >= FACTORY_PRESETS.length) return;
+			const entry = FACTORY_PRESETS[program];
+			if (!entry) return;
+			void presetManager.activatePreset({ entryId: entry.id });
+		};
+		window.addEventListener("cz-program-change", handler);
+		return () => window.removeEventListener("cz-program-change", handler);
+	}, [presetManager.activatePreset, presetManager]);
+
 	useEffect(() => {
 		const handleBeforeUnload = () => {
 			const state = useSynthStore.getState().gatherState();

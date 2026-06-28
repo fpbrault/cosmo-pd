@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI16, AtomicU8, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use arc_swap::ArcSwap;
@@ -310,6 +310,10 @@ pub struct PluginSharedState {
     /// `processor.reset_audio_state()` *before* applying the new preset params.
     /// Ordering: IPC thread stores (Release), audio thread swaps (Acquire).
     pub preset_reset_pending: AtomicBool,
+    /// Set by audio thread in `handle_host_event_side_effects` on Program Change.
+    /// A value >= 0 is a pending program number (0-127). -1 means none.
+    /// Consumed by `state_changed()` on the non-realtime thread.
+    pub pending_program_change: AtomicI16,
 }
 
 impl PluginSharedState {
@@ -346,6 +350,7 @@ impl PluginSharedState {
             midi_learn: MidiLearnService::new(midi_learn_state),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
+            pending_program_change: AtomicI16::new(-1),
         }
     }
 }

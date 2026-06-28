@@ -101,6 +101,7 @@ fn handle_ipc_invoke(
         ),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
+        pending_program_change: std::sync::atomic::AtomicI16::new(-1),
     });
     crate::ipc::IpcContext::new(shared_state, params.clone())
         .invoke_envelope(&cosmo_pd101_bridge_types::PluginIpcEnvelope { id: 0, request })?
@@ -234,17 +235,40 @@ impl CzPlugin {
         self.apply_preset_state(Some(entry.id), Some(entry.name), params);
     }
 
-    pub(crate) fn apply_factory_preset(&mut self, index: usize) {
+    fn apply_factory_preset_async(&mut self, index: usize) {
         let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
             return;
         };
         let identity = crate::ffi::factory_preset_identity(index)
             .map(|(id, name)| (id.to_string(), name.to_string()));
-        self.apply_preset_state(
-            identity.as_ref().map(|(id, _)| id.clone()),
-            identity.as_ref().map(|(_, name)| name.clone()),
-            params,
-        );
+        sync_all_daw_params_from_synth(&self.params, &params);
+        let rt_params = Arc::new(build_rt_synth_params(&params));
+        self.shared_state
+            .preset_reset_pending
+            .store(true, Ordering::Release);
+        self.shared_state.synth.synth_params.store(Arc::new(params));
+        self.shared_state
+            .synth
+            .rt_synth_params
+            .store(Arc::clone(&rt_params));
+        self.audio.cached_rt_synth_params = Arc::clone(&rt_params);
+        self.shared_state
+            .synth
+            .synth_params_version
+            .fetch_add(1, Ordering::Release);
+        self.audio.cached_synth_params_version = self
+            .shared_state
+            .synth
+            .synth_params_version
+            .load(Ordering::Acquire);
+        self.audio.daw_params_dirty = false;
+        if let Ok(mut session) = self.shared_state.presets.session.lock() {
+            if let Some((id, name)) = identity {
+                session.active_preset_name_base = name;
+                session.loaded_preset_id = Some(id);
+            }
+            session.is_dirty = false;
+        }
     }
 }
 
@@ -358,6 +382,13 @@ impl PluginLogic for CzPlugin {
     }
 
     fn state_changed(&mut self) {
+        let pc = self
+            .shared_state
+            .pending_program_change
+            .swap(-1, Ordering::AcqRel);
+        if pc >= 0 && (pc as usize) < crate::ffi::factory_preset_count() {
+            self.apply_factory_preset_async(pc as usize);
+        }
         if let Some(ref mut proc) = self.audio.processor {
             proc.set_shared_params(self.audio.cached_rt_synth_params.clone());
         }
