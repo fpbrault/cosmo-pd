@@ -117,6 +117,10 @@ pub struct CzEditor {
     last_sent_params_json: Arc<Mutex<String>>,
     #[cfg(target_os = "macos")]
     standalone_window: Option<StandaloneWindow>,
+    #[cfg(target_os = "macos")]
+    auv2_resize_handle_view: Option<usize>,
+    #[cfg(target_os = "macos")]
+    auv2_resize_handle_state: Option<usize>,
 }
 
 impl Drop for CzEditor {
@@ -137,8 +141,32 @@ impl CzEditor {
         }
         self.last_midi_learn_version = u32::MAX;
         self.pending_parent_ns_view = None;
+        self.clear_auv2_resize_handle();
         self.clear_standalone_window();
     }
+
+    #[cfg(target_os = "macos")]
+    fn clear_auv2_resize_handle(&mut self) {
+        use cocoa::base::id;
+        use objc::{msg_send, sel, sel_impl};
+
+        if let Some(handle) = self.auv2_resize_handle_view.take() {
+            let handle = handle as id;
+            unsafe {
+                let _: () = msg_send![handle, removeFromSuperview];
+                let _: () = msg_send![handle, release];
+            }
+        }
+
+        if let Some(state) = self.auv2_resize_handle_state.take() {
+            unsafe {
+                drop(Box::from_raw(state as *mut AuV2ResizeHandleState));
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn clear_auv2_resize_handle(&mut self) {}
 
     #[cfg(target_os = "macos")]
     fn clear_standalone_window(&mut self) {
@@ -160,6 +188,10 @@ impl CzEditor {
             last_sent_params_json: Arc::new(Mutex::new(String::new())),
             #[cfg(target_os = "macos")]
             standalone_window: None,
+            #[cfg(target_os = "macos")]
+            auv2_resize_handle_view: None,
+            #[cfg(target_os = "macos")]
+            auv2_resize_handle_state: None,
         }
     }
 
@@ -210,12 +242,78 @@ impl CzEditor {
         if self.has_live_webview() {
             self.pending_parent_ns_view = None;
             let _ = apply_webview_size(&self.webview_state, initial_size.0, initial_size.1);
+            self.install_auv2_resize_handle(ns_view, initial_size);
             self.push_params();
             self.apply_scale_normalization();
             true
         } else {
+            self.clear_auv2_resize_handle();
             false
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn install_auv2_resize_handle(
+        &mut self,
+        ns_view: *mut std::ffi::c_void,
+        initial_size: (u32, u32),
+    ) {
+        use cocoa::base::{id, nil};
+        use cocoa::foundation::{NSPoint, NSRect, NSSize};
+        use objc::{msg_send, sel, sel_impl};
+
+        self.clear_auv2_resize_handle();
+
+        if !unsafe { is_truce_auv2_parent_view(ns_view) } {
+            return;
+        }
+
+        const HANDLE_SIZE: f64 = 18.0;
+        const NS_VIEW_MIN_X_MARGIN: usize = 1;
+        const NS_VIEW_MAX_Y_MARGIN: usize = 32;
+        const NS_WINDOW_ABOVE: isize = 1;
+
+        let state = Box::new(AuV2ResizeHandleState {
+            parent_view: ns_view as usize,
+            current_size: self.current_size.clone(),
+            webview_state: self.webview_state.clone(),
+            drag_start_x: 0.0,
+            drag_start_y: 0.0,
+            drag_start_width: initial_size.0,
+            drag_start_height: initial_size.1,
+        });
+        let state_ptr = Box::into_raw(state);
+
+        let frame = NSRect {
+            origin: NSPoint {
+                x: (initial_size.0 as f64 - HANDLE_SIZE).max(0.0),
+                y: 0.0,
+            },
+            size: NSSize {
+                width: HANDLE_SIZE,
+                height: HANDLE_SIZE,
+            },
+        };
+
+        let handle = unsafe {
+            let class = auv2_resize_handle_class();
+            let handle: id = msg_send![class, alloc];
+            let handle: id = msg_send![handle, initWithFrame: frame];
+            let handle_object = handle;
+            (*handle_object)
+                .set_ivar::<*mut std::ffi::c_void>(AUV2_RESIZE_HANDLE_STATE_IVAR, state_ptr.cast());
+            let _: () =
+                msg_send![handle, setAutoresizingMask: NS_VIEW_MIN_X_MARGIN | NS_VIEW_MAX_Y_MARGIN];
+            let _: () = msg_send![handle, setNeedsDisplay: cocoa::base::YES];
+            let parent = ns_view as id;
+            let _: () =
+                msg_send![parent, addSubview: handle positioned: NS_WINDOW_ABOVE relativeTo: nil];
+            handle
+        };
+
+        self.auv2_resize_handle_view = Some(handle as usize);
+        self.auv2_resize_handle_state = Some(state_ptr as usize);
+        append_log_debug("installed Cosmo AUv2 resize handle");
     }
 
     #[cfg(target_os = "ios")]
@@ -339,7 +437,7 @@ impl Editor for CzEditor {
     }
 
     fn aspect_ratio(&self) -> Option<(u32, u32)> {
-        None
+        Some((DEFAULT_WIDTH, DEFAULT_HEIGHT))
     }
 
     fn set_size(&mut self, width: u32, height: u32) -> bool {
@@ -623,6 +721,294 @@ fn apply_webview_size(
     ));
 
     resize_result.is_ok()
+}
+
+#[cfg(target_os = "macos")]
+const AUV2_RESIZE_HANDLE_STATE_IVAR: &str = "state";
+
+#[cfg(target_os = "macos")]
+struct AuV2ResizeHandleState {
+    parent_view: usize,
+    current_size: Arc<Mutex<(u32, u32)>>,
+    webview_state: Arc<Mutex<WebViewContainer>>,
+    drag_start_x: f64,
+    drag_start_y: f64,
+    drag_start_width: u32,
+    drag_start_height: u32,
+}
+
+#[cfg(target_os = "macos")]
+unsafe impl Send for AuV2ResizeHandleState {}
+#[cfg(target_os = "macos")]
+unsafe impl Sync for AuV2ResizeHandleState {}
+
+#[cfg(target_os = "macos")]
+unsafe fn is_truce_auv2_parent_view(ns_view: *mut std::ffi::c_void) -> bool {
+    use cocoa::base::id;
+    use std::ffi::CStr;
+    use std::os::raw::c_char;
+
+    unsafe extern "C" {
+        fn object_getClassName(object: id) -> *const c_char;
+    }
+
+    let name = unsafe { object_getClassName(ns_view as id) };
+    if name.is_null() {
+        return false;
+    }
+
+    unsafe { CStr::from_ptr(name) }
+        .to_str()
+        .map(|name| name.starts_with("TruceAuFixedContainer"))
+        .unwrap_or(false)
+}
+
+#[cfg(target_os = "macos")]
+fn auv2_resize_handle_class() -> &'static objc::runtime::Class {
+    use cocoa::foundation::NSRect;
+    use objc::declare::ClassDecl;
+    use objc::runtime::{BOOL, Class, Object, Sel};
+    use objc::{class, sel, sel_impl};
+    use std::sync::OnceLock;
+
+    static CLASS: OnceLock<&'static Class> = OnceLock::new();
+    CLASS.get_or_init(|| {
+        let mut decl = ClassDecl::new("CosmoAuV2ResizeHandle", class!(NSView))
+            .expect("failed to declare CosmoAuV2ResizeHandle");
+        decl.add_ivar::<*mut std::ffi::c_void>(AUV2_RESIZE_HANDLE_STATE_IVAR);
+        unsafe {
+            decl.add_method(
+                sel!(isFlipped),
+                auv2_resize_handle_is_flipped as extern "C" fn(&Object, Sel) -> BOOL,
+            );
+            decl.add_method(
+                sel!(drawRect:),
+                auv2_resize_handle_draw_rect as extern "C" fn(&Object, Sel, NSRect),
+            );
+            decl.add_method(
+                sel!(mouseDown:),
+                auv2_resize_handle_mouse_down
+                    as extern "C" fn(&Object, Sel, *mut objc::runtime::Object),
+            );
+            decl.add_method(
+                sel!(mouseDragged:),
+                auv2_resize_handle_mouse_dragged
+                    as extern "C" fn(&Object, Sel, *mut objc::runtime::Object),
+            );
+            decl.add_method(
+                sel!(resetCursorRects),
+                auv2_resize_handle_reset_cursor_rects as extern "C" fn(&Object, Sel),
+            );
+            decl.register()
+        }
+    })
+}
+
+#[cfg(target_os = "macos")]
+extern "C" fn auv2_resize_handle_is_flipped(
+    _this: &objc::runtime::Object,
+    _cmd: objc::runtime::Sel,
+) -> objc::runtime::BOOL {
+    objc::runtime::YES
+}
+
+#[cfg(target_os = "macos")]
+extern "C" fn auv2_resize_handle_draw_rect(
+    this: &objc::runtime::Object,
+    _cmd: objc::runtime::Sel,
+    _dirty_rect: cocoa::foundation::NSRect,
+) {
+    use cocoa::base::id;
+    use cocoa::foundation::NSPoint;
+    use objc::{class, msg_send, sel, sel_impl};
+
+    unsafe {
+        let bounds: cocoa::foundation::NSRect = msg_send![this, bounds];
+        let color: id = msg_send![
+            class!(NSColor),
+            colorWithCalibratedWhite: 0.86
+            alpha: 0.86
+        ];
+        let _: () = msg_send![color, setStroke];
+
+        for offset in [4.5_f64, 8.5, 12.5] {
+            let path: id = msg_send![class!(NSBezierPath), bezierPath];
+            let _: () = msg_send![path, setLineWidth: 1.4_f64];
+            let start = NSPoint {
+                x: bounds.size.width - offset,
+                y: bounds.size.height - 1.5,
+            };
+            let end = NSPoint {
+                x: bounds.size.width - 1.5,
+                y: bounds.size.height - offset,
+            };
+            let _: () = msg_send![path, moveToPoint: start];
+            let _: () = msg_send![path, lineToPoint: end];
+            let _: () = msg_send![path, stroke];
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+extern "C" fn auv2_resize_handle_reset_cursor_rects(
+    this: &objc::runtime::Object,
+    _cmd: objc::runtime::Sel,
+) {
+    use cocoa::base::id;
+    use objc::{class, msg_send, sel, sel_impl};
+
+    unsafe {
+        let bounds: cocoa::foundation::NSRect = msg_send![this, bounds];
+        let cursor: id = msg_send![class!(NSCursor), closedHandCursor];
+        let _: () = msg_send![this, addCursorRect: bounds cursor: cursor];
+    }
+}
+
+#[cfg(target_os = "macos")]
+extern "C" fn auv2_resize_handle_mouse_down(
+    this: &objc::runtime::Object,
+    _cmd: objc::runtime::Sel,
+    event: *mut objc::runtime::Object,
+) {
+    unsafe {
+        let Some(state) = auv2_resize_handle_state(this) else {
+            return;
+        };
+        let state = &mut *state;
+        let point = screen_point_for_event(this, event);
+        state.drag_start_x = point.x;
+        state.drag_start_y = point.y;
+        let (width, height) = state
+            .current_size
+            .lock()
+            .map(|size| *size)
+            .unwrap_or((DEFAULT_WIDTH, DEFAULT_HEIGHT));
+        state.drag_start_width = width;
+        state.drag_start_height = height;
+    }
+}
+
+#[cfg(target_os = "macos")]
+extern "C" fn auv2_resize_handle_mouse_dragged(
+    this: &objc::runtime::Object,
+    _cmd: objc::runtime::Sel,
+    event: *mut objc::runtime::Object,
+) {
+    unsafe {
+        let Some(state) = auv2_resize_handle_state(this) else {
+            return;
+        };
+        let state = &mut *state;
+        let point = screen_point_for_event(this, event);
+        let delta_x = point.x - state.drag_start_x;
+        let delta_y = state.drag_start_y - point.y;
+        apply_auv2_handle_drag(state, delta_x, delta_y);
+    }
+}
+
+#[cfg(target_os = "macos")]
+unsafe fn auv2_resize_handle_state(
+    this: &objc::runtime::Object,
+) -> Option<*mut AuV2ResizeHandleState> {
+    let state: *mut std::ffi::c_void = unsafe { *this.get_ivar(AUV2_RESIZE_HANDLE_STATE_IVAR) };
+    if state.is_null() {
+        return None;
+    }
+    Some(state.cast::<AuV2ResizeHandleState>())
+}
+
+#[cfg(target_os = "macos")]
+unsafe fn screen_point_for_event(
+    view: &objc::runtime::Object,
+    event: *mut objc::runtime::Object,
+) -> cocoa::foundation::NSPoint {
+    use cocoa::base::{id, nil};
+    use objc::{msg_send, sel, sel_impl};
+
+    let location: cocoa::foundation::NSPoint = msg_send![event, locationInWindow];
+    let window: id = msg_send![view, window];
+    if window == nil {
+        return location;
+    }
+    msg_send![window, convertPointToScreen: location]
+}
+
+#[cfg(target_os = "macos")]
+fn apply_auv2_handle_drag(state: &mut AuV2ResizeHandleState, delta_x: f64, delta_y: f64) {
+    let (width, height) = fit_auv2_aspect_size(
+        state.drag_start_width,
+        state.drag_start_height,
+        delta_x,
+        delta_y,
+    );
+
+    if let Ok(mut current_size) = state.current_size.lock() {
+        *current_size = (width, height);
+    }
+
+    unsafe {
+        resize_auv2_parent_view(state.parent_view as *mut std::ffi::c_void, width, height);
+    }
+    let _ = apply_webview_size(&state.webview_state, width, height);
+}
+
+#[cfg(target_os = "macos")]
+unsafe fn resize_auv2_parent_view(parent_view: *mut std::ffi::c_void, width: u32, height: u32) {
+    use cocoa::base::id;
+    use cocoa::foundation::NSRect;
+    use objc::{msg_send, sel, sel_impl};
+
+    let parent = parent_view as id;
+    let mut frame: NSRect = msg_send![parent, frame];
+    let old_height = frame.size.height;
+    let superview: id = msg_send![parent, superview];
+    let superview_is_flipped = if superview == cocoa::base::nil {
+        let parent_is_flipped: bool = msg_send![parent, isFlipped];
+        parent_is_flipped
+    } else {
+        let superview_is_flipped: bool = msg_send![superview, isFlipped];
+        superview_is_flipped
+    };
+    if !superview_is_flipped {
+        frame.origin.y += old_height - height as f64;
+    }
+    frame.size.width = width as f64;
+    frame.size.height = height as f64;
+    let _: () = msg_send![parent, setFrame: frame];
+    let _: () = msg_send![parent, setNeedsDisplay: cocoa::base::YES];
+}
+
+#[cfg(target_os = "macos")]
+fn fit_auv2_aspect_size(
+    start_width: u32,
+    start_height: u32,
+    delta_x: f64,
+    delta_y: f64,
+) -> (u32, u32) {
+    let aspect = DEFAULT_WIDTH as f64 / DEFAULT_HEIGHT as f64;
+    let target_width = (start_width as f64 + delta_x).max(MIN_WIDTH as f64);
+    let target_height = (start_height as f64 + delta_y).max(MIN_HEIGHT as f64);
+    let horizontal_change = delta_x.abs() / start_width.max(1) as f64;
+    let vertical_change = delta_y.abs() / start_height.max(1) as f64;
+
+    let (mut width, mut height) = if horizontal_change >= vertical_change {
+        let width = target_width;
+        (width, width / aspect)
+    } else {
+        let height = target_height;
+        (height * aspect, height)
+    };
+
+    if width < MIN_WIDTH as f64 {
+        width = MIN_WIDTH as f64;
+        height = width / aspect;
+    }
+    if height < MIN_HEIGHT as f64 {
+        height = MIN_HEIGHT as f64;
+        width = height * aspect;
+    }
+
+    (width.round() as u32, height.round() as u32)
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
