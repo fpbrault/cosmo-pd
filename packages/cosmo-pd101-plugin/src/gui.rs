@@ -969,13 +969,30 @@ unsafe fn resize_auv2_parent_view(parent_view: *mut std::ffi::c_void, width: u32
         let superview_is_flipped: bool = msg_send![superview, isFlipped];
         superview_is_flipped
     };
-    if !superview_is_flipped {
-        frame.origin.y += old_height - height as f64;
-    }
+    frame.origin.y = top_left_anchored_origin_y(
+        frame.origin.y,
+        old_height,
+        height as f64,
+        superview_is_flipped,
+    );
     frame.size.width = width as f64;
     frame.size.height = height as f64;
     let _: () = msg_send![parent, setFrame: frame];
     let _: () = msg_send![parent, setNeedsDisplay: cocoa::base::YES];
+}
+
+#[cfg(target_os = "macos")]
+fn top_left_anchored_origin_y(
+    origin_y: f64,
+    old_height: f64,
+    new_height: f64,
+    superview_is_flipped: bool,
+) -> f64 {
+    if superview_is_flipped {
+        origin_y
+    } else {
+        origin_y + old_height - new_height
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -1009,6 +1026,68 @@ fn fit_auv2_aspect_size(
     }
 
     (width.round() as u32, height.round() as u32)
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod auv2_resize_tests {
+    use super::*;
+
+    fn assert_native_aspect(width: u32, height: u32) {
+        assert_eq!(width * DEFAULT_HEIGHT, height * DEFAULT_WIDTH);
+    }
+
+    #[test]
+    fn aspect_fit_uses_horizontal_drag_as_dominant_axis() {
+        let (width, height) = fit_auv2_aspect_size(DEFAULT_WIDTH, DEFAULT_HEIGHT, 288.0, 10.0);
+
+        assert_eq!((width, height), (1440, 1080));
+        assert_native_aspect(width, height);
+    }
+
+    #[test]
+    fn aspect_fit_uses_vertical_drag_as_dominant_axis() {
+        let (width, height) = fit_auv2_aspect_size(DEFAULT_WIDTH, DEFAULT_HEIGHT, 10.0, 216.0);
+
+        assert_eq!((width, height), (1440, 1080));
+        assert_native_aspect(width, height);
+    }
+
+    #[test]
+    fn aspect_fit_clamps_to_native_minimum_size() {
+        let (width, height) = fit_auv2_aspect_size(DEFAULT_WIDTH, DEFAULT_HEIGHT, -2000.0, -2000.0);
+
+        assert_eq!((width, height), (MIN_WIDTH, MIN_HEIGHT));
+        assert_native_aspect(width, height);
+    }
+
+    #[test]
+    fn aspect_fit_keeps_minimum_height_when_width_would_be_too_small() {
+        let (width, height) = fit_auv2_aspect_size(480, 360, -200.0, 0.0);
+
+        assert_eq!((width, height), (MIN_WIDTH, MIN_HEIGHT));
+        assert_native_aspect(width, height);
+    }
+
+    #[test]
+    fn flipped_superview_keeps_origin_y_fixed_for_top_left_anchor() {
+        let origin = top_left_anchored_origin_y(120.0, 864.0, 600.0, true);
+
+        assert_eq!(origin, 120.0);
+    }
+
+    #[test]
+    fn unflipped_superview_moves_origin_y_to_keep_top_edge_fixed_when_shrinking() {
+        let origin = top_left_anchored_origin_y(120.0, 864.0, 600.0, false);
+
+        assert_eq!(origin, 384.0);
+    }
+
+    #[test]
+    fn unflipped_superview_moves_origin_y_to_keep_top_edge_fixed_when_growing() {
+        let origin = top_left_anchored_origin_y(120.0, 864.0, 1080.0, false);
+
+        assert_eq!(origin, -96.0);
+    }
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
