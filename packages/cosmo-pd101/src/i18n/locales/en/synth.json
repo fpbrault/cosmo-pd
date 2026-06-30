@@ -1129,6 +1129,7 @@
 	},
 	"randomModule": {
 		"title": "Random",
+		"displayTitle": "Random sample-and-hold preview",
 		"rate": "Rate"
 	},
 	"modEnv": {
