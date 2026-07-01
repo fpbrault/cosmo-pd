@@ -156,6 +156,8 @@ describe("useSynthStore", () => {
 			setTempoBpm,
 			setLfoRateMode,
 			setLfoSyncDivision,
+			setRandomRateMode,
+			setRandomSyncDivision,
 			setCzDacEnabled,
 			setPortamentoMode,
 			setPortamentoRate,
@@ -171,6 +173,8 @@ describe("useSynthStore", () => {
 			setTempoBpm(132);
 			setLfoRateMode("sync");
 			setLfoSyncDivision("eighth");
+			setRandomRateMode("sync");
+			setRandomSyncDivision("sixteenth");
 			setCzDacEnabled(true);
 			setPortamentoMode("rate");
 			setPortamentoRate(42);
@@ -184,6 +188,8 @@ describe("useSynthStore", () => {
 		expect(preset.params.tempoBpm).toBe(132);
 		expect(preset.params.lfo.rateMode).toBe("sync");
 		expect(preset.params.lfo.syncDivision).toBe("eighth");
+		expect(preset.params.random?.rateMode).toBe("sync");
+		expect(preset.params.random?.syncDivision).toBe("sixteenth");
 		expect(preset.params.czDacEnabled).toBe(true);
 		expect(preset.params.portamento).toEqual({
 			enabled: false,
@@ -228,6 +234,11 @@ describe("useSynthStore", () => {
 					retrigger: false,
 					offset: 0,
 				},
+				random: {
+					rate: 4,
+					rateMode: "sync",
+					syncDivision: "quarterTriplet",
+				},
 			},
 		} as unknown as SynthPresetV1;
 
@@ -244,6 +255,8 @@ describe("useSynthStore", () => {
 		expect(state.warpBAmount).toBe(0.4);
 		expect(state.lfoRateMode).toBe("sync");
 		expect(state.lfoSyncDivision).toBe("quarter");
+		expect(state.randomRateMode).toBe("sync");
+		expect(state.randomSyncDivision).toBe("quarterTriplet");
 	});
 
 	it("restores preset-specific voice settings when applying different presets", () => {

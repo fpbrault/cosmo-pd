@@ -1,3 +1,6 @@
+import { useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
+
 interface LfoDisplayProps {
 	id: 1 | 2;
 	color: string;
@@ -6,6 +9,8 @@ interface LfoDisplayProps {
 	offset: number;
 	depth: number;
 	phase: number;
+	rateHz: number;
+	animate: boolean;
 	transportStatus: string;
 	showLoop: boolean;
 }
@@ -80,7 +85,10 @@ function lfoPlayheadPoint({
 	offset,
 	depth,
 	phase,
-}: Omit<LfoDisplayProps, "id" | "color" | "transportStatus" | "showLoop">) {
+}: Pick<
+	LfoDisplayProps,
+	"waveform" | "symmetry" | "offset" | "depth" | "phase"
+>) {
 	const width = 220;
 	const centerY = 28;
 	const amp = 6 + clamp01(depth) * 14;
@@ -91,8 +99,6 @@ function lfoPlayheadPoint({
 	return { x, y };
 }
 
-import { useTranslation } from "react-i18next";
-
 export default function LfoDisplay({
 	id,
 	color,
@@ -101,11 +107,65 @@ export default function LfoDisplay({
 	offset,
 	depth,
 	phase,
+	rateHz,
+	animate,
 	transportStatus,
 	showLoop,
 }: LfoDisplayProps) {
 	const { t } = useTranslation("synth");
+	const markerRef = useRef<SVGCircleElement | null>(null);
+	const phaseRef = useRef(phase);
+	const previewPath = useMemo(
+		() => lfoPreviewPath(waveform, symmetry, offset, depth),
+		[depth, offset, symmetry, waveform],
+	);
 	const point = lfoPlayheadPoint({ waveform, symmetry, offset, depth, phase });
+
+	useEffect(() => {
+		phaseRef.current = phase;
+		const marker = markerRef.current;
+		if (!marker) {
+			return;
+		}
+		const nextPoint = lfoPlayheadPoint({
+			waveform,
+			symmetry,
+			offset,
+			depth,
+			phase,
+		});
+		marker.setAttribute("cx", String(nextPoint.x));
+		marker.setAttribute("cy", String(nextPoint.y));
+	}, [depth, offset, phase, symmetry, waveform]);
+
+	useEffect(() => {
+		if (!animate || rateHz <= 0) {
+			return;
+		}
+
+		let rafId = 0;
+		let last = performance.now();
+		const tick = (now: number) => {
+			const dt = Math.min(0.05, (now - last) / 1000);
+			last = now;
+			phaseRef.current = (phaseRef.current + dt * rateHz) % 1;
+			const marker = markerRef.current;
+			if (marker) {
+				const nextPoint = lfoPlayheadPoint({
+					waveform,
+					symmetry,
+					offset,
+					depth,
+					phase: phaseRef.current,
+				});
+				marker.setAttribute("cx", String(nextPoint.x));
+				marker.setAttribute("cy", String(nextPoint.y));
+			}
+			rafId = requestAnimationFrame(tick);
+		};
+		rafId = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(rafId);
+	}, [animate, depth, offset, rateHz, symmetry, waveform]);
 
 	return (
 		<div className="col-span-4 rounded-md border border-cz-border/55 bg-cz-bg/35 px-2 py-0.5">
@@ -125,13 +185,20 @@ export default function LfoDisplay({
 					strokeWidth="1"
 				/>
 				<path
-					d={lfoPreviewPath(waveform, symmetry, offset, depth)}
+					d={previewPath}
 					fill="none"
 					stroke={`url(#lfo-preview-${id})`}
 					strokeWidth="2"
 					strokeLinecap="round"
 				/>
-				<circle cx={point.x} cy={point.y} r={4.5} fill={color} stroke={color} />
+				<circle
+					ref={markerRef}
+					cx={point.x}
+					cy={point.y}
+					r={4.5}
+					fill={color}
+					stroke={color}
+				/>
 			</svg>
 			<div className="mt-0.5 flex items-center justify-between font-mono text-5xs text-cz-cream/55 uppercase tracking-[0.18em]">
 				<span>{transportStatus}</span>

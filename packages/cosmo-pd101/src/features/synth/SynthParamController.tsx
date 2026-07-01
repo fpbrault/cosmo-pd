@@ -91,6 +91,8 @@ export const SYNTH_PARAM_SETTERS = {
 	lfo2Retrigger: "setLfo2Retrigger",
 	lfo2Offset: "setLfo2Offset",
 	randomRate: "setRandomRate",
+	randomRateMode: "setRandomRateMode",
+	randomSyncDivision: "setRandomSyncDivision",
 	modEnvAttack: "setModEnvAttack",
 	modEnvDecay: "setModEnvDecay",
 	modEnvSustain: "setModEnvSustain",

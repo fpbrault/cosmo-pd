@@ -148,7 +148,7 @@ const LFO_SYNC_DIVISION_LABELS_V1: [EngineEnumValueLabelV1; 10] = [
     },
 ];
 
-const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 60] = [
+const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 62] = [
     EngineParamUiMetaV1 {
         key: "volume",
         readout_format: EngineParamReadoutFormatV1::Percent,
@@ -298,6 +298,18 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 60] = [
     EngineParamUiMetaV1 {
         key: "randomRate",
         readout_format: EngineParamReadoutFormatV1::Hertz,
+    },
+    EngineParamUiMetaV1 {
+        key: "randomRateMode",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &LFO_RATE_MODE_LABELS_V1,
+        },
+    },
+    EngineParamUiMetaV1 {
+        key: "randomSyncDivision",
+        readout_format: EngineParamReadoutFormatV1::EnumMap {
+            values: &LFO_SYNC_DIVISION_LABELS_V1,
+        },
     },
     EngineParamUiMetaV1 {
         key: "modEnvAttack",

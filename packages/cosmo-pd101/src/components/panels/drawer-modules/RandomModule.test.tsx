@@ -45,10 +45,15 @@ describe("RandomModule", () => {
 			vi.fn(() => 1),
 		);
 		vi.stubGlobal("cancelAnimationFrame", vi.fn());
-		mocks.useSynthParam.mockReturnValue({
-			value: 0.5,
+		mocks.useSynthParam.mockImplementation((key: string) => ({
+			value:
+				key === "randomRateMode"
+					? "hz"
+					: key === "randomSyncDivision"
+						? "quarter"
+						: 0.5,
 			setValue: vi.fn(),
-		});
+		}));
 		mocks.getLiveSources.mockReturnValue({
 			random: 0,
 		});
