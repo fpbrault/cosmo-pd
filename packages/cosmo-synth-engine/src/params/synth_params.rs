@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use super::fx_params::{FxSlotConfig, PhaseModParams, VibratoParams, default_fx_slot_configs};
-use super::lfo::LfoParams;
+use super::lfo::{LfoParams, LfoRateMode, LfoSyncDivision};
 use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
@@ -17,13 +17,22 @@ pub const NUM_OPERATORS: usize = 4; // CZ-101 has 4 operators per line
 /// Parameters for the random (sample-and-hold) modulation source.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
 pub struct RandomParams {
     pub rate: f32,
+    #[serde(default)]
+    pub rate_mode: LfoRateMode,
+    #[serde(default)]
+    pub sync_division: LfoSyncDivision,
 }
 
 impl Default for RandomParams {
     fn default() -> Self {
-        Self { rate: 2.0 }
+        Self {
+            rate: 2.0,
+            rate_mode: LfoRateMode::Hz,
+            sync_division: LfoSyncDivision::Quarter,
+        }
     }
 }
 

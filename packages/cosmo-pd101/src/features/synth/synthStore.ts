@@ -211,6 +211,8 @@ type SynthState = {
 	lfo2Offset: number;
 
 	randomRate: number;
+	randomRateMode: LfoRateMode;
+	randomSyncDivision: LfoSyncDivision;
 
 	modEnvAttack: number;
 	modEnvDecay: number;
@@ -314,6 +316,8 @@ type SynthActions = {
 	setLfo2Offset: (v: number) => void;
 
 	setRandomRate: (v: number) => void;
+	setRandomRateMode: (v: LfoRateMode) => void;
+	setRandomSyncDivision: (v: LfoSyncDivision) => void;
 
 	setModEnvAttack: (v: number) => void;
 	setModEnvDecay: (v: number) => void;
@@ -430,6 +434,8 @@ const DEFAULT_STATE: SynthState = {
 	lfo2Offset: requireEngineParamDefault("lfo2Offset"),
 
 	randomRate: requireEngineParamDefault("randomRate"),
+	randomRateMode: "hz",
+	randomSyncDivision: "quarter",
 
 	modEnvAttack: requireEngineParamDefault("modEnvAttack"),
 	modEnvDecay: requireEngineParamDefault("modEnvDecay"),
@@ -598,6 +604,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setLfo2Offset: (v) => setEditedState({ lfo2Offset: v }),
 
 		setRandomRate: (v) => setEditedState({ randomRate: v }),
+		setRandomRateMode: (v) => setEditedState({ randomRateMode: v }),
+		setRandomSyncDivision: (v) => setEditedState({ randomSyncDivision: v }),
 
 		setModEnvAttack: (v) => setEditedState({ modEnvAttack: v }),
 		setModEnvDecay: (v) => setEditedState({ modEnvDecay: v }),
@@ -777,6 +785,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				},
 				random: {
 					rate: s.randomRate,
+					rateMode: s.randomRateMode,
+					syncDivision: s.randomSyncDivision,
 				},
 				modEnv: {
 					attack: s.modEnvAttack,
@@ -1073,6 +1083,9 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					p.random?.rate,
 					requireEngineParamDefault("randomRate"),
 				),
+				randomRateMode: (p.random?.rateMode as LfoRateMode) ?? "hz",
+				randomSyncDivision:
+					(p.random?.syncDivision as LfoSyncDivision) ?? "quarter",
 				modEnvAttack: safe(
 					p.modEnv?.attack,
 					requireEngineParamDefault("modEnvAttack"),

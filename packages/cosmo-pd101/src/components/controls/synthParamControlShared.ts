@@ -108,6 +108,12 @@ function resolveSyncConfig(
 				divisionParamKey: "lfo2SyncDivision" as const,
 				syncTooltipParamKey: "lfo2SyncDivision" as const,
 			};
+		case "randomRate":
+			return {
+				modeParamKey: "randomRateMode" as const,
+				divisionParamKey: "randomSyncDivision" as const,
+				syncTooltipParamKey: "randomSyncDivision" as const,
+			};
 		default:
 			return null;
 	}

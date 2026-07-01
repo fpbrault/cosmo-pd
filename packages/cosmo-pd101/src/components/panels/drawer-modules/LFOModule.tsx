@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import LfoDisplay from "@/components/panels/drawer-modules/LfoDisplay";
+import { LFO_RATE_TRANSFORM } from "@/components/panels/drawer-modules/lfoRateTransform";
 import { getSyncCyclesPerBeat } from "@/components/panels/drawer-modules/syncDivisions";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
@@ -17,52 +18,8 @@ interface LfoModuleProps {
 	color: string;
 }
 
-const LFO_RATE_MAX_HZ = 200;
-const LFO_RATE_EXPONENT = 5.643856189774724; // 50% travel ~= 4Hz
-
-function normToLfoRate(norm: number): number {
-	return LFO_RATE_MAX_HZ * Math.max(0, Math.min(1, norm)) ** LFO_RATE_EXPONENT;
-}
-
-function lfoRateToNorm(hz: number): number {
-	if (hz <= 0) {
-		return 0;
-	}
-	return Math.max(
-		0,
-		Math.min(1, (hz / LFO_RATE_MAX_HZ) ** (1 / LFO_RATE_EXPONENT)),
-	);
-}
-
-function formatCompactValue(value: number): string {
-	if (!Number.isFinite(value) || value <= 0) {
-		return "0";
-	}
-	if (value >= 100) {
-		return value.toFixed(0);
-	}
-	if (value >= 10) {
-		return value.toFixed(1);
-	}
-	if (value >= 1) {
-		return value.toFixed(2);
-	}
-	return value.toFixed(3);
-}
-
-const LFO_RATE_TRANSFORM = {
-	toControlValue: lfoRateToNorm,
-	fromControlValue: normToLfoRate,
-	min: 0,
-	max: 1,
-	defaultValue: lfoRateToNorm(2),
-	valueFormatter: (_controlValue: number, engineValue: number) =>
-		`${formatCompactValue(engineValue)}Hz`,
-} as const;
-
 export default function LfoModule({ id, color }: LfoModuleProps) {
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
-	const [playheadPhase, setPlayheadPhase] = useState(0);
 	const transport = useHostTransport();
 	const lfoWaveformKey = id === 1 ? "lfoWaveform" : "lfo2Waveform";
 	const lfoRateKey = id === 1 ? "lfoRate" : "lfo2Rate";
@@ -101,33 +58,22 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				)
 			: Math.max(0, lfoRate);
 
-	useEffect(() => {
-		let rafId = 0;
-		let last = performance.now();
-		const tick = (now: number) => {
-			const dt = Math.min(0.05, (now - last) / 1000);
-			last = now;
-			setPlayheadPhase((prev) => (prev + dt * previewRateHz) % 1);
-			rafId = requestAnimationFrame(tick);
-		};
-		rafId = requestAnimationFrame(tick);
-		return () => cancelAnimationFrame(rafId);
-	}, [previewRateHz]);
-
 	const displayPlayheadPhase = useMemo(() => {
 		if (lfoRateMode === "sync" && transport.available && transport.playing) {
 			const phase = transport.positionBeats * syncCyclesPerBeat;
 			return ((phase % 1) + 1) % 1;
 		}
-		return playheadPhase;
+		return 0;
 	}, [
 		lfoRateMode,
-		playheadPhase,
 		transport.available,
 		transport.playing,
 		transport.positionBeats,
 		syncCyclesPerBeat,
 	]);
+	const animatePreview =
+		!(lfoRateMode === "sync" && transport.available && transport.playing) &&
+		previewRateHz > 0;
 
 	const transportStatus = transport.available
 		? `${transport.playing ? "Host Run" : "Host Stop"} ${transport.tempo.toFixed(1)} BPM ${transport.timeSigNum}/${transport.timeSigDen}`
@@ -171,6 +117,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				offset={lfoOffset}
 				depth={lfoDepth}
 				phase={displayPlayheadPhase}
+				rateHz={previewRateHz}
+				animate={animatePreview}
 				transportStatus={transportStatus}
 				showLoop={transport.available && transport.loopActive}
 			/>

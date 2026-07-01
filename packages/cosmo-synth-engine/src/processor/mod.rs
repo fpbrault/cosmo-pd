@@ -622,6 +622,20 @@ mod tests {
     }
 
     #[test]
+    fn sync_random_uses_manual_tempo_when_host_transport_is_absent() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().tempo_bpm = 120.0;
+        proc.params_mut().random.rate_mode = crate::params::LfoRateMode::Sync;
+        proc.params_mut().random.sync_division = crate::params::LfoSyncDivision::Quarter;
+
+        let mut out = [0.0_f32; 1];
+        proc.process(&mut out);
+
+        let expected_phase = 2.0 / 48_000.0;
+        assert!((proc.random_phase - expected_phase).abs() < 1.0e-6);
+    }
+
+    #[test]
     fn fx_destination_route_does_not_break_processing() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.set_mod_wheel(1.0);

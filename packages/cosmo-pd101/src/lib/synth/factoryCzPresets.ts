@@ -467,6 +467,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -950,6 +952,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.4505869,
@@ -1414,6 +1418,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 1.1107421,
@@ -1874,6 +1880,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -2292,6 +2300,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -2713,6 +2723,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -3151,6 +3163,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -3600,6 +3614,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -4026,6 +4042,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -4465,6 +4483,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -4853,6 +4873,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -5320,6 +5342,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -5759,6 +5783,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -6181,6 +6207,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -6603,6 +6631,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -7025,6 +7055,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -7464,6 +7496,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -7869,6 +7903,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -8308,6 +8344,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -8730,6 +8768,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -9135,6 +9175,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -9557,6 +9599,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -9962,6 +10006,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -10384,6 +10430,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -10823,6 +10871,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -11262,6 +11312,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -11701,6 +11753,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -12140,6 +12194,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -12562,6 +12618,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -12984,6 +13042,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -13389,6 +13449,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -13811,6 +13873,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -14250,6 +14314,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -14672,6 +14738,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -15094,6 +15162,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -15533,6 +15603,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -15938,6 +16010,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -16377,6 +16451,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -16799,6 +16875,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -17221,6 +17299,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -17643,6 +17723,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -18065,6 +18147,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -18470,6 +18554,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -18909,6 +18995,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -19314,6 +19402,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -19753,6 +19843,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -20249,6 +20341,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -20696,6 +20790,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -21101,6 +21197,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -21506,6 +21604,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -21928,6 +22028,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -22333,6 +22435,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -22738,6 +22842,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -23143,6 +23249,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -23595,6 +23703,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -24049,6 +24159,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -24454,6 +24566,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -24893,6 +25007,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -25315,6 +25431,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -25720,6 +25838,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -26159,6 +26279,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -26581,6 +26703,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -26986,6 +27110,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -27408,6 +27534,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -27847,6 +27975,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -28269,6 +28399,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -28691,6 +28823,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -29113,6 +29247,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -29535,6 +29671,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -29974,6 +30112,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -30396,6 +30536,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -30835,6 +30977,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -31274,6 +31418,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -31696,6 +31842,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -32101,6 +32249,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -32506,6 +32656,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -32911,6 +33063,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -33316,6 +33470,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -33721,6 +33877,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -34160,6 +34318,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -34582,6 +34742,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -35004,6 +35166,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -35409,6 +35573,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -35831,6 +35997,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -36270,6 +36438,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -36675,6 +36845,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -37080,6 +37252,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -37502,6 +37676,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -37941,6 +38117,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -38346,6 +38524,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -38785,6 +38965,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -39190,6 +39372,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -39629,6 +39813,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -40068,6 +40254,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -40507,6 +40695,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -40946,6 +41136,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -41368,6 +41560,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -41807,6 +42001,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -42246,6 +42442,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -42668,6 +42866,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -43107,6 +43307,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -43529,6 +43731,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -43951,6 +44155,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -44390,6 +44596,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -44829,6 +45037,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -45234,6 +45444,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -45646,6 +45858,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -46075,6 +46289,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -46497,6 +46713,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -46902,6 +47120,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -47348,6 +47568,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -47806,6 +48028,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -48228,6 +48452,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -48623,6 +48849,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -49052,6 +49280,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -49457,6 +49687,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -49879,6 +50111,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -50304,6 +50538,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -50760,6 +50996,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -51233,6 +51471,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -51672,6 +51912,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -52124,6 +52366,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -52589,6 +52833,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,
@@ -53011,6 +53257,8 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				random: {
 					rate: 2.0,
+					rateMode: "hz",
+					syncDivision: "quarter",
 				},
 				modEnv: {
 					attack: 0.01,

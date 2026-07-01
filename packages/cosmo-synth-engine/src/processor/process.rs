@@ -94,6 +94,8 @@ impl CosmoProcessor {
         let base_lfo2_depth = p.lfo2.depth;
         let base_lfo2_offset = p.lfo2.offset;
         let base_random_rate = p.random.rate;
+        let random_rate_mode = p.random.rate_mode;
+        let random_sync_division = p.random.sync_division;
         let sr = self.sample_rate;
         let effective_tempo_bpm = self.host_transport_tempo_bpm.unwrap_or(manual_tempo_bpm);
         self.fx.set_tempo_bpm(effective_tempo_bpm);
@@ -169,6 +171,8 @@ impl CosmoProcessor {
                 base_lfo2_offset,
                 lfo2_waveform,
                 base_random_rate,
+                random_rate_mode,
+                random_sync_division,
                 sr,
             );
 
@@ -269,6 +273,8 @@ impl CosmoProcessor {
         base_lfo2_offset: f32,
         lfo2_waveform: crate::params::LfoWaveform,
         base_random_rate: f32,
+        random_rate_mode: LfoRateMode,
+        random_sync_division: LfoSyncDivision,
         sr: f32,
     ) -> LfoFrame {
         let lfo1_rate_mod = get_mod_if_active(
@@ -370,12 +376,26 @@ impl CosmoProcessor {
             * lfo2_depth
             + lfo2_offset;
 
-        let random_rate = (base_random_rate + random_rate_mod * 20.0).clamp(0.0, 200.0);
-        self.random_phase += random_rate / sr;
-        if self.random_phase >= 1.0 {
-            self.random_phase -= 1.0;
-            self.random_step = self.random_step.wrapping_add(1);
-            self.random_hold = random_hold_value(self.random_step);
+        let random_rate = match random_rate_mode {
+            LfoRateMode::Hz => (base_random_rate + random_rate_mod * 20.0).clamp(0.0, 200.0),
+            LfoRateMode::Sync => sync_rate_hz(effective_tempo_bpm, random_sync_division),
+        };
+        if matches!(random_rate_mode, LfoRateMode::Sync) && self.host_transport_playing {
+            let cycles =
+                self.host_transport_position_beats as f32 * random_sync_division.cycles_per_beat();
+            let synced_step = cycles.floor() as i32;
+            self.random_phase = cycles.fract();
+            if synced_step != self.random_step {
+                self.random_step = synced_step;
+                self.random_hold = random_hold_value(self.random_step);
+            }
+        } else {
+            self.random_phase += random_rate / sr;
+            if self.random_phase >= 1.0 {
+                self.random_phase -= 1.0;
+                self.random_step = self.random_step.wrapping_add(1);
+                self.random_hold = random_hold_value(self.random_step);
+            }
         }
 
         if self.host_transport_playing {

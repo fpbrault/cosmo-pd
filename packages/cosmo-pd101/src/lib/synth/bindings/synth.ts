@@ -477,6 +477,8 @@ export type PortamentoParams = {
 /**  Parameters for the random (sample-and-hold) modulation source. */
 export type RandomParams = {
 	rate: number | null,
+	rateMode?: LfoRateMode,
+	syncDivision?: LfoSyncDivision,
 };
 
 /**  Reverb parameters */
@@ -5151,6 +5153,72 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     }
   },
   {
+    "key": "randomRateMode",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "HZ",
+          "value": "hz"
+        },
+        {
+          "label": "SYNC",
+          "value": "sync"
+        }
+      ]
+    }
+  },
+  {
+    "key": "randomSyncDivision",
+    "paramDefault": null,
+    "readoutFormat": {
+      "kind": "enumMap",
+      "values": [
+        {
+          "label": "1/1",
+          "value": "whole"
+        },
+        {
+          "label": "1/2",
+          "value": "half"
+        },
+        {
+          "label": "1/4",
+          "value": "quarter"
+        },
+        {
+          "label": "1/8",
+          "value": "eighth"
+        },
+        {
+          "label": "1/16",
+          "value": "sixteenth"
+        },
+        {
+          "label": "1/32",
+          "value": "thirtySecond"
+        },
+        {
+          "label": "1/4.",
+          "value": "dottedQuarter"
+        },
+        {
+          "label": "1/8.",
+          "value": "dottedEighth"
+        },
+        {
+          "label": "1/4T",
+          "value": "quarterTriplet"
+        },
+        {
+          "label": "1/8T",
+          "value": "eighthTriplet"
+        }
+      ]
+    }
+  },
+  {
     "key": "modEnvAttack",
     "paramDefault": 0.009999999776482582,
     "readoutFormat": {
@@ -5864,7 +5932,9 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "routes": []
   },
   "random": {
-    "rate": 2.0
+    "rate": 2.0,
+    "rateMode": "hz",
+    "syncDivision": "quarter"
   },
   "modEnv": {
     "attack": 0.01,

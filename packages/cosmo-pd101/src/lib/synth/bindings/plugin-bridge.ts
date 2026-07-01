@@ -476,6 +476,8 @@ export type PresetSession = {
 /**  Parameters for the random (sample-and-hold) modulation source. */
 export type RandomParams = {
 	rate: number | null,
+	rateMode?: LfoRateMode,
+	syncDivision?: LfoSyncDivision,
 };
 
 /**  Reverb parameters */
