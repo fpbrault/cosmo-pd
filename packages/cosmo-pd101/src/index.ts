@@ -14,9 +14,8 @@ export {
 } from "./components/renderer/rendererFrameLayout";
 export {
 	default as SynthRenderer,
-	SharedPhaseDistortionVisualizer,
+	SharedSynthRenderer,
 	type SynthRendererProps,
-	type SynthRendererProps as SharedPhaseDistortionVisualizerProps,
 } from "./components/renderer/SynthRenderer";
 export {
 	PresetManagerProvider,

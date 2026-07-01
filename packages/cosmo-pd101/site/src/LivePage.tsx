@@ -20,7 +20,7 @@ import {
 	SYNTH_RENDERER_DESIGN_WIDTH,
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 } from "../../src/components/renderer/rendererFrameLayout";
-import { SharedPhaseDistortionVisualizer } from "../../src/components/renderer/SynthRenderer";
+import { SharedSynthRenderer } from "../../src/components/renderer/SynthRenderer";
 import { PresetManagerProvider } from "../../src/context/PresetManagerContext";
 import { createWebPresetManagerRepository } from "../../src/features/synth/createWebPresetManagerRepository";
 import { useSynthStore } from "../../src/features/synth/synthStore";
@@ -303,29 +303,47 @@ export default function LivePage() {
 			)}
 			<div
 				ref={synthPanelRef}
-				id="synth-fullscreen-target"
-				className="relative shrink-0 overflow-hidden"
-				style={{
-					width: scaledWidth,
-					height: scaledHeight,
-				}}
+				className="relative"
+				style={
+					isSynthFullscreen
+						? {
+								width: "100vw",
+								height: "100vh",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}
+						: {
+								width: scaledWidth,
+								height: scaledHeight,
+							}
+				}
 			>
 				<div
-					className="absolute"
+					className="relative shrink-0 overflow-hidden"
 					style={{
-						width: frameWidth,
-						height: frameHeight,
-						transform: `scale(${frameScale})`,
-						transformOrigin: "top left",
+						width: scaledWidth,
+						height: scaledHeight,
 					}}
 				>
-					<PresetManagerProvider value={presetManager}>
-						<SharedPhaseDistortionVisualizer
-							runtime={runtime}
-							appVersion={__CZ_APP_VERSION__}
-							bottomBarExtra={<WebPluginStoreNotice />}
-						/>
-					</PresetManagerProvider>
+					<div
+						className=""
+						style={{
+							width: frameWidth,
+							height: frameHeight,
+							transform: `scale(${frameScale})`,
+							transformOrigin: "top left",
+						}}
+					>
+						<PresetManagerProvider value={presetManager}>
+							{" "}
+							<SharedSynthRenderer
+								runtime={runtime}
+								appVersion={__CZ_APP_VERSION__}
+								bottomBarExtra={<WebPluginStoreNotice />}
+							/>
+						</PresetManagerProvider>
+					</div>
 				</div>
 			</div>
 			{!isMobileViewport && (

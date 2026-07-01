@@ -279,4 +279,4 @@ function SynthBottomSection({
 }
 
 export default SynthRenderer;
-export const SharedPhaseDistortionVisualizer = SynthRenderer;
+export const SharedSynthRenderer = SynthRenderer;
