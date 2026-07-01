@@ -103,4 +103,51 @@ describe("ModMatrixPanel", () => {
 		expect(screen.getByTestId("mod-route-editor")).toBeInTheDocument();
 		expect(screen.getByTestId("editor-title")).toHaveTextContent("Add Route");
 	});
+
+	it("does not emit duplicate key warnings when routes load after mount", () => {
+		const consoleErrorSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const setModMatrix = vi.fn();
+		useModMatrixMock.mockReturnValue({
+			modMatrix: { routes: [] },
+			setModMatrix,
+		});
+
+		const { rerender } = render(<ModMatrixPanel />);
+
+		useModMatrixMock.mockReturnValue({
+			modMatrix: {
+				routes: [
+					{
+						source: "lfo1",
+						destination: "volume",
+						amount: 0,
+						enabled: true,
+					},
+					{
+						source: "lfo2",
+						destination: "volume",
+						amount: 0,
+						enabled: true,
+					},
+				],
+			},
+			setModMatrix,
+		});
+		rerender(<ModMatrixPanel />);
+
+		expect(
+			consoleErrorSpy.mock.calls.some(([message]) =>
+				String(message).includes('unique "key" prop'),
+			),
+		).toBe(false);
+		expect(
+			consoleErrorSpy.mock.calls.some(([message]) =>
+				String(message).includes("Encountered two children with the same key"),
+			),
+		).toBe(false);
+
+		consoleErrorSpy.mockRestore();
+	});
 });

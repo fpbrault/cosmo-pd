@@ -40,6 +40,9 @@ export default function ModMatrixPanel() {
 	const [routeKeys, setRouteKeys] = useState<string[]>(() =>
 		routes.map(() => `mod-route-${nextRouteKeyRef.current++}`),
 	);
+	const renderedRouteKeys = routes.map(
+		(_, idx) => routeKeys[idx] ?? `mod-route-pending-${idx}`,
+	);
 
 	useEffect(() => {
 		if (routeKeys.length === routes.length) {
@@ -183,7 +186,7 @@ export default function ModMatrixPanel() {
 							)}
 							{routes.map((route, idx) => (
 								<motion.div
-									key={routeKeys[idx]}
+									key={renderedRouteKeys[idx]}
 									initial={{ opacity: 0, x: -10 }}
 									animate={{ opacity: 1, x: 0 }}
 									exit={{ opacity: 0, x: 10, height: 0, marginTop: 0 }}
