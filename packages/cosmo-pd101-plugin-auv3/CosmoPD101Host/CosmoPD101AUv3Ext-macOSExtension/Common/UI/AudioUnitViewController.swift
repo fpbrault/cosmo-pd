@@ -48,7 +48,11 @@ private enum VoiceLimitSettings {
 public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
 	private static let minimumWidth: CGFloat = 640
 	private static let minimumHeight: CGFloat = 480
+	#if DEBUG
 	private static let isSizingDebugEnabled = true
+	#else
+	private static let isSizingDebugEnabled = false
+	#endif
 	private var presetSessionState = PresetSessionState()
 	private var editorState = [String: Any]()
 	private var midiLearnState = MidiLearnState()
@@ -112,13 +116,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		#if os(iOS)
 		view = UIView(frame: CGRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
-		view.backgroundColor = .black
+		view.backgroundColor = .clear
 		preferredContentSize = CGSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		#else
 		view = NSView(frame: NSRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
 		
 		view.wantsLayer = true
-		view.layer?.backgroundColor = NSColor.black.cgColor
+		view.layer?.backgroundColor = NSColor.clear.cgColor
 		preferredContentSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		#endif
 		installWebView()
@@ -416,137 +420,6 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				forMainFrameOnly: true
 			)
 		)
-		let diagnosticsScript = """
-		(function () {
-		  if (window.__czDiagInstalled) return;
-		  window.__czDiagInstalled = true;
-
-		  var _showCount = 0;
-		  var _dismissTimer = null;
-
-		  function timestampIso() {
-		    var d = new Date();
-		    return d.toISOString().replace('T', ' ').replace('Z', '');
-		  }
-
-		  function safeStringify(obj, depth) {
-		    if (depth === undefined) depth = 0;
-		    if (depth > 3) return '[maxDepth]';
-		    if (obj === null) return 'null';
-		    if (obj === undefined) return 'undefined';
-		    if (typeof obj === 'string') return obj.length > 500 ? obj.slice(0, 500) + '...' : obj;
-		    if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
-		    if (obj instanceof Error) return obj.stack || obj.message || String(obj);
-		    if (Array.isArray(obj)) return '[' + obj.map(function (v) { return safeStringify(v, depth + 1); }).join(', ') + ']';
-		    if (typeof obj === 'object') {
-		      try {
-		        var keys = Object.keys(obj);
-		        if (keys.length > 20) keys = keys.slice(0, 20).concat(['... (' + (keys.length - 20) + ' more)']);
-		        return '{' + keys.map(function (k) { return (k.length > 50 ? k.slice(0, 50) + '...' : k) + ': ' + safeStringify(obj[k], depth + 1); }).join(', ') + '}';
-		      } catch (_) { return String(obj); }
-		    }
-		    try { return String(obj); } catch (_) { return '[unstringifiable]'; }
-		  }
-
-		  function reportError(kind, msg, obj, stack) {
-		    var lines = [
-		      '[' + timestampIso() + '] ' + kind,
-		      'message: ' + (msg || '(empty)'),
-		    ];
-		    if (stack) lines.push('stack:\\n' + stack);
-		    if (obj) lines.push('source: ' + safeStringify(obj));
-		    var full = lines.join('\\n');
-
-		    try {
-		      var pre = document.getElementById('__czFatal');
-		      if (!pre) {
-		        pre = document.createElement('pre');
-		        pre.id = '__czFatal';
-		        pre.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:2147483647;padding:8px 12px;margin:0;max-height:40vh;overflow:auto;background:rgba(17,17,17,0.95);color:#ff8080;font:11px/1.4 -apple-system,monospace;white-space:pre-wrap;border-top:1px solid #ff4040;';
-		        var dismissBtn = document.createElement('button');
-		        dismissBtn.textContent = 'Dismiss';
-		        dismissBtn.style.cssText = 'position:absolute;top:4px;right:4px;background:#444;color:#fff;border:none;border-radius:3px;padding:2px 8px;font:11px -apple-system;cursor:pointer;';
-		        dismissBtn.onclick = function () { pre.remove(); };
-		        pre.appendChild(dismissBtn);
-		        document.body.appendChild(pre);
-		      }
-		      var content = pre.childNodes[0];
-		      if (!content || content.nodeType !== 3) {
-		        content = document.createTextNode('');
-		        pre.insertBefore(content, pre.firstChild);
-		      }
-		      content.nodeValue = 'Cosmo PD-101 UI runtime error [' + _showCount + ']\\n\\n' + full + '\\n';
-		      pre.style.display = 'block';
-
-		      _showCount++;
-		      if (_dismissTimer) clearTimeout(_dismissTimer);
-		      _dismissTimer = setTimeout(function () {
-		        var el = document.getElementById('__czFatal');
-		        if (el) el.remove();
-		      }, 8000);
-		    } catch (_) {}
-		  }
-
-		  window.__czDismissOverlay = function () {
-		    var el = document.getElementById('__czFatal');
-		    if (el) el.remove();
-		  };
-		  window.__czClearOverlay = window.__czDismissOverlay;
-
-		  document.addEventListener('DOMContentLoaded', function () {
-		    var stale = document.getElementById('__czFatal');
-		    if (stale) stale.remove();
-		    window.__czDiagClear = true;
-		  });
-
-		  window.addEventListener('error', function (e) {
-		    var msg = (e && e.message) ? (e.message + ' @ ' + e.filename + ':' + e.lineno) : 'Unknown window error';
-		    reportError('window.error', msg, e, e && e.error && e.error.stack ? e.error.stack : null);
-		    try {
-		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'window.error: ' + msg + '\\n' + (e && e.error && e.error.stack ? e.error.stack : '')] });
-		    } catch (_) {}
-		  });
-
-		  window.addEventListener('unhandledrejection', function (e) {
-		    var reason = e && e.reason;
-		    var msg = reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason || 'Unhandled promise rejection');
-		    reportError('unhandledrejection', msg, reason, reason && reason.stack ? reason.stack : null);
-		    try {
-		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['error', 'unhandledrejection: ' + msg] });
-		    } catch (_) {}
-		  });
-
-		  window.addEventListener('rejectionhandled', function (e) {
-		    var reason = e && e.reason;
-		    var msg = reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason || 'Promise rejection handled late');
-		    try {
-		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['warn', 'rejectionhandled: ' + msg] });
-		    } catch (_) {}
-		  });
-
-		  var _origFetch = window.fetch;
-		  if (_origFetch) {
-		    window.fetch = function (input, init) {
-		      return _origFetch.call(window, input, init).catch(function (err) {
-		        try {
-		          var url = typeof input === 'string' ? input : (input && input.url ? input.url : String(input));
-		          window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['warn', 'fetch failed: ' + url + '\\n' + String(err)] });
-		        } catch (_) {}
-		        throw err;
-		      });
-		    };
-		  }
-
-		  window.addEventListener('unload', function () {
-		    try {
-		      window.webkit.messageHandlers.cosmoPd101.postMessage({ id: 0, method: 'clientLog', args: ['log', 'page unload at ' + timestampIso()] });
-		    } catch (_) {}
-		  });
-		})();
-		"""
-		configuration.userContentController.addUserScript(
-			WKUserScript(source: diagnosticsScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
-		)
 		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
 
 		if let baseUrl = indexUrl?.deletingLastPathComponent() {
@@ -557,14 +430,14 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		webView.navigationDelegate = self
 		#if os(macOS)
 		webView.wantsLayer = true
-		webView.layer?.backgroundColor = NSColor.black.cgColor
+		webView.layer?.backgroundColor = NSColor.clear.cgColor
 		webView.setValue(false, forKey: "drawsBackground")
 		webView.autoresizingMask = [.width, .height]
 		#else
 		webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-		webView.isOpaque = true
-		webView.backgroundColor = .black
-		webView.scrollView.backgroundColor = .black
+		webView.isOpaque = false
+		webView.backgroundColor = .clear
+		webView.scrollView.backgroundColor = .clear
 		webView.scrollView.contentInsetAdjustmentBehavior = .never
 		webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
 		#endif
@@ -580,7 +453,6 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		guard let indexUrl else {
 			os_log("index.html missing from bundle", log: czVCLog, type: .error)
-			webView.loadHTMLString(diagnosticHtml(title: "UI Bundle Missing", message: "Could not find index.html in the AU bundle."), baseURL: nil)
 			return
 		}
 		os_log("indexUrl=%{public}@", log: czVCLog, type: .default, indexUrl.path)
@@ -705,13 +577,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
 		os_log("didFail navigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
 		scriptDispatcher.setNavigationFinished(false)
-		webView.loadHTMLString(diagnosticHtml(title: "Navigation Failed", message: error.localizedDescription), baseURL: nil)
+		reloadBundledWebView(after: 0.25)
 	}
 
 	public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
 		os_log("didFailProvisionalNavigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
 		scriptDispatcher.setNavigationFinished(false)
-		webView.loadHTMLString(diagnosticHtml(title: "Provisional Navigation Failed", message: error.localizedDescription), baseURL: nil)
+		reloadBundledWebView(after: 0.25)
 	}
 
 	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -768,31 +640,21 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			}
 
 			os_log(
-				"showing diagnostic after repeated content termination instance=%{public}@ count=%{public}d",
+				"reloading webView after repeated content termination instance=%{public}@ count=%{public}d",
 				log: czVCLog,
 				type: .error,
 				self.instanceID,
 				self.webContentTerminationCount
 			)
-
-			webView.loadHTMLString(
-				self.diagnosticHtml(title: "Web Content Process Terminated", message: "WebKit crashed while loading or resuming the bundled UI."),
-				baseURL: nil
-			)
+			webView.reload()
 		}
 	}
 
-	private func diagnosticHtml(title: String, message: String) -> String {
-		"""
-		<html>
-			<body style='margin:0;background:#0f1115;color:#f3f4f6;font-family:-apple-system,system-ui,sans-serif;'>
-				<div style='padding:24px;'>
-					<h2 style='margin:0 0 10px 0;'>Cosmo PD-101 UI: \(title)</h2>
-					<p style='margin:0;white-space:pre-wrap;line-height:1.4;'>\(message)</p>
-				</div>
-			</body>
-		</html>
-		"""
+	private func reloadBundledWebView(after delay: TimeInterval) {
+		DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+			guard let self, let webView = self.webView else { return }
+			webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
+		}
 	}
 
 	private func sendResponse(id: Int, result: Any) {

@@ -13,6 +13,6 @@ struct AudioUnitViewModel {
     var showAudioControls: Bool = false
     var showMIDIContols: Bool = false
     var title: String = "-"
-    var message: String = "Host booted (build marker B2). Waiting for Audio Unit..."
+    var message: String = ""
     var viewController: ViewController?
 }

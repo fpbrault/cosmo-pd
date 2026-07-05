@@ -53,15 +53,7 @@ class PluginErrorBoundary extends Component<
 
 	public render(): ReactNode {
 		if (this.state.hasError) {
-			return (
-				<div className="h-dvh w-full bg-transparent p-4 text-cz-cream">
-					<div className="rounded border border-cz-border bg-black/35 p-3 font-mono text-xs tracking-[0.04em]">
-						Plugin UI failed to initialize.
-						<br />
-						{this.state.errorMessage}
-					</div>
-				</div>
-			);
+			return <div aria-hidden="true" className="h-dvh w-full bg-transparent" />;
 		}
 
 		return this.props.children;
