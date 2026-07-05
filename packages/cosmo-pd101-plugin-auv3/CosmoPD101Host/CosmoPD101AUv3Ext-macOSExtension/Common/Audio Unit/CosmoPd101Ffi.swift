@@ -25,6 +25,9 @@ func cosmo_pd101_ffi_set_voice_limit(_ engine: CosmoPd101FfiEngineRef?, _ limit:
 @_silgen_name("cosmo_pd101_ffi_set_params_json")
 func cosmo_pd101_ffi_set_params_json(_ engine: CosmoPd101FfiEngineRef?, _ json: UnsafePointer<CChar>?) -> Int32
 
+@_silgen_name("cosmo_pd101_ffi_set_params_json_raw")
+func cosmo_pd101_ffi_set_params_json_raw(_ engine: CosmoPd101FfiEngineRef?, _ json: UnsafePointer<CChar>?) -> Int32
+
 @_silgen_name("cosmo_pd101_ffi_get_params_json")
 func cosmo_pd101_ffi_get_params_json(_ engine: CosmoPd101FfiEngineRef?, _ output: UnsafeMutablePointer<UInt8>?, _ outputLen: Int) -> Int
 

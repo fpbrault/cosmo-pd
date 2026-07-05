@@ -19,6 +19,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	private var pendingParamsJson: String?
 	private var pendingFactoryPresetIndex: Int?
 	private var selectedFactoryPreset: AUAudioUnitPreset?
+	private var savedStateJson: String?
 	private lazy var availableFactoryPresets: [AUAudioUnitPreset] = buildFactoryPresets()
 	/// Called on the main thread when engine state changes from the native side (preset load, state restore).
 	/// The ViewController sets this to push params and optional preset metadata to the WebView.
@@ -159,6 +160,9 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		} else if let pendingIndex = pendingFactoryPresetIndex {
 			pendingFactoryPresetIndex = nil
 			_ = applyFactoryPreset(index: pendingIndex)
+		} else if let saved = savedStateJson {
+			savedStateJson = nil
+			_ = setParamsJson(saved, notifyWebView: true, isRaw: true)
 		} else if applyDefaultFactoryPresetIfNeeded() {
 			// Applied fresh-start default factory preset.
 		} else {
@@ -171,6 +175,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	public override func deallocateRenderResources() {
+		savedStateJson = paramsJson()
 		cosmo_pd101_ffi_engine_destroy(engine)
 		engine = nil
 		super.deallocateRenderResources()
@@ -233,10 +238,16 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		}
 	}
 
-	public func setParamsJson(_ json: String, notifyWebView: Bool = false, selectedPresetName: String? = nil) -> Bool {
-		os_log(.default, log: czAULog, "[CzAU] setParamsJson: engine=%@ len=%d notify=%@", engine != nil ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no")
+	public func setParamsJson(_ json: String, notifyWebView: Bool = false, selectedPresetName: String? = nil, isRaw: Bool = false) -> Bool {
+		os_log(.default, log: czAULog, "[CzAU] setParamsJson: engine=%@ len=%d notify=%@ isRaw=%@", engine != nil ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no", isRaw ? "yes" : "no")
 		let didSet = json.withCString { pointer in
-			cosmo_pd101_ffi_set_params_json(engine, pointer) == CosmoPd101FfiStatus.ok.rawValue
+			let status: Int32
+			if isRaw {
+				status = cosmo_pd101_ffi_set_params_json_raw(engine, pointer)
+			} else {
+				status = cosmo_pd101_ffi_set_params_json(engine, pointer)
+			}
+			return status == CosmoPd101FfiStatus.ok.rawValue
 		}
 		os_log(.default, log: czAULog, "[CzAU] setParamsJson: didSet=%@", didSet ? "true" : "false")
 		guard didSet else { return false }

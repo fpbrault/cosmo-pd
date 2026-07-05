@@ -621,6 +621,41 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json(
     }
 }
 
+/// Apply `SynthParams` from JSON whose envelope level/rate values are already
+/// in the internal raw [0, 127] range (as produced by
+/// [`cosmo_pd101_ffi_get_params_json`]). Skips the human→raw envelope
+/// normalization that [`cosmo_pd101_ffi_set_params_json`] performs, so safe
+/// to use for restoring engine state that was serialized from a live engine.
+///
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `json` must be a non-null,
+/// nul-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json_raw(
+    engine: *mut CosmoPd101FfiEngine,
+    json: *const c_char,
+) -> CosmoPd101FfiStatus {
+    unsafe {
+        let Ok(engine) = engine_mut(engine) else {
+            return CosmoPd101FfiStatus::NullPointer;
+        };
+        if json.is_null() {
+            return CosmoPd101FfiStatus::NullPointer;
+        }
+
+        let Ok(json) = CStr::from_ptr(json).to_str() else {
+            return CosmoPd101FfiStatus::InvalidArgument;
+        };
+        let Ok(params) = serde_json::from_str::<SynthParams>(json) else {
+            return CosmoPd101FfiStatus::JsonError;
+        };
+        engine.processor.set_params_raw(params);
+        CosmoPd101FfiStatus::Ok
+    }
+}
+
 /// # Safety
 ///
 /// `engine` must be a valid, non-null pointer returned by

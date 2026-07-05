@@ -208,7 +208,7 @@ class AudioUnitHostModel: ObservableObject {
         )
         switch phase {
         case .active:
-            if suspendedForBackground && isFreeRunning {
+            if suspendedForBackground {
                 suspendedForBackground = false
                 playEngine.startPlaying()
             }
@@ -217,8 +217,8 @@ class AudioUnitHostModel: ObservableObject {
                 suspendedForBackground = false
                 return
             }
-            suspendedForBackground = playEngine.isPlaying
-            if suspendedForBackground {
+            if playEngine.isPlaying {
+                suspendedForBackground = true
                 playEngine.stopPlaying()
             }
         default:
