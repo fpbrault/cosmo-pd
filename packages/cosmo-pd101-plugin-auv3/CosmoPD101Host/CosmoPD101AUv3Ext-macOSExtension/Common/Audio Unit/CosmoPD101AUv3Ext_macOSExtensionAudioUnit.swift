@@ -13,6 +13,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	private var engine: CosmoPd101FfiEngineRef?
 	private var maxFrames: Int = 4096
 	private var voiceLimit: Int = 8
+	private var midiChannel: Int = 0
 	private var parameterObserverToken: AUParameterObserverToken?
 	/// Full-state JSON buffered when `fullStateForDocument` is set before `allocateRenderResources`.
 	private var pendingParamsJson: String?
@@ -163,6 +164,10 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		} else {
 			syncParametersToEngine()
 		}
+	}
+
+	public func setMidiChannel(_ channel: Int) {
+		midiChannel = max(0, min(channel, 16))
 	}
 
 	public override func deallocateRenderResources() {
@@ -460,6 +465,10 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	private func handleMidi(status: UInt8, data1: UInt8, data2: UInt8) {
 		let message = status & 0xF0
+		let channel = Int(status & 0x0F) + 1
+		if midiChannel != 0 && channel != midiChannel {
+			return
+		}
 		switch message {
 		case 0x80:
 			_ = cosmo_pd101_ffi_note_off(engine, data1)

@@ -21,6 +21,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import Auv3StandaloneSettingsSection from "./Auv3StandaloneSettingsSection";
 import { createPluginPresetManagerRepository } from "./hooks/createPluginPresetManagerRepository";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
@@ -158,6 +159,7 @@ export default function PluginPage({
 	const isIosHost = window.__czHostPlatform === "ios";
 	const isAuv3WebView =
 		window.__czHostPlatform === "ios" || window.__czHostPlatform === "macos";
+	const showStandaloneIosSettings = isAuv3WebView;
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
@@ -486,6 +488,11 @@ export default function PluginPage({
 								runtime={runtime}
 								appVersion={appVersion}
 								bottomBarExtra={utilityExtra}
+								keyboardSettingsExtra={
+									showStandaloneIosSettings ? (
+										<Auv3StandaloneSettingsSection />
+									) : undefined
+								}
 								disableAudioGate
 								miniKeyboard={{
 									activeNotes: runtime.activeNotes,
@@ -523,6 +530,11 @@ export default function PluginPage({
 							runtime={runtime}
 							appVersion={appVersion}
 							bottomBarExtra={utilityExtra}
+							keyboardSettingsExtra={
+								showStandaloneIosSettings ? (
+									<Auv3StandaloneSettingsSection />
+								) : undefined
+							}
 							disableAudioGate
 							miniKeyboard={{
 								activeNotes: runtime.activeNotes,

@@ -15,6 +15,16 @@ type UsePluginBridgeSynthEngineOptions = {
 	onExternalParamChange?: () => void;
 };
 
+declare global {
+	interface Window {
+		__czAuv3HostActive?: boolean;
+	}
+}
+
+function isAuv3BridgeHostActive(): boolean {
+	return window.__czAuv3HostActive !== false;
+}
+
 export type PluginPresetSession = {
 	activePresetId: string | null;
 	loadedPresetId?: string | null;
@@ -212,8 +222,16 @@ export function usePluginBridgeSynthEngine(
 		let rafId = 0;
 		let inFlight = false;
 		let cancelled = false;
+		let paused = !isAuv3BridgeHostActive();
+		const schedule = () => {
+			if (!cancelled && !paused && rafId === 0) {
+				rafId = requestAnimationFrame(poll);
+			}
+		};
 		const poll = () => {
+			rafId = 0;
 			if (cancelled) return;
+			if (paused || !isAuv3BridgeHostActive()) return;
 			const getPendingParamChanges = window.__czGetPendingParamChanges;
 			if (
 				getPendingParamChanges &&
@@ -235,12 +253,27 @@ export function usePluginBridgeSynthEngine(
 						inFlight = false;
 					});
 			}
-			rafId = requestAnimationFrame(poll);
+			schedule();
 		};
-		rafId = requestAnimationFrame(poll);
+		const pause = () => {
+			paused = true;
+			if (rafId !== 0) {
+				cancelAnimationFrame(rafId);
+				rafId = 0;
+			}
+		};
+		const resume = () => {
+			paused = false;
+			schedule();
+		};
+		window.addEventListener("cz-auv3-host-inactive", pause);
+		window.addEventListener("cz-auv3-host-active", resume);
+		schedule();
 		return () => {
 			cancelled = true;
 			cancelAnimationFrame(rafId);
+			window.removeEventListener("cz-auv3-host-inactive", pause);
+			window.removeEventListener("cz-auv3-host-active", resume);
 		};
 	}, [enabled, applyNativeUiParamChanges]);
 
@@ -264,6 +297,7 @@ export function usePluginBridgeSynthEngine(
 	useEffect(() => {
 		if (!enabled) return;
 		let cancelled = false;
+		let paramsVersionPollingPaused = !isAuv3BridgeHostActive();
 		let retryCount = 0;
 		const MAX_RETRIES = 10;
 		const RETRY_DELAY_MS = 500;
@@ -348,38 +382,73 @@ export function usePluginBridgeSynthEngine(
 		// Params-version polling fallback: poll ~200ms for native version bumps
 		// (e.g., host MIDI mapping changes params). Only hydrate when version
 		// changes, and never echo back to native.
-		const startPolling = () => {
-			const poll = () => {
-				if (cancelled) return;
-				const getParamsVersion = window.__czGetParamsVersion;
-				const getParams = window.__czGetParams;
-				if (getParamsVersion && getParams) {
-					void getParamsVersion().then((version: number) => {
-						if (cancelled) return;
+		const pollParamsVersion = () => {
+			if (cancelled || paramsVersionPollingPaused) return;
+			const getParamsVersion = window.__czGetParamsVersion;
+			const getParams = window.__czGetParams;
+			if (getParamsVersion && getParams) {
+				void getParamsVersion()
+					.then((version: number) => {
+						if (cancelled || paramsVersionPollingPaused) return;
 						if (version !== lastParamsVersion) {
 							lastParamsVersion = version;
 							if (!applyingHostParamsRef.current) {
-								void getParams().then((result) => {
-									if (cancelled) return;
-									applyResult(result);
-								});
+								void getParams()
+									.then((result) => {
+										if (cancelled || paramsVersionPollingPaused) return;
+										applyResult(result);
+									})
+									.catch(() => {
+										// native bridge may be unavailable during sleep/resume
+									});
 							}
 						}
+					})
+					.catch(() => {
+						// native bridge may be unavailable during sleep/resume
+					})
+					.finally(() => {
+						if (!cancelled && !paramsVersionPollingPaused) {
+							pollId = window.setTimeout(pollParamsVersion, 200);
+						}
 					});
-				}
-				if (!cancelled) {
-					pollId = window.setTimeout(poll, 200);
-				}
-			};
-			pollId = window.setTimeout(poll, 200);
+				return;
+			}
+			if (!cancelled && !paramsVersionPollingPaused) {
+				pollId = window.setTimeout(pollParamsVersion, 200);
+			}
 		};
-		startPolling();
+		const startParamsVersionPolling = () => {
+			if (cancelled || paramsVersionPollingPaused) return;
+			window.clearTimeout(pollId);
+			pollId = window.setTimeout(pollParamsVersion, 200);
+		};
+		const pauseParamsVersionPolling = () => {
+			paramsVersionPollingPaused = true;
+			window.clearTimeout(pollId);
+			pollId = 0;
+		};
+		const resumeParamsVersionPolling = () => {
+			paramsVersionPollingPaused = false;
+			startParamsVersionPolling();
+		};
+		window.addEventListener("cz-auv3-host-inactive", pauseParamsVersionPolling);
+		window.addEventListener("cz-auv3-host-active", resumeParamsVersionPolling);
+		startParamsVersionPolling();
 
 		return () => {
 			cancelled = true;
 			window.clearTimeout(retryId);
 			window.clearTimeout(fallbackId);
 			window.clearTimeout(pollId);
+			window.removeEventListener(
+				"cz-auv3-host-inactive",
+				pauseParamsVersionPolling,
+			);
+			window.removeEventListener(
+				"cz-auv3-host-active",
+				resumeParamsVersionPolling,
+			);
 		};
 	}, [enabled, applyHostParams]);
 

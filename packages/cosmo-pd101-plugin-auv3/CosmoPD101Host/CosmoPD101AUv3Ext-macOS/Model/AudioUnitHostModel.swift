@@ -11,6 +11,20 @@ import AudioToolbox
 import AVFAudio
 import Combine
 
+private enum StandaloneHostSettings {
+    static let groupId = "group.ca.purraudio.CosmoPD101Host"
+    static let keepRunningInBackgroundKey = "com.cosmo.pd101.standalone.keepRunningInBackground"
+    static let defaultKeepRunningInBackground = false
+
+    private static var defaults: UserDefaults {
+        UserDefaults(suiteName: groupId) ?? .standard
+    }
+
+    static var keepRunningInBackground: Bool {
+        defaults.object(forKey: keepRunningInBackgroundKey) as? Bool ?? defaultKeepRunningInBackground
+    }
+}
+
 @MainActor
 class AudioUnitHostModel: ObservableObject {
     /// The playback engine used to play audio.
@@ -33,6 +47,8 @@ class AudioUnitHostModel: ObservableObject {
     let isFreeRunning: Bool
 
     let auValString: String
+
+    private var suspendedForBackground = false
     
     private let instanceInvalidationNotifcation = Notification.Name(String(kAudioComponentInstanceInvalidationNotification))
 
@@ -176,5 +192,38 @@ class AudioUnitHostModel: ObservableObject {
 
     func stopPlaying() {
         playEngine.stopPlaying()
+    }
+
+    func handleScenePhaseChange(_ phase: ScenePhase) {
+#if os(iOS) || os(visionOS)
+        let keepRunningInBackground = StandaloneHostSettings.keepRunningInBackground
+        let backgroundModes = (Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String])?.joined(separator: ",") ?? "<none>"
+        NSLog(
+            "[AUHostModel] scenePhase=%@ keepRunningInBackground=%@ isPlaying=%@ suspendedForBackground=%@ backgroundModes=%@",
+            String(describing: phase),
+            keepRunningInBackground ? "yes" : "no",
+            playEngine.isPlaying ? "yes" : "no",
+            suspendedForBackground ? "yes" : "no",
+            backgroundModes
+        )
+        switch phase {
+        case .active:
+            if suspendedForBackground && isFreeRunning {
+                suspendedForBackground = false
+                playEngine.startPlaying()
+            }
+        case .inactive, .background:
+            guard !keepRunningInBackground else {
+                suspendedForBackground = false
+                return
+            }
+            suspendedForBackground = playEngine.isPlaying
+            if suspendedForBackground {
+                playEngine.stopPlaying()
+            }
+        default:
+            break
+        }
+#endif
     }
 }

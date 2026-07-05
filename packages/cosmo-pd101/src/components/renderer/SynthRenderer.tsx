@@ -41,6 +41,7 @@ export type SynthRendererProps = {
 	frameStyle?: CSSProperties;
 	headerExtra?: ReactNode;
 	bottomBarExtra?: ReactNode;
+	keyboardSettingsExtra?: ReactNode;
 	runtime: SynthRuntime;
 	onAudioLevelChange?: (level: number) => void;
 	disableAudioGate?: boolean;
@@ -57,6 +58,7 @@ const SynthRenderer = memo(function SynthRenderer({
 	frameStyle,
 	headerExtra,
 	bottomBarExtra,
+	keyboardSettingsExtra,
 	runtime,
 	onAudioLevelChange,
 	disableAudioGate = false,
@@ -236,6 +238,7 @@ const SynthRenderer = memo(function SynthRenderer({
 								appVersion={appVersion}
 								audioGate={audioGate}
 								bottomBarExtra={bottomBarExtra}
+								keyboardSettingsExtra={keyboardSettingsExtra}
 								keyboardVisible={keyboardVisible}
 								onKeyboardToggle={handleKeyboardToggle}
 							/>
@@ -251,6 +254,7 @@ type SynthBottomSectionProps = {
 	appVersion: string;
 	audioGate: { ready: boolean; onResume: () => void };
 	bottomBarExtra?: ReactNode;
+	keyboardSettingsExtra?: ReactNode;
 	keyboardVisible: boolean;
 	onKeyboardToggle: () => void;
 };
@@ -259,6 +263,7 @@ function SynthBottomSection({
 	appVersion,
 	audioGate,
 	bottomBarExtra,
+	keyboardSettingsExtra,
 	keyboardVisible,
 	onKeyboardToggle,
 }: SynthBottomSectionProps) {
@@ -269,6 +274,7 @@ function SynthBottomSection({
 			<SynthInfoBar
 				infoText={infoText}
 				bottomBarExtra={bottomBarExtra}
+				keyboardSettingsExtra={keyboardSettingsExtra}
 				showKeyboardToggle
 				keyboardVisible={keyboardVisible}
 				onKeyboardToggle={onKeyboardToggle}

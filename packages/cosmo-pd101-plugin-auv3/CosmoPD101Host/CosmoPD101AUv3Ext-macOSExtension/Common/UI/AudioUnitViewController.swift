@@ -45,6 +45,53 @@ private enum VoiceLimitSettings {
 	}
 }
 
+private enum StandaloneAppSettings {
+	static let groupId = "group.ca.purraudio.CosmoPD101Host"
+	static let midiChannelKey = "com.cosmo.pd101.standalone.midiChannel"
+	static let keepRunningInBackgroundKey = "com.cosmo.pd101.standalone.keepRunningInBackground"
+	static let bufferSizeKey = "com.cosmo.pd101.standalone.bufferSize"
+	static let defaultMidiChannel = 0
+	static let defaultKeepRunningInBackground = false
+	static let defaultBufferSize = 128
+	static let allowedBufferSizes = [32, 64, 128, 256, 512, 1024]
+
+	private static var defaults: UserDefaults {
+		UserDefaults(suiteName: groupId) ?? .standard
+	}
+
+	static func clampMidiChannel(_ value: Int) -> Int {
+		max(0, min(value, 16))
+	}
+
+	static func clampBufferSize(_ value: Int) -> Int {
+		allowedBufferSizes.contains(value) ? value : defaultBufferSize
+	}
+
+	static func load() -> [String: Any] {
+		let storedMidiChannel = defaults.object(forKey: midiChannelKey) as? Int
+		let storedBufferSize = defaults.object(forKey: bufferSizeKey) as? Int
+		return [
+			"midiChannel": clampMidiChannel(storedMidiChannel ?? defaultMidiChannel),
+			"keepRunningInBackground": defaults.object(forKey: keepRunningInBackgroundKey) as? Bool ?? defaultKeepRunningInBackground,
+			"bufferSize": clampBufferSize(storedBufferSize ?? defaultBufferSize),
+		]
+	}
+
+	static func save(_ payload: [String: Any]) -> [String: Any] {
+		let midiChannel = clampMidiChannel(payload["midiChannel"] as? Int ?? defaultMidiChannel)
+		let keepRunningInBackground = payload["keepRunningInBackground"] as? Bool ?? defaultKeepRunningInBackground
+		let bufferSize = clampBufferSize(payload["bufferSize"] as? Int ?? defaultBufferSize)
+		defaults.set(midiChannel, forKey: midiChannelKey)
+		defaults.set(keepRunningInBackground, forKey: keepRunningInBackgroundKey)
+		defaults.set(bufferSize, forKey: bufferSizeKey)
+		return [
+			"midiChannel": midiChannel,
+			"keepRunningInBackground": keepRunningInBackground,
+			"bufferSize": bufferSize,
+		]
+	}
+}
+
 public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
 	private static let minimumWidth: CGFloat = 640
 	private static let minimumHeight: CGFloat = 480
@@ -78,6 +125,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	@objc public var cosmoAuv3FitMode: String = "fit-bounds"
 	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"
+	@objc public var cosmoAuv3SupportsStandaloneAppSettings = false
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
@@ -197,6 +245,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	nonisolated public func createAudioUnit(with componentDescription: AudioComponentDescription) throws -> AUAudioUnit {
 		let unit = try CosmoPD101AUv3Ext_macOSExtensionAudioUnit(componentDescription: componentDescription, options: [])
 		unit.setVoiceLimit(VoiceLimitSettings.load())
+		applyStandaloneAppSettings(StandaloneAppSettings.load(), to: unit)
 		audioUnit = unit
 		observation = unit.observe(\.allParameterValues, options: [.new]) { _, _ in }
 		unit.paramsChangedHandler = { [weak self] json, presetName in
@@ -367,6 +416,12 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				applied ? "true" : "false"
 			)
 			sendResponse(id: id, result: NSNull())
+		case "getStandaloneAppSettings":
+			sendResponse(id: id, result: StandaloneAppSettings.load())
+		case "setStandaloneAppSettings":
+			let settings = StandaloneAppSettings.save(methodPayload as? [String: Any] ?? [:])
+			applyStandaloneAppSettings(settings, to: audioUnit)
+			sendResponse(id: id, result: settings)
 		case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetDescription", "setPresetTags", "exportPreset", "importPresetBank", "listFxModulePresets", "saveFxModulePreset", "deleteFxModulePreset":
 			sendError(id: id, message: "AUv3 preset library editing is not supported yet")
 		case "clientLog":
@@ -416,6 +471,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		configuration.userContentController.addUserScript(
 			WKUserScript(
 				source: "window.__czRuntimeMode='\(cosmoAuv3RuntimeMode)';",
+				injectionTime: .atDocumentStart,
+				forMainFrameOnly: true
+			)
+		)
+		configuration.userContentController.addUserScript(
+			WKUserScript(
+				source: "window.__czSupportsStandaloneAppSettings=\(cosmoAuv3SupportsStandaloneAppSettings ? "true" : "false");",
 				injectionTime: .atDocumentStart,
 				forMainFrameOnly: true
 			)
@@ -655,6 +717,21 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			guard let self, let webView = self.webView else { return }
 			webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
 		}
+	}
+
+	private func applyStandaloneAppSettings(_ settings: [String: Any], to audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
+		let midiChannel = StandaloneAppSettings.clampMidiChannel(settings["midiChannel"] as? Int ?? StandaloneAppSettings.defaultMidiChannel)
+		let bufferSize = StandaloneAppSettings.clampBufferSize(settings["bufferSize"] as? Int ?? StandaloneAppSettings.defaultBufferSize)
+		audioUnit.setMidiChannel(midiChannel)
+		audioUnit.maximumFramesToRender = AUAudioFrameCount(bufferSize)
+		os_log(
+			.default,
+			log: czVCLog,
+			"standalone app settings applied midiChannel=%d bufferSize=%d keepBackground=%{public}@",
+			midiChannel,
+			bufferSize,
+			(settings["keepRunningInBackground"] as? Bool ?? StandaloneAppSettings.defaultKeepRunningInBackground) ? "true" : "false"
+		)
 	}
 
 	private func sendResponse(id: Int, result: Any) {
