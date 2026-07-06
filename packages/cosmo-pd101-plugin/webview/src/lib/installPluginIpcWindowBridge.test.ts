@@ -34,12 +34,40 @@ describe("installPluginIpcWindowBridge", () => {
 	it("uses typed platform overrides", async () => {
 		const getParamsVersion = vi.fn(async () => 42);
 		installPluginIpcWindowBridge(invoke, {
-			__czGetParamsVersion: getParamsVersion,
+			overrides: { __czGetParamsVersion: getParamsVersion },
 		});
 
 		await window.__czGetParamsVersion?.();
 
 		expect(getParamsVersion).toHaveBeenCalledOnce();
 		expect(invokeMock).not.toHaveBeenCalledWith("getParamsVersion");
+	});
+
+	it("installs every method by default (plugin/standalone)", () => {
+		installPluginIpcWindowBridge(invoke);
+		expect(typeof window.__czGetPendingParamChanges).toBe("function");
+		expect(window.__czBridgeCapabilities?.__czGetPendingParamChanges).not.toBe(
+			false,
+		);
+	});
+
+	it("does not install methods whose capability is explicitly false", () => {
+		installPluginIpcWindowBridge(invoke, {
+			capabilities: {
+				__czGetPendingParamChanges: false,
+				__czGetPresetName: false,
+				__czSetPresetName: false,
+			},
+		});
+
+		expect(window.__czGetPendingParamChanges).toBeUndefined();
+		expect(window.__czGetPresetName).toBeUndefined();
+		expect(window.__czSetPresetName).toBeUndefined();
+		expect(window.__czBridgeCapabilities?.__czGetPendingParamChanges).toBe(
+			false,
+		);
+		expect(window.__czBridgeCapabilities?.__czGetPresetName).toBe(false);
+		// Untouched capabilities default true and are still installed.
+		expect(typeof window.__czGetParams).toBe("function");
 	});
 });

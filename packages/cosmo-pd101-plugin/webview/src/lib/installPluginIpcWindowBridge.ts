@@ -1,4 +1,7 @@
-import type { PluginBridgeWindowFacade } from "@cosmo/cosmo-pd101";
+import type {
+	PluginBridgeWindowCapabilities,
+	PluginBridgeWindowFacade,
+} from "@cosmo/cosmo-pd101";
 import type { PluginIpcInvoke } from "./ipcTypes";
 
 type RequiredPluginBridgeWindowFacade = {
@@ -12,6 +15,9 @@ type PluginBridgeWindowInstallerMap = {
 		invoke: PluginIpcInvoke,
 	) => RequiredPluginBridgeWindowFacade[K];
 };
+
+/** Per-method capability flags. Defaults to `true` (install everything). */
+export type PluginBridgeCapabilities = PluginBridgeWindowCapabilities;
 
 function fireAndForget(label: string, promise: Promise<unknown>) {
 	void promise.catch((error) => {
@@ -99,14 +105,61 @@ const pluginBridgeWindowInstallers = {
 export type PluginBridgeWindowOverrides =
 	Partial<RequiredPluginBridgeWindowFacade>;
 
+export type InstallPluginIpcWindowBridgeOptions = {
+	overrides?: PluginBridgeWindowOverrides;
+	/**
+	 * Per-method capability flags. Methods whose capability is `false` are NOT
+	 * installed on `window`, so consumers must not poll them. Defaults to all
+	 * `true` (suitable for the plugin/standalone bridge where native
+	 * implements every method).
+	 */
+	capabilities?: PluginBridgeCapabilities;
+};
+
+/**
+ * Returns `true` if a capability is supported. Absent flags default to `true`
+ * (the plugin/standalone bridge supports everything; AUv3 opts out
+ * explicitly).
+ */
+export function supportsMethod(
+	capabilities: PluginBridgeCapabilities | undefined,
+	method: keyof PluginBridgeWindowFacade,
+): boolean {
+	return capabilities?.[method] !== false;
+}
+
 export function installPluginIpcWindowBridge(
 	invoke: PluginIpcInvoke,
-	overrides: PluginBridgeWindowOverrides = {},
+	options:
+		| InstallPluginIpcWindowBridgeOptions
+		| PluginBridgeWindowOverrides = {},
 ) {
+	const resolved: InstallPluginIpcWindowBridgeOptions =
+		"overrides" in options || "capabilities" in options
+			? (options as InstallPluginIpcWindowBridgeOptions)
+			: { overrides: options as PluginBridgeWindowOverrides };
+
+	const overrides = resolved.overrides ?? {};
+	const capabilities: PluginBridgeCapabilities = resolved.capabilities ?? {};
+
+	// Expose the resolved capabilities so consumers (e.g. polling loops) can
+	// gate on what native actually supports.
+	window.__czBridgeCapabilities = capabilities;
+
+	// Treat window as a record for capability-driven delete of stale methods.
+	const windowRecord = window as unknown as Record<string, unknown>;
+
 	for (const key of Object.keys(pluginBridgeWindowInstallers) as Array<
 		keyof typeof pluginBridgeWindowInstallers
 	>) {
+		if (!supportsMethod(capabilities, key)) {
+			// Capability disabled: never install the method, and actively remove
+			// any stale installation (e.g. from a prior bridge or test) so
+			// consumers feature-detect a missing method instead of a dead fn.
+			delete windowRecord[key];
+			continue;
+		}
 		const method = overrides[key] ?? pluginBridgeWindowInstallers[key](invoke);
-		Object.assign(window, { [key]: method });
+		windowRecord[key] = method;
 	}
 }

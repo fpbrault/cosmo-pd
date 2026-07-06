@@ -135,5 +135,17 @@ declare global {
 		__czOnMidiCcBatch?: (events: Array<[number, number, number]>) => void;
 		__czOnMidiLearnState?: (json: string) => void;
 		__czOnParamChanges?: (changes: UiParamChange[]) => void;
+		/**
+		 * Per-method capability flags set by the installed bridge. Methods whose
+		 * capability is `false` are NOT installed on `window`. Absent flags
+		 * default to `true` (plugin/standalone supports everything). AUv3 opts
+		 * out of unsupported methods (e.g. `getPendingParamChanges`).
+		 */
+		__czBridgeCapabilities?: PluginBridgeWindowCapabilities;
 	}
 }
+
+/** Capability flags mirroring `PluginBridgeWindowFacade` method names. */
+export type PluginBridgeWindowCapabilities = Partial<
+	Record<keyof PluginBridgeWindowFacade, boolean>
+>;

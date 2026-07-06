@@ -170,7 +170,8 @@ public final class WebViewScriptDispatcher {
 			return false
 		}
 
-		if let resumeHoldUntil = lifecycle.resumeHoldUntil, now() < resumeHoldUntil {
+		let current = now()
+		if let resumeHoldUntil = lifecycle.resumeHoldUntil, current < resumeHoldUntil {
 			return false
 		}
 

@@ -25,6 +25,19 @@ function isAuv3BridgeHostActive(): boolean {
 	return window.__czAuv3HostActive !== false;
 }
 
+/**
+ * Returns `true` only when the pending-param-changes IPC is actually supported
+ * by the current bridge. AUv3 disables it (native does not implement the
+ * method), so polling must not start — otherwise every animation frame issues a
+ * failing IPC to an unknown native method.
+ */
+function supportsPendingParamChanges(): boolean {
+	if (window.__czBridgeCapabilities?.__czGetPendingParamChanges === false) {
+		return false;
+	}
+	return typeof window.__czGetPendingParamChanges === "function";
+}
+
 export type PluginPresetSession = {
 	activePresetId: string | null;
 	loadedPresetId?: string | null;
@@ -217,8 +230,12 @@ export function usePluginBridgeSynthEngine(
 
 	// Native-origin param changes via IPC pull (rAF).
 	// Independent of host idle() cadence for lower-latency knob updates.
+	// Only starts when the bridge explicitly supports getPendingParamChanges —
+	// AUv3 disables it (native does not implement the method), so polling must
+	// not start, otherwise every frame issues a failing IPC call.
 	useEffect(() => {
 		if (!enabled) return;
+		if (!supportsPendingParamChanges()) return;
 		let rafId = 0;
 		let inFlight = false;
 		let cancelled = false;
@@ -232,6 +249,7 @@ export function usePluginBridgeSynthEngine(
 			rafId = 0;
 			if (cancelled) return;
 			if (paused || !isAuv3BridgeHostActive()) return;
+			if (!supportsPendingParamChanges()) return;
 			const getPendingParamChanges = window.__czGetPendingParamChanges;
 			if (
 				getPendingParamChanges &&

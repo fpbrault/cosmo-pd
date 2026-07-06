@@ -156,3 +156,5 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(recorder.scripts[0].contains(#"\"volume\":0.7"#))
 	#expect(!dispatcher.hasPendingParams)
 }
+
+

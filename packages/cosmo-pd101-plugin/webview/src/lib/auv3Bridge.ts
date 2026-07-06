@@ -162,17 +162,35 @@ export function publishAuv3HostActiveFromWeb(active: boolean) {
 	);
 }
 
+function rejectPendingRpc(message: string) {
+	for (const id of [...pendingRpc.keys()]) {
+		const pending = pendingRpc.get(id);
+		if (!pending) {
+			continue;
+		}
+		pendingRpc.delete(id);
+		pending.reject(new Error(message));
+	}
+}
+
 function installAuv3VisibilityLifecycle() {
-	const syncVisibility = () => {
-		publishAuv3HostActiveFromWeb(!document.hidden);
-	};
-	document.addEventListener("visibilitychange", syncVisibility);
-	window.addEventListener("pagehide", () =>
-		publishAuv3HostActiveFromWeb(false),
-	);
-	window.addEventListener("pageshow", syncVisibility);
-	if (document.hidden) {
-		publishAuv3HostActiveFromWeb(false);
+	// Native host lifecycle is authoritative in AUv3. Native dispatches
+	// cz-auv3-host-active / cz-auv3-host-inactive (after a settle window), which
+	// drive the authoritative `__czAuv3HostActive` flag and gate polling.
+	//
+	// `document.hidden`/pagehide are NOT used to publish host-state: doing so
+	// would race WebKit's own suspend/resume and bounce native state, producing
+	// the black/visible/black loop. Native's settle gate (in WebViewScriptDispatcher)
+	// is the single authority that re-enables evaluateJavaScript after resume.
+	window.addEventListener("pagehide", () => {
+		// pagehide during teardown: cancel pending RPCs so they don't hang on a
+		// dead handler. Do NOT publish host-inactive — native is authoritative.
+		rejectPendingRpc("[auv3Bridge] pagehide — cancelling pending RPCs");
+	});
+	// If native never publishes (beyond first paint), seed the flag true. Native
+	// will override via cz-auv3-host-active/inactive when it speaks.
+	if (window.__czAuv3HostActive === undefined) {
+		window.__czAuv3HostActive = !document.hidden;
 	}
 }
 
@@ -332,18 +350,28 @@ function installIpcRouter() {
 	};
 
 	installPluginIpcWindowBridge(invoke, {
-		__czGetParams: async () => {
-			const result = await invokeAuv3<SynthParams | string>(
-				"getParams",
-				undefined,
-				3000,
-			);
-			return typeof result === "string"
-				? (JSON.parse(result) as SynthParams)
-				: result;
+		// AUv3 native does not implement these methods. Disabling them here
+		// prevents continuous failing IPC (esp. polled getPendingParamChanges)
+		// and ensures consumers feature-detect via __czBridgeCapabilities.
+		capabilities: {
+			__czGetPendingParamChanges: false,
+			__czGetPresetName: false,
+			__czSetPresetName: false,
 		},
-		__czGetParamsVersion: () =>
-			invokeAuv3<number>("getParamsVersion", undefined, 3000),
+		overrides: {
+			__czGetParams: async () => {
+				const result = await invokeAuv3<SynthParams | string>(
+					"getParams",
+					undefined,
+					3000,
+				);
+				return typeof result === "string"
+					? (JSON.parse(result) as SynthParams)
+					: result;
+			},
+			__czGetParamsVersion: () =>
+				invokeAuv3<number>("getParamsVersion", undefined, 3000),
+		},
 	});
 }
 

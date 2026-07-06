@@ -137,6 +137,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private var webView: WKWebView?
 	private var webViewJavaScriptEvaluator: WebViewJavaScriptEvaluator?
 	private lazy var scriptDispatcher = WebViewScriptDispatcher()
+	private enum WebContentState {
+		case loading
+		case ready
+		case terminated
+	}
+
+	private var webContentState: WebContentState = .loading
 	private var webContentTerminationCount = 0
 	private var recentWebContentTerminationCount = 0
 	private var recentWebContentTerminationWindowStart: Date?
@@ -147,6 +154,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private var pendingStatePushReason: String?
 	private var pushStateCount = 0
 	private var telemetryTickCount = 0
+	private let reloadPolicy = WebViewReloadPolicy()
 
 	#if os(iOS)
 	public override var prefersStatusBarHidden: Bool { true }
@@ -482,6 +490,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		configuration.userContentController.addUserScript(
 			WKUserScript(source: hostContextScript(dispatchEvent: false), injectionTime: .atDocumentStart, forMainFrameOnly: true)
 		)
+		configuration.userContentController.addUserScript(
+			WKUserScript(source: "window.__czBridgeReloadPolicy={ignoreCancelledNavigation:true};", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+		)
 		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
 
 		if let baseUrl = indexUrl?.deletingLastPathComponent() {
@@ -499,7 +510,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		let webView = WKWebView(frame: view.bounds, configuration: configuration)
 		webView.navigationDelegate = self
-		webView.isHidden = true
+		// WebView stays visible from installation. Reload/recovery gates
+		// communication only — never visibility.
+		webView.isHidden = false
 		#if os(macOS)
 		webView.wantsLayer = true
 		webView.layer?.backgroundColor = NSColor.clear.cgColor
@@ -687,13 +700,39 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-		os_log("didFail navigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
+		let nsError = error as NSError
+		os_log(
+			"didFailNavigation domain=%{public}@ code=%{public}d description=%{public}@ instance=%{public}@",
+			log: czVCLog,
+			type: .error,
+			nsError.domain,
+			nsError.code,
+			error.localizedDescription,
+			instanceID
+		)
+		if !WebViewReloadPolicy.shouldReloadAfterNavigationError(error) {
+			os_log("didFailNavigation reload skipped (benign cancellation) instance=%{public}@", log: czVCLog, type: .default, instanceID)
+			return
+		}
 		scriptDispatcher.setNavigationFinished(false)
 		scheduleWebContentReload(reason: "didFailNavigation", delay: 0.5)
 	}
 
 	public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-		os_log("didFailProvisionalNavigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
+		let nsError = error as NSError
+		os_log(
+			"didFailProvisionalNavigation domain=%{public}@ code=%{public}d description=%{public}@ instance=%{public}@",
+			log: czVCLog,
+			type: .error,
+			nsError.domain,
+			nsError.code,
+			error.localizedDescription,
+			instanceID
+		)
+		if !WebViewReloadPolicy.shouldReloadAfterNavigationError(error) {
+			os_log("didFailProvisionalNavigation reload skipped (benign cancellation) instance=%{public}@", log: czVCLog, type: .default, instanceID)
+			return
+		}
 		scriptDispatcher.setNavigationFinished(false)
 		scheduleWebContentReload(reason: "didFailProvisionalNavigation", delay: 0.5)
 	}
@@ -717,17 +756,20 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+		webContentState = .loading
+		webAppReady = false
+		scriptDispatcher.setNavigationFinished(false)
 		os_log("didStartProvisionalNavigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
-		webView.isHidden = true
 	}
 
 	public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
 		webContentTerminationCount += 1
 		let recentTerminationCount = recordRecentWebContentTermination()
+		webContentState = .terminated
 		webAppReady = false
 		pendingStatePushReason = "webContentProcessDidTerminate"
 		scriptDispatcher.setWebContentAlive(false)
-		webView.isHidden = true
+		scriptDispatcher.setNavigationFinished(false)
 
 		telemetryController.hostWillResignActive()
 		telemetryController.resetAllCaches()
@@ -769,7 +811,10 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	private func canReloadWebContentNow() -> Bool {
-		scriptDispatcher.state.hostActive && scriptDispatcher.state.viewVisible
+		// viewVisible intentionally not consulted: a stale visibility flag must
+		// not permanently block WebContent recovery inside an AUv3 host.
+		// hostActive may delay; isViewLoaded + webView presence gate execution.
+		scriptDispatcher.state.hostActive && isViewLoaded && webView != nil
 	}
 
 	private func schedulePendingWebContentReloadIfPossible() {
@@ -779,17 +824,25 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	private func scheduleWebContentReload(reason: String, delay: TimeInterval) {
 		pendingWebContentReloadReason = reason
-		webView?.isHidden = true
 
 		guard canReloadWebContentNow() else {
 			os_log(
-				"deferring webView reload reason=%{public}@ instance=%{public}@ hostActive=%{public}d viewVisible=%{public}d",
+				"webView reload deferred reason=%{public}@ instance=%{public}@",
 				log: czVCLog,
 				type: .default,
 				reason,
-				instanceID,
-				scriptDispatcher.state.hostActive,
-				scriptDispatcher.state.viewVisible
+				instanceID
+			)
+			return
+		}
+
+		if webContentReloadWorkItem != nil {
+			os_log(
+				"webView reload coalesced reason=%{public}@ instance=%{public}@",
+				log: czVCLog,
+				type: .default,
+				reason,
+				instanceID
 			)
 			return
 		}
@@ -816,8 +869,12 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			guard let webView = self.webView else { return }
 
 			self.pendingWebContentReloadReason = nil
+			self.reloadPolicy.clearPendingReload()
+			self.webContentState = .loading
+			self.webAppReady = false
+			self.scriptDispatcher.setNavigationFinished(false)
 			os_log(
-				"loading bundled webView reason=%{public}@ delay=%{public}.2f instance=%{public}@",
+				"webView reload executing reason=%{public}@ delay=%{public}.2f instance=%{public}@",
 				log: czVCLog,
 				type: .default,
 				reason,
@@ -829,7 +886,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		webContentReloadWorkItem = workItem
 		os_log(
-			"scheduled webView reload reason=%{public}@ delay=%{public}.2f instance=%{public}@",
+			"webView reload scheduled reason=%{public}@ delay=%{public}.2f instance=%{public}@",
 			log: czVCLog,
 			type: .default,
 			reason,
@@ -946,18 +1003,34 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				self.webContentTerminationCount
 			)
 
-			self.layoutWebView(reason: "hostDidBecomeActive")
-			self.logSizing("hostDidBecomeActive")
+			// Repair stale visibility state defensively: old hidden states from
+			// backgrounding must not block recovery.
+			if self.isViewLoaded {
+				self.scriptDispatcher.setViewVisible(true)
+				self.webView?.isHidden = false
+				self.layoutWebView(reason: "hostDidBecomeActive")
+				self.logSizing("hostDidBecomeActive")
+			}
 			self.scriptDispatcher.setHostActive(true, resumeHold: 0.25)
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+			// Short hold allows WebKit to resume WebContent before any JS eval.
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
 				guard let self else { return }
 				self.scriptDispatcher.clearResumeHold()
 				self.schedulePendingWebContentReloadIfPossible()
-				self.scriptDispatcher.sendLifecycleEvent(
-					name: "cz-auv3-host-active",
-					assignments: ["__czAuv3HostActive": "true"]
+				if self.webContentState == .ready && self.webAppReady {
+					self.scriptDispatcher.sendLifecycleEvent(
+						name: "cz-auv3-host-active",
+						assignments: ["__czAuv3HostActive": "true"]
+					)
+					self.requestStatePushWhenWebReady(reason: "hostDidBecomeActive")
+				}
+				os_log(
+					"host active resume hold cleared instance=%{public}@ webReady=%{public}d",
+					log: czVCLog,
+					type: .default,
+					self.instanceID,
+					self.webAppReady
 				)
-				self.requestStatePushWhenWebReady(reason: "hostDidBecomeActive")
 			}
 		}
 	}
@@ -1005,14 +1078,15 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	private func handleWebReady(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
+		webContentState = .ready
 		webAppReady = true
 		webContentReloadWorkItem?.cancel()
 		webContentReloadWorkItem = nil
 		pendingWebContentReloadReason = nil
+		reloadPolicy.clearPendingReload()
 		scriptDispatcher.setWebContentAlive(true)
 		scriptDispatcher.setNavigationFinished(true)
 		publishHostContextToWebView(reason: "webReady")
-		webView?.isHidden = false
 
 		let reason = pendingStatePushReason ?? "webReady"
 		pendingStatePushReason = nil
