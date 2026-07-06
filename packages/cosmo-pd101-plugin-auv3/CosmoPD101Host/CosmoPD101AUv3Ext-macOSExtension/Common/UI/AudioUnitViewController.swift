@@ -485,7 +485,16 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
 
 		if let baseUrl = indexUrl?.deletingLastPathComponent() {
-			configuration.setURLSchemeHandler(BundleSchemeHandler(baseURL: baseUrl), forURLScheme: "cosmo-ext")
+			configuration.setURLSchemeHandler(
+				BundleSchemeHandler(baseURL: baseUrl, scopeFrameProvider: { [weak self] in
+					guard let audioUnit = self?.audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
+						return nil
+					}
+					let scope = audioUnit.scopeData()
+					return ScopeBinaryFrame(samples: scope.samples, sampleRate: scope.sampleRate, hz: scope.hz)
+				}),
+				forURLScheme: "cosmo-ext"
+			)
 		}
 
 		let webView = WKWebView(frame: view.bounds, configuration: configuration)
@@ -1211,9 +1220,11 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 	private let baseURL: URL
+	private let scopeFrameProvider: () -> ScopeBinaryFrame?
 
-	init(baseURL: URL) {
+	init(baseURL: URL, scopeFrameProvider: @escaping () -> ScopeBinaryFrame? = { nil }) {
 		self.baseURL = baseURL
+		self.scopeFrameProvider = scopeFrameProvider
 	}
 
 	func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
@@ -1225,6 +1236,10 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 		let relativePath = requestURL.path.hasPrefix("/")
 			? String(requestURL.path.dropFirst())
 			: requestURL.path
+		if relativePath == "__scope__" {
+			serveScope(urlSchemeTask: urlSchemeTask, requestURL: requestURL)
+			return
+		}
 		let requestedFileURL = relativePath.isEmpty
 			? baseURL.appendingPathComponent("index.html")
 			: baseURL.appendingPathComponent(relativePath)
@@ -1256,6 +1271,28 @@ private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 	}
 
 	func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
+
+	private func serveScope(urlSchemeTask: any WKURLSchemeTask, requestURL: URL) {
+		let data = ScopeBinaryFrameEncoder.encode(scopeFrameProvider())
+		let response = HTTPURLResponse(
+			url: requestURL,
+			statusCode: 200,
+			httpVersion: "HTTP/1.1",
+			headerFields: [
+				"Access-Control-Allow-Origin": "*",
+				"Content-Length": String(data.count),
+				"Content-Type": "application/octet-stream",
+			]
+		) ?? URLResponse(
+			url: requestURL,
+			mimeType: "application/octet-stream",
+			expectedContentLength: data.count,
+			textEncodingName: nil
+		)
+		urlSchemeTask.didReceive(response)
+		urlSchemeTask.didReceive(data)
+		urlSchemeTask.didFinish()
+	}
 
 	private static let corsHeaders = [
 		"Access-Control-Allow-Origin": "*",

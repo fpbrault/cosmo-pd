@@ -7,6 +7,14 @@ import {
 	recordAuv3ScopeRpc,
 } from "./scopePerformance";
 
+export const AUV3_SCOPE_BINARY_URL = "cosmo-ext://bundle/__scope__";
+
+type BinaryScopeFrame = {
+	samples: Float32Array;
+	sampleRate: number;
+	hz: number;
+};
+
 /** AUv3-specific Window methods (webkit bridge, host platform, subscriptions). */
 declare global {
 	interface Window {
@@ -144,6 +152,30 @@ function isAuv3HostActive() {
 	return window.__czAuv3HostActive !== false;
 }
 
+export function publishAuv3HostActiveFromWeb(active: boolean) {
+	if (window.__czAuv3HostActive === active) {
+		return;
+	}
+	window.__czAuv3HostActive = active;
+	window.dispatchEvent(
+		new Event(active ? "cz-auv3-host-active" : "cz-auv3-host-inactive"),
+	);
+}
+
+function installAuv3VisibilityLifecycle() {
+	const syncVisibility = () => {
+		publishAuv3HostActiveFromWeb(!document.hidden);
+	};
+	document.addEventListener("visibilitychange", syncVisibility);
+	window.addEventListener("pagehide", () =>
+		publishAuv3HostActiveFromWeb(false),
+	);
+	window.addEventListener("pageshow", syncVisibility);
+	if (document.hidden) {
+		publishAuv3HostActiveFromWeb(false);
+	}
+}
+
 function shouldSuppressWhileHostInactive(method: string) {
 	return inactiveSuppressedMethods.has(method);
 }
@@ -198,6 +230,64 @@ function invokeAuv3<T = unknown>(
 const invoke = createTypedInvoke((method: string, payload?: unknown) =>
 	invokeAuv3<unknown>(method, payload),
 );
+
+export function decodeAuv3BinaryScopeFrame(
+	buffer: ArrayBuffer,
+): BinaryScopeFrame | null {
+	if (buffer.byteLength < 8 || (buffer.byteLength - 8) % 4 !== 0) {
+		return null;
+	}
+
+	const view = new DataView(buffer);
+	const sampleRate = view.getFloat32(0, true);
+	const hz = view.getFloat32(4, true);
+	const sampleCount = (buffer.byteLength - 8) / 4;
+	return {
+		samples: new Float32Array(buffer, 8, sampleCount),
+		sampleRate,
+		hz,
+	};
+}
+
+function normalizeLegacyScopeFrame(result: unknown): BinaryScopeFrame | null {
+	const raw = result as Omit<ScopeDataResponse, "samples"> & {
+		samples?: Array<number | null>;
+	};
+	if (!raw?.samples) {
+		return null;
+	}
+
+	return {
+		samples: Float32Array.from(
+			raw.samples.filter(
+				(sample): sample is number => typeof sample === "number",
+			),
+		),
+		sampleRate: raw.sampleRate ?? 0,
+		hz: raw.hz ?? 0,
+	};
+}
+
+export async function fetchAuv3BinaryScopeFrame(
+	fetchScope: typeof fetch = window.fetch.bind(window),
+): Promise<BinaryScopeFrame | null> {
+	const response = await fetchScope(AUV3_SCOPE_BINARY_URL);
+	if (!response.ok) {
+		throw new Error(`scope fetch: ${response.status}`);
+	}
+	return decodeAuv3BinaryScopeFrame(await response.arrayBuffer());
+}
+
+export async function readAuv3ScopeFrame(
+	fetchScope: typeof fetch,
+	invokeScope: () => Promise<unknown>,
+): Promise<BinaryScopeFrame | null> {
+	try {
+		return await fetchAuv3BinaryScopeFrame(fetchScope);
+	} catch {
+		return normalizeLegacyScopeFrame(await invokeScope());
+	}
+}
 
 function installIpcResponseHandler() {
 	window.__czIpcResponse = (response: IpcRpcResponse) => {
@@ -278,6 +368,7 @@ function installScopePolling() {
 	let lastScheduled = 0;
 	let pollInFlight = false;
 	let destroyed = false;
+	let binaryScopeSupported = true;
 
 	const scheduleNextFrame = () => {
 		if (
@@ -312,19 +403,28 @@ function installScopePolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS)
-				.then((result) => {
-					const raw = result as Omit<ScopeDataResponse, "samples"> & {
-						samples: number[];
-					};
-					if (raw?.samples.length > 0 && currentScopeHandler) {
-						recordAuv3ScopeRpc(raw.samples.length);
-						currentScopeHandler(raw.samples, raw.sampleRate ?? 0, raw.hz ?? 0);
-					}
-				})
-				.catch(() => {
-					// Scope data is opportunistic; audio may not be active yet.
-				});
+			let frame: BinaryScopeFrame | null;
+			if (binaryScopeSupported) {
+				try {
+					frame = await fetchAuv3BinaryScopeFrame();
+				} catch {
+					binaryScopeSupported = false;
+					frame = normalizeLegacyScopeFrame(
+						await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS),
+					);
+				}
+			} else {
+				frame = normalizeLegacyScopeFrame(
+					await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS),
+				);
+			}
+
+			if (frame?.samples.length && currentScopeHandler) {
+				recordAuv3ScopeRpc(frame.samples.length);
+				currentScopeHandler(frame.samples, frame.sampleRate, frame.hz);
+			}
+		} catch {
+			// Scope data is opportunistic; audio may not be active yet.
 		} finally {
 			pollInFlight = false;
 			scheduleNextFrame();
@@ -555,6 +655,7 @@ export function ensureAuv3Bridge(): boolean {
 	}
 
 	installed = true;
+	installAuv3VisibilityLifecycle();
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();
