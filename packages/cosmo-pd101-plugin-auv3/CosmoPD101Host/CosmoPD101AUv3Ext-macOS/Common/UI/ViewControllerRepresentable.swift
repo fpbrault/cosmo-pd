@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-private func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
+func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
 	let fitModeSelector = NSSelectorFromString("setCosmoAuv3FitMode:")
 	if viewController.responds(to: fitModeSelector) {
 		viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")

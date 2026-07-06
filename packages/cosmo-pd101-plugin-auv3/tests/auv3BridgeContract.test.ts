@@ -95,6 +95,17 @@ describe("AUv3 bridge contract", () => {
 		).toEqual([]);
 	});
 
+	it("suppresses nonessential polling RPCs while the AUv3 host is inactive", () => {
+		const bridgeSource = readText(auv3BridgePath);
+
+		expect(bridgeSource).toContain(
+			"const inactiveSuppressedMethods = new Set([",
+		);
+		expect(bridgeSource).toContain('"getParamsVersion"');
+		expect(bridgeSource).toContain('"getPendingParamChanges"');
+		expect(bridgeSource).toContain("suppressed while host inactive");
+	});
+
 	it("has currentPresetSession keys matching PluginPresetSession", () => {
 		const swiftSource = readText(xcodeControllerPath);
 
@@ -173,13 +184,18 @@ describe("AUv3 bridge contract", () => {
 		expect(swiftSource).toContain(
 			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
 		);
-		expect(swiftSource).toContain(
-			"source: \"window.__czRuntimeMode='\\(cosmoAuv3RuntimeMode)';\"",
-		);
+		expect(swiftSource).toContain("hostContextScript(dispatchEvent: false)");
+		expect(swiftSource).toContain("window.__czRuntimeMode=\\(runtimeMode);");
 	});
 
 	it("marks the containing standalone app as standalone before embedding the AU view", () => {
 		const hostAppSource = readText(xcodeViewControllerRepresentablePath);
+		const simplePlayEngineSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Common/Audio/SimplePlayEngine.swift",
+			),
+		);
 
 		expect(hostAppSource).toContain(
 			'viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")',
@@ -187,5 +203,82 @@ describe("AUv3 bridge contract", () => {
 		expect(hostAppSource).toContain(
 			'viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")',
 		);
+		expect(hostAppSource).toContain(
+			'viewController.setValue(true, forKey: "cosmoAuv3SupportsStandaloneAppSettings")',
+		);
+		expect(simplePlayEngineSource).toContain(
+			"configureStandaloneAuv3ViewController(viewController)",
+		);
+	});
+
+	it("injects standalone app settings support into the AUv3 webview", () => {
+		const swiftSource = readText(xcodeControllerPath);
+
+		expect(swiftSource).toContain(
+			"@objc public var cosmoAuv3SupportsStandaloneAppSettings = false",
+		);
+		expect(swiftSource).toContain(
+			"window.__czSupportsStandaloneAppSettings=\\(supportsStandaloneAppSettings);",
+		);
+		expect(swiftSource).toContain("publishHostContextToWebView(reason:");
+		expect(swiftSource).toContain("cz-host-context-changed");
+	});
+
+	it("keeps restored document params on the raw restore path", () => {
+		const swiftSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+			),
+		);
+
+		expect(swiftSource).toContain("paramsJson() ?? savedStateJson");
+		expect(swiftSource).toContain(
+			"_ = setParamsJson(json, notifyWebView: true, isRaw: true)",
+		);
+		expect(swiftSource).toContain(
+			"_ = setParamsJson(pending, notifyWebView: true, isRaw: true)",
+		);
+		expect(swiftSource).toContain("savedStateJson = json");
+	});
+
+	it("keeps AUv3 standalone buffer choices aligned and allocates at the supported maximum", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const audioUnitSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+			),
+		);
+
+		expect(swiftSource).toContain(
+			"static let allowedBufferSizes = [128, 256, 512, 1024]",
+		);
+		expect(swiftSource).toContain(
+			"audioUnit.maximumFramesToRender = AUAudioFrameCount(CosmoPD101AUv3Ext_macOSExtensionAudioUnit.maxSupportedFrameCount)",
+		);
+		expect(audioUnitSource).toContain(
+			"static let maxSupportedFrameCount = 1024",
+		);
+		expect(audioUnitSource).toContain(
+			"maximumFramesToRender = AUAudioFrameCount(Self.maxSupportedFrameCount)",
+		);
+		expect(audioUnitSource).toContain(
+			"maxFrames = max(Int(maximumFramesToRender), Self.maxSupportedFrameCount)",
+		);
+	});
+
+	it("sends all notes off before changing the AUv3 MIDI channel filter", () => {
+		const audioUnitSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+			),
+		);
+
+		expect(audioUnitSource).toContain(
+			"guard nextChannel != midiChannel else { return }",
+		);
+		expect(audioUnitSource).toContain("cosmo_pd101_ffi_all_notes_off(engine)");
 	});
 });

@@ -53,7 +53,7 @@ private enum StandaloneAppSettings {
 	static let defaultMidiChannel = 0
 	static let defaultKeepRunningInBackground = false
 	static let defaultBufferSize = 128
-	static let allowedBufferSizes = [32, 64, 128, 256, 512, 1024]
+	static let allowedBufferSizes = [128, 256, 512, 1024]
 
 	private static var defaults: UserDefaults {
 		UserDefaults(suiteName: groupId) ?? .standard
@@ -123,15 +123,25 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}
 	}
 
-	@objc public var cosmoAuv3FitMode: String = "fit-bounds"
-	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"
-	@objc public var cosmoAuv3SupportsStandaloneAppSettings = false
+	@objc public var cosmoAuv3FitMode: String = "fit-bounds" {
+		didSet { publishHostContextToWebView(reason: "fitMode") }
+	}
+	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted" {
+		didSet { publishHostContextToWebView(reason: "runtimeMode") }
+	}
+	@objc public var cosmoAuv3SupportsStandaloneAppSettings = false {
+		didSet { publishHostContextToWebView(reason: "standaloneAppSettingsSupport") }
+	}
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
 	private var webView: WKWebView?
 	private var webViewJavaScriptEvaluator: WebViewJavaScriptEvaluator?
 	private lazy var scriptDispatcher = WebViewScriptDispatcher()
 	private var webContentTerminationCount = 0
+	private var recentWebContentTerminationCount = 0
+	private var recentWebContentTerminationWindowStart: Date?
+	private var webContentReloadWorkItem: DispatchWorkItem?
+	private var pendingWebContentReloadReason: String?
 	private var hostInactiveAt: Date?
 	private var webAppReady = false
 	private var pendingStatePushReason: String?
@@ -202,6 +212,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		super.viewWillAppear(animated)
 		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
 		scriptDispatcher.setViewVisible(true)
+		schedulePendingWebContentReloadIfPossible()
 		telemetryController.viewWillAppear()
 	}
 
@@ -469,18 +480,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			WKUserScript(source: hostPlatformScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
 		)
 		configuration.userContentController.addUserScript(
-			WKUserScript(
-				source: "window.__czRuntimeMode='\(cosmoAuv3RuntimeMode)';",
-				injectionTime: .atDocumentStart,
-				forMainFrameOnly: true
-			)
-		)
-		configuration.userContentController.addUserScript(
-			WKUserScript(
-				source: "window.__czSupportsStandaloneAppSettings=\(cosmoAuv3SupportsStandaloneAppSettings ? "true" : "false");",
-				injectionTime: .atDocumentStart,
-				forMainFrameOnly: true
-			)
+			WKUserScript(source: hostContextScript(dispatchEvent: false), injectionTime: .atDocumentStart, forMainFrameOnly: true)
 		)
 		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
 
@@ -490,6 +490,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		let webView = WKWebView(frame: view.bounds, configuration: configuration)
 		webView.navigationDelegate = self
+		webView.isHidden = true
 		#if os(macOS)
 		webView.wantsLayer = true
 		webView.layer?.backgroundColor = NSColor.clear.cgColor
@@ -520,6 +521,46 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		os_log("indexUrl=%{public}@", log: czVCLog, type: .default, indexUrl.path)
 
 		webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
+	}
+
+	private func javaScriptStringLiteral(_ value: String) -> String {
+		guard
+			let data = try? JSONSerialization.data(withJSONObject: [value], options: []),
+			let json = String(data: data, encoding: .utf8),
+			json.count >= 2
+		else {
+			return "\"\""
+		}
+		return String(json.dropFirst().dropLast())
+	}
+
+	private func hostContextScript(dispatchEvent: Bool) -> String {
+		let runtimeMode = javaScriptStringLiteral(cosmoAuv3RuntimeMode)
+		let fitMode = javaScriptStringLiteral(cosmoAuv3FitMode)
+		let supportsStandaloneAppSettings = cosmoAuv3SupportsStandaloneAppSettings ? "true" : "false"
+		let eventScript = dispatchEvent
+			? "window.dispatchEvent(new CustomEvent('cz-host-context-changed',{detail:{runtimeMode:window.__czRuntimeMode,fitMode:window.__czAuv3FitMode,supportsStandaloneAppSettings:window.__czSupportsStandaloneAppSettings}}));"
+			: ""
+		return "window.__czRuntimeMode=\(runtimeMode);window.__czAuv3FitMode=\(fitMode);window.__czSupportsStandaloneAppSettings=\(supportsStandaloneAppSettings);\(eventScript)"
+	}
+
+	private func publishHostContextToWebView(reason: String) {
+		os_log(
+			"publishHostContext reason=%{public}@ runtime=%{public}@ supportsStandaloneSettings=%{public}@",
+			log: czVCLog,
+			type: .default,
+			reason,
+			cosmoAuv3RuntimeMode,
+			cosmoAuv3SupportsStandaloneAppSettings ? "yes" : "no"
+		)
+		_ = scriptDispatcher.sendLifecycleEvent(
+			name: "cz-host-context-changed",
+			assignments: [
+				"__czRuntimeMode": javaScriptStringLiteral(cosmoAuv3RuntimeMode),
+				"__czAuv3FitMode": javaScriptStringLiteral(cosmoAuv3FitMode),
+				"__czSupportsStandaloneAppSettings": cosmoAuv3SupportsStandaloneAppSettings ? "true" : "false",
+			]
+		)
 	}
 
 	private func layoutWebView(reason: String = "layout") {
@@ -639,13 +680,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
 		os_log("didFail navigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
 		scriptDispatcher.setNavigationFinished(false)
-		reloadBundledWebView(after: 0.25)
+		scheduleWebContentReload(reason: "didFailNavigation", delay: 0.5)
 	}
 
 	public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
 		os_log("didFailProvisionalNavigation: %{public}@", log: czVCLog, type: .error, error.localizedDescription)
 		scriptDispatcher.setNavigationFinished(false)
-		reloadBundledWebView(after: 0.25)
+		scheduleWebContentReload(reason: "didFailProvisionalNavigation", delay: 0.5)
 	}
 
 	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -668,62 +709,132 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
 		os_log("didStartProvisionalNavigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
+		webView.isHidden = true
 	}
 
 	public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
 		webContentTerminationCount += 1
+		let recentTerminationCount = recordRecentWebContentTermination()
 		webAppReady = false
 		pendingStatePushReason = "webContentProcessDidTerminate"
 		scriptDispatcher.setWebContentAlive(false)
+		webView.isHidden = true
 
 		telemetryController.hostWillResignActive()
 		telemetryController.resetAllCaches()
 
 		os_log(
-			"web content process terminated count=%{public}d instance=%{public}@",
+			"web content process terminated count=%{public}d recent=%{public}d instance=%{public}@",
 			log: czVCLog,
 			type: .error,
 			webContentTerminationCount,
+			recentTerminationCount,
 			instanceID
 		)
 
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self, weak webView] in
-			guard let self, let webView, webView === self.webView else { return }
-
-			if self.webContentTerminationCount == 1 {
-				os_log(
-					"reloading webView after content termination instance=%{public}@",
-					log: czVCLog,
-					type: .default,
-					self.instanceID
-				)
-				webView.reload()
-				return
-			}
-
-			os_log(
-				"reloading webView after repeated content termination instance=%{public}@ count=%{public}d",
-				log: czVCLog,
-				type: .error,
-				self.instanceID,
-				self.webContentTerminationCount
-			)
-			webView.reload()
-		}
+		scheduleWebContentReload(
+			reason: "webContentProcessDidTerminate",
+			delay: webContentTerminationReloadDelay(recentTerminationCount: recentTerminationCount)
+		)
 	}
 
 	private func reloadBundledWebView(after delay: TimeInterval) {
-		DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-			guard let self, let webView = self.webView else { return }
+		scheduleWebContentReload(reason: "reloadBundledWebView", delay: delay)
+	}
+
+	private func recordRecentWebContentTermination() -> Int {
+		let now = Date()
+		if let windowStart = recentWebContentTerminationWindowStart,
+			now.timeIntervalSince(windowStart) <= 8 {
+			recentWebContentTerminationCount += 1
+		} else {
+			recentWebContentTerminationWindowStart = now
+			recentWebContentTerminationCount = 1
+		}
+		return recentWebContentTerminationCount
+	}
+
+	private func webContentTerminationReloadDelay(recentTerminationCount: Int) -> TimeInterval {
+		let exponent = max(0, min(recentTerminationCount - 1, 3))
+		return 0.5 * pow(2.0, Double(exponent))
+	}
+
+	private func canReloadWebContentNow() -> Bool {
+		scriptDispatcher.state.hostActive && scriptDispatcher.state.viewVisible
+	}
+
+	private func schedulePendingWebContentReloadIfPossible() {
+		guard let pendingReason = pendingWebContentReloadReason else { return }
+		scheduleWebContentReload(reason: pendingReason, delay: 0.5)
+	}
+
+	private func scheduleWebContentReload(reason: String, delay: TimeInterval) {
+		pendingWebContentReloadReason = reason
+		webView?.isHidden = true
+
+		guard canReloadWebContentNow() else {
+			os_log(
+				"deferring webView reload reason=%{public}@ instance=%{public}@ hostActive=%{public}d viewVisible=%{public}d",
+				log: czVCLog,
+				type: .default,
+				reason,
+				instanceID,
+				scriptDispatcher.state.hostActive,
+				scriptDispatcher.state.viewVisible
+			)
+			return
+		}
+
+		webContentReloadWorkItem?.cancel()
+
+		let clampedDelay = max(0.25, delay)
+		let workItem = DispatchWorkItem { [weak self] in
+			guard let self else { return }
+			self.webContentReloadWorkItem = nil
+
+			guard self.canReloadWebContentNow() else {
+				os_log(
+					"webView reload became inactive before execution reason=%{public}@ instance=%{public}@",
+					log: czVCLog,
+					type: .default,
+					reason,
+					self.instanceID
+				)
+				self.scheduleWebContentReload(reason: reason, delay: 0.5)
+				return
+			}
+
+			guard let webView = self.webView else { return }
+
+			self.pendingWebContentReloadReason = nil
+			os_log(
+				"loading bundled webView reason=%{public}@ delay=%{public}.2f instance=%{public}@",
+				log: czVCLog,
+				type: .default,
+				reason,
+				clampedDelay,
+				self.instanceID
+			)
 			webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
 		}
+
+		webContentReloadWorkItem = workItem
+		os_log(
+			"scheduled webView reload reason=%{public}@ delay=%{public}.2f instance=%{public}@",
+			log: czVCLog,
+			type: .default,
+			reason,
+			clampedDelay,
+			instanceID
+		)
+		DispatchQueue.main.asyncAfter(deadline: .now() + clampedDelay, execute: workItem)
 	}
 
 	private func applyStandaloneAppSettings(_ settings: [String: Any], to audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
 		let midiChannel = StandaloneAppSettings.clampMidiChannel(settings["midiChannel"] as? Int ?? StandaloneAppSettings.defaultMidiChannel)
 		let bufferSize = StandaloneAppSettings.clampBufferSize(settings["bufferSize"] as? Int ?? StandaloneAppSettings.defaultBufferSize)
 		audioUnit.setMidiChannel(midiChannel)
-		audioUnit.maximumFramesToRender = AUAudioFrameCount(bufferSize)
+		audioUnit.maximumFramesToRender = AUAudioFrameCount(CosmoPD101AUv3Ext_macOSExtensionAudioUnit.maxSupportedFrameCount)
 		os_log(
 			.default,
 			log: czVCLog,
@@ -832,6 +943,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
 				guard let self else { return }
 				self.scriptDispatcher.clearResumeHold()
+				self.schedulePendingWebContentReloadIfPossible()
 				self.scriptDispatcher.sendLifecycleEvent(
 					name: "cz-auv3-host-active",
 					assignments: ["__czAuv3HostActive": "true"]
@@ -885,8 +997,13 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 	private func handleWebReady(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
 		webAppReady = true
+		webContentReloadWorkItem?.cancel()
+		webContentReloadWorkItem = nil
+		pendingWebContentReloadReason = nil
 		scriptDispatcher.setWebContentAlive(true)
 		scriptDispatcher.setNavigationFinished(true)
+		publishHostContextToWebView(reason: "webReady")
+		webView?.isHidden = false
 
 		let reason = pendingStatePushReason ?? "webReady"
 		pendingStatePushReason = nil

@@ -140,6 +140,11 @@ extension AVAudioUnit {
             return first
         }
 		NSLog("[SPE] chosen VC: %@", viewController == nil ? "nil" : String(describing: type(of: viewController!)))
+		if let viewController {
+			await MainActor.run {
+				configureStandaloneAuv3ViewController(viewController)
+			}
+		}
 
 		if #available(macOS 13.0, iOS 16.0, *) {
 			if viewController == nil {

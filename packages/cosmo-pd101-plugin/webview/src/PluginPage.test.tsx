@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import PluginPage from "./PluginPage";
 
@@ -77,7 +77,19 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
 		SYNTH_RENDERER_MAX_ASPECT_RATIO: 3 / 2,
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
-		SynthRenderer: () => <div data-testid="synth-renderer" />,
+		SynthRenderer: ({
+			keyboardSettingsExtra,
+		}: {
+			keyboardSettingsExtra?: React.ReactNode;
+		}) => (
+			<div data-testid="synth-renderer">
+				{keyboardSettingsExtra ? (
+					<div data-testid="keyboard-settings-extra">
+						{keyboardSettingsExtra}
+					</div>
+				) : null}
+			</div>
+		),
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>
 			selector(synthStoreState),
@@ -215,9 +227,25 @@ describe("PluginPage", () => {
 				__czHostPlatform?: string;
 				__czHostSize?: { width: number; height: number };
 				__czRuntimeMode?: string;
+				__czSupportsStandaloneAppSettings?: boolean;
 				ipc?: unknown;
 			}
 		).__czRuntimeMode;
+		delete (
+			window as Window & {
+				__czSupportsStandaloneAppSettings?: boolean;
+			}
+		).__czSupportsStandaloneAppSettings;
+		delete (
+			window as Window & {
+				__czGetStandaloneAppSettings?: unknown;
+			}
+		).__czGetStandaloneAppSettings;
+		delete (
+			window as Window & {
+				__czSetStandaloneAppSettings?: unknown;
+			}
+		).__czSetStandaloneAppSettings;
 		delete (window as Window & { ipc?: unknown }).ipc;
 	});
 
@@ -585,6 +613,171 @@ describe("PluginPage", () => {
 		} finally {
 			getBoundingClientRect.mockRestore();
 		}
+	});
+
+	it("shows AUv3 app settings in AUv3 webviews without waiting for the standalone support flag", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
+				__czSupportsStandaloneAppSettings?: boolean;
+			}
+		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "auv3-hosted";
+
+		const { getByText } = render(<PluginPage appVersion="0.2.0" />);
+
+		expect(getByText("AUv3 App")).toBeInstanceOf(HTMLElement);
+	});
+
+	it("shows AUv3 app settings in the standalone AUv3 app", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
+				__czSupportsStandaloneAppSettings?: boolean;
+				__czGetStandaloneAppSettings?: () => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+				__czSetStandaloneAppSettings?: (settings: {
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}) => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+			}
+		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "standalone";
+		(
+			window as Window & {
+				__czGetStandaloneAppSettings?: () => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+			}
+		).__czGetStandaloneAppSettings = vi.fn(async () => ({
+			midiChannel: 0,
+			keepRunningInBackground: false,
+			bufferSize: 128,
+		}));
+		(
+			window as Window & {
+				__czSetStandaloneAppSettings?: (settings: {
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}) => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+			}
+		).__czSetStandaloneAppSettings = vi.fn(async (settings) => settings);
+
+		const { getByText } = render(<PluginPage appVersion="0.2.0" />);
+
+		expect(getByText("AUv3 App")).toBeInstanceOf(HTMLElement);
+		expect(getByText("MIDI Channel")).toBeInstanceOf(HTMLElement);
+		expect(getByText("Run In Background")).toBeInstanceOf(HTMLElement);
+		expect(getByText("Buffer Size")).toBeInstanceOf(HTMLElement);
+	});
+
+	it("shows AUv3 app settings when standalone support arrives after render", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
+				__czSupportsStandaloneAppSettings?: boolean;
+				__czGetStandaloneAppSettings?: () => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+				__czSetStandaloneAppSettings?: (settings: {
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}) => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+			}
+		).__czHostPlatform = undefined;
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "plugin";
+		(
+			window as Window & {
+				__czGetStandaloneAppSettings?: () => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+			}
+		).__czGetStandaloneAppSettings = vi.fn(
+			() =>
+				new Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>(() => {}),
+		);
+		(
+			window as Window & {
+				__czSetStandaloneAppSettings?: (settings: {
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}) => Promise<{
+					midiChannel: number;
+					keepRunningInBackground: boolean;
+					bufferSize: number;
+				}>;
+			}
+		).__czSetStandaloneAppSettings = vi.fn(async (settings) => settings);
+
+		const { getByText, queryByText } = render(
+			<PluginPage appVersion="0.2.0" />,
+		);
+
+		expect(queryByText("AUv3 App")).toBeNull();
+
+		act(() => {
+			(
+				window as Window & {
+					__czRuntimeMode?: string;
+					__czSupportsStandaloneAppSettings?: boolean;
+				}
+			).__czRuntimeMode = "standalone";
+			(
+				window as Window & {
+					__czSupportsStandaloneAppSettings?: boolean;
+				}
+			).__czSupportsStandaloneAppSettings = true;
+			window.dispatchEvent(new Event("cz-host-context-changed"));
+		});
+
+		expect(getByText("AUv3 App")).toBeInstanceOf(HTMLElement);
+		expect(getByText("MIDI Channel")).toBeInstanceOf(HTMLElement);
+		expect(getByText("Run In Background")).toBeInstanceOf(HTMLElement);
+		expect(getByText("Buffer Size")).toBeInstanceOf(HTMLElement);
 	});
 
 	it("centers the AUv3 standalone wrapper while keeping the scaled renderer anchored top-left", () => {

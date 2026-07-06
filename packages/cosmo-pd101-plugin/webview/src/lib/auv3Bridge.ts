@@ -51,6 +51,7 @@ const listenerCountWatchers = new Map<string, Set<() => void>>();
 let demandTrackingInstalled = false;
 const inactiveSuppressedMethods = new Set([
 	"getScopeData",
+	"getPendingParamChanges",
 	"getParamsVersion",
 	"getRuntimeVoiceStates",
 	"getRuntimeModSources",

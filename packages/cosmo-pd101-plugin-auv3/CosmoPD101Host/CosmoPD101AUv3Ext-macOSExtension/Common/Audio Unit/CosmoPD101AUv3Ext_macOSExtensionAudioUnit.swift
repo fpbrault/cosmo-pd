@@ -7,11 +7,13 @@ import os
 private let czAULog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzAU")
 
 public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unchecked Sendable {
+	static let maxSupportedFrameCount = 1024
+
 	private let outputBus: AUAudioUnitBus
 	private var outputBusArrayStorage: AUAudioUnitBusArray!
 	private var inputBusArrayStorage: AUAudioUnitBusArray!
 	private var engine: CosmoPd101FfiEngineRef?
-	private var maxFrames: Int = 4096
+	private var maxFrames: Int = 1024
 	private var voiceLimit: Int = 8
 	private var midiChannel: Int = 0
 	private var parameterObserverToken: AUParameterObserverToken?
@@ -90,7 +92,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	public override var fullStateForDocument: [String: Any]? {
 		get {
 			var state = super.fullStateForDocument ?? [:]
-			if let json = paramsJson() {
+			if let json = paramsJson() ?? savedStateJson {
 				state["CzParamsJson"] = json
 			}
 			return state
@@ -100,10 +102,11 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 			if let json = newValue?["CzParamsJson"] as? String {
 				if engine != nil {
 					os_log(.default, log: czAULog, "[CzAU] fullStateForDocument set: applying json len=%d", json.count)
-					_ = setParamsJson(json, notifyWebView: true)
+					_ = setParamsJson(json, notifyWebView: true, isRaw: true)
 				} else {
 					os_log(.default, log: czAULog, "[CzAU] fullStateForDocument set: engine nil, buffering len=%d", json.count)
 					pendingParamsJson = json
+					savedStateJson = json
 				}
 			}
 		}
@@ -128,6 +131,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		let format = AVAudioFormat(standardFormatWithSampleRate: defaultSampleRate, channels: 2)!
 		outputBus = try AUAudioUnitBus(format: format)
 		try super.init(componentDescription: componentDescription, options: options)
+		maximumFramesToRender = AUAudioFrameCount(Self.maxSupportedFrameCount)
 		outputBusArrayStorage = AUAudioUnitBusArray(audioUnit: self, busType: .output, busses: [outputBus])
 		inputBusArrayStorage = AUAudioUnitBusArray(audioUnit: self, busType: .input, busses: [])
 
@@ -146,7 +150,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public override func allocateRenderResources() throws {
 		try super.allocateRenderResources()
-		maxFrames = Int(maximumFramesToRender)
+		maxFrames = max(Int(maximumFramesToRender), Self.maxSupportedFrameCount)
 		let sampleRate = Float(outputBus.format.sampleRate)
 		engine = cosmo_pd101_ffi_engine_create(sampleRate, maxFrames)
 		guard engine != nil else {
@@ -156,7 +160,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		_ = applyVoiceLimit(reason: "allocateRenderResources")
 		if let pending = pendingParamsJson {
 			pendingParamsJson = nil
-			_ = setParamsJson(pending, notifyWebView: true)
+			_ = setParamsJson(pending, notifyWebView: true, isRaw: true)
 		} else if let pendingIndex = pendingFactoryPresetIndex {
 			pendingFactoryPresetIndex = nil
 			_ = applyFactoryPreset(index: pendingIndex)
@@ -171,7 +175,12 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	public func setMidiChannel(_ channel: Int) {
-		midiChannel = max(0, min(channel, 16))
+		let nextChannel = max(0, min(channel, 16))
+		guard nextChannel != midiChannel else { return }
+		if engine != nil {
+			_ = cosmo_pd101_ffi_all_notes_off(engine)
+		}
+		midiChannel = nextChannel
 	}
 
 	public override func deallocateRenderResources() {
