@@ -7,20 +7,6 @@ import WebKit
 private let czVCLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzVC")
 private let czWebViewLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzWebView")
 
-private final class WebViewJavaScriptEvaluator: JavaScriptEvaluating {
-	private weak var webView: WKWebView?
-
-	init(webView: WKWebView) {
-		self.webView = webView
-	}
-
-	func evaluateJavaScript(_ javaScriptString: String) {
-		Task { @MainActor [weak webView] in
-			_ = try? await webView?.evaluateJavaScript(javaScriptString)
-		}
-	}
-}
-
 #if os(iOS)
 import UIKit
 #endif
@@ -92,7 +78,7 @@ private enum StandaloneAppSettings {
 	}
 }
 
-public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNavigationDelegate, WKScriptMessageHandler {
+public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebEditorSessionDelegate {
 	private static let minimumWidth: CGFloat = 640
 	private static let minimumHeight: CGFloat = 480
 	#if DEBUG
@@ -104,11 +90,6 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	private var editorState = [String: Any]()
 	private var midiLearnState = MidiLearnState()
 	private var paramsVersion = 0
-	private lazy var telemetryController = TelemetryController { [weak self] in
-		Task { @MainActor [weak self] in
-			self?.handleTelemetryTimer()
-		}
-	}
 	private let instanceID = UUID().uuidString
 	private var cachedVoiceLimit: Int = 0
 	private var voiceLimit: Int {
@@ -124,37 +105,22 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	}
 
 	@objc public var cosmoAuv3FitMode: String = "fit-bounds" {
-		didSet { publishHostContextToWebView(reason: "fitMode") }
+		didSet { currentSession?.publishHostContext(currentHostContext(), reason: "fitMode") }
 	}
 	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted" {
-		didSet { publishHostContextToWebView(reason: "runtimeMode") }
+		didSet { currentSession?.publishHostContext(currentHostContext(), reason: "runtimeMode") }
 	}
 	@objc public var cosmoAuv3SupportsStandaloneAppSettings = false {
-		didSet { publishHostContextToWebView(reason: "standaloneAppSettingsSupport") }
+		didSet { currentSession?.publishHostContext(currentHostContext(), reason: "standaloneAppSettingsSupport") }
 	}
 
 	nonisolated(unsafe) var audioUnit: AUAudioUnit?
-	private var webView: WKWebView?
-	private var webViewJavaScriptEvaluator: WebViewJavaScriptEvaluator?
-	private lazy var scriptDispatcher = WebViewScriptDispatcher()
-	private enum WebContentState {
-		case loading
-		case ready
-		case terminated
-	}
-
-	private var webContentState: WebContentState = .loading
-	private var webContentTerminationCount = 0
-	private var recentWebContentTerminationCount = 0
-	private var recentWebContentTerminationWindowStart: Date?
-	private var webContentReloadWorkItem: DispatchWorkItem?
-	private var pendingWebContentReloadReason: String?
+	private var currentSession: WebEditorSession?
+	private var inactiveSnapshotView: WebEditorHostView?
 	private var hostInactiveAt: Date?
-	private var webAppReady = false
-	private var pendingStatePushReason: String?
 	private var pushStateCount = 0
-	private var telemetryTickCount = 0
-	private let reloadPolicy = WebViewReloadPolicy()
+	private var lastWebViewRecreateAt: Date?
+	private var webViewRecreateCountInWindow = 0
 
 	#if os(iOS)
 	public override var prefersStatusBarHidden: Bool { true }
@@ -165,11 +131,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	nonisolated(unsafe) private var observation: NSKeyValueObservation?
 
 	deinit {
-		telemetryController.invalidate()
+		currentSession?.destroy(reason: "deinit")
 		observation?.invalidate()
 		observation = nil
-		webView?.configuration.userContentController.removeScriptMessageHandler(forName: "cosmoPd101")
-		webView?.navigationDelegate = nil
 		#if os(iOS)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSExtensionHostDidBecomeActive, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSExtensionHostWillResignActive, object: nil)
@@ -182,16 +146,15 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 
 		#if os(iOS)
 		view = UIView(frame: CGRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
-		view.backgroundColor = .clear
+		view.backgroundColor = UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1)
 		preferredContentSize = CGSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		#else
 		view = NSView(frame: NSRect(x: 0, y: 0, width: Self.minimumWidth, height: Self.minimumHeight))
 		
 		view.wantsLayer = true
-		view.layer?.backgroundColor = NSColor.clear.cgColor
+		view.layer?.backgroundColor = NSColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1).cgColor
 		preferredContentSize = NSSize(width: Self.minimumWidth, height: Self.minimumHeight)
 		#endif
-		installWebView()
 		logSizing("loadView")
 
 		#if os(iOS)
@@ -203,7 +166,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	#if os(iOS)
 	public override func viewDidLayoutSubviews() {
 		super.viewDidLayoutSubviews()
-		layoutWebView(reason: "viewDidLayoutSubviews")
+		currentSession?.layout(bounds: view.bounds, reason: "viewDidLayoutSubviews")
+		inactiveSnapshotView?.frame = view.bounds
 		logSizing("viewDidLayoutSubviews")
 	}
 
@@ -211,24 +175,25 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		super.viewWillTransition(to: size, with: coordinator)
 		logSizing("viewWillTransition")
 		coordinator.animate(alongsideTransition: nil) { [weak self] _ in
-			self?.layoutWebView(reason: "viewWillTransitionComplete")
-			self?.logSizing("viewWillTransitionComplete")
+			guard let self else { return }
+			self.currentSession?.layout(bounds: self.view.bounds, reason: "viewWillTransitionComplete")
+			self.inactiveSnapshotView?.frame = self.view.bounds
+			self.logSizing("viewWillTransitionComplete")
 		}
 	}
 
 	public override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
-		scriptDispatcher.setViewVisible(true)
-		schedulePendingWebContentReloadIfPossible()
-		telemetryController.viewWillAppear()
+		installEditorSession(reason: "viewWillAppear")
 	}
 
 	public override func viewDidDisappear(_ animated: Bool) {
 		super.viewDidDisappear(animated)
 		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
-		scriptDispatcher.setViewVisible(false)
-		telemetryController.viewDidDisappear()
+		hostInactiveAt = Date()
+		destroyEditorSession(reason: "viewDidDisappear")
+		removeInactiveSnapshot(reason: "viewDidDisappear")
 	}
 
 	#else
@@ -243,20 +208,21 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 	public override func viewWillAppear() {
 		super.viewWillAppear()
 		os_log("viewWillAppear (instance=%@)", log: czVCLog, type: .default, instanceID)
-		scriptDispatcher.setViewVisible(true)
-		telemetryController.viewWillAppear()
+		installEditorSession(reason: "viewWillAppear")
 	}
 
 	public override func viewDidDisappear() {
 		super.viewDidDisappear()
 		os_log("viewDidDisappear (instance=%@)", log: czVCLog, type: .default, instanceID)
-		scriptDispatcher.setViewVisible(false)
-		telemetryController.viewDidDisappear()
+		hostInactiveAt = Date()
+		destroyEditorSession(reason: "viewDidDisappear")
+		removeInactiveSnapshot(reason: "viewDidDisappear")
 	}
 
 	public override func viewDidLayout() {
 		super.viewDidLayout()
-		layoutWebView(reason: "viewDidLayout")
+		currentSession?.layout(bounds: view.bounds, reason: "viewDidLayout")
+		inactiveSnapshotView?.frame = view.bounds
 		logSizing("viewDidLayout")
 	}
 	#endif
@@ -269,43 +235,42 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		observation = unit.observe(\.allParameterValues, options: [.new]) { _, _ in }
 		unit.paramsChangedHandler = { [weak self] json, presetName in
 			DispatchQueue.main.async { [weak self] in
-				self?.pushStateToWebView(json, selectedPresetName: presetName)
+				self?.pushStateToCurrentSession(json, selectedPresetName: presetName)
 			}
 		}
 		os_log("createAudioUnit: unit created", log: czVCLog, type: .default)
 		return unit
 	}
 
-	public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-		guard message.name == "cosmoPd101" else { return }
-		guard let payload = message.body as? [String: Any] else { return }
+	private func handleSessionMessage(_ session: WebEditorSession, payload: [String: Any]) {
+		guard session === currentSession else { return }
 
 		let id = payload["id"] as? Int ?? 0
 		let method = payload["method"] as? String ?? ""
 		let methodPayload = payload["payload"]
 
 		os_log(
-			"ipc from JS method=%{public}@ id=%{public}d instance=%{public}@ webReady=%{public}d",
+			"ipc from JS method=%{public}@ id=%{public}d instance=%{public}@ session=%{public}@",
 			log: czVCLog,
 			type: .debug,
 			method,
 			id,
 			instanceID,
-			webAppReady
+			session.id.uuidString
 		)
 
 		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
 			// Audio unit not yet assigned — respond with an error so JS promises
 			// reject immediately rather than hanging forever.
-			sendError(id: id, message: "audioUnit not ready")
+			sendError(session: session, id: id, message: "audioUnit not ready")
 			return
 		}
 
 		switch method {
 		case "getParams":
-			sendResponse(id: id, result: audioUnit.paramsJson() ?? "{}")
+			sendResponse(session: session, id: id, result: audioUnit.paramsJson() ?? "{}")
 		case "getParamsVersion":
-			sendResponse(id: id, result: paramsVersion)
+			sendResponse(session: session, id: id, result: paramsVersion)
 		case "setParams":
 			if
 				let params = methodPayload as? [String: Any],
@@ -314,49 +279,49 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				audioUnit.setParamsJson(json)
 			{
 				paramsVersion += 1
-				sendResponse(id: id, result: NSNull())
+				sendResponse(session: session, id: id, result: NSNull())
 			} else {
 				os_log("setParams FAILED: invalid object payload", log: czVCLog, type: .error)
-				sendError(id: id, message: "invalid setParams payload")
+				sendError(session: session, id: id, message: "invalid setParams payload")
 			}
 		case "getTransportInfo":
-			sendResponse(id: id, result: transportInfoResult())
+			sendResponse(session: session, id: id, result: transportInfoResult())
 		case "getScopeData":
 			let scope = audioUnit.scopeData()
-			sendResponse(id: id, result: [
+			sendResponse(session: session, id: id, result: [
 				"samples": scope.samples,
 				"sampleRate": scope.sampleRate,
 				"hz": scope.hz,
 			])
 		case "getRuntimeVoiceStates":
-			sendResponse(id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
+			sendResponse(session: session, id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
 		case "getRuntimeModSources":
-			sendResponse(id: id, result: audioUnit.runtimeModSourcesJson() ?? "{}")
+			sendResponse(session: session, id: id, result: audioUnit.runtimeModSourcesJson() ?? "{}")
 		case "subscribeRuntimeVoiceStates":
-			setTelemetrySubscription(.runtimeVoiceStates, active: true, audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			setTelemetrySubscription(.runtimeVoiceStates, active: true, session: session)
+			sendResponse(session: session, id: id, result: NSNull())
 		case "unsubscribeRuntimeVoiceStates":
-			setTelemetrySubscription(.runtimeVoiceStates, active: false, audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			setTelemetrySubscription(.runtimeVoiceStates, active: false, session: session)
+			sendResponse(session: session, id: id, result: NSNull())
 		case "subscribeRuntimeModSources":
-			setTelemetrySubscription(.runtimeModSources, active: true, audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			setTelemetrySubscription(.runtimeModSources, active: true, session: session)
+			sendResponse(session: session, id: id, result: NSNull())
 		case "unsubscribeRuntimeModSources":
-			setTelemetrySubscription(.runtimeModSources, active: false, audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			setTelemetrySubscription(.runtimeModSources, active: false, session: session)
+			sendResponse(session: session, id: id, result: NSNull())
 		case "subscribeTransport":
-			setTelemetrySubscription(.transport, active: true, audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			setTelemetrySubscription(.transport, active: true, session: session)
+			sendResponse(session: session, id: id, result: NSNull())
 		case "unsubscribeTransport":
-			setTelemetrySubscription(.transport, active: false, audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			setTelemetrySubscription(.transport, active: false, session: session)
+			sendResponse(session: session, id: id, result: NSNull())
 		case "getPresetSession":
-			sendResponse(id: id, result: currentPresetSession(for: audioUnit))
+			sendResponse(session: session, id: id, result: currentPresetSession(for: audioUnit))
 		case "setPresetSession":
 			presetSessionState = PresetSessionState(payload: methodPayload as? [String: Any])
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "getPresetLibrary":
-			sendResponse(id: id, result: [
+			sendResponse(session: session, id: id, result: [
 				"entries": presetLibraryEntries(for: audioUnit),
 				"status": ["state": "ready", "message": NSNull()],
 			])
@@ -366,7 +331,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				let presetId = payload["presetId"] as? String,
 				let preset = preset(for: audioUnit, id: presetId)
 			else {
-				sendError(id: id, message: "invalid loadPreset payload")
+				sendError(session: session, id: id, message: "invalid loadPreset payload")
 				return
 			}
 			audioUnit.currentPreset = preset
@@ -375,22 +340,22 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			presetSessionState.loadedPresetId = presetId
 			presetSessionState.activePresetNameBase = preset.name
 			presetSessionState.isDirty = false
-			sendResponse(id: id, result: ["presetName": preset.name])
+			sendResponse(session: session, id: id, result: ["presetName": preset.name])
 		case "setEditorState":
 			editorState = methodPayload as? [String: Any] ?? [:]
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "getEditorState":
-			sendResponse(id: id, result: editorState)
+			sendResponse(session: session, id: id, result: editorState)
 		case "getMidiLearnState":
-			sendResponse(id: id, result: midiLearnState.payload)
+			sendResponse(session: session, id: id, result: midiLearnState.payload)
 		case "setMidiLearnMode":
 			midiLearnState.learnMode = methodPayload as? Bool ?? false
 			midiLearnState.version += 1
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "setPendingMidiLearnParam":
 			midiLearnState.pendingParamKey = methodPayload as? String
 			midiLearnState.version += 1
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "addMidiBinding":
 			guard
 				let payload = methodPayload as? [String: Any],
@@ -398,27 +363,27 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				let channel = payload["channel"] as? Int,
 				let cc = payload["cc"] as? Int
 			else {
-				sendError(id: id, message: "invalid addMidiBinding payload")
+				sendError(session: session, id: id, message: "invalid addMidiBinding payload")
 				return
 			}
 			midiLearnState.bindings.removeAll { $0.paramKey == paramKey }
 			midiLearnState.bindings.append(MidiLearnBinding(paramKey: paramKey, channel: channel, cc: cc))
 			midiLearnState.version += 1
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "removeMidiBinding":
 			guard let payload = methodPayload as? [String: Any], let binding = MidiLearnBinding(payload: payload) else {
-				sendError(id: id, message: "invalid removeMidiBinding payload")
+				sendError(session: session, id: id, message: "invalid removeMidiBinding payload")
 				return
 			}
 			midiLearnState.bindings.removeAll { $0 == binding }
 			midiLearnState.version += 1
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "clearMidiLearnBindings":
 			midiLearnState.bindings.removeAll()
 			midiLearnState.version += 1
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "getVoiceLimit":
-			sendResponse(id: id, result: voiceLimit)
+			sendResponse(session: session, id: id, result: voiceLimit)
 		case "setVoiceLimit":
 			let requested = methodPayload as? Int
 			if let limit = methodPayload as? Int {
@@ -434,214 +399,134 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 				voiceLimit,
 				applied ? "true" : "false"
 			)
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "getStandaloneAppSettings":
-			sendResponse(id: id, result: StandaloneAppSettings.load())
+			sendResponse(session: session, id: id, result: StandaloneAppSettings.load())
 		case "setStandaloneAppSettings":
 			let settings = StandaloneAppSettings.save(methodPayload as? [String: Any] ?? [:])
 			applyStandaloneAppSettings(settings, to: audioUnit)
-			sendResponse(id: id, result: settings)
+			sendResponse(session: session, id: id, result: settings)
 		case "addPreset", "savePreset", "deletePreset", "renamePreset", "toggleStarred", "setPresetAuthor", "setPresetDescription", "setPresetTags", "exportPreset", "importPresetBank", "listFxModulePresets", "saveFxModulePreset", "deleteFxModulePreset":
-			sendError(id: id, message: "AUv3 preset library editing is not supported yet")
+			sendError(session: session, id: id, message: "AUv3 preset library editing is not supported yet")
 		case "clientLog":
 			let logPayload = methodPayload as? [String: Any]
 			let logLevel = logPayload?["level"] as? String ?? "info"
 			let logMessage = logPayload?["message"] as? String ?? ""
 			os_log("%{public}@: %{public}@", log: czWebViewLog, type: .default, logLevel, logMessage)
-			sendResponse(id: id, result: NSNull())
-		case "webReady":
-			handleWebReady(audioUnit: audioUnit)
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		case "noteOn", "noteOff", "sustain", "pitchBend", "modWheel", "aftertouch", "polyAftertouch", "macroValue", "panic":
 			audioUnit.handleEngineEvent(type: method, payload: methodPayload as? [String: Any] ?? [:])
-			sendResponse(id: id, result: NSNull())
+			sendResponse(session: session, id: id, result: NSNull())
 		default:
-			sendError(id: id, message: "unknown method: \(method)")
+			sendError(session: session, id: id, message: "unknown method: \(method)")
 		}
 	}
 
-	private func installWebView() {
-		if webView != nil {
-			os_log("installWebView skipped; webView already exists instance=%{public}@", log: czVCLog, type: .fault, instanceID)
+	private func installEditorSession(reason: String) {
+		guard isViewLoaded else { return }
+		if let currentSession {
+			currentSession.layout(bounds: view.bounds, reason: reason)
 			return
 		}
 
-		os_log("installWebView instance=%{public}@ subviews=%{public}d", log: czVCLog, type: .default, instanceID, view.subviews.count)
-
-		// Resolve the bundle URL up-front so we can register the cosmo-ext scheme
-		// handler on the WKWebViewConfiguration before the WKWebView is created
-		// (the API requires this ordering).
-		let bundle = Bundle(for: AudioUnitViewController.self)
-		let indexUrl = bundle.url(forResource: "index", withExtension: "html", subdirectory: "ui")
-			?? bundle.url(forResource: "index", withExtension: "html")
-
-		let configuration = WKWebViewConfiguration()
-		configuration.allowsAirPlayForMediaPlayback = false
-		configuration.mediaTypesRequiringUserActionForPlayback = .all
-		configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-		#if os(macOS)
-		let hostPlatformScript = "window.__czHostPlatform='macos';"
-		#else
-		let hostPlatformScript = "window.__czHostPlatform='ios';"
-		#endif
-		configuration.userContentController.addUserScript(
-			WKUserScript(source: hostPlatformScript, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+		let session = WebEditorSession(
+			delegate: self,
+			hostContext: currentHostContext(),
+			bundle: Bundle(for: AudioUnitViewController.self),
+			log: czVCLog
 		)
-		configuration.userContentController.addUserScript(
-			WKUserScript(source: hostContextScript(dispatchEvent: false), injectionTime: .atDocumentStart, forMainFrameOnly: true)
-		)
-		configuration.userContentController.addUserScript(
-			WKUserScript(source: "window.__czBridgeReloadPolicy={ignoreCancelledNavigation:true};", injectionTime: .atDocumentStart, forMainFrameOnly: true)
-		)
-		configuration.userContentController.add(WeakScriptMessageHandler(self), name: "cosmoPd101")
+		currentSession = session
+		session.install(in: view, bounds: view.bounds)
+		logSizing(reason)
+	}
 
-		if let baseUrl = indexUrl?.deletingLastPathComponent() {
-			configuration.setURLSchemeHandler(
-				BundleSchemeHandler(baseURL: baseUrl, scopeFrameProvider: { [weak self] in
-					guard let audioUnit = self?.audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
-						return nil
-					}
-					let scope = audioUnit.scopeData()
-					return ScopeBinaryFrame(samples: scope.samples, sampleRate: scope.sampleRate, hz: scope.hz)
-				}),
-				forURLScheme: "cosmo-ext"
+	private func destroyEditorSession(reason: String) {
+		currentSession?.destroy(reason: reason)
+		currentSession = nil
+	}
+
+	private func replaceEditorSession(_ session: WebEditorSession, reason: String) {
+		guard session === currentSession else { return }
+		guard shouldRecreateWebView(reason: reason) else {
+			destroyEditorSession(reason: "\(reason):recreateLimit")
+			return
+		}
+		destroyEditorSession(reason: reason)
+		installEditorSession(reason: reason)
+	}
+
+	private func shouldRecreateWebView(reason: String) -> Bool {
+		let now = Date()
+		if let lastWebViewRecreateAt, now.timeIntervalSince(lastWebViewRecreateAt) <= 8 {
+			webViewRecreateCountInWindow += 1
+		} else {
+			webViewRecreateCountInWindow = 1
+		}
+		lastWebViewRecreateAt = now
+
+		guard webViewRecreateCountInWindow <= 3 else {
+			os_log(
+				"webEditorSession recreate suppressed reason=%{public}@ count=%{public}d instance=%{public}@",
+				log: czVCLog,
+				type: .fault,
+				reason,
+				webViewRecreateCountInWindow,
+				instanceID
 			)
+			return false
 		}
 
-		let webView = WKWebView(frame: view.bounds, configuration: configuration)
-		webView.navigationDelegate = self
-		// WebView stays visible from installation. Reload/recovery gates
-		// communication only — never visibility.
-		webView.isHidden = false
-		#if os(macOS)
-		webView.wantsLayer = true
-		webView.layer?.backgroundColor = NSColor.clear.cgColor
-		webView.setValue(false, forKey: "drawsBackground")
-		webView.autoresizingMask = [.width, .height]
-		#else
-		webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-		webView.isOpaque = false
-		webView.backgroundColor = .clear
-		webView.scrollView.backgroundColor = .clear
-		webView.scrollView.contentInsetAdjustmentBehavior = .never
-		webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
-		#endif
-		view.addSubview(webView)
-		self.webView = webView
-		let evaluator = WebViewJavaScriptEvaluator(webView: webView)
-		webViewJavaScriptEvaluator = evaluator
-		scriptDispatcher.setEvaluator(evaluator)
-		scriptDispatcher.setWebContentAlive(true)
-		scriptDispatcher.setNavigationFinished(false)
-		layoutWebView(reason: "installWebView")
-		logSizing("installWebView")
-
-		guard let indexUrl else {
-			os_log("index.html missing from bundle", log: czVCLog, type: .error)
-			return
-		}
-		os_log("indexUrl=%{public}@", log: czVCLog, type: .default, indexUrl.path)
-
-		webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
+		return true
 	}
 
-	private func javaScriptStringLiteral(_ value: String) -> String {
-		guard
-			let data = try? JSONSerialization.data(withJSONObject: [value], options: []),
-			let json = String(data: data, encoding: .utf8),
-			json.count >= 2
-		else {
-			return "\"\""
-		}
-		return String(json.dropFirst().dropLast())
+	private func currentHostContext() -> WebEditorHostContext {
+		WebEditorHostContext(
+			runtimeMode: cosmoAuv3RuntimeMode,
+			fitMode: cosmoAuv3FitMode,
+			supportsStandaloneAppSettings: cosmoAuv3SupportsStandaloneAppSettings
+		)
 	}
 
-	private func hostContextScript(dispatchEvent: Bool) -> String {
-		let runtimeMode = javaScriptStringLiteral(cosmoAuv3RuntimeMode)
-		let fitMode = javaScriptStringLiteral(cosmoAuv3FitMode)
-		let supportsStandaloneAppSettings = cosmoAuv3SupportsStandaloneAppSettings ? "true" : "false"
-		let eventScript = dispatchEvent
-			? "window.dispatchEvent(new CustomEvent('cz-host-context-changed',{detail:{runtimeMode:window.__czRuntimeMode,fitMode:window.__czAuv3FitMode,supportsStandaloneAppSettings:window.__czSupportsStandaloneAppSettings}}));"
-			: ""
-		return "window.__czRuntimeMode=\(runtimeMode);window.__czAuv3FitMode=\(fitMode);window.__czSupportsStandaloneAppSettings=\(supportsStandaloneAppSettings);\(eventScript)"
+	func webEditorSessionDidReceiveMessage(_ session: WebEditorSession, payload: [String: Any]) {
+		handleSessionMessage(session, payload: payload)
 	}
 
-	private func publishHostContextToWebView(reason: String) {
+	func webEditorSessionDidBecomeReady(_ session: WebEditorSession) {
+		guard session === currentSession else { return }
 		os_log(
-			"publishHostContext reason=%{public}@ runtime=%{public}@ supportsStandaloneSettings=%{public}@",
+			"webEditorSession ready instance=%{public}@ session=%{public}@",
 			log: czVCLog,
 			type: .default,
-			reason,
-			cosmoAuv3RuntimeMode,
-			cosmoAuv3SupportsStandaloneAppSettings ? "yes" : "no"
+			instanceID,
+			session.id.uuidString
 		)
-		_ = scriptDispatcher.sendLifecycleEvent(
-			name: "cz-host-context-changed",
-			assignments: [
-				"__czRuntimeMode": javaScriptStringLiteral(cosmoAuv3RuntimeMode),
-				"__czAuv3FitMode": javaScriptStringLiteral(cosmoAuv3FitMode),
-				"__czSupportsStandaloneAppSettings": cosmoAuv3SupportsStandaloneAppSettings ? "true" : "false",
-			]
-		)
+		session.publishHostContext(currentHostContext(), reason: "webReady")
+		session.layout(bounds: view.bounds, reason: "webReady")
+		logSizing("webReady")
+		pushCurrentStateToSession(session, reason: "webReady")
+		session.pushTelemetryUpdates()
+		removeInactiveSnapshot(reason: "webReady")
 	}
 
-	private func layoutWebView(reason: String = "layout") {
-		guard let webView else { return }
-		webView.frame = view.bounds
-		#if os(macOS)
-		webView.needsLayout = true
-		#else
-		webView.setNeedsLayout()
-		#endif
-		publishHostSizeToWebView(reason: reason)
+	func webEditorSessionDidRequestReplacement(_ session: WebEditorSession, reason: String) {
+		replaceEditorSession(session, reason: reason)
 	}
 
-	private func publishHostSizeToWebView(reason: String) {
-		guard let webView else { return }
-		let size = webView.bounds.size
-		guard size.width > 0, size.height > 0 else { return }
-		let deviceInfo = currentDeviceSizingInfo()
-		let reasonLiteral = jsonStringLiteral(reason)
-		let script = """
-		window.__czHostSize = {
-		  width: \(size.width),
-		  height: \(size.height),
-		  scale: \(deviceInfo.scale),
-		  deviceLandscapeAspectRatio: \(deviceInfo.landscapeAspectRatio),
-		  fitMode: "\(cosmoAuv3FitMode)",
-		  reason: \(reasonLiteral)
-		};
-		window.dispatchEvent(new CustomEvent('cz-host-size-changed', {
-		  detail: window.__czHostSize
-		}));
-		window.dispatchEvent(new Event('resize'));
-		"""
-		_ = scriptDispatcher.enqueueHostSizeScript(script)
+	func webEditorSessionNeedsScopeFrame(_ session: WebEditorSession) -> ScopeBinaryFrame? {
+		guard session === currentSession else { return nil }
+		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return nil }
+		let scope = audioUnit.scopeData()
+		return ScopeBinaryFrame(samples: scope.samples, sampleRate: scope.sampleRate, hz: scope.hz)
 	}
 
-	private func currentDeviceSizingInfo() -> (scale: CGFloat, landscapeAspectRatio: CGFloat) {
-		#if os(iOS)
-		let screen = view.window?.windowScene?.screen ?? view.window?.screen ?? UIScreen.main
-		let bounds = screen.bounds
-		let scale = screen.scale
-		#else
-		let screen = view.window?.screen ?? NSScreen.main
-		let bounds = screen?.frame ?? .zero
-		let scale = view.window?.backingScaleFactor ?? screen?.backingScaleFactor ?? 1
-		#endif
-		let landscapeWidth = max(bounds.width, bounds.height)
-		let landscapeHeight = min(bounds.width, bounds.height)
-		let ratio = landscapeHeight > 0 ? landscapeWidth / landscapeHeight : 4.0 / 3.0
-		return (scale, ratio)
-	}
-
-	private func jsonStringLiteral(_ value: String) -> String {
-		guard let data = try? JSONSerialization.data(withJSONObject: [value]),
-			let json = String(data: data, encoding: .utf8),
-			json.count >= 2 else {
-			return "\"\""
-		}
-		return String(json.dropFirst().dropLast())
+	func webEditorSessionNeedsTelemetryScript(
+		_ session: WebEditorSession,
+		telemetryController: TelemetryController,
+		forceChannels: Set<TelemetryChannel>
+	) -> String? {
+		guard session === currentSession else { return nil }
+		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return nil }
+		return telemetryScript(audioUnit: audioUnit, telemetryController: telemetryController, forceChannels: forceChannels)
 	}
 
 	private func logSizing(_ reason: String) {
@@ -649,8 +534,6 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		guard isViewLoaded else { return }
 
 		#if os(iOS)
-		let webBounds = webView?.bounds ?? .zero
-		let webFrame = webView?.frame ?? .zero
 		let window = view.window
 		let scene = window?.windowScene
 		let screenBounds = scene?.screen.bounds ?? window?.screen.bounds ?? .zero
@@ -662,14 +545,12 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			geometry = "unavailable"
 		}
 		os_log(
-			"size[%{public}@] view.bounds=%{public}@ view.frame=%{public}@ web.bounds=%{public}@ web.frame=%{public}@ preferred=%{public}@ safeArea=%{public}@ window.bounds=%{public}@ window.frame=%{public}@ screen.bounds=%{public}@ effectiveGeometry=%{public}@ minSize=%{public}@",
+			"size[%{public}@] view.bounds=%{public}@ view.frame=%{public}@ preferred=%{public}@ safeArea=%{public}@ window.bounds=%{public}@ window.frame=%{public}@ screen.bounds=%{public}@ effectiveGeometry=%{public}@ minSize=%{public}@",
 			log: czVCLog,
 			type: .default,
 			reason,
 			NSCoder.string(for: view.bounds),
 			NSCoder.string(for: view.frame),
-			NSCoder.string(for: webBounds),
-			NSCoder.string(for: webFrame),
 			NSCoder.string(for: preferredContentSize),
 			NSCoder.string(for: view.safeAreaInsets),
 			NSCoder.string(for: window?.bounds ?? .zero),
@@ -679,221 +560,20 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			NSCoder.string(for: minSize)
 		)
 		#else
-		let webBounds = webView?.bounds ?? .zero
-		let webFrame = webView?.frame ?? .zero
 		let window = view.window
 		let screenFrame = window?.screen?.frame ?? .zero
 		os_log(
-			"size[%{public}@] view.bounds=%{public}@ view.frame=%{public}@ web.bounds=%{public}@ web.frame=%{public}@ preferred=%{public}@ window.frame=%{public}@ screen.frame=%{public}@",
+			"size[%{public}@] view.bounds=%{public}@ view.frame=%{public}@ preferred=%{public}@ window.frame=%{public}@ screen.frame=%{public}@",
 			log: czVCLog,
 			type: .default,
 			reason,
 			NSStringFromRect(view.bounds),
 			NSStringFromRect(view.frame),
-			NSStringFromRect(webBounds),
-			NSStringFromRect(webFrame),
 			NSStringFromSize(preferredContentSize),
 			NSStringFromRect(window?.frame ?? .zero),
 			NSStringFromRect(screenFrame)
 		)
 		#endif
-	}
-
-	public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-		let nsError = error as NSError
-		os_log(
-			"didFailNavigation domain=%{public}@ code=%{public}d description=%{public}@ instance=%{public}@",
-			log: czVCLog,
-			type: .error,
-			nsError.domain,
-			nsError.code,
-			error.localizedDescription,
-			instanceID
-		)
-		if !WebViewReloadPolicy.shouldReloadAfterNavigationError(error) {
-			os_log("didFailNavigation reload skipped (benign cancellation) instance=%{public}@", log: czVCLog, type: .default, instanceID)
-			return
-		}
-		scriptDispatcher.setNavigationFinished(false)
-		scheduleWebContentReload(reason: "didFailNavigation", delay: 0.5)
-	}
-
-	public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-		let nsError = error as NSError
-		os_log(
-			"didFailProvisionalNavigation domain=%{public}@ code=%{public}d description=%{public}@ instance=%{public}@",
-			log: czVCLog,
-			type: .error,
-			nsError.domain,
-			nsError.code,
-			error.localizedDescription,
-			instanceID
-		)
-		if !WebViewReloadPolicy.shouldReloadAfterNavigationError(error) {
-			os_log("didFailProvisionalNavigation reload skipped (benign cancellation) instance=%{public}@", log: czVCLog, type: .default, instanceID)
-			return
-		}
-		scriptDispatcher.setNavigationFinished(false)
-		scheduleWebContentReload(reason: "didFailProvisionalNavigation", delay: 0.5)
-	}
-
-	public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-		os_log("didFinish navigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
-		layoutWebView(reason: "didFinish")
-		logSizing("didFinish")
-
-		webAppReady = false
-		scriptDispatcher.setNavigationFinished(false)
-		pendingStatePushReason = pendingStatePushReason ?? "didFinish"
-
-		os_log(
-			"waiting for webReady after didFinish instance=%{public}@ pendingReason=%{public}@",
-			log: czVCLog,
-			type: .default,
-			instanceID,
-			pendingStatePushReason ?? "nil"
-		)
-	}
-
-	public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-		webContentState = .loading
-		webAppReady = false
-		scriptDispatcher.setNavigationFinished(false)
-		os_log("didStartProvisionalNavigation instance=%{public}@", log: czVCLog, type: .default, instanceID)
-	}
-
-	public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-		webContentTerminationCount += 1
-		let recentTerminationCount = recordRecentWebContentTermination()
-		webContentState = .terminated
-		webAppReady = false
-		pendingStatePushReason = "webContentProcessDidTerminate"
-		scriptDispatcher.setWebContentAlive(false)
-		scriptDispatcher.setNavigationFinished(false)
-
-		telemetryController.hostWillResignActive()
-		telemetryController.resetAllCaches()
-
-		os_log(
-			"web content process terminated count=%{public}d recent=%{public}d instance=%{public}@",
-			log: czVCLog,
-			type: .error,
-			webContentTerminationCount,
-			recentTerminationCount,
-			instanceID
-		)
-
-		scheduleWebContentReload(
-			reason: "webContentProcessDidTerminate",
-			delay: webContentTerminationReloadDelay(recentTerminationCount: recentTerminationCount)
-		)
-	}
-
-	private func reloadBundledWebView(after delay: TimeInterval) {
-		scheduleWebContentReload(reason: "reloadBundledWebView", delay: delay)
-	}
-
-	private func recordRecentWebContentTermination() -> Int {
-		let now = Date()
-		if let windowStart = recentWebContentTerminationWindowStart,
-			now.timeIntervalSince(windowStart) <= 8 {
-			recentWebContentTerminationCount += 1
-		} else {
-			recentWebContentTerminationWindowStart = now
-			recentWebContentTerminationCount = 1
-		}
-		return recentWebContentTerminationCount
-	}
-
-	private func webContentTerminationReloadDelay(recentTerminationCount: Int) -> TimeInterval {
-		let exponent = max(0, min(recentTerminationCount - 1, 3))
-		return 0.5 * pow(2.0, Double(exponent))
-	}
-
-	private func canReloadWebContentNow() -> Bool {
-		// viewVisible intentionally not consulted: a stale visibility flag must
-		// not permanently block WebContent recovery inside an AUv3 host.
-		// hostActive may delay; isViewLoaded + webView presence gate execution.
-		scriptDispatcher.state.hostActive && isViewLoaded && webView != nil
-	}
-
-	private func schedulePendingWebContentReloadIfPossible() {
-		guard let pendingReason = pendingWebContentReloadReason else { return }
-		scheduleWebContentReload(reason: pendingReason, delay: 0.5)
-	}
-
-	private func scheduleWebContentReload(reason: String, delay: TimeInterval) {
-		pendingWebContentReloadReason = reason
-
-		guard canReloadWebContentNow() else {
-			os_log(
-				"webView reload deferred reason=%{public}@ instance=%{public}@",
-				log: czVCLog,
-				type: .default,
-				reason,
-				instanceID
-			)
-			return
-		}
-
-		if webContentReloadWorkItem != nil {
-			os_log(
-				"webView reload coalesced reason=%{public}@ instance=%{public}@",
-				log: czVCLog,
-				type: .default,
-				reason,
-				instanceID
-			)
-			return
-		}
-
-		webContentReloadWorkItem?.cancel()
-
-		let clampedDelay = max(0.25, delay)
-		let workItem = DispatchWorkItem { [weak self] in
-			guard let self else { return }
-			self.webContentReloadWorkItem = nil
-
-			guard self.canReloadWebContentNow() else {
-				os_log(
-					"webView reload became inactive before execution reason=%{public}@ instance=%{public}@",
-					log: czVCLog,
-					type: .default,
-					reason,
-					self.instanceID
-				)
-				self.scheduleWebContentReload(reason: reason, delay: 0.5)
-				return
-			}
-
-			guard let webView = self.webView else { return }
-
-			self.pendingWebContentReloadReason = nil
-			self.reloadPolicy.clearPendingReload()
-			self.webContentState = .loading
-			self.webAppReady = false
-			self.scriptDispatcher.setNavigationFinished(false)
-			os_log(
-				"webView reload executing reason=%{public}@ delay=%{public}.2f instance=%{public}@",
-				log: czVCLog,
-				type: .default,
-				reason,
-				clampedDelay,
-				self.instanceID
-			)
-			webView.load(URLRequest(url: URL(string: "cosmo-ext://bundle/index.html")!))
-		}
-
-		webContentReloadWorkItem = workItem
-		os_log(
-			"webView reload scheduled reason=%{public}@ delay=%{public}.2f instance=%{public}@",
-			log: czVCLog,
-			type: .default,
-			reason,
-			clampedDelay,
-			instanceID
-		)
-		DispatchQueue.main.asyncAfter(deadline: .now() + clampedDelay, execute: workItem)
 	}
 
 	private func applyStandaloneAppSettings(_ settings: [String: Any], to audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
@@ -911,80 +591,94 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		)
 	}
 
-	private func sendResponse(id: Int, result: Any) {
-		sendScriptPayload(["id": id, "result": result])
+	private func sendResponse(session: WebEditorSession, id: Int, result: Any) {
+		guard session === currentSession else { return }
+		session.sendResponse(id: id, result: result)
 	}
 
-	private func sendError(id: Int, message: String) {
-		sendScriptPayload(["id": id, "error": message])
+	private func sendError(session: WebEditorSession, id: Int, message: String) {
+		guard session === currentSession else { return }
+		session.sendError(id: id, message: message)
+	}
+
+	private func freezeCurrentSessionForHostInactive() {
+		guard isViewLoaded else {
+			destroyEditorSession(reason: "hostWillResignActive")
+			return
+		}
+
+		if let snapshot = currentSession?.makeSnapshotView() {
+			removeInactiveSnapshot(reason: "replaceSnapshot")
+			snapshot.frame = view.bounds
+			#if os(macOS)
+			snapshot.autoresizingMask = [.width, .height]
+			#else
+			snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+			#endif
+			view.addSubview(snapshot)
+			inactiveSnapshotView = snapshot
+			os_log(
+				"inactive snapshot installed instance=%{public}@",
+				log: czVCLog,
+				type: .default,
+				instanceID
+			)
+		}
+
+		destroyEditorSession(reason: "hostWillResignActive")
+	}
+
+	private func removeInactiveSnapshot(reason: String) {
+		guard let inactiveSnapshotView else { return }
+		inactiveSnapshotView.removeFromSuperview()
+		self.inactiveSnapshotView = nil
+		os_log(
+			"inactive snapshot removed reason=%{public}@ instance=%{public}@",
+			log: czVCLog,
+			type: .default,
+			reason,
+			instanceID
+		)
 	}
 
 	/// Pushes updated engine params and optional preset metadata to the WebView.
 	/// Called when native-side state changes (factory preset selection, state restore).
-	private func pushStateToWebView(_ paramsJson: String, selectedPresetName: String? = nil) {
+	private func pushStateToCurrentSession(_ paramsJson: String, selectedPresetName: String? = nil) {
+		guard let session = currentSession else { return }
+		pushStateToSession(session, paramsJson: paramsJson, selectedPresetName: selectedPresetName)
+	}
+
+	private func pushStateToSession(_ session: WebEditorSession, paramsJson: String, selectedPresetName: String? = nil) {
+		guard session === currentSession else { return }
 		pushStateCount += 1
 
 		os_log(
-			"pushStateToWebView #%{public}d instance=%{public}@ bytes=%{public}d preset=%{public}@ webReady=%{public}d queued=%{public}d",
+			"pushStateToSession #%{public}d instance=%{public}@ session=%{public}@ bytes=%{public}d preset=%{public}@",
 			log: czVCLog,
 			type: .default,
 			pushStateCount,
 			instanceID,
+			session.id.uuidString,
 			paramsJson.utf8.count,
-			selectedPresetName ?? "nil",
-			webAppReady,
-			!scriptDispatcher.state.navigationFinished || scriptDispatcher.hasPendingParams
+			selectedPresetName ?? "nil"
 		)
 
-		_ = scriptDispatcher.enqueueParams(json: paramsJson, selectedPresetName: selectedPresetName)
+		session.pushParams(json: paramsJson, selectedPresetName: selectedPresetName)
 	}
 
-	private func sendScriptPayload(_ payload: [String: Any]) {
-		guard JSONSerialization.isValidJSONObject(payload) else {
-			os_log(.error, log: czVCLog, "sendScriptPayload: failed to serialize payload id=%{public}d", payload["id"] as? Int ?? -1)
-			return
-		}
-		if !scriptDispatcher.sendIpcResponse(payload: payload) {
-			os_log(.debug, log: czVCLog, "sendScriptPayload dropped — evaluator nil or web content dead id=%{public}d", payload["id"] as? Int ?? -1)
-		}
-	}
-
-	private func setTelemetrySubscription(_ channel: TelemetryChannel, active: Bool, audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
-		if active {
-			let wasSubscribed = telemetryController.subscribe(channel)
-			os_log("telemetry subscribe %{public}@ (instance=%@, new=%{public}d)", log: czVCLog, type: .default, channel.rawValue, instanceID, wasSubscribed)
-			guard wasSubscribed else { return }
-			pushTelemetryUpdates(audioUnit: audioUnit, forceChannels: [channel])
-			return
-		}
-
-		telemetryController.unsubscribe(channel)
-		os_log("telemetry unsubscribe %{public}@ (instance=%@)", log: czVCLog, type: .default, channel.rawValue, instanceID)
-	}
-
-	private func handleTelemetryTimer() {
-		telemetryTickCount += 1
-
-		if telemetryTickCount % 50 == 0 {
-			os_log(
-				"telemetry tick #%{public}d instance=%{public}@ channels=%{public}@ webReady=%{public}d",
-				log: czVCLog,
-				type: .debug,
-				telemetryTickCount,
-				instanceID,
-				telemetryController.activeChannels.map(\.rawValue).joined(separator: ","),
-				webAppReady
-			)
-		}
-
-		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else {
-			telemetryController.viewDidDisappear()
-			return
-		}
-
-		guard webAppReady else { return }
-
-		pushTelemetryUpdates(audioUnit: audioUnit)
+	private func setTelemetrySubscription(_ channel: TelemetryChannel, active: Bool, session: WebEditorSession) {
+		guard session === currentSession else { return }
+		let changed = session.setTelemetrySubscription(channel, active: active)
+		os_log(
+			"telemetry subscription channel=%{public}@ active=%{public}d changed=%{public}d instance=%{public}@ session=%{public}@",
+			log: czVCLog,
+			type: .default,
+			channel.rawValue,
+			active,
+			changed,
+			instanceID,
+			session.id.uuidString
+		)
 	}
 
 	@objc private func handleHostDidBecomeActive(_ notification: Notification) {
@@ -994,42 +688,27 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			let inactiveSeconds = self.hostInactiveAt.map { Date().timeIntervalSince($0) } ?? -1
 
 			os_log(
-				"host did become active instance=%{public}@ inactiveSeconds=%{public}.2f webReady=%{public}d webContentTerminationCount=%{public}d",
+				"host did become active instance=%{public}@ inactiveSeconds=%{public}.2f",
 				log: czVCLog,
 				type: .default,
 				self.instanceID,
-				inactiveSeconds,
-				self.webAppReady,
-				self.webContentTerminationCount
+				inactiveSeconds
 			)
 
-			// Repair stale visibility state defensively: old hidden states from
-			// backgrounding must not block recovery.
 			if self.isViewLoaded {
-				self.scriptDispatcher.setViewVisible(true)
-				self.webView?.isHidden = false
-				self.layoutWebView(reason: "hostDidBecomeActive")
-				self.logSizing("hostDidBecomeActive")
+				self.installEditorSession(reason: "hostDidBecomeActive")
 			}
-			self.scriptDispatcher.setHostActive(true, resumeHold: 0.25)
+			let resumedSession = self.currentSession
 			// Short hold allows WebKit to resume WebContent before any JS eval.
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-				guard let self else { return }
-				self.scriptDispatcher.clearResumeHold()
-				self.schedulePendingWebContentReloadIfPossible()
-				if self.webContentState == .ready && self.webAppReady {
-					self.scriptDispatcher.sendLifecycleEvent(
-						name: "cz-auv3-host-active",
-						assignments: ["__czAuv3HostActive": "true"]
-					)
-					self.requestStatePushWhenWebReady(reason: "hostDidBecomeActive")
-				}
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak resumedSession] in
+				guard let self, let resumedSession, resumedSession === self.currentSession else { return }
+				resumedSession.clearResumeHold()
 				os_log(
-					"host active resume hold cleared instance=%{public}@ webReady=%{public}d",
+					"host active resume hold cleared instance=%{public}@ session=%{public}@",
 					log: czVCLog,
 					type: .default,
 					self.instanceID,
-					self.webAppReady
+					resumedSession.id.uuidString
 				)
 			}
 		}
@@ -1040,92 +719,40 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			guard let self else { return }
 
 			self.hostInactiveAt = Date()
-			self.pendingStatePushReason = nil
-			self.scriptDispatcher.sendLifecycleEvent(
-				name: "cz-auv3-host-inactive",
-				assignments: ["__czAuv3HostActive": "false"]
-			)
-			self.scriptDispatcher.setHostActive(false)
-
 			os_log(
 				"host will resign active instance=%{public}@",
 				log: czVCLog,
 				type: .default,
 				self.instanceID
 			)
-
-			self.telemetryController.hostWillResignActive()
+			self.freezeCurrentSessionForHostInactive()
 		}
 	}
 
-	private func requestStatePushWhenWebReady(reason: String) {
-		pendingStatePushReason = reason
-
-		guard webAppReady else {
-			os_log(
-				"state push deferred reason=%{public}@ instance=%{public}@",
-				log: czVCLog,
-				type: .default,
-				reason,
-				instanceID
-			)
-			return
-		}
-
-		pendingStatePushReason = nil
-		pushCurrentStateToWebView(reason: reason)
-		telemetryController.hostDidBecomeActive()
-	}
-
-	private func handleWebReady(audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit) {
-		webContentState = .ready
-		webAppReady = true
-		webContentReloadWorkItem?.cancel()
-		webContentReloadWorkItem = nil
-		pendingWebContentReloadReason = nil
-		reloadPolicy.clearPendingReload()
-		scriptDispatcher.setWebContentAlive(true)
-		scriptDispatcher.setNavigationFinished(true)
-		publishHostContextToWebView(reason: "webReady")
-
-		let reason = pendingStatePushReason ?? "webReady"
-		pendingStatePushReason = nil
-
-		os_log(
-			"webReady received instance=%{public}@ pendingReason=%{public}@",
-			log: czVCLog,
-			type: .default,
-			instanceID,
-			reason
-		)
-
-		layoutWebView(reason: "webReady")
-		logSizing("webReady")
-		pushCurrentStateToWebView(reason: reason)
-		telemetryController.hostDidBecomeActive()
-	}
-
-	private func pushCurrentStateToWebView(reason: String) {
+	private func pushCurrentStateToSession(_ session: WebEditorSession, reason: String) {
+		guard session === currentSession else { return }
 		guard let audioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit else { return }
 		guard let json = audioUnit.paramsJson() else { return }
 
 		os_log(
-			"pushCurrentStateToWebView reason=%{public}@ instance=%{public}@",
+			"pushCurrentStateToSession reason=%{public}@ instance=%{public}@ session=%{public}@",
 			log: czVCLog,
 			type: .default,
 			reason,
-			instanceID
+			instanceID,
+			session.id.uuidString
 		)
 
-		pushStateToWebView(json)
+		pushStateToSession(session, paramsJson: json)
 	}
 
-	private func pushTelemetryUpdates(
+	private func telemetryScript(
 		audioUnit: CosmoPD101AUv3Ext_macOSExtensionAudioUnit,
+		telemetryController: TelemetryController,
 		forceChannels: Set<TelemetryChannel> = []
-	) {
+	) -> String? {
 		guard !telemetryController.activeChannels.isEmpty else {
-			return
+			return nil
 		}
 
 		var script = ""
@@ -1151,9 +778,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 		}
 
 		guard !script.isEmpty else {
-			return
+			return nil
 		}
-		_ = scriptDispatcher.sendTelemetry(script: script)
+		return script
 	}
 
 	private func appendJavascriptJsonCallback(_ script: inout String, functionName: String, json: String) {
@@ -1286,124 +913,8 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WKNa
 			[
 				"learnMode": learnMode,
 				"pendingParamKey": pendingParamKey ?? NSNull(),
-				"bindings": bindings.map(\ .payload),
+				"bindings": bindings.map(\.payload),
 				"version": version,
 			]
 		}
 	}
-
-private final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
-	private let baseURL: URL
-	private let scopeFrameProvider: () -> ScopeBinaryFrame?
-
-	init(baseURL: URL, scopeFrameProvider: @escaping () -> ScopeBinaryFrame? = { nil }) {
-		self.baseURL = baseURL
-		self.scopeFrameProvider = scopeFrameProvider
-	}
-
-	func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
-		guard let requestURL = urlSchemeTask.request.url else {
-			urlSchemeTask.didFailWithError(URLError(.badURL))
-			return
-		}
-
-		let relativePath = requestURL.path.hasPrefix("/")
-			? String(requestURL.path.dropFirst())
-			: requestURL.path
-		if relativePath == "__scope__" {
-			serveScope(urlSchemeTask: urlSchemeTask, requestURL: requestURL)
-			return
-		}
-		let requestedFileURL = relativePath.isEmpty
-			? baseURL.appendingPathComponent("index.html")
-			: baseURL.appendingPathComponent(relativePath)
-		let fileURL = Self.existingFileURL(for: requestedFileURL, relativePath: relativePath, baseURL: baseURL)
-
-		do {
-			let data = try Data(contentsOf: fileURL)
-			let mimeType = Self.mimeType(for: fileURL.pathExtension)
-			let response = HTTPURLResponse(
-				url: requestURL,
-				statusCode: 200,
-				httpVersion: "HTTP/1.1",
-				headerFields: Self.corsHeaders.merging(
-					["Content-Type": mimeType.hasPrefix("text/") || mimeType == "application/javascript" ? "\(mimeType); charset=utf-8" : mimeType]
-				) { $1 }
-			) ?? URLResponse(
-				url: requestURL,
-				mimeType: mimeType,
-				expectedContentLength: data.count,
-				textEncodingName: nil
-			)
-			urlSchemeTask.didReceive(response)
-			urlSchemeTask.didReceive(data)
-			urlSchemeTask.didFinish()
-		} catch {
-			os_log("BundleSchemeHandler failed for %{public}@: %{public}@", log: czVCLog, type: .error, fileURL.path, error.localizedDescription)
-			urlSchemeTask.didFailWithError(error)
-		}
-	}
-
-	func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
-
-	private func serveScope(urlSchemeTask: any WKURLSchemeTask, requestURL: URL) {
-		let data = ScopeBinaryFrameEncoder.encode(scopeFrameProvider())
-		let response = HTTPURLResponse(
-			url: requestURL,
-			statusCode: 200,
-			httpVersion: "HTTP/1.1",
-			headerFields: [
-				"Access-Control-Allow-Origin": "*",
-				"Content-Length": String(data.count),
-				"Content-Type": "application/octet-stream",
-			]
-		) ?? URLResponse(
-			url: requestURL,
-			mimeType: "application/octet-stream",
-			expectedContentLength: data.count,
-			textEncodingName: nil
-		)
-		urlSchemeTask.didReceive(response)
-		urlSchemeTask.didReceive(data)
-		urlSchemeTask.didFinish()
-	}
-
-	private static let corsHeaders = [
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "GET",
-		"Access-Control-Allow-Headers": "Content-Type",
-	]
-
-	private static func existingFileURL(for requestedFileURL: URL, relativePath: String, baseURL: URL) -> URL {
-		if FileManager.default.fileExists(atPath: requestedFileURL.path) {
-			return requestedFileURL
-		}
-
-		if relativePath.hasPrefix("assets/") {
-			let flattenedURL = baseURL.appendingPathComponent((relativePath as NSString).lastPathComponent)
-			if FileManager.default.fileExists(atPath: flattenedURL.path) {
-				return flattenedURL
-			}
-		}
-
-		return requestedFileURL
-	}
-
-	private static func mimeType(for ext: String) -> String {
-		switch ext.lowercased() {
-		case "html": return "text/html"
-		case "js", "mjs": return "application/javascript"
-		case "css": return "text/css"
-		case "wasm": return "application/wasm"
-		case "json", "map": return "application/json"
-		case "png": return "image/png"
-		case "jpg", "jpeg": return "image/jpeg"
-		case "gif": return "image/gif"
-		case "svg": return "image/svg+xml"
-		case "woff2": return "font/woff2"
-		case "woff": return "font/woff"
-		case "ttf": return "font/ttf"
-		default: return "application/octet-stream"
-		}
-	}
-}

@@ -13,9 +13,21 @@ const xcodeControllerPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
+const xcodeWebEditorSessionPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/WebEditorSession.swift",
+);
 const xcodeHostAppPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/CosmoPD101AUv3Ext_macOSApp.swift",
+);
+const standaloneHostModelPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Model/AudioUnitHostModel.swift",
+);
+const simplePlayEnginePath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Common/Audio/SimplePlayEngine.swift",
 );
 const xcodeViewControllerRepresentablePath = path.join(
 	packageRoot,
@@ -106,6 +118,47 @@ describe("AUv3 bridge contract", () => {
 		expect(bridgeSource).toContain("suppressed while host inactive");
 	});
 
+	it("freezes a snapshot before destroying the WebView session on host inactive", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const handlerMatch = swiftSource.match(
+			/@objc private func handleHostWillResignActive[\s\S]*?\n\t}\n/m,
+		);
+
+		expect(handlerMatch).not.toBeNull();
+		expect(handlerMatch?.[0]).toContain(
+			"freezeCurrentSessionForHostInactive()",
+		);
+		expect(swiftSource).toContain("makeSnapshotView()");
+		expect(swiftSource).toContain(
+			'destroyEditorSession(reason: "hostWillResignActive")',
+		);
+		expect(swiftSource).toContain('removeInactiveSnapshot(reason: "webReady")');
+		expect(swiftSource).toContain(
+			'destroyEditorSession(reason: "viewDidDisappear")',
+		);
+	});
+
+	it("keeps AUv3 scope polling enabled behind visibility gates", () => {
+		const bridgeSource = readText(auv3BridgePath);
+
+		expect(bridgeSource).toContain("const AUV3_SCOPE_POLLING_ENABLED = true");
+		expect(bridgeSource).toContain(
+			"const isPageVisible = () => !document.hidden",
+		);
+		expect(bridgeSource).toContain('window.addEventListener("pagehide"');
+	});
+
+	it("fades standalone audio on background instead of stopping on inactive", () => {
+		const hostModelSource = readText(standaloneHostModelPath);
+		const playEngineSource = readText(simplePlayEnginePath);
+
+		expect(hostModelSource).toContain("case .inactive:");
+		expect(hostModelSource).toContain("case .background:");
+		expect(hostModelSource).toContain("playEngine.fadeOutAndStop()");
+		expect(playEngineSource).toContain("public func fadeOutAndStop(");
+		expect(playEngineSource).toContain("engine.mainMixerNode.outputVolume");
+	});
+
 	it("has currentPresetSession keys matching PluginPresetSession", () => {
 		const swiftSource = readText(xcodeControllerPath);
 
@@ -167,25 +220,27 @@ describe("AUv3 bridge contract", () => {
 	});
 
 	it("publishes native AUv3 view bounds to the web renderer on layout", () => {
-		const swiftSource = readText(xcodeControllerPath);
+		const swiftSource = readText(xcodeWebEditorSessionPath);
 
-		expect(swiftSource).toContain("publishHostSizeToWebView(reason:");
+		expect(swiftSource).toContain("private func publishHostSize(reason:");
 		expect(swiftSource).toContain("deviceLandscapeAspectRatio:");
 		expect(swiftSource).toContain("cz-host-size-changed");
 		expect(swiftSource).toContain("window.dispatchEvent(new Event('resize'))");
 	});
 
 	it("keeps hosted AUv3 runtime mode as the controller default", () => {
-		const swiftSource = readText(xcodeControllerPath);
+		const controllerSource = readText(xcodeControllerPath);
+		const sessionSource = readText(xcodeWebEditorSessionPath);
 
-		expect(swiftSource).toContain(
+		expect(controllerSource).toContain(
 			'@objc public var cosmoAuv3FitMode: String = "fit-bounds"',
 		);
-		expect(swiftSource).toContain(
+		expect(controllerSource).toContain(
 			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
 		);
-		expect(swiftSource).toContain("hostContextScript(dispatchEvent: false)");
-		expect(swiftSource).toContain("window.__czRuntimeMode=\\(runtimeMode);");
+		expect(controllerSource).toContain("currentHostContext()");
+		expect(sessionSource).toContain("func script(dispatchEvent: Bool)");
+		expect(sessionSource).toContain("window.__czRuntimeMode=\\(runtimeMode);");
 	});
 
 	it("marks the containing standalone app as standalone before embedding the AU view", () => {
@@ -212,16 +267,20 @@ describe("AUv3 bridge contract", () => {
 	});
 
 	it("injects standalone app settings support into the AUv3 webview", () => {
-		const swiftSource = readText(xcodeControllerPath);
+		const controllerSource = readText(xcodeControllerPath);
+		const sessionSource = readText(xcodeWebEditorSessionPath);
 
-		expect(swiftSource).toContain(
+		expect(controllerSource).toContain(
 			"@objc public var cosmoAuv3SupportsStandaloneAppSettings = false",
 		);
-		expect(swiftSource).toContain(
+		expect(sessionSource).toContain(
 			"window.__czSupportsStandaloneAppSettings=\\(supportsStandaloneAppSettings);",
 		);
-		expect(swiftSource).toContain("publishHostContextToWebView(reason:");
-		expect(swiftSource).toContain("cz-host-context-changed");
+		expect(controllerSource).toContain(
+			"publishHostContext(currentHostContext()",
+		);
+		expect(sessionSource).toContain("func publishHostContext(");
+		expect(sessionSource).toContain("cz-host-context-changed");
 	});
 
 	it("keeps restored document params on the raw restore path", () => {

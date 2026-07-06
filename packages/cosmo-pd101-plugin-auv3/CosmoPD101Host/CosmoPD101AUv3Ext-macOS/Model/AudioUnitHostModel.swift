@@ -211,15 +211,20 @@ class AudioUnitHostModel: ObservableObject {
             if suspendedForBackground {
                 suspendedForBackground = false
                 playEngine.startPlaying()
+            } else {
+                playEngine.cancelPendingFadeOut()
             }
-        case .inactive, .background:
+        case .inactive:
+            break
+        case .background:
             guard !keepRunningInBackground else {
                 suspendedForBackground = false
+                playEngine.cancelPendingFadeOut()
                 return
             }
             if playEngine.isPlaying {
                 suspendedForBackground = true
-                playEngine.stopPlaying()
+                playEngine.fadeOutAndStop()
             }
         default:
             break

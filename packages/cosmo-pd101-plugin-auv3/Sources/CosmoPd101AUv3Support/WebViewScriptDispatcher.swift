@@ -36,6 +36,7 @@ public final class WebViewScriptDispatcher {
 	private var lifecycle: LifecycleState
 	private var pendingHostSizeScript: String?
 	private var pendingParams: PendingParams?
+	private var pendingIpcResponses: [[String: Any]] = []
 	private let now: () -> Date
 
 	public init(
@@ -58,6 +59,10 @@ public final class WebViewScriptDispatcher {
 
 	public var hasPendingHostSizeScript: Bool {
 		pendingHostSizeScript != nil
+	}
+
+	public var canEvaluateNow: Bool {
+		canEvaluate()
 	}
 
 	public func setEvaluator(_ evaluator: JavaScriptEvaluating?) {
@@ -91,6 +96,12 @@ public final class WebViewScriptDispatcher {
 		flushIfPossible()
 	}
 
+	public func clearPendingMessagesForDestroyedWebContent() {
+		pendingHostSizeScript = nil
+		pendingParams = nil
+		pendingIpcResponses.removeAll()
+	}
+
 	public func clearResumeHold() {
 		lifecycle.resumeHoldUntil = nil
 		flushIfPossible()
@@ -111,7 +122,21 @@ public final class WebViewScriptDispatcher {
 
 	@discardableResult
 	public func sendIpcResponse(payload: [String: Any]) -> Bool {
-		guard canDeliverIpcResponse() else { return false }
+		guard evaluator != nil else { return false }
+
+		if !lifecycle.webContentAlive {
+			return false
+		}
+
+		if canEvaluate() {
+			return deliverIpcResponse(payload: payload)
+		}
+
+		pendingIpcResponses.append(payload)
+		return true
+	}
+
+	private func deliverIpcResponse(payload: [String: Any]) -> Bool {
 		guard JSONSerialization.isValidJSONObject(payload),
 			let data = try? JSONSerialization.data(withJSONObject: payload),
 			let json = String(data: data, encoding: .utf8)
@@ -120,6 +145,15 @@ public final class WebViewScriptDispatcher {
 		}
 		evaluator?.evaluateJavaScript("window.__czIpcResponse?.(\(json));")
 		return true
+	}
+
+	private func drainPendingIpcResponses() {
+		while !pendingIpcResponses.isEmpty {
+			let payload = pendingIpcResponses.removeFirst()
+			if !deliverIpcResponse(payload: payload) {
+				break
+			}
+		}
 	}
 
 	@discardableResult
@@ -151,13 +185,16 @@ public final class WebViewScriptDispatcher {
 			didFlush = true
 		}
 
-		guard let pendingParams else { return didFlush }
-		guard let script = paramsScript(json: pendingParams.json, selectedPresetName: pendingParams.selectedPresetName) else {
-			return false
+		if let pendingParams,
+			let script = paramsScript(json: pendingParams.json, selectedPresetName: pendingParams.selectedPresetName)
+		{
+			self.pendingParams = nil
+			evaluator?.evaluateJavaScript(script)
+			didFlush = true
 		}
-		self.pendingParams = nil
-		evaluator?.evaluateJavaScript(script)
-		return true
+
+		drainPendingIpcResponses()
+		return didFlush
 	}
 
 	private func canEvaluate() -> Bool {
@@ -175,11 +212,6 @@ public final class WebViewScriptDispatcher {
 			return false
 		}
 
-		return true
-	}
-
-	private func canDeliverIpcResponse() -> Bool {
-		guard evaluator != nil, lifecycle.webContentAlive else { return false }
 		return true
 	}
 

@@ -82,15 +82,19 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(recorder.scripts == ["window.__czOnTransport?.('{}');"])
 }
 
-@Test func ipcResponseDeliveredDuringResumeHold() {
+@Test func ipcResponseQueuedDuringResumeHold() {
 	let recorder = ScriptRecorder()
-	let now = Date(timeIntervalSince1970: 100)
+	var now = Date(timeIntervalSince1970: 100)
 	let dispatcher = WebViewScriptDispatcher(evaluator: recorder, now: { now })
 	dispatcher.setViewVisible(true)
 	dispatcher.setNavigationFinished(true)
 
 	dispatcher.setHostActive(true, resumeHold: 0.25)
 	#expect(dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+	#expect(recorder.scripts.isEmpty)
+
+	now = Date(timeIntervalSince1970: 100.3)
+	dispatcher.clearResumeHold()
 	#expect(recorder.scripts.count == 1)
 	#expect(recorder.scripts[0].contains("__czIpcResponse"))
 }
@@ -115,12 +119,16 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(!dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
 }
 
-@Test func ipcResponseSurvivesMissingViewVisibleAndHostInactive() {
+@Test func ipcResponseQueuedWhenLifecycleNotEvaluable() {
 	let recorder = ScriptRecorder()
 	let dispatcher = WebViewScriptDispatcher(evaluator: recorder)
 	dispatcher.setWebContentAlive(true)
 
 	#expect(dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+	#expect(recorder.scripts.isEmpty)
+
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
 	#expect(recorder.scripts.count == 1)
 	#expect(recorder.scripts[0].contains("__czIpcResponse"))
 }
@@ -136,6 +144,30 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(!dispatcher.enqueueParams(json: #"{"volume":0.7}"#))
 	#expect(dispatcher.hasPendingParams)
 	#expect(recorder.scripts.isEmpty)
+}
+
+@Test func canEvaluateNowReflectsLifecycleGates() {
+	let recorder = ScriptRecorder()
+	var now = Date(timeIntervalSince1970: 100)
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder, now: { now })
+
+	#expect(!dispatcher.canEvaluateNow)
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+	#expect(dispatcher.canEvaluateNow)
+
+	dispatcher.setHostActive(false)
+	#expect(!dispatcher.canEvaluateNow)
+
+	dispatcher.setHostActive(true, resumeHold: 0.25)
+	#expect(!dispatcher.canEvaluateNow)
+
+	now = Date(timeIntervalSince1970: 100.3)
+	dispatcher.clearResumeHold()
+	#expect(dispatcher.canEvaluateNow)
+
+	dispatcher.setWebContentAlive(false)
+	#expect(!dispatcher.canEvaluateNow)
 }
 
 @Test func paramsFlushAfterResumeHoldClears() {
@@ -157,4 +189,49 @@ private final class ScriptRecorder: JavaScriptEvaluating {
 	#expect(!dispatcher.hasPendingParams)
 }
 
+@Test func hostInactiveInvalidatesPendingResumeWork() {
+	let recorder = ScriptRecorder()
+	var now = Date(timeIntervalSince1970: 100)
+	let dispatcher = WebViewScriptDispatcher(evaluator: recorder, now: { now })
+	dispatcher.setViewVisible(true)
+	dispatcher.setNavigationFinished(true)
+	dispatcher.setHostActive(true, resumeHold: 0.25)
 
+	#expect(!dispatcher.enqueueHostSizeScript("window.__czHostSize = { width: 640 };"))
+	#expect(dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+
+	dispatcher.setHostActive(false)
+	now = Date(timeIntervalSince1970: 100.3)
+	dispatcher.clearResumeHold()
+
+	#expect(!dispatcher.canEvaluateNow)
+	#expect(recorder.scripts.isEmpty)
+}
+
+@Test func destroyedWebContentDropsQueuedMessages() {
+	let oldRecorder = ScriptRecorder()
+	let newRecorder = ScriptRecorder()
+	let dispatcher = WebViewScriptDispatcher(evaluator: oldRecorder)
+	dispatcher.setWebContentAlive(true)
+	dispatcher.setHostActive(true, resumeHold: 1)
+
+	#expect(!dispatcher.enqueueParams(json: #"{"volume":0.7}"#))
+	#expect(!dispatcher.enqueueHostSizeScript("window.__czHostSize = { width: 640 };"))
+	#expect(dispatcher.sendIpcResponse(payload: ["id": 1, "result": NSNull()]))
+	#expect(dispatcher.hasPendingParams)
+	#expect(dispatcher.hasPendingHostSizeScript)
+
+	dispatcher.setWebContentAlive(false)
+	dispatcher.setEvaluator(nil)
+	dispatcher.clearPendingMessagesForDestroyedWebContent()
+	dispatcher.setEvaluator(newRecorder)
+	dispatcher.setViewVisible(true)
+	dispatcher.setWebContentAlive(true)
+	dispatcher.setNavigationFinished(true)
+	dispatcher.clearResumeHold()
+
+	#expect(oldRecorder.scripts.isEmpty)
+	#expect(newRecorder.scripts.isEmpty)
+	#expect(!dispatcher.hasPendingParams)
+	#expect(!dispatcher.hasPendingHostSizeScript)
+}

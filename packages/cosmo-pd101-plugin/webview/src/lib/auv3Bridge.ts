@@ -45,6 +45,7 @@ export type StandaloneAppSettings = {
 };
 
 const IPC_TIMEOUT_MS = 250;
+const AUV3_SCOPE_POLLING_ENABLED = true;
 
 let installed = false;
 let nextRpcId = 1;
@@ -174,21 +175,16 @@ function rejectPendingRpc(message: string) {
 }
 
 function installAuv3VisibilityLifecycle() {
-	// Native host lifecycle is authoritative in AUv3. Native dispatches
-	// cz-auv3-host-active / cz-auv3-host-inactive (after a settle window), which
-	// drive the authoritative `__czAuv3HostActive` flag and gate polling.
-	//
-	// `document.hidden`/pagehide are NOT used to publish host-state: doing so
-	// would race WebKit's own suspend/resume and bounce native state, producing
-	// the black/visible/black loop. Native's settle gate (in WebViewScriptDispatcher)
-	// is the single authority that re-enables evaluateJavaScript after resume.
+	// Native drives cz-auv3-host-active on resume, but no longer sends
+	// cz-auv3-host-inactive (avoids evaluateJavaScript during suspend).
+	// JS uses document.hidden locally to gate polling and suppress RPCs.
 	window.addEventListener("pagehide", () => {
-		// pagehide during teardown: cancel pending RPCs so they don't hang on a
-		// dead handler. Do NOT publish host-inactive — native is authoritative.
 		rejectPendingRpc("[auv3Bridge] pagehide — cancelling pending RPCs");
 	});
-	// If native never publishes (beyond first paint), seed the flag true. Native
-	// will override via cz-auv3-host-active/inactive when it speaks.
+	window.addEventListener("visibilitychange", () => {
+		// Update local flag only — never publish back to native.
+		window.__czAuv3HostActive = !document.hidden;
+	});
 	if (window.__czAuv3HostActive === undefined) {
 		window.__czAuv3HostActive = !document.hidden;
 	}
@@ -391,6 +387,11 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 }
 
 function installScopePolling() {
+	if (!AUV3_SCOPE_POLLING_ENABLED) {
+		installScopeProperty(() => {});
+		return;
+	}
+
 	const pollIntervalMs = getAuv3ScopePollIntervalMs(window.__czHostPlatform);
 	let rafId = 0;
 	let lastScheduled = 0;
@@ -398,13 +399,10 @@ function installScopePolling() {
 	let destroyed = false;
 	let binaryScopeSupported = true;
 
+	const isPageVisible = () => !document.hidden;
+
 	const scheduleNextFrame = () => {
-		if (
-			destroyed ||
-			rafId !== 0 ||
-			!currentScopeHandler ||
-			!isAuv3HostActive()
-		) {
+		if (destroyed || rafId !== 0 || !currentScopeHandler || !isPageVisible()) {
 			return;
 		}
 		rafId = requestAnimationFrame(tick);
@@ -420,7 +418,7 @@ function installScopePolling() {
 
 	const tick = async (now: number) => {
 		rafId = 0;
-		if (destroyed || !currentScopeHandler || !isAuv3HostActive()) {
+		if (destroyed || !currentScopeHandler || !isPageVisible()) {
 			return;
 		}
 		if (now - lastScheduled < pollIntervalMs || pollInFlight) {
@@ -471,7 +469,6 @@ function installScopePolling() {
 		destroyed = true;
 		stopPolling();
 	});
-	window.addEventListener("cz-auv3-host-inactive", stopPolling);
 	window.addEventListener("cz-auv3-host-active", scheduleNextFrame);
 }
 
