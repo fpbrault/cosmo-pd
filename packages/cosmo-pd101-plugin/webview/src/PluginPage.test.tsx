@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import PluginPage from "./PluginPage";
 
@@ -77,7 +77,19 @@ vi.mock("@cosmo/cosmo-pd101", () => {
 		SYNTH_RENDERER_DESIGN_HEIGHT: 912,
 		SYNTH_RENDERER_MAX_ASPECT_RATIO: 3 / 2,
 		SYNTH_RENDERER_MIN_ASPECT_RATIO: 4 / 3,
-		SynthRenderer: () => <div data-testid="synth-renderer" />,
+		SynthRenderer: ({
+			keyboardSettingsExtra,
+		}: {
+			keyboardSettingsExtra?: React.ReactNode;
+		}) => (
+			<div data-testid="synth-renderer">
+				{keyboardSettingsExtra ? (
+					<div data-testid="keyboard-settings-extra">
+						{keyboardSettingsExtra}
+					</div>
+				) : null}
+			</div>
+		),
 		useSynthPresetManager: mockUseSynthPresetManager,
 		useSynthStore: (selector: (state: typeof synthStoreState) => unknown) =>
 			selector(synthStoreState),

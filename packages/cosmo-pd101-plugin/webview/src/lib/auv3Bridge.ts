@@ -7,6 +7,14 @@ import {
 	recordAuv3ScopeRpc,
 } from "./scopePerformance";
 
+export const AUV3_SCOPE_BINARY_URL = "cosmo-ext://bundle/__scope__";
+
+type BinaryScopeFrame = {
+	samples: Float32Array;
+	sampleRate: number;
+	hz: number;
+};
+
 /** AUv3-specific Window methods (webkit bridge, host platform, subscriptions). */
 declare global {
 	interface Window {
@@ -26,6 +34,7 @@ declare global {
 }
 
 const IPC_TIMEOUT_MS = 250;
+const AUV3_SCOPE_POLLING_ENABLED = true;
 
 let installed = false;
 let nextRpcId = 1;
@@ -35,11 +44,17 @@ const pendingRpc = new Map<
 >();
 let currentParamHandler: Window["__czOnParams"];
 let currentScopeHandler: Window["__czOnScope"];
-const listenerCounts = new Map<string, number>();
 const listenerCountWatchers = new Map<string, Set<() => void>>();
 let demandTrackingInstalled = false;
+type ListenerRegistration = {
+	capture: boolean;
+	listener: EventListenerOrEventListenerObject;
+	nativeListener: EventListenerOrEventListenerObject;
+};
+const listenerRegistrations = new Map<string, ListenerRegistration[]>();
 const inactiveSuppressedMethods = new Set([
 	"getScopeData",
+	"getPendingParamChanges",
 	"getParamsVersion",
 	"getRuntimeVoiceStates",
 	"getRuntimeModSources",
@@ -56,6 +71,91 @@ function notifyListenerCountWatchers(eventName: string) {
 	listenerCountWatchers.get(eventName)?.forEach((watcher) => {
 		watcher();
 	});
+}
+
+function getEventListenerCapture(options?: boolean | EventListenerOptions) {
+	return typeof options === "boolean" ? options : (options?.capture ?? false);
+}
+
+function findListenerRegistrationIndex(
+	eventName: string,
+	listener: EventListenerOrEventListenerObject,
+	capture: boolean,
+) {
+	return (
+		listenerRegistrations
+			.get(eventName)
+			?.findIndex(
+				(registration) =>
+					registration.listener === listener &&
+					registration.capture === capture,
+			) ?? -1
+	);
+}
+
+function removeListenerRegistration(
+	eventName: string,
+	listener: EventListenerOrEventListenerObject,
+	capture: boolean,
+) {
+	const registrations = listenerRegistrations.get(eventName);
+	const index = findListenerRegistrationIndex(eventName, listener, capture);
+	if (!registrations || index < 0) {
+		return;
+	}
+	registrations.splice(index, 1);
+	if (registrations.length === 0) {
+		listenerRegistrations.delete(eventName);
+	}
+	notifyListenerCountWatchers(eventName);
+}
+
+function callTrackedEventListener(
+	listener: EventListenerOrEventListenerObject,
+	event: Event,
+) {
+	if (typeof listener === "function") {
+		listener.call(window, event);
+		return;
+	}
+	listener.handleEvent(event);
+}
+
+function trackListenerRegistration(
+	eventName: string,
+	listener: EventListenerOrEventListenerObject,
+	options?: boolean | AddEventListenerOptions,
+) {
+	if (!listenerCountWatchers.has(eventName)) {
+		return listener;
+	}
+
+	const capture = getEventListenerCapture(options);
+	const existingIndex = findListenerRegistrationIndex(
+		eventName,
+		listener,
+		capture,
+	);
+	if (existingIndex >= 0) {
+		return (
+			listenerRegistrations.get(eventName)?.[existingIndex]?.nativeListener ??
+			listener
+		);
+	}
+
+	let nativeListener = listener;
+	if (typeof options === "object" && options.once) {
+		nativeListener = (event: Event) => {
+			removeListenerRegistration(eventName, listener, capture);
+			callTrackedEventListener(listener, event);
+		};
+	}
+
+	const registrations = listenerRegistrations.get(eventName) ?? [];
+	registrations.push({ capture, listener, nativeListener });
+	listenerRegistrations.set(eventName, registrations);
+	notifyListenerCountWatchers(eventName);
+	return nativeListener;
 }
 
 function installDemandTracking() {
@@ -75,12 +175,11 @@ function installDemandTracking() {
 		if (!listener) {
 			return;
 		}
-		nativeAddEventListener(type, listener, options);
-		if (!listenerCountWatchers.has(type)) {
-			return;
-		}
-		listenerCounts.set(type, (listenerCounts.get(type) ?? 0) + 1);
-		notifyListenerCountWatchers(type);
+		nativeAddEventListener(
+			type,
+			trackListenerRegistration(type, listener, options),
+			options,
+		);
 	}) as typeof window.addEventListener;
 
 	window.removeEventListener = ((
@@ -91,18 +190,22 @@ function installDemandTracking() {
 		if (!listener) {
 			return;
 		}
-		nativeRemoveEventListener(type, listener, options);
-		if (!listenerCountWatchers.has(type)) {
-			return;
-		}
-		const nextCount = Math.max(0, (listenerCounts.get(type) ?? 0) - 1);
-		listenerCounts.set(type, nextCount);
-		notifyListenerCountWatchers(type);
+		const capture = getEventListenerCapture(options);
+		const registration =
+			listenerRegistrations.get(type)?.[
+				findListenerRegistrationIndex(type, listener, capture)
+			];
+		nativeRemoveEventListener(
+			type,
+			registration?.nativeListener ?? listener,
+			options,
+		);
+		removeListenerRegistration(type, listener, capture);
 	}) as typeof window.removeEventListener;
 }
 
 function hasDemand(eventName: string) {
-	return (listenerCounts.get(eventName) ?? 0) > 0;
+	return (listenerRegistrations.get(eventName)?.length ?? 0) > 0;
 }
 
 function watchDemand(eventName: string, watcher: () => void) {
@@ -119,7 +222,7 @@ function watchDemand(eventName: string, watcher: () => void) {
 		currentWatchers.delete(watcher);
 		if (currentWatchers.size === 0) {
 			listenerCountWatchers.delete(eventName);
-			listenerCounts.delete(eventName);
+			listenerRegistrations.delete(eventName);
 		}
 	};
 }
@@ -130,6 +233,43 @@ function nativeHandler() {
 
 function isAuv3HostActive() {
 	return window.__czAuv3HostActive !== false;
+}
+
+export function publishAuv3HostActiveFromWeb(active: boolean) {
+	if (window.__czAuv3HostActive === active) {
+		return;
+	}
+	window.__czAuv3HostActive = active;
+	window.dispatchEvent(
+		new Event(active ? "cz-auv3-host-active" : "cz-auv3-host-inactive"),
+	);
+}
+
+function rejectPendingRpc(message: string) {
+	for (const id of [...pendingRpc.keys()]) {
+		const pending = pendingRpc.get(id);
+		if (!pending) {
+			continue;
+		}
+		pendingRpc.delete(id);
+		pending.reject(new Error(message));
+	}
+}
+
+function installAuv3VisibilityLifecycle() {
+	// Native drives cz-auv3-host-active on resume, but no longer sends
+	// cz-auv3-host-inactive (avoids evaluateJavaScript during suspend).
+	// JS uses document.hidden locally to gate polling and suppress RPCs.
+	window.addEventListener("pagehide", () => {
+		rejectPendingRpc("[auv3Bridge] pagehide — cancelling pending RPCs");
+	});
+	window.addEventListener("visibilitychange", () => {
+		// Update local flag only — never publish back to native.
+		window.__czAuv3HostActive = !document.hidden;
+	});
+	if (window.__czAuv3HostActive === undefined) {
+		window.__czAuv3HostActive = !document.hidden;
+	}
 }
 
 function shouldSuppressWhileHostInactive(method: string) {
@@ -187,6 +327,64 @@ const invoke = createTypedInvoke((method: string, payload?: unknown) =>
 	invokeAuv3<unknown>(method, payload),
 );
 
+export function decodeAuv3BinaryScopeFrame(
+	buffer: ArrayBuffer,
+): BinaryScopeFrame | null {
+	if (buffer.byteLength < 8 || (buffer.byteLength - 8) % 4 !== 0) {
+		return null;
+	}
+
+	const view = new DataView(buffer);
+	const sampleRate = view.getFloat32(0, true);
+	const hz = view.getFloat32(4, true);
+	const sampleCount = (buffer.byteLength - 8) / 4;
+	return {
+		samples: new Float32Array(buffer, 8, sampleCount),
+		sampleRate,
+		hz,
+	};
+}
+
+function normalizeLegacyScopeFrame(result: unknown): BinaryScopeFrame | null {
+	const raw = result as Omit<ScopeDataResponse, "samples"> & {
+		samples?: Array<number | null>;
+	};
+	if (!raw?.samples) {
+		return null;
+	}
+
+	return {
+		samples: Float32Array.from(
+			raw.samples.filter(
+				(sample): sample is number => typeof sample === "number",
+			),
+		),
+		sampleRate: raw.sampleRate ?? 0,
+		hz: raw.hz ?? 0,
+	};
+}
+
+export async function fetchAuv3BinaryScopeFrame(
+	fetchScope: typeof fetch = window.fetch.bind(window),
+): Promise<BinaryScopeFrame | null> {
+	const response = await fetchScope(AUV3_SCOPE_BINARY_URL);
+	if (!response.ok) {
+		throw new Error(`scope fetch: ${response.status}`);
+	}
+	return decodeAuv3BinaryScopeFrame(await response.arrayBuffer());
+}
+
+export async function readAuv3ScopeFrame(
+	fetchScope: typeof fetch,
+	invokeScope: () => Promise<unknown>,
+): Promise<BinaryScopeFrame | null> {
+	try {
+		return await fetchAuv3BinaryScopeFrame(fetchScope);
+	} catch {
+		return normalizeLegacyScopeFrame(await invokeScope());
+	}
+}
+
 function installIpcResponseHandler() {
 	window.__czIpcResponse = (response: IpcRpcResponse) => {
 		const pending = pendingRpc.get(response.id);
@@ -230,18 +428,28 @@ function installIpcRouter() {
 	};
 
 	installPluginIpcWindowBridge(invoke, {
-		__czGetParams: async () => {
-			const result = await invokeAuv3<SynthParams | string>(
-				"getParams",
-				undefined,
-				3000,
-			);
-			return typeof result === "string"
-				? (JSON.parse(result) as SynthParams)
-				: result;
+		// AUv3 native does not implement these methods. Disabling them here
+		// prevents continuous failing IPC (esp. polled getPendingParamChanges)
+		// and ensures consumers feature-detect via __czBridgeCapabilities.
+		capabilities: {
+			__czGetPendingParamChanges: false,
+			__czGetPresetName: false,
+			__czSetPresetName: false,
 		},
-		__czGetParamsVersion: () =>
-			invokeAuv3<number>("getParamsVersion", undefined, 3000),
+		overrides: {
+			__czGetParams: async () => {
+				const result = await invokeAuv3<SynthParams | string>(
+					"getParams",
+					undefined,
+					3000,
+				);
+				return typeof result === "string"
+					? (JSON.parse(result) as SynthParams)
+					: result;
+			},
+			__czGetParamsVersion: () =>
+				invokeAuv3<number>("getParamsVersion", undefined, 3000),
+		},
 	});
 }
 
@@ -261,19 +469,22 @@ function installScopeProperty(onActiveChange: (active: boolean) => void) {
 }
 
 function installScopePolling() {
+	if (!AUV3_SCOPE_POLLING_ENABLED) {
+		installScopeProperty(() => {});
+		return;
+	}
+
 	const pollIntervalMs = getAuv3ScopePollIntervalMs(window.__czHostPlatform);
 	let rafId = 0;
 	let lastScheduled = 0;
 	let pollInFlight = false;
 	let destroyed = false;
+	let binaryScopeSupported = true;
+
+	const isPageVisible = () => !document.hidden;
 
 	const scheduleNextFrame = () => {
-		if (
-			destroyed ||
-			rafId !== 0 ||
-			!currentScopeHandler ||
-			!isAuv3HostActive()
-		) {
+		if (destroyed || rafId !== 0 || !currentScopeHandler || !isPageVisible()) {
 			return;
 		}
 		rafId = requestAnimationFrame(tick);
@@ -289,7 +500,7 @@ function installScopePolling() {
 
 	const tick = async (now: number) => {
 		rafId = 0;
-		if (destroyed || !currentScopeHandler || !isAuv3HostActive()) {
+		if (destroyed || !currentScopeHandler || !isPageVisible()) {
 			return;
 		}
 		if (now - lastScheduled < pollIntervalMs || pollInFlight) {
@@ -300,19 +511,28 @@ function installScopePolling() {
 		lastScheduled = now;
 		pollInFlight = true;
 		try {
-			await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS)
-				.then((result) => {
-					const raw = result as Omit<ScopeDataResponse, "samples"> & {
-						samples: number[];
-					};
-					if (raw?.samples.length > 0 && currentScopeHandler) {
-						recordAuv3ScopeRpc(raw.samples.length);
-						currentScopeHandler(raw.samples, raw.sampleRate ?? 0, raw.hz ?? 0);
-					}
-				})
-				.catch(() => {
-					// Scope data is opportunistic; audio may not be active yet.
-				});
+			let frame: BinaryScopeFrame | null;
+			if (binaryScopeSupported) {
+				try {
+					frame = await fetchAuv3BinaryScopeFrame();
+				} catch {
+					binaryScopeSupported = false;
+					frame = normalizeLegacyScopeFrame(
+						await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS),
+					);
+				}
+			} else {
+				frame = normalizeLegacyScopeFrame(
+					await invokeAuv3("getScopeData", undefined, IPC_TIMEOUT_MS),
+				);
+			}
+
+			if (frame?.samples.length && currentScopeHandler) {
+				recordAuv3ScopeRpc(frame.samples.length);
+				currentScopeHandler(frame.samples, frame.sampleRate, frame.hz);
+			}
+		} catch {
+			// Scope data is opportunistic; audio may not be active yet.
 		} finally {
 			pollInFlight = false;
 			scheduleNextFrame();
@@ -331,7 +551,6 @@ function installScopePolling() {
 		destroyed = true;
 		stopPolling();
 	});
-	window.addEventListener("cz-auv3-host-inactive", stopPolling);
 	window.addEventListener("cz-auv3-host-active", scheduleNextFrame);
 }
 
@@ -536,6 +755,7 @@ export function ensureAuv3Bridge(): boolean {
 	}
 
 	installed = true;
+	installAuv3VisibilityLifecycle();
 	installParamProperty();
 	installIpcResponseHandler();
 	installMidiCcHandler();

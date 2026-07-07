@@ -33,6 +33,8 @@ class AudioUnitHostModel: ObservableObject {
     let isFreeRunning: Bool
 
     let auValString: String
+
+    private var suspendedForBackground = false
     
     private let instanceInvalidationNotifcation = Notification.Name(String(kAudioComponentInstanceInvalidationNotification))
 
@@ -65,6 +67,8 @@ class AudioUnitHostModel: ObservableObject {
     private func loadAudioUnit() {
         Task {
             self.audioUnitCrashed = false
+            self.validationResult = nil
+            self.currentValidationData = nil
             let viewController = await playEngine.initComponent(type: type, subType: subType, manufacturer: manufacturer)
 
 #if DEBUG
@@ -113,9 +117,7 @@ class AudioUnitHostModel: ObservableObject {
 
                 guard let invalidatedAudioUnit = invalidatedObject as? AUAudioUnit else {
                     NSLog("[AUHostModel] AU invalidation notification with unexpected object type=%@", String(describing: Swift.type(of: invalidatedObject as Any)))
-                    hostModel.viewModel.viewController = nil
-                    hostModel.viewModel.message = "The AU view process disconnected. Rebuild/install and relaunch the AUv3 host."
-                    hostModel.audioUnitCrashed = true
+                    hostModel.handleAudioUnitInvalidation(reason: "unexpected invalidation object")
                     return
                 }
 
@@ -131,12 +133,20 @@ class AudioUnitHostModel: ObservableObject {
                 }()
                 if isCurrentInstance || hasMatchingDescription {
                     NSLog("[AUHostModel] AU invalidated (instance=%@ descMatch=%@)", isCurrentInstance ? "yes" : "no", hasMatchingDescription ? "yes" : "no")
-                    hostModel.viewModel.viewController = nil
-                    hostModel.viewModel.message = "The AU view process disconnected. Rebuild/install and relaunch the AUv3 host."
-                    hostModel.audioUnitCrashed = true
+                    hostModel.handleAudioUnitInvalidation(reason: "current AU invalidated")
                 }
             }
         }
+    }
+
+    private func handleAudioUnitInvalidation(reason: String) {
+        NSLog("[AUHostModel] Recovering silently after AU invalidation: %@", reason)
+        viewModel.viewController = nil
+        viewModel.message = ""
+        validationResult = nil
+        currentValidationData = nil
+        audioUnitCrashed = false
+        loadAudioUnit()
     }
     
     private func validateAU(audioUnit: AVAudioUnit) async -> (AudioComponentValidationResult, String) {
@@ -169,5 +179,35 @@ class AudioUnitHostModel: ObservableObject {
     func stopPlaying() {
         playEngine.stopPlaying()
     }
-}
 
+    func handleScenePhaseChange(_ phase: ScenePhase) {
+#if os(iOS) || os(visionOS)
+        let backgroundModes = (Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String])?.joined(separator: ",") ?? "<none>"
+        NSLog(
+            "[AUHostModel] scenePhase=%@ isPlaying=%@ suspendedForBackground=%@ backgroundModes=%@",
+            String(describing: phase),
+            playEngine.isPlaying ? "yes" : "no",
+            suspendedForBackground ? "yes" : "no",
+            backgroundModes
+        )
+        switch phase {
+        case .active:
+            if suspendedForBackground {
+                suspendedForBackground = false
+                playEngine.startPlaying()
+            } else {
+                playEngine.cancelPendingFadeOut()
+            }
+        case .inactive:
+            break
+        case .background:
+            if playEngine.isPlaying {
+                suspendedForBackground = true
+                playEngine.fadeOutAndStop()
+            }
+        default:
+            break
+        }
+#endif
+    }
+}

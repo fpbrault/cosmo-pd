@@ -17,7 +17,9 @@ use arrayvec::ArrayVec;
 use core::array;
 
 use crate::dsp_utils::random_hold_value;
-use crate::envelope::{EnvelopeTimingCache, normalize_synth_params_envelopes_to_raw_if_human};
+use crate::envelope::{
+    EnvelopeTimingCache, compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human,
+};
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{
@@ -236,6 +238,11 @@ impl CosmoProcessor {
     /// Copy a `SynthParams` snapshot into the processor.
     pub fn set_params(&mut self, mut params: SynthParams) {
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
+        self.set_shared_params(Arc::new(params));
+    }
+
+    pub fn set_params_raw(&mut self, mut params: SynthParams) {
+        compute_env_level_norms(&mut params);
         self.set_shared_params(Arc::new(params));
     }
 

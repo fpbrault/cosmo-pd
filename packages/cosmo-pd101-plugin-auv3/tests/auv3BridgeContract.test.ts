@@ -13,9 +13,21 @@ const xcodeControllerPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
+const xcodeWebEditorSessionPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/WebEditorSession.swift",
+);
 const xcodeHostAppPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/CosmoPD101AUv3Ext_macOSApp.swift",
+);
+const standaloneHostModelPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Model/AudioUnitHostModel.swift",
+);
+const simplePlayEnginePath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Common/Audio/SimplePlayEngine.swift",
 );
 const xcodeViewControllerRepresentablePath = path.join(
 	packageRoot,
@@ -95,6 +107,58 @@ describe("AUv3 bridge contract", () => {
 		).toEqual([]);
 	});
 
+	it("suppresses nonessential polling RPCs while the AUv3 host is inactive", () => {
+		const bridgeSource = readText(auv3BridgePath);
+
+		expect(bridgeSource).toContain(
+			"const inactiveSuppressedMethods = new Set([",
+		);
+		expect(bridgeSource).toContain('"getParamsVersion"');
+		expect(bridgeSource).toContain('"getPendingParamChanges"');
+		expect(bridgeSource).toContain("suppressed while host inactive");
+	});
+
+	it("freezes a snapshot before destroying the WebView session on host inactive", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const handlerMatch = swiftSource.match(
+			/@objc private func handleHostWillResignActive[\s\S]*?\n\t}\n/m,
+		);
+
+		expect(handlerMatch).not.toBeNull();
+		expect(handlerMatch?.[0]).toContain(
+			"freezeCurrentSessionForHostInactive()",
+		);
+		expect(swiftSource).toContain("makeSnapshotView()");
+		expect(swiftSource).toContain(
+			'destroyEditorSession(reason: "hostWillResignActive")',
+		);
+		expect(swiftSource).toContain('removeInactiveSnapshot(reason: "webReady")');
+		expect(swiftSource).toContain(
+			'destroyEditorSession(reason: "viewDidDisappear")',
+		);
+	});
+
+	it("keeps AUv3 scope polling enabled behind visibility gates", () => {
+		const bridgeSource = readText(auv3BridgePath);
+
+		expect(bridgeSource).toContain("const AUV3_SCOPE_POLLING_ENABLED = true");
+		expect(bridgeSource).toContain(
+			"const isPageVisible = () => !document.hidden",
+		);
+		expect(bridgeSource).toContain('window.addEventListener("pagehide"');
+	});
+
+	it("fades standalone audio on background instead of stopping on inactive", () => {
+		const hostModelSource = readText(standaloneHostModelPath);
+		const playEngineSource = readText(simplePlayEnginePath);
+
+		expect(hostModelSource).toContain("case .inactive:");
+		expect(hostModelSource).toContain("case .background:");
+		expect(hostModelSource).toContain("playEngine.fadeOutAndStop()");
+		expect(playEngineSource).toContain("public func fadeOutAndStop(");
+		expect(playEngineSource).toContain("engine.mainMixerNode.outputVolume");
+	});
+
 	it("has currentPresetSession keys matching PluginPresetSession", () => {
 		const swiftSource = readText(xcodeControllerPath);
 
@@ -156,36 +220,90 @@ describe("AUv3 bridge contract", () => {
 	});
 
 	it("publishes native AUv3 view bounds to the web renderer on layout", () => {
-		const swiftSource = readText(xcodeControllerPath);
+		const swiftSource = readText(xcodeWebEditorSessionPath);
 
-		expect(swiftSource).toContain("publishHostSizeToWebView(reason:");
+		expect(swiftSource).toContain("private func publishHostSize(reason:");
 		expect(swiftSource).toContain("deviceLandscapeAspectRatio:");
 		expect(swiftSource).toContain("cz-host-size-changed");
 		expect(swiftSource).toContain("window.dispatchEvent(new Event('resize'))");
 	});
 
 	it("keeps hosted AUv3 runtime mode as the controller default", () => {
-		const swiftSource = readText(xcodeControllerPath);
+		const controllerSource = readText(xcodeControllerPath);
+		const sessionSource = readText(xcodeWebEditorSessionPath);
 
-		expect(swiftSource).toContain(
+		expect(controllerSource).toContain(
 			'@objc public var cosmoAuv3FitMode: String = "fit-bounds"',
 		);
-		expect(swiftSource).toContain(
+		expect(controllerSource).toContain(
 			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
 		);
-		expect(swiftSource).toContain(
-			"source: \"window.__czRuntimeMode='\\(cosmoAuv3RuntimeMode)';\"",
-		);
+		expect(controllerSource).toContain("currentHostContext()");
+		expect(sessionSource).toContain("func script(dispatchEvent: Bool)");
+		expect(sessionSource).toContain("window.__czRuntimeMode=\\(runtimeMode);");
 	});
 
 	it("marks the containing standalone app as standalone before embedding the AU view", () => {
 		const hostAppSource = readText(xcodeViewControllerRepresentablePath);
+		const simplePlayEngineSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOS/Common/Audio/SimplePlayEngine.swift",
+			),
+		);
 
 		expect(hostAppSource).toContain(
 			'viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")',
 		);
 		expect(hostAppSource).toContain(
 			'viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")',
+		);
+		expect(simplePlayEngineSource).toContain(
+			"configureStandaloneAuv3ViewController(viewController)",
+		);
+	});
+
+	it("keeps restored document params on the raw restore path", () => {
+		const swiftSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+			),
+		);
+
+		expect(swiftSource).toContain("paramsJson() ?? savedStateJson");
+		expect(swiftSource).toContain(
+			"_ = setParamsJson(json, notifyWebView: true, isRaw: true)",
+		);
+		expect(swiftSource).toContain(
+			"_ = setParamsJson(pending, notifyWebView: true, isRaw: true)",
+		);
+		expect(swiftSource).toContain("savedStateJson = json");
+	});
+
+	it("keeps AUv3 standalone buffer choices aligned and allocates at the supported maximum", () => {
+		const swiftSource = readText(xcodeControllerPath);
+		const audioUnitSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+			),
+		);
+
+		expect(swiftSource).toContain(
+			"static let allowedBufferSizes = [128, 256, 512, 1024]",
+		);
+		expect(swiftSource).toContain(
+			"audioUnit.maximumFramesToRender = AUAudioFrameCount(CosmoPD101AUv3Ext_macOSExtensionAudioUnit.maxSupportedFrameCount)",
+		);
+		expect(audioUnitSource).toContain(
+			"static let maxSupportedFrameCount = 1024",
+		);
+		expect(audioUnitSource).toContain(
+			"maximumFramesToRender = AUAudioFrameCount(Self.maxSupportedFrameCount)",
+		);
+		expect(audioUnitSource).toContain(
+			"maxFrames = max(Int(maximumFramesToRender), Self.maxSupportedFrameCount)",
 		);
 	});
 });

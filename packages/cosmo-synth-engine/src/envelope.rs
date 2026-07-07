@@ -28,6 +28,21 @@ pub fn normalize_synth_params_envelopes_to_raw_if_human(params: &mut SynthParams
     normalize_env_to_raw_if_human(EnvelopeKind::Dca, &mut params.line2.dca_env);
 }
 
+pub fn compute_env_level_norms(params: &mut SynthParams) {
+    fn update_norms(kind: EnvelopeKind, env: &mut StepEnvData) {
+        const INV_99: f32 = 1.0 / 99.0;
+        for step in env.steps.iter_mut() {
+            step.level_norm = raw_level_to_human(kind, step.level) as f32 * INV_99;
+        }
+    }
+    update_norms(EnvelopeKind::Dco, &mut params.line1.dco_env);
+    update_norms(EnvelopeKind::Dcw, &mut params.line1.dcw_env);
+    update_norms(EnvelopeKind::Dca, &mut params.line1.dca_env);
+    update_norms(EnvelopeKind::Dco, &mut params.line2.dco_env);
+    update_norms(EnvelopeKind::Dcw, &mut params.line2.dcw_env);
+    update_norms(EnvelopeKind::Dca, &mut params.line2.dca_env);
+}
+
 #[derive(Debug, Clone)]
 pub struct EnvelopeTimingCache {
     dco_rate_samples: [u32; 100],

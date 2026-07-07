@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-private func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
+func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
 	let fitModeSelector = NSSelectorFromString("setCosmoAuv3FitMode:")
 	if viewController.responds(to: fitModeSelector) {
 		viewController.setValue("fit-bounds", forKey: "cosmoAuv3FitMode")
@@ -40,7 +40,7 @@ final class FullScreenAUContainerViewController: UIViewController {
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		view.backgroundColor = .black
+		view.backgroundColor = .clear
 		view.insetsLayoutMarginsFromSafeArea = false
 
 		configureStandaloneAuv3ViewController(auViewController)
@@ -69,7 +69,9 @@ struct AUViewControllerUI: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> UIViewController {
         guard let auViewController = self.auViewController else {
-            return UIViewController()
+            let viewController = UIViewController()
+            viewController.view.backgroundColor = .clear
+            return viewController
         }
         return FullScreenAUContainerViewController(auViewController: auViewController)
     }
@@ -97,7 +99,7 @@ final class FullScreenAUMacContainerViewController: NSViewController {
     override func loadView() {
         view = NSView()
         view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.black.cgColor
+        view.layer?.backgroundColor = NSColor.clear.cgColor
     }
 
 	override func viewDidLoad() {

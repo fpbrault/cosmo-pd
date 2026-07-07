@@ -123,6 +123,11 @@ extension AVAudioUnit {
             return first
         }
 		NSLog("[SPE] chosen VC: %@", viewController == nil ? "nil" : String(describing: type(of: viewController!)))
+		if let viewController {
+			await MainActor.run {
+				configureStandaloneAuv3ViewController(viewController)
+			}
+		}
 
 		if #available(macOS 13.0, iOS 16.0, *) {
 			if viewController == nil {
@@ -161,6 +166,8 @@ public class SimplePlayEngine {
     
     // Whether we are playing.
     private(set) var isPlaying = false
+	private let normalOutputVolume: Float = 1
+	private var fadeOutGeneration = 0
     
     // This block will be called every render cycle and will receive MIDI events
     private let midiOutBlock: AUMIDIOutputEventBlock = { sampleTime, cable, length, data in return noErr }
@@ -403,13 +410,51 @@ public class SimplePlayEngine {
     
     public func startPlaying() {
         stateChangeQueue.sync {
+            self.cancelFadeOutLocked()
             if !self.isPlaying { self.startPlayingInternal() }
         }
     }
     
     public func stopPlaying() {
         stateChangeQueue.sync {
+            self.cancelFadeOutLocked()
             if self.isPlaying { self.stopPlayingInternal() }
+        }
+    }
+
+    public func cancelPendingFadeOut() {
+        stateChangeQueue.sync {
+            self.cancelFadeOutLocked()
+        }
+    }
+
+    public func fadeOutAndStop(duration: TimeInterval = 0.25) {
+        stateChangeQueue.sync {
+            guard self.isPlaying else { return }
+            self.fadeOutGeneration += 1
+            let generation = self.fadeOutGeneration
+            let initialVolume = max(0, self.engine.mainMixerNode.outputVolume)
+            let clampedDuration = max(0, duration)
+            guard clampedDuration > 0, initialVolume > 0 else {
+                self.stopPlayingInternal()
+                self.engine.mainMixerNode.outputVolume = self.normalOutputVolume
+                return
+            }
+
+            let steps = 12
+            let interval = clampedDuration / Double(steps)
+            for step in 1...steps {
+                DispatchQueue.main.asyncAfter(deadline: .now() + interval * Double(step)) { [weak self] in
+                    Task { @MainActor in
+                        self?.applyFadeOutStep(
+                            generation: generation,
+                            step: step,
+                            steps: steps,
+                            initialVolume: initialVolume
+                        )
+                    }
+                }
+            }
         }
     }
     
@@ -429,6 +474,7 @@ public class SimplePlayEngine {
         
         // assumptions: we are protected by stateChangeQueue. we are not playing.
         setSessionActive(true)
+        engine.mainMixerNode.outputVolume = normalOutputVolume
         
         if avAudioUnit.wantsAudioInput {
             // Schedule buffers on the player.
@@ -465,6 +511,28 @@ public class SimplePlayEngine {
         engine.stop()
         isPlaying = false
         setSessionActive(false)
+        engine.mainMixerNode.outputVolume = normalOutputVolume
+    }
+
+    private func cancelFadeOutLocked() {
+        fadeOutGeneration += 1
+        engine.mainMixerNode.outputVolume = normalOutputVolume
+    }
+
+    private func applyFadeOutStep(
+        generation: Int,
+        step: Int,
+        steps: Int,
+        initialVolume: Float
+    ) {
+        stateChangeQueue.sync {
+            guard generation == self.fadeOutGeneration, self.isPlaying else { return }
+            let remaining = max(0, Float(steps - step) / Float(steps))
+            self.engine.mainMixerNode.outputVolume = initialVolume * remaining
+            if step == steps {
+                self.stopPlayingInternal()
+            }
+        }
     }
     
     private func scheduleEffectLoop() {

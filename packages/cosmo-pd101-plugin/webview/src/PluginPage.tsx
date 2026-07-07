@@ -40,6 +40,11 @@ type HostSize = {
 	reason?: string;
 };
 
+type HostContext = {
+	hostPlatform?: Window["__czHostPlatform"];
+	runtimeMode?: Window["__czRuntimeMode"];
+};
+
 type PluginRendererLayout = {
 	frameWidth: number;
 	frameHeight: number;
@@ -100,6 +105,13 @@ function isValidHostSize(value: HostSize | undefined): value is HostSize {
 	return Boolean(value?.width && value.height);
 }
 
+function readHostContext(): HostContext {
+	return {
+		hostPlatform: window.__czHostPlatform,
+		runtimeMode: window.__czRuntimeMode,
+	};
+}
+
 function getAuv3HostBounds({
 	bounds,
 	nativeHostSize,
@@ -155,9 +167,23 @@ export default function PluginPage({
 	appVersion,
 	utilityExtra,
 }: PluginPageProps) {
-	const isIosHost = window.__czHostPlatform === "ios";
+	const [hostContext, setHostContext] = useState<HostContext>(readHostContext);
+	useEffect(() => {
+		const handleHostContextChange = () => {
+			setHostContext(readHostContext());
+		};
+		window.addEventListener("cz-host-context-changed", handleHostContextChange);
+		return () => {
+			window.removeEventListener(
+				"cz-host-context-changed",
+				handleHostContextChange,
+			);
+		};
+	}, []);
+
+	const isIosHost = hostContext.hostPlatform === "ios";
 	const isAuv3WebView =
-		window.__czHostPlatform === "ios" || window.__czHostPlatform === "macos";
+		hostContext.hostPlatform === "ios" || hostContext.hostPlatform === "macos";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
@@ -464,10 +490,7 @@ export default function PluginPage({
 
 	if (isAuv3WebView) {
 		return (
-			<div
-				ref={frameRef}
-				className="relative h-full w-full overflow-hidden bg-black"
-			>
+			<div ref={frameRef} className="relative h-full w-full overflow-hidden">
 				<div
 					className="absolute overflow-hidden"
 					style={{

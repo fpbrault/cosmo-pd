@@ -28,6 +28,10 @@ const SWIFT_VIEW_CONTROLLER = resolve(
 	pluginDir,
 	"../cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
+const SWIFT_WEB_EDITOR_SESSION = resolve(
+	pluginDir,
+	"../cosmo-pd101-plugin-auv3/CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/WebEditorSession.swift",
+);
 
 // ─── Known-intentional AUv3 stubs ─────────────────────────────────────────────
 //
@@ -155,6 +159,7 @@ function failMessage(
 describe("IPC contract coverage", () => {
 	const auv3BridgeSource = readFileSync(AUV3_BRIDGE_TS, "utf8");
 	const swiftSource = readFileSync(SWIFT_VIEW_CONTROLLER, "utf8");
+	const swiftSessionSource = readFileSync(SWIFT_WEB_EDITOR_SESSION, "utf8");
 
 	const auv3Called = extractInvokeMethods(auv3BridgeSource);
 	const { implemented: swiftImplemented, stubbed: swiftStubbed } =
@@ -162,12 +167,15 @@ describe("IPC contract coverage", () => {
 
 	describe("AUv3 bridge (JS) ↔ Swift userContentController", () => {
 		it("routes native-to-web JavaScript through the dispatcher", () => {
-			const directEvaluateCalls = swiftSource.match(
+			const directEvaluateCalls = swiftSessionSource.match(
 				/webView\??\.evaluateJavaScript/g,
 			);
 			expect(directEvaluateCalls).toHaveLength(1);
-			expect(swiftSource).toContain("final class WebViewJavaScriptEvaluator");
-			expect(swiftSource).toContain("scriptDispatcher");
+			expect(swiftSessionSource).toContain(
+				"final class WebViewJavaScriptEvaluator",
+			);
+			expect(swiftSessionSource).toContain("dispatcher");
+			expect(swiftSource).toContain("currentSession");
 		});
 
 		it("every AUv3 bridge method has a matching Swift case arm", () => {
