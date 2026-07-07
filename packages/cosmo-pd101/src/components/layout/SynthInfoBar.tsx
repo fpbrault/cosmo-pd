@@ -7,7 +7,6 @@ import { KeyboardSettingsPopover } from "@/components/modals/KeyboardSettingsPop
 type SynthInfoBarProps = {
 	infoText: string;
 	bottomBarExtra?: ReactNode;
-	keyboardSettingsExtra?: ReactNode;
 	showKeyboardToggle: boolean;
 	keyboardVisible: boolean;
 	onKeyboardToggle: () => void;
@@ -16,7 +15,6 @@ type SynthInfoBarProps = {
 export default function SynthInfoBar({
 	infoText,
 	bottomBarExtra,
-	keyboardSettingsExtra,
 	showKeyboardToggle,
 	keyboardVisible,
 	onKeyboardToggle,
@@ -68,7 +66,6 @@ export default function SynthInfoBar({
 						open={settingsOpen}
 						triggerRef={settingsBtnRef}
 						onClose={() => setSettingsOpen(false)}
-						extraSettings={keyboardSettingsExtra}
 					/>
 				</div>
 			) : null}

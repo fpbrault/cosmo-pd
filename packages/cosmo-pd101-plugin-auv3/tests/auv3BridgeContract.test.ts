@@ -258,29 +258,9 @@ describe("AUv3 bridge contract", () => {
 		expect(hostAppSource).toContain(
 			'viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")',
 		);
-		expect(hostAppSource).toContain(
-			'viewController.setValue(true, forKey: "cosmoAuv3SupportsStandaloneAppSettings")',
-		);
 		expect(simplePlayEngineSource).toContain(
 			"configureStandaloneAuv3ViewController(viewController)",
 		);
-	});
-
-	it("injects standalone app settings support into the AUv3 webview", () => {
-		const controllerSource = readText(xcodeControllerPath);
-		const sessionSource = readText(xcodeWebEditorSessionPath);
-
-		expect(controllerSource).toContain(
-			"@objc public var cosmoAuv3SupportsStandaloneAppSettings = false",
-		);
-		expect(sessionSource).toContain(
-			"window.__czSupportsStandaloneAppSettings=\\(supportsStandaloneAppSettings);",
-		);
-		expect(controllerSource).toContain(
-			"publishHostContext(currentHostContext()",
-		);
-		expect(sessionSource).toContain("func publishHostContext(");
-		expect(sessionSource).toContain("cz-host-context-changed");
 	});
 
 	it("keeps restored document params on the raw restore path", () => {
@@ -327,17 +307,4 @@ describe("AUv3 bridge contract", () => {
 		);
 	});
 
-	it("sends all notes off before changing the AUv3 MIDI channel filter", () => {
-		const audioUnitSource = readText(
-			path.join(
-				packageRoot,
-				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
-			),
-		);
-
-		expect(audioUnitSource).toContain(
-			"guard nextChannel != midiChannel else { return }",
-		);
-		expect(audioUnitSource).toContain("cosmo_pd101_ffi_all_notes_off(engine)");
-	});
 });

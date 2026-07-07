@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import Button from "@/components/controls/Button";
 import Popover from "@/components/primitives/Popover";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
@@ -7,12 +7,10 @@ export function KeyboardSettingsPopover({
 	open,
 	triggerRef,
 	onClose,
-	extraSettings,
 }: {
 	open: boolean;
 	triggerRef: RefObject<Element | null>;
 	onClose: () => void;
-	extraSettings?: ReactNode;
 }) {
 	const keyboardOctaves = useSynthUiStore((s) => s.keyboardOctaves);
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
@@ -151,7 +149,6 @@ export function KeyboardSettingsPopover({
 							Shows PC keyboard key labels on the on-screen mini keyboard.
 						</p>
 					</div>
-					{extraSettings}
 				</div>
 			</div>
 		</Popover>

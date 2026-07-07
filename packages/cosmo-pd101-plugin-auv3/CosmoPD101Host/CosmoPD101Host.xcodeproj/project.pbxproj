@@ -42,7 +42,6 @@
 		1A3DB63E2FAB6671008A88D4 /* CosmoPD101AUv3Ext-macOSExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "CosmoPD101AUv3Ext-macOSExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A3DB6AB2FAB6671008A88D4 /* CosmoPd101Plugin.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = CosmoPd101Plugin.xcframework; path = ../Artifacts/CosmoPd101Plugin.xcframework; sourceTree = "<group>"; };
 		1A834E852FDDBFA300EF1AD8 /* TelemetryController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TelemetryController.swift; path = ../Sources/CosmoPd101AUv3Support/TelemetryController.swift; sourceTree = "<group>"; };
-		1AC4783D2FFAA600005A1339 /* CosmoPD101Host-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "CosmoPD101Host-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -53,21 +52,11 @@
 			);
 			target = 1A3DB63D2FAB6671008A88D4 /* CosmoPD101AUv3Ext-macOSExtension */;
 		};
-		1AC4783F2FFAA61C005A1339 /* Exceptions for "CosmoPD101AUv3Ext-macOS" folder in "CosmoPD101AUv3Ext-macOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 1A3DB6182FAB6670008A88D4 /* CosmoPD101AUv3Ext-macOS */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1A3DB61A2FAB6670008A88D4 /* CosmoPD101AUv3Ext-macOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				1AC4783F2FFAA61C005A1339 /* Exceptions for "CosmoPD101AUv3Ext-macOS" folder in "CosmoPD101AUv3Ext-macOS" target */,
-			);
 			path = "CosmoPD101AUv3Ext-macOS";
 			sourceTree = "<group>";
 		};
@@ -111,7 +100,6 @@
 		1A3DB5FE2FAB6546008A88D4 = {
 			isa = PBXGroup;
 			children = (
-				1AC4783D2FFAA600005A1339 /* CosmoPD101Host-Info.plist */,
 				1A3DB61A2FAB6670008A88D4 /* CosmoPD101AUv3Ext-macOS */,
 				1A3DB6422FAB6671008A88D4 /* CosmoPD101AUv3Ext-macOSExtension */,
 				1A3DB6AB2FAB6671008A88D4 /* CosmoPd101Plugin.xcframework */,
@@ -490,7 +478,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "CosmoPD101Host-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -543,7 +530,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "CosmoPD101Host-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -696,7 +682,6 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "CosmoPD101AUv3Ext-macOS/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Cosmo PD-101 AUv3";
 				"INFOPLIST_KEY_CFBundleDisplayName[sdk=macosx*]" = "Cosmo PD-101 AUv3";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -704,8 +689,6 @@
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarHidden[sdk=iphoneos*]" = YES;
@@ -761,7 +744,6 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "CosmoPD101AUv3Ext-macOS/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Cosmo PD-101 AUv3";
 				"INFOPLIST_KEY_CFBundleDisplayName[sdk=macosx*]" = "Cosmo PD-101 AUv3";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -769,8 +751,6 @@
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarHidden[sdk=iphoneos*]" = YES;

@@ -21,7 +21,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import Auv3StandaloneSettingsSection from "./Auv3StandaloneSettingsSection";
 import { createPluginPresetManagerRepository } from "./hooks/createPluginPresetManagerRepository";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
@@ -44,7 +43,6 @@ type HostSize = {
 type HostContext = {
 	hostPlatform?: Window["__czHostPlatform"];
 	runtimeMode?: Window["__czRuntimeMode"];
-	supportsStandaloneAppSettings: boolean;
 };
 
 type PluginRendererLayout = {
@@ -111,8 +109,6 @@ function readHostContext(): HostContext {
 	return {
 		hostPlatform: window.__czHostPlatform,
 		runtimeMode: window.__czRuntimeMode,
-		supportsStandaloneAppSettings:
-			window.__czSupportsStandaloneAppSettings === true,
 	};
 }
 
@@ -188,10 +184,6 @@ export default function PluginPage({
 	const isIosHost = hostContext.hostPlatform === "ios";
 	const isAuv3WebView =
 		hostContext.hostPlatform === "ios" || hostContext.hostPlatform === "macos";
-	const showStandaloneIosSettings =
-		isAuv3WebView ||
-		hostContext.supportsStandaloneAppSettings ||
-		hostContext.runtimeMode === "standalone";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
@@ -513,16 +505,11 @@ export default function PluginPage({
 						style={auv3ZoomStyle}
 					>
 						<PresetManagerProvider value={presetManager}>
-							<SynthRenderer
-								runtime={runtime}
-								appVersion={appVersion}
-								bottomBarExtra={utilityExtra}
-								keyboardSettingsExtra={
-									showStandaloneIosSettings ? (
-										<Auv3StandaloneSettingsSection />
-									) : undefined
-								}
-								disableAudioGate
+								<SynthRenderer
+									runtime={runtime}
+									appVersion={appVersion}
+									bottomBarExtra={utilityExtra}
+									disableAudioGate
 								miniKeyboard={{
 									activeNotes: runtime.activeNotes,
 									pitchBend: runtime.pitchBend,
@@ -555,16 +542,11 @@ export default function PluginPage({
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
 					<PresetManagerProvider value={presetManager}>
-						<SynthRenderer
-							runtime={runtime}
-							appVersion={appVersion}
-							bottomBarExtra={utilityExtra}
-							keyboardSettingsExtra={
-								showStandaloneIosSettings ? (
-									<Auv3StandaloneSettingsSection />
-								) : undefined
-							}
-							disableAudioGate
+							<SynthRenderer
+								runtime={runtime}
+								appVersion={appVersion}
+								bottomBarExtra={utilityExtra}
+								disableAudioGate
 							miniKeyboard={{
 								activeNotes: runtime.activeNotes,
 								pitchBend: runtime.pitchBend,

@@ -13,23 +13,6 @@ import os
 
 private let speLog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "SPE")
 
-private enum StandaloneAudioSettings {
-    static let groupId = "group.ca.purraudio.CosmoPD101Host"
-    static let bufferSizeKey = "com.cosmo.pd101.standalone.bufferSize"
-    static let defaultBufferSize = 128
-    static let allowedBufferSizes = [128, 256, 512, 1024]
-
-    private static var defaults: UserDefaults {
-        UserDefaults(suiteName: groupId) ?? .standard
-    }
-
-    static var bufferSize: Int {
-        let stored = defaults.object(forKey: bufferSizeKey) as? Int
-        let value = stored ?? defaultBufferSize
-        return allowedBufferSizes.contains(value) ? value : defaultBufferSize
-    }
-}
-
 #if os(iOS) || os(visionOS)
 import UIKit
 #elseif os(macOS)
@@ -180,7 +163,6 @@ public class SimplePlayEngine {
     
     // File to play.
     private var file: AVAudioFile?
-    private var loopBuffer: AVAudioPCMBuffer?
     
     // Whether we are playing.
     private(set) var isPlaying = false
@@ -406,14 +388,6 @@ public class SimplePlayEngine {
         do {
             let file = try AVAudioFile(forReading: fileURL)
             self.file = file
-            if let buffer = AVAudioPCMBuffer(
-                pcmFormat: file.processingFormat,
-                frameCapacity: AVAudioFrameCount(file.length)
-            ) {
-                try file.read(into: buffer)
-                file.framePosition = 0
-                self.loopBuffer = buffer
-            }
             engine.connect(player, to: engine.mainMixerNode, format: file.processingFormat)
         } catch {
             os_log(.error, log: speLog, "Could not create AVAudioFile instance: %@", error.localizedDescription)
@@ -425,21 +399,7 @@ public class SimplePlayEngine {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)
-            if active {
-                let sampleRate = session.sampleRate > 0 ? session.sampleRate : 48_000
-                let duration = Double(StandaloneAudioSettings.bufferSize) / sampleRate
-                try session.setPreferredIOBufferDuration(duration)
-            }
             try session.setActive(active)
-            os_log(
-                "Audio session active=%{public}@ category=%{public}@ sampleRate=%{public}.1f ioBuffer=%{public}.5f",
-                log: speLog,
-                type: .default,
-                active ? "yes" : "no",
-                session.category.rawValue,
-                session.sampleRate,
-                session.ioBufferDuration
-            )
         } catch {
             os_log(.error, log: speLog, "Could not set Audio Session active: %@", error.localizedDescription)
         }
@@ -576,12 +536,17 @@ public class SimplePlayEngine {
     }
     
     private func scheduleEffectLoop() {
-        guard let loopBuffer else {
-            os_log(.error, log: speLog, "`loopBuffer` must not be nil in scheduleEffectLoop")
+        guard let file = file else {
+            os_log(.error, log: speLog, "`file` must not be nil in scheduleEffectLoop")
             return
         }
-
-        player.scheduleBuffer(loopBuffer, at: nil, options: .loops)
+        
+        Task {
+            await player.scheduleFile(file, at: nil)
+            if self.isPlaying {
+                self.scheduleEffectLoop()
+            }
+        }
     }
     
     private func resetAudioLoop() {

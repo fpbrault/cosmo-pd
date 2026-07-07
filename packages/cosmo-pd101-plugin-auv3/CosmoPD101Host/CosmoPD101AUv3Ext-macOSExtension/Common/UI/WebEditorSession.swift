@@ -14,16 +14,14 @@ typealias WebEditorHostView = NSView
 struct WebEditorHostContext: Equatable {
 	let runtimeMode: String
 	let fitMode: String
-	let supportsStandaloneAppSettings: Bool
 
 	func script(dispatchEvent: Bool) -> String {
 		let runtimeMode = Self.javaScriptStringLiteral(runtimeMode)
 		let fitMode = Self.javaScriptStringLiteral(fitMode)
-		let supportsStandaloneAppSettings = supportsStandaloneAppSettings ? "true" : "false"
 		let eventScript = dispatchEvent
-			? "window.dispatchEvent(new CustomEvent('cz-host-context-changed',{detail:{runtimeMode:window.__czRuntimeMode,fitMode:window.__czAuv3FitMode,supportsStandaloneAppSettings:window.__czSupportsStandaloneAppSettings}}));"
+			? "window.dispatchEvent(new CustomEvent('cz-host-context-changed',{detail:{runtimeMode:window.__czRuntimeMode,fitMode:window.__czAuv3FitMode}}));"
 			: ""
-		return "window.__czRuntimeMode=\(runtimeMode);window.__czAuv3FitMode=\(fitMode);window.__czSupportsStandaloneAppSettings=\(supportsStandaloneAppSettings);\(eventScript)"
+		return "window.__czRuntimeMode=\(runtimeMode);window.__czAuv3FitMode=\(fitMode);\(eventScript)"
 	}
 
 	private static func javaScriptStringLiteral(_ value: String) -> String {
@@ -213,7 +211,6 @@ final class WebEditorSession: NSObject, WKNavigationDelegate, WKScriptMessageHan
 			assignments: [
 				"__czRuntimeMode": javaScriptStringLiteral(context.runtimeMode),
 				"__czAuv3FitMode": javaScriptStringLiteral(context.fitMode),
-				"__czSupportsStandaloneAppSettings": context.supportsStandaloneAppSettings ? "true" : "false",
 			]
 		)
 	}

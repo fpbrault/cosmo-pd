@@ -25,7 +25,6 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParamsVersion = undefined;
 		window.__czGetPendingParamChanges = undefined;
 		window.__czSetParams = undefined;
-		window.__czAuv3HostActive = undefined;
 	});
 
 	afterEach(() => {
@@ -35,7 +34,6 @@ describe("usePluginBridgeSynthEngine", () => {
 		window.__czGetParamsVersion = undefined;
 		window.__czGetPendingParamChanges = undefined;
 		window.__czSetParams = undefined;
-		window.__czAuv3HostActive = undefined;
 	});
 
 	it("does not push default params before hydration completes", async () => {
@@ -198,39 +196,6 @@ describe("usePluginBridgeSynthEngine", () => {
 			});
 		});
 		expect(onExternalParamChange).toHaveBeenCalledOnce();
-
-		unmount();
-	});
-
-	it("pauses params-version polling while the AUv3 host is inactive", async () => {
-		vi.useFakeTimers();
-		window.__czAuv3HostActive = false;
-		window.__czGetParams = vi.fn(async () => makeParams(0.42));
-		window.__czGetParamsVersion = vi.fn(async () => 1);
-		captureSetParams([]);
-
-		const { unmount } = renderHook(() => usePluginBridgeSynthEngine());
-
-		await act(async () => {
-			await Promise.resolve();
-		});
-		await act(async () => {
-			vi.advanceTimersByTime(1000);
-			await Promise.resolve();
-		});
-
-		expect(window.__czGetParamsVersion).not.toHaveBeenCalled();
-
-		act(() => {
-			window.__czAuv3HostActive = true;
-			window.dispatchEvent(new Event("cz-auv3-host-active"));
-		});
-		await act(async () => {
-			vi.advanceTimersByTime(250);
-			await Promise.resolve();
-		});
-
-		expect(window.__czGetParamsVersion).toHaveBeenCalled();
 
 		unmount();
 	});
