@@ -17,6 +17,11 @@ func configureStandaloneAuv3ViewController(_ viewController: NSObject) {
 	if viewController.responds(to: runtimeModeSelector) {
 		viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")
 	}
+
+	let appSettingsSelector = NSSelectorFromString("setCosmoAuv3SupportsStandaloneAppSettings:")
+	if viewController.responds(to: appSettingsSelector) {
+		viewController.setValue(true, forKey: "cosmoAuv3SupportsStandaloneAppSettings")
+	}
 }
 
 #if os(iOS) || os(visionOS)

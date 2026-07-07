@@ -258,9 +258,29 @@ describe("AUv3 bridge contract", () => {
 		expect(hostAppSource).toContain(
 			'viewController.setValue("standalone", forKey: "cosmoAuv3RuntimeMode")',
 		);
+		expect(hostAppSource).toContain(
+			'viewController.setValue(true, forKey: "cosmoAuv3SupportsStandaloneAppSettings")',
+		);
 		expect(simplePlayEngineSource).toContain(
 			"configureStandaloneAuv3ViewController(viewController)",
 		);
+	});
+
+	it("injects standalone app settings support into the AUv3 webview", () => {
+		const controllerSource = readText(xcodeControllerPath);
+		const sessionSource = readText(xcodeWebEditorSessionPath);
+
+		expect(controllerSource).toContain(
+			"@objc public var cosmoAuv3SupportsStandaloneAppSettings = false",
+		);
+		expect(sessionSource).toContain(
+			"window.__czSupportsStandaloneAppSettings=\\(supportsStandaloneAppSettings);",
+		);
+		expect(controllerSource).toContain(
+			"publishHostContext(currentHostContext()",
+		);
+		expect(sessionSource).toContain("func publishHostContext(");
+		expect(sessionSource).toContain("cz-host-context-changed");
 	});
 
 	it("keeps restored document params on the raw restore path", () => {
@@ -281,7 +301,7 @@ describe("AUv3 bridge contract", () => {
 		expect(swiftSource).toContain("savedStateJson = json");
 	});
 
-	it("keeps AUv3 standalone buffer choices aligned and allocates at the supported maximum", () => {
+	it("keeps AUv3 standalone buffer choices aligned and applies the render frame limit", () => {
 		const swiftSource = readText(xcodeControllerPath);
 		const audioUnitSource = readText(
 			path.join(
@@ -294,7 +314,7 @@ describe("AUv3 bridge contract", () => {
 			"static let allowedBufferSizes = [128, 256, 512, 1024]",
 		);
 		expect(swiftSource).toContain(
-			"audioUnit.maximumFramesToRender = AUAudioFrameCount(CosmoPD101AUv3Ext_macOSExtensionAudioUnit.maxSupportedFrameCount)",
+			"audioUnit.maximumFramesToRender = AUAudioFrameCount(bufferSize)",
 		);
 		expect(audioUnitSource).toContain(
 			"static let maxSupportedFrameCount = 1024",
@@ -305,5 +325,19 @@ describe("AUv3 bridge contract", () => {
 		expect(audioUnitSource).toContain(
 			"maxFrames = max(Int(maximumFramesToRender), Self.maxSupportedFrameCount)",
 		);
+	});
+
+	it("sends all notes off before changing the AUv3 MIDI channel filter", () => {
+		const audioUnitSource = readText(
+			path.join(
+				packageRoot,
+				"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+			),
+		);
+
+		expect(audioUnitSource).toContain(
+			"guard nextChannel != midiChannel else { return }",
+		);
+		expect(audioUnitSource).toContain("cosmo_pd101_ffi_all_notes_off(engine)");
 	});
 });
