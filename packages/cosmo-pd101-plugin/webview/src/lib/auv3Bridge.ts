@@ -55,9 +55,14 @@ const pendingRpc = new Map<
 >();
 let currentParamHandler: Window["__czOnParams"];
 let currentScopeHandler: Window["__czOnScope"];
-const listenerCounts = new Map<string, number>();
 const listenerCountWatchers = new Map<string, Set<() => void>>();
 let demandTrackingInstalled = false;
+type ListenerRegistration = {
+	capture: boolean;
+	listener: EventListenerOrEventListenerObject;
+	nativeListener: EventListenerOrEventListenerObject;
+};
+const listenerRegistrations = new Map<string, ListenerRegistration[]>();
 const inactiveSuppressedMethods = new Set([
 	"getScopeData",
 	"getPendingParamChanges",
@@ -79,6 +84,91 @@ function notifyListenerCountWatchers(eventName: string) {
 	});
 }
 
+function getEventListenerCapture(options?: boolean | EventListenerOptions) {
+	return typeof options === "boolean" ? options : (options?.capture ?? false);
+}
+
+function findListenerRegistrationIndex(
+	eventName: string,
+	listener: EventListenerOrEventListenerObject,
+	capture: boolean,
+) {
+	return (
+		listenerRegistrations
+			.get(eventName)
+			?.findIndex(
+				(registration) =>
+					registration.listener === listener &&
+					registration.capture === capture,
+			) ?? -1
+	);
+}
+
+function removeListenerRegistration(
+	eventName: string,
+	listener: EventListenerOrEventListenerObject,
+	capture: boolean,
+) {
+	const registrations = listenerRegistrations.get(eventName);
+	const index = findListenerRegistrationIndex(eventName, listener, capture);
+	if (!registrations || index < 0) {
+		return;
+	}
+	registrations.splice(index, 1);
+	if (registrations.length === 0) {
+		listenerRegistrations.delete(eventName);
+	}
+	notifyListenerCountWatchers(eventName);
+}
+
+function callTrackedEventListener(
+	listener: EventListenerOrEventListenerObject,
+	event: Event,
+) {
+	if (typeof listener === "function") {
+		listener.call(window, event);
+		return;
+	}
+	listener.handleEvent(event);
+}
+
+function trackListenerRegistration(
+	eventName: string,
+	listener: EventListenerOrEventListenerObject,
+	options?: boolean | AddEventListenerOptions,
+) {
+	if (!listenerCountWatchers.has(eventName)) {
+		return listener;
+	}
+
+	const capture = getEventListenerCapture(options);
+	const existingIndex = findListenerRegistrationIndex(
+		eventName,
+		listener,
+		capture,
+	);
+	if (existingIndex >= 0) {
+		return (
+			listenerRegistrations.get(eventName)?.[existingIndex]?.nativeListener ??
+			listener
+		);
+	}
+
+	let nativeListener = listener;
+	if (typeof options === "object" && options.once) {
+		nativeListener = (event: Event) => {
+			removeListenerRegistration(eventName, listener, capture);
+			callTrackedEventListener(listener, event);
+		};
+	}
+
+	const registrations = listenerRegistrations.get(eventName) ?? [];
+	registrations.push({ capture, listener, nativeListener });
+	listenerRegistrations.set(eventName, registrations);
+	notifyListenerCountWatchers(eventName);
+	return nativeListener;
+}
+
 function installDemandTracking() {
 	if (demandTrackingInstalled) {
 		return;
@@ -96,12 +186,11 @@ function installDemandTracking() {
 		if (!listener) {
 			return;
 		}
-		nativeAddEventListener(type, listener, options);
-		if (!listenerCountWatchers.has(type)) {
-			return;
-		}
-		listenerCounts.set(type, (listenerCounts.get(type) ?? 0) + 1);
-		notifyListenerCountWatchers(type);
+		nativeAddEventListener(
+			type,
+			trackListenerRegistration(type, listener, options),
+			options,
+		);
 	}) as typeof window.addEventListener;
 
 	window.removeEventListener = ((
@@ -112,18 +201,22 @@ function installDemandTracking() {
 		if (!listener) {
 			return;
 		}
-		nativeRemoveEventListener(type, listener, options);
-		if (!listenerCountWatchers.has(type)) {
-			return;
-		}
-		const nextCount = Math.max(0, (listenerCounts.get(type) ?? 0) - 1);
-		listenerCounts.set(type, nextCount);
-		notifyListenerCountWatchers(type);
+		const capture = getEventListenerCapture(options);
+		const registration =
+			listenerRegistrations.get(type)?.[
+				findListenerRegistrationIndex(type, listener, capture)
+			];
+		nativeRemoveEventListener(
+			type,
+			registration?.nativeListener ?? listener,
+			options,
+		);
+		removeListenerRegistration(type, listener, capture);
 	}) as typeof window.removeEventListener;
 }
 
 function hasDemand(eventName: string) {
-	return (listenerCounts.get(eventName) ?? 0) > 0;
+	return (listenerRegistrations.get(eventName)?.length ?? 0) > 0;
 }
 
 function watchDemand(eventName: string, watcher: () => void) {
@@ -140,7 +233,7 @@ function watchDemand(eventName: string, watcher: () => void) {
 		currentWatchers.delete(watcher);
 		if (currentWatchers.size === 0) {
 			listenerCountWatchers.delete(eventName);
-			listenerCounts.delete(eventName);
+			listenerRegistrations.delete(eventName);
 		}
 	};
 }

@@ -2,9 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	AUV3_SCOPE_BINARY_URL,
 	decodeAuv3BinaryScopeFrame,
+	ensureAuv3Bridge,
 	publishAuv3HostActiveFromWeb,
 	readAuv3ScopeFrame,
 } from "./auv3Bridge";
+
+function resolveNextRpc(message: unknown) {
+	const rpc = message as { id?: number };
+	if (typeof rpc.id !== "number") {
+		return;
+	}
+	window.__czIpcResponse?.({ id: rpc.id, result: null });
+}
+
+function waitForBridgePromises() {
+	return new Promise((resolve) => window.setTimeout(resolve, 0));
+}
 
 function binaryScopeFrame(sampleRate: number, hz: number, samples: number[]) {
 	const buffer = new ArrayBuffer(8 + samples.length * 4);
@@ -80,5 +93,81 @@ describe("auv3Bridge scope transport", () => {
 		expect(window.__czAuv3HostActive).toBe(true);
 		expect(inactive).toHaveBeenCalledOnce();
 		expect(active).toHaveBeenCalledOnce();
+	});
+
+	it("does not overcount duplicate telemetry listeners", async () => {
+		const messages: Array<{ method?: string }> = [];
+		window.__czAuv3HostActive = true;
+		window.webkit = {
+			messageHandlers: {
+				cosmoPd101: {
+					postMessage: vi.fn((message: unknown) => {
+						messages.push(message as { method?: string });
+						resolveNextRpc(message);
+					}),
+				},
+			},
+		};
+
+		expect(ensureAuv3Bridge()).toBe(true);
+
+		const listener = vi.fn();
+		window.addEventListener("cz-runtime-voice-states", listener);
+		await waitForBridgePromises();
+		window.addEventListener("cz-runtime-voice-states", listener);
+		await waitForBridgePromises();
+
+		expect(
+			messages.filter(
+				(message) => message.method === "subscribeRuntimeVoiceStates",
+			),
+		).toHaveLength(1);
+
+		window.removeEventListener("cz-runtime-voice-states", listener);
+		await waitForBridgePromises();
+		window.removeEventListener("cz-runtime-voice-states", listener);
+		await waitForBridgePromises();
+
+		expect(
+			messages.filter(
+				(message) => message.method === "unsubscribeRuntimeVoiceStates",
+			),
+		).toHaveLength(1);
+	});
+
+	it("clears telemetry demand for once listeners after the event fires", async () => {
+		const messages: Array<{ method?: string }> = [];
+		window.__czAuv3HostActive = true;
+		window.webkit = {
+			messageHandlers: {
+				cosmoPd101: {
+					postMessage: vi.fn((message: unknown) => {
+						messages.push(message as { method?: string });
+						resolveNextRpc(message);
+					}),
+				},
+			},
+		};
+
+		expect(ensureAuv3Bridge()).toBe(true);
+
+		const listener = vi.fn();
+		window.addEventListener("cz-runtime-mod-sources", listener, { once: true });
+		await waitForBridgePromises();
+
+		window.dispatchEvent(new CustomEvent("cz-runtime-mod-sources"));
+		await waitForBridgePromises();
+
+		expect(listener).toHaveBeenCalledOnce();
+		expect(
+			messages.filter(
+				(message) => message.method === "subscribeRuntimeModSources",
+			),
+		).toHaveLength(1);
+		expect(
+			messages.filter(
+				(message) => message.method === "unsubscribeRuntimeModSources",
+			),
+		).toHaveLength(1);
 	});
 });
