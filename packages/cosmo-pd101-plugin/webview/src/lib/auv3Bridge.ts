@@ -25,13 +25,24 @@ declare global {
 		};
 		__czHostPlatform?: "macos" | "ios";
 		__czRuntimeMode?: "auv3-hosted" | "plugin" | "standalone";
+		__czSupportsStandaloneAppSettings?: boolean;
 		__czAuv3HostActive?: boolean;
 		__czOnHostPresetSelected?: (name: string) => void;
 		__czOnRuntimeVoiceStates?: (json: string) => void;
 		__czOnRuntimeModSources?: (json: string) => void;
 		__czOnTransport?: (json: string) => void;
+		__czGetStandaloneAppSettings?: () => Promise<StandaloneAppSettings>;
+		__czSetStandaloneAppSettings?: (
+			settings: StandaloneAppSettings,
+		) => Promise<StandaloneAppSettings>;
 	}
 }
+
+export type StandaloneAppSettings = {
+	midiChannel: number;
+	keepRunningInBackground: boolean;
+	bufferSize: number;
+};
 
 const IPC_TIMEOUT_MS = 250;
 const AUV3_SCOPE_POLLING_ENABLED = true;
@@ -746,6 +757,13 @@ function installTransportSubscription() {
 	});
 }
 
+function installStandaloneAppSettingsBridge() {
+	window.__czGetStandaloneAppSettings = () =>
+		invokeAuv3<StandaloneAppSettings>("getStandaloneAppSettings");
+	window.__czSetStandaloneAppSettings = (settings) =>
+		invokeAuv3<StandaloneAppSettings>("setStandaloneAppSettings", settings);
+}
+
 export function ensureAuv3Bridge(): boolean {
 	if (installed) {
 		return true;
@@ -765,5 +783,6 @@ export function ensureAuv3Bridge(): boolean {
 	installRuntimeVoiceStatesSubscription();
 	installRuntimeModSourcesSubscription();
 	installTransportSubscription();
+	installStandaloneAppSettingsBridge();
 	return true;
 }

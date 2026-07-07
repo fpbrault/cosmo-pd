@@ -21,6 +21,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import Auv3StandaloneSettingsSection from "./Auv3StandaloneSettingsSection";
 import { createPluginPresetManagerRepository } from "./hooks/createPluginPresetManagerRepository";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
 import { usePluginSynthRuntime } from "./hooks/usePluginSynthRuntime";
@@ -43,6 +44,7 @@ type HostSize = {
 type HostContext = {
 	hostPlatform?: Window["__czHostPlatform"];
 	runtimeMode?: Window["__czRuntimeMode"];
+	supportsStandaloneAppSettings: boolean;
 };
 
 type PluginRendererLayout = {
@@ -109,6 +111,8 @@ function readHostContext(): HostContext {
 	return {
 		hostPlatform: window.__czHostPlatform,
 		runtimeMode: window.__czRuntimeMode,
+		supportsStandaloneAppSettings:
+			window.__czSupportsStandaloneAppSettings === true,
 	};
 }
 
@@ -184,6 +188,10 @@ export default function PluginPage({
 	const isIosHost = hostContext.hostPlatform === "ios";
 	const isAuv3WebView =
 		hostContext.hostPlatform === "ios" || hostContext.hostPlatform === "macos";
+	const showStandaloneIosSettings =
+		isAuv3WebView ||
+		hostContext.supportsStandaloneAppSettings ||
+		hostContext.runtimeMode === "standalone";
 	const isLikelyIosDevice =
 		/iPad|iPhone|iPod/.test(window.navigator.userAgent) ||
 		(window.navigator.platform === "MacIntel" &&
@@ -509,6 +517,11 @@ export default function PluginPage({
 								runtime={runtime}
 								appVersion={appVersion}
 								bottomBarExtra={utilityExtra}
+								keyboardSettingsExtra={
+									showStandaloneIosSettings ? (
+										<Auv3StandaloneSettingsSection />
+									) : undefined
+								}
 								disableAudioGate
 								miniKeyboard={{
 									activeNotes: runtime.activeNotes,
@@ -546,6 +559,11 @@ export default function PluginPage({
 							runtime={runtime}
 							appVersion={appVersion}
 							bottomBarExtra={utilityExtra}
+							keyboardSettingsExtra={
+								showStandaloneIosSettings ? (
+									<Auv3StandaloneSettingsSection />
+								) : undefined
+							}
 							disableAudioGate
 							miniKeyboard={{
 								activeNotes: runtime.activeNotes,

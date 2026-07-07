@@ -13,6 +13,7 @@ struct CosmoPD101AUv3Ext_macOSApp: App {
 	private static let minimumWindowHeight: CGFloat = 480
 
     @StateObject private var hostModel = AudioUnitHostModel()
+	@Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -21,6 +22,9 @@ struct CosmoPD101AUv3Ext_macOSApp: App {
 					minWidth: Self.minimumWindowWidth,
 					minHeight: Self.minimumWindowHeight
 				)
+				.onChange(of: scenePhase) { phase in
+					hostModel.handleScenePhaseChange(phase)
+				}
         }
 		.defaultSize(width: Self.minimumWindowWidth, height: Self.minimumWindowHeight)
 		.windowResizability(.contentSize)
