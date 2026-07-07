@@ -1,8 +1,14 @@
+use std::sync::{Arc, OnceLock};
+
+use crate::runtime_state::PluginSharedState;
 use cosmo_synth_engine::params::SynthParams;
 use truce::prelude::*;
 
 #[derive(Params)]
 pub struct CzPluginParams {
+    #[skip]
+    shared_state: OnceLock<Arc<PluginSharedState>>,
+
     #[param(name = "Volume", range = "linear(0.0, 1.0)", default = 1.0, unit = "%")]
     pub volume: FloatParam,
 
@@ -97,6 +103,16 @@ pub struct CzPluginParams {
     pub meter_l: MeterSlot,
     #[meter]
     pub meter_r: MeterSlot,
+}
+
+impl CzPluginParams {
+    pub(crate) fn set_shared_state(&self, shared_state: Arc<PluginSharedState>) {
+        let _ = self.shared_state.set(shared_state);
+    }
+
+    pub(crate) fn shared_state(&self) -> Option<Arc<PluginSharedState>> {
+        self.shared_state.get().cloned()
+    }
 }
 
 pub fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
