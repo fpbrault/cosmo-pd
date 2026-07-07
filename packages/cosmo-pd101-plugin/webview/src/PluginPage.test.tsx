@@ -223,15 +223,15 @@ describe("PluginPage", () => {
 			}
 		).__czHostSize;
 		delete (
-				window as Window & {
-					__czHostPlatform?: string;
-					__czHostSize?: { width: number; height: number };
-					__czRuntimeMode?: string;
-					ipc?: unknown;
-				}
-			).__czRuntimeMode;
-			delete (window as Window & { ipc?: unknown }).ipc;
-		});
+			window as Window & {
+				__czHostPlatform?: string;
+				__czHostSize?: { width: number; height: number };
+				__czRuntimeMode?: string;
+				ipc?: unknown;
+			}
+		).__czRuntimeMode;
+		delete (window as Window & { ipc?: unknown }).ipc;
+	});
 
 	it("renders and creates a plugin repository-backed preset manager", () => {
 		render(<PluginPage appVersion="0.2.0" />);
@@ -599,7 +599,7 @@ describe("PluginPage", () => {
 		}
 	});
 
-		it("centers the AUv3 standalone wrapper while keeping the scaled renderer anchored top-left", () => {
+	it("centers the AUv3 standalone wrapper while keeping the scaled renderer anchored top-left", () => {
 		(
 			window as Window & {
 				__czHostPlatform?: string;

@@ -306,5 +306,4 @@ describe("AUv3 bridge contract", () => {
 			"maxFrames = max(Int(maximumFramesToRender), Self.maxSupportedFrameCount)",
 		);
 	});
-
 });

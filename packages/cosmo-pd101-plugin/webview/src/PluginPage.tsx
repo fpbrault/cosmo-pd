@@ -505,11 +505,11 @@ export default function PluginPage({
 						style={auv3ZoomStyle}
 					>
 						<PresetManagerProvider value={presetManager}>
-								<SynthRenderer
-									runtime={runtime}
-									appVersion={appVersion}
-									bottomBarExtra={utilityExtra}
-									disableAudioGate
+							<SynthRenderer
+								runtime={runtime}
+								appVersion={appVersion}
+								bottomBarExtra={utilityExtra}
+								disableAudioGate
 								miniKeyboard={{
 									activeNotes: runtime.activeNotes,
 									pitchBend: runtime.pitchBend,
@@ -542,11 +542,11 @@ export default function PluginPage({
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
 					<PresetManagerProvider value={presetManager}>
-							<SynthRenderer
-								runtime={runtime}
-								appVersion={appVersion}
-								bottomBarExtra={utilityExtra}
-								disableAudioGate
+						<SynthRenderer
+							runtime={runtime}
+							appVersion={appVersion}
+							bottomBarExtra={utilityExtra}
+							disableAudioGate
 							miniKeyboard={{
 								activeNotes: runtime.activeNotes,
 								pitchBend: runtime.pitchBend,
