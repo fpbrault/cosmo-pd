@@ -159,6 +159,26 @@ describe("AUv3 bridge contract", () => {
 		expect(playEngineSource).toContain("engine.mainMixerNode.outputVolume");
 	});
 
+	it("tears down the stale standalone AU before reconnecting the graph", () => {
+		const playEngineSource = readText(simplePlayEnginePath);
+		const connectMatch = playEngineSource.match(
+			/public func connect\(avAudioUnit nextAudioUnit:[\s\S]*?\n {4}\}/,
+		);
+
+		expect(playEngineSource).toContain("connect(avAudioUnit: nil)");
+		expect(playEngineSource).toContain("self.avAudioUnit = nextAudioUnit");
+		expect(playEngineSource).toContain("scheduleMIDIEventListBlock = nil");
+		expect(playEngineSource).toContain(
+			"if isPlaying && self.avAudioUnit?.wantsAudioInput == true",
+		);
+		expect(connectMatch?.[0]).not.toContain(
+			"guard let avAudioUnit = self.avAudioUnit",
+		);
+		expect(connectMatch?.[0]).toContain(
+			"guard let avAudioUnit = nextAudioUnit else",
+		);
+	});
+
 	it("has currentPresetSession keys matching PluginPresetSession", () => {
 		const swiftSource = readText(xcodeControllerPath);
 
