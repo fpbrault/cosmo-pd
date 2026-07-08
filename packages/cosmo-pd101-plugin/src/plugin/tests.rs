@@ -372,6 +372,7 @@ fn host_event_processing_respects_sample_offsets() {
     let mut events = EventList::default();
     events.push(Event {
         sample_offset: 32,
+        port: 0,
         body: EventBody::NoteOn {
             group: 0,
             channel: 0,
@@ -399,6 +400,20 @@ fn host_event_processing_respects_sample_offsets() {
         post_event_peak > 1.0e-4,
         "expected audible output after note-on offset, got peak {post_event_peak}"
     );
+}
+
+#[test]
+fn editor_uses_params_owned_shared_state() {
+    with_test_data_dir(|_| {
+        let params = Arc::new(CzPluginParams::new());
+        let plugin = CzPlugin::new(Arc::clone(&params));
+
+        assert!(params.shared_state().is_some());
+
+        drop(plugin);
+        let editor = CzPlugin::editor(params);
+        drop(editor);
+    });
 }
 
 #[test]
@@ -859,6 +874,7 @@ fn param_change_applies_at_event_offset() {
         let mut events = EventList::default();
         events.push(Event {
             sample_offset: 32,
+            port: 0,
             body: EventBody::ParamChange {
                 id: CzPluginParamsParamId::Volume as u32,
                 value: next_volume,

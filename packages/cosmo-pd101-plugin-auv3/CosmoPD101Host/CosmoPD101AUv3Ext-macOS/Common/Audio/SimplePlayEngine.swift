@@ -584,42 +584,45 @@ public class SimplePlayEngine {
         player.scheduleBuffer(loopBuffer, at: nil, options: .loops)
     }
     
-    private func resetAudioLoop() {
-        guard let avAudioUnit = self.avAudioUnit else {
+    private func restoreAudioLoopIfNeeded(previousAudioUnit: AVAudioUnit?) {
+        guard previousAudioUnit?.wantsAudioInput == true else { return }
+
+        // Connect player -> mixer.
+        guard let format = file?.processingFormat else {
+            os_log(.error, log: speLog, "No AVAudioFile defined (processing format unavailable)")
             return
         }
-        
-        if avAudioUnit.wantsAudioInput {
-            // Connect player -> mixer.
-            guard let format = file?.processingFormat else {
-                os_log(.error, log: speLog, "No AVAudioFile defined (processing format unavailable)")
-                return
-            }
-            engine.connect(player, to: engine.mainMixerNode, format: format)
-        }
+        engine.connect(player, to: engine.mainMixerNode, format: format)
     }
     
     public func reset() {
         connect(avAudioUnit: nil)
     }
     
-    public func connect(avAudioUnit: AVAudioUnit?, completion: @escaping (() -> Void) = {}) {
-        guard let avAudioUnit = self.avAudioUnit else {
-            return
+    public func connect(avAudioUnit nextAudioUnit: AVAudioUnit?, completion: @escaping (() -> Void) = {}) {
+        let previousAudioUnit = self.avAudioUnit
+
+        if isPlaying {
+            player.pause()
         }
-        
+
         // Break the audio unit -> mixer connection
         engine.disconnectNodeInput(engine.mainMixerNode)
-        
-        resetAudioLoop()
-        
-        // We're done with the unit; release all references.
-        engine.detach(avAudioUnit)
+
+        if let previousAudioUnit {
+            // We're done with the previous unit; release all graph references before storing the replacement.
+            engine.detach(previousAudioUnit)
+        }
+
+        self.avAudioUnit = nextAudioUnit
+        if nextAudioUnit == nil {
+            scheduleMIDIEventListBlock = nil
+            restoreAudioLoopIfNeeded(previousAudioUnit: previousAudioUnit)
+        }
         
         // Internal function to resume playing and call the completion handler.
         func rewiringComplete() {
-            scheduleMIDIEventListBlock = auAudioUnit.scheduleMIDIEventListBlock
-            if isPlaying {
+            if isPlaying && self.avAudioUnit?.wantsAudioInput == true {
                 player.play()
             }
             completion()
@@ -629,13 +632,14 @@ public class SimplePlayEngine {
         
         // Connect the main mixer -> output node
         engine.connect(engine.mainMixerNode, to: engine.outputNode, format: hardwareFormat)
-        
-        // Pause the player before re-wiring it. It is not simple to keep it playing across an insertion or deletion.
-        if isPlaying {
-            player.pause()
+
+        guard let avAudioUnit = nextAudioUnit else {
+            rewiringComplete()
+            return
         }
         
         let auAudioUnit = avAudioUnit.auAudioUnit
+        scheduleMIDIEventListBlock = auAudioUnit.scheduleMIDIEventListBlock
         
         if !auAudioUnit.midiOutputNames.isEmpty {
             auAudioUnit.midiOutputEventBlock = midiOutBlock

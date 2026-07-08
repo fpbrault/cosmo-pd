@@ -154,6 +154,7 @@ impl CzPlugin {
             },
             voice_limit as u8,
         ));
+        params.set_shared_state(shared_state.clone());
         Self {
             params,
             audio,
@@ -249,6 +250,8 @@ impl CzPlugin {
 }
 
 impl PluginLogic for CzPlugin {
+    type Params = CzPluginParams;
+
     fn reset(&mut self, sample_rate: f64, max_block_size: usize) {
         append_log(&format!(
             "reset sample_rate={} log_path={}",
@@ -363,11 +366,11 @@ impl PluginLogic for CzPlugin {
         }
     }
 
-    fn editor(&self) -> Box<dyn Editor> {
-        Box::new(crate::gui::CzEditor::new(
-            self.shared_state.clone(),
-            self.params.clone(),
-        ))
+    fn editor(params: Arc<Self::Params>) -> Box<dyn Editor> {
+        let shared_state = params
+            .shared_state()
+            .expect("CzPluginParams shared state must be initialized by CzPlugin::new");
+        Box::new(crate::gui::CzEditor::new(shared_state, params))
     }
 }
 
