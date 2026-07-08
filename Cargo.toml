@@ -28,7 +28,7 @@ proc-macro2 = "1"
 truce = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26", default-features = false }
 truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26" }
 truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26" }
-truce-clap = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26" }
+truce-clap = { git = "https://github.com/fpbrault/truce.git", rev = "466e8bf8439b30e12a50358624c89be8e7807eea" }
 truce-vst3 = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26" }
 truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26" }
 truce-standalone = { git = "https://github.com/fpbrault/truce.git", rev = "efa7b50d93f17b754e636fdd474971993fc49f26" }

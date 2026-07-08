@@ -598,8 +598,8 @@ dependencies = [
  "truce",
  "truce-au",
  "truce-clap",
- "truce-core",
- "truce-params",
+ "truce-core 3.0.0",
+ "truce-params 3.0.0",
  "truce-standalone",
  "truce-test",
  "truce-vst3",
@@ -3620,11 +3620,11 @@ name = "truce"
 version = "3.0.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
 dependencies = [
- "truce-core",
+ "truce-core 3.0.0",
  "truce-derive",
  "truce-gui-types",
  "truce-loader",
- "truce-params",
+ "truce-params 3.0.0",
  "truce-plugin",
 ]
 
@@ -3635,8 +3635,8 @@ source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd
 dependencies = [
  "cc",
  "crossbeam-queue",
- "truce-core",
- "truce-params",
+ "truce-core 3.0.0",
+ "truce-params 3.0.0",
  "truce-shim-types",
 ]
 
@@ -3648,20 +3648,30 @@ dependencies = [
  "base64",
  "serde",
  "toml 1.1.2+spec-1.1.0",
- "truce-utils",
+ "truce-utils 3.0.0",
 ]
 
 [[package]]
 name = "truce-clap"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 dependencies = [
  "clap-sys",
  "crossbeam-queue",
  "log",
  "objc",
- "truce-core",
- "truce-params",
+ "truce-core 1.0.1",
+ "truce-params 1.0.1",
+]
+
+[[package]]
+name = "truce-core"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "png",
+ "truce-params 1.0.1",
+ "truce-utils 1.0.1",
 ]
 
 [[package]]
@@ -3671,8 +3681,8 @@ source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd
 dependencies = [
  "libc",
  "png",
- "truce-params",
- "truce-utils",
+ "truce-params 3.0.0",
+ "truce-utils 3.0.0",
 ]
 
 [[package]]
@@ -3681,7 +3691,7 @@ version = "3.0.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
 dependencies = [
  "tiny-skia",
- "truce-core",
+ "truce-core 3.0.0",
  "truce-font",
  "truce-gui-types",
 ]
@@ -3696,8 +3706,8 @@ dependencies = [
  "syn 2.0.118",
  "toml 1.1.2+spec-1.1.0",
  "truce-build",
- "truce-params",
- "truce-utils",
+ "truce-params 3.0.0",
+ "truce-utils 3.0.0",
 ]
 
 [[package]]
@@ -3705,8 +3715,8 @@ name = "truce-driver"
 version = "3.0.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
 dependencies = [
- "truce-core",
- "truce-params",
+ "truce-core 3.0.0",
+ "truce-params 3.0.0",
 ]
 
 [[package]]
@@ -3732,11 +3742,11 @@ dependencies = [
  "objc2-ui-kit",
  "pollster",
  "raw-window-handle 0.5.2",
- "truce-core",
+ "truce-core 3.0.0",
  "truce-cpu",
  "truce-gui-types",
  "truce-gui-utils",
- "truce-params",
+ "truce-params 3.0.0",
  "truce-plugin",
  "wgpu",
 ]
@@ -3747,7 +3757,7 @@ version = "3.0.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
 dependencies = [
  "objc2",
- "truce-core",
+ "truce-core 3.0.0",
 ]
 
 [[package]]
@@ -3769,10 +3779,18 @@ dependencies = [
  "libloading 0.9.0",
  "log",
  "parking_lot",
- "truce-core",
+ "truce-core 3.0.0",
  "truce-gui-types",
- "truce-params",
+ "truce-params 3.0.0",
  "truce-plugin",
+]
+
+[[package]]
+name = "truce-params"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "bitflags 2.13.0",
 ]
 
 [[package]]
@@ -3788,9 +3806,9 @@ name = "truce-plugin"
 version = "3.0.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
 dependencies = [
- "truce-core",
+ "truce-core 3.0.0",
  "truce-gui-types",
- "truce-params",
+ "truce-params 3.0.0",
 ]
 
 [[package]]
@@ -3813,10 +3831,10 @@ dependencies = [
  "pico-args",
  "raw-window-handle 0.5.2",
  "rfd",
- "truce-core",
+ "truce-core 3.0.0",
  "truce-gui",
- "truce-params",
- "truce-utils",
+ "truce-params 3.0.0",
+ "truce-utils 3.0.0",
  "windows-sys 0.61.2",
  "x11-dl",
 ]
@@ -3829,10 +3847,15 @@ dependencies = [
  "png",
  "toml 1.1.2+spec-1.1.0",
  "truce-build",
- "truce-core",
+ "truce-core 3.0.0",
  "truce-driver",
- "truce-params",
+ "truce-params 3.0.0",
 ]
+
+[[package]]
+name = "truce-utils"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 
 [[package]]
 name = "truce-utils"
@@ -3846,8 +3869,8 @@ source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd
 dependencies = [
  "cc",
  "crossbeam-queue",
- "truce-core",
- "truce-params",
+ "truce-core 3.0.0",
+ "truce-params 3.0.0",
 ]
 
 [[package]]
