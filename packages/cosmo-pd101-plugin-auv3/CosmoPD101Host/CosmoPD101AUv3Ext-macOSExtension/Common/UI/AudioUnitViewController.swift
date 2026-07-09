@@ -230,7 +230,9 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 	nonisolated public func createAudioUnit(with componentDescription: AudioComponentDescription) throws -> AUAudioUnit {
 		let unit = try CosmoPD101AUv3Ext_macOSExtensionAudioUnit(componentDescription: componentDescription, options: [])
 		unit.setVoiceLimit(VoiceLimitSettings.load())
-		applyStandaloneAppSettings(StandaloneAppSettings.load(), to: unit)
+		Task { @MainActor in
+			self.applyStandaloneAppSettings(StandaloneAppSettings.load(), to: unit)
+		}
 		audioUnit = unit
 		observation = unit.observe(\.allParameterValues, options: [.new]) { _, _ in }
 		unit.paramsChangedHandler = { [weak self] json, presetName in
@@ -918,3 +920,4 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 			]
 		}
 	}
+
