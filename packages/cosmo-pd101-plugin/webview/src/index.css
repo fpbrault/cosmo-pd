@@ -16,10 +16,6 @@ body,
 	touch-action: pan-y;
 }
 
-[data-auv3-hosted] [data-auv3-gesture-control] {
-	touch-action: pan-y;
-}
-
 [data-auv3-hosted] [data-auv3-passive-surface] {
 	touch-action: pan-y;
 }

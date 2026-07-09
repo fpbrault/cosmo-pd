@@ -149,7 +149,6 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 			<div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-base-300/60 bg-base-300/30">
 				<canvas
 					ref={canvasRef}
-					data-auv3-gesture-control
 					className="absolute inset-0 h-full w-full cursor-crosshair touch-none"
 					style={{ imageRendering: "auto" }}
 					onPointerDown={handleCanvasPointerDown}

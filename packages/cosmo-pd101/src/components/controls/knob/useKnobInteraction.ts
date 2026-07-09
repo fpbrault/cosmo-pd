@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	hasGestureExceededSlop,
-	isAuv3HostedRuntime,
-	isMostlyVerticalGesture,
-} from "@/lib/ui/hostedGesture";
-import {
 	clampValue,
 	DEFAULT_ARC_GEOMETRY,
 	denormalizeValueCurved,
@@ -88,19 +83,11 @@ export function useKnobInteraction({
 	const activePointerIdRef = useRef<number | null>(null);
 	const activePointerTargetRef = useRef<Element | null>(null);
 
-	type DragState = {
+	const dragState = useRef<{
 		mode: "linear" | "angular";
 		startSvgY: number;
 		startValue: number;
 		isShift: boolean;
-	};
-	const dragState = useRef<DragState | null>(null);
-	const pendingHostedTouchRef = useRef<{
-		pointerId: number;
-		startClientX: number;
-		startClientY: number;
-		target: Element;
-		dragState: DragState;
 	} | null>(null);
 
 	// Emit a domain value, applying step quantization and clamping.
@@ -153,36 +140,22 @@ export function useKnobInteraction({
 				}
 			}
 
+			e.preventDefault();
 			const target = e.currentTarget as Element;
+			target.setPointerCapture(e.pointerId);
+			activePointerIdRef.current = e.pointerId;
+			activePointerTargetRef.current = target;
 			const pt = toSvgPoint(e.clientX, e.clientY);
 			const norm = normalizeValueCurved(value, min, max, curve);
 			const mode = isOnHandle(pt.x, pt.y, norm, arcGeometry)
 				? "angular"
 				: "linear";
-			const nextDragState: DragState = {
+			dragState.current = {
 				mode,
 				startSvgY: pt.y,
 				startValue: value,
 				isShift: e.shiftKey,
 			};
-			if (e.pointerType === "touch" && isAuv3HostedRuntime()) {
-				pendingHostedTouchRef.current = {
-					pointerId: e.pointerId,
-					startClientX: e.clientX,
-					startClientY: e.clientY,
-					target,
-					dragState: nextDragState,
-				};
-				activePointerIdRef.current = e.pointerId;
-				activePointerTargetRef.current = target;
-				return;
-			}
-
-			e.preventDefault();
-			target.setPointerCapture(e.pointerId);
-			activePointerIdRef.current = e.pointerId;
-			activePointerTargetRef.current = target;
-			dragState.current = nextDragState;
 			setDragging(true);
 		},
 		[disabled, defaultValue, toSvgPoint, value, min, max, curve, emit],
@@ -196,24 +169,6 @@ export function useKnobInteraction({
 			) {
 				return;
 			}
-			const pendingTouch = pendingHostedTouchRef.current;
-			if (pendingTouch?.pointerId === e.pointerId) {
-				const deltaX = e.clientX - pendingTouch.startClientX;
-				const deltaY = e.clientY - pendingTouch.startClientY;
-				if (!hasGestureExceededSlop(deltaX, deltaY)) return;
-				if (isMostlyVerticalGesture(deltaX, deltaY)) {
-					pendingHostedTouchRef.current = null;
-					activePointerIdRef.current = null;
-					activePointerTargetRef.current = null;
-					return;
-				}
-				e.preventDefault();
-				pendingTouch.target.setPointerCapture(e.pointerId);
-				dragState.current = pendingTouch.dragState;
-				pendingHostedTouchRef.current = null;
-				setDragging(true);
-			}
-
 			const state = dragState.current;
 			if (!state) return;
 
@@ -249,7 +204,6 @@ export function useKnobInteraction({
 		}
 		activePointerIdRef.current = null;
 		activePointerTargetRef.current = null;
-		pendingHostedTouchRef.current = null;
 		dragState.current = null;
 		setDragging(false);
 	}, []);

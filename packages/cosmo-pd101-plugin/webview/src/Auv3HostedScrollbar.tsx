@@ -152,7 +152,6 @@ export default function Auv3HostedScrollbar({
 					aria-valuemin={0}
 					aria-valuemax={Math.round(maxScroll)}
 					aria-valuenow={Math.round(metrics.scrollTop)}
-					data-auv3-gesture-control
 					className="absolute inset-x-0 min-h-12 touch-none rounded-full border border-cz-light-blue/70 bg-cz-light-blue shadow-black/50 shadow-md"
 					style={{
 						height: `${thumbSizePercent}%`,
