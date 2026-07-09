@@ -16,6 +16,11 @@ import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
+import {
+	hasGestureExceededSlop,
+	isAuv3HostedRuntime,
+	isMostlyVerticalGesture,
+} from "@/lib/ui/hostedGesture";
 import type { KnobCurve } from "./knob/knobGeometry";
 import {
 	mapPointerDeltaWithCurve,
@@ -143,6 +148,7 @@ function SynthParamSliderInner({
 	const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 	const pointerStartValueRef = useRef<number>(state.displayedValue);
 	const pointerDragActiveRef = useRef(false);
+	const pendingHostedTouchRef = useRef(false);
 	const [dragging, setDragging] = useState(false);
 	const [hovered, setHovered] = useState(false);
 	const [hoverSession, setHoverSession] = useState(0);
@@ -301,11 +307,15 @@ function SynthParamSliderInner({
 	const beginPointer = useCallback(
 		(e: PointerEvent<HTMLDivElement>) => {
 			if (disabled || state.midiLearn.interactionLocked) return;
-			e.preventDefault();
 			pointerIdRef.current = e.pointerId;
 			pointerStartRef.current = { x: e.clientX, y: e.clientY };
 			pointerStartValueRef.current = state.displayedValue;
 			pointerDragActiveRef.current = false;
+			pendingHostedTouchRef.current =
+				e.pointerType === "touch" && isAuv3HostedRuntime();
+			if (pendingHostedTouchRef.current) return;
+
+			e.preventDefault();
 			e.currentTarget.setPointerCapture(e.pointerId);
 		},
 		[disabled, state],
@@ -320,8 +330,19 @@ function SynthParamSliderInner({
 				if (!start) return;
 				const dx = e.clientX - start.x;
 				const dy = e.clientY - start.y;
-				if (Math.hypot(dx, dy) < 2) {
+				if (pendingHostedTouchRef.current && !hasGestureExceededSlop(dx, dy)) {
 					return;
+				}
+				if (pendingHostedTouchRef.current && isMostlyVerticalGesture(dx, dy)) {
+					pointerIdRef.current = null;
+					pointerStartRef.current = null;
+					pendingHostedTouchRef.current = false;
+					return;
+				}
+				if (!pendingHostedTouchRef.current && Math.hypot(dx, dy) < 2) return;
+				if (pendingHostedTouchRef.current) {
+					e.currentTarget.setPointerCapture(e.pointerId);
+					pendingHostedTouchRef.current = false;
 				}
 				pointerDragActiveRef.current = true;
 				setDragging(true);
@@ -344,6 +365,7 @@ function SynthParamSliderInner({
 		pointerStartRef.current = null;
 		pointerStartValueRef.current = state.displayedValue;
 		pointerDragActiveRef.current = false;
+		pendingHostedTouchRef.current = false;
 		setDragging(false);
 	}, [state.displayedValue]);
 
@@ -446,6 +468,7 @@ function SynthParamSliderInner({
 				}
 				onClick={state.midiLearn.onClick}
 				onContextMenu={state.midiLearn.onContextMenu}
+				data-auv3-gesture-control
 				data-hover-info={resolvedTooltip}
 				{...hoverHandlers}
 				className={`relative rounded-md border border-cz-border/80 bg-cz-inset/85 shadow-inner ${

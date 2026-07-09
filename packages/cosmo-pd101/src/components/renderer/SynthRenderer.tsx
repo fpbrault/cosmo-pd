@@ -132,6 +132,7 @@ const SynthRenderer = memo(function SynthRenderer({
 					>
 						<div
 							data-theme="cosmo"
+							data-auv3-passive-surface
 							className="relative flex h-full min-h-0 w-full min-w-0 select-none flex-col overflow-hidden bg-cz-panel"
 							style={frameStyle}
 						>
@@ -157,7 +158,10 @@ const SynthRenderer = memo(function SynthRenderer({
 									maxSize="30%"
 									collapsible
 								>
-									<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset p-2 shadow-lg">
+									<div
+										data-auv3-passive-surface
+										className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset p-2 shadow-lg"
+									>
 										<Group
 											orientation="vertical"
 											className="h-full min-h-0 flex-1 gap-0"

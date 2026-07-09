@@ -104,7 +104,7 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 		}
 	}
 
-	@objc public var cosmoAuv3FitMode: String = "fit-bounds" {
+	@objc public var cosmoAuv3FitMode: String = "fit-width" {
 		didSet { currentSession?.publishHostContext(currentHostContext(), reason: "fitMode") }
 	}
 	@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted" {
@@ -482,7 +482,17 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 	}
 
 	private func currentHostContext() -> WebEditorHostContext {
-		WebEditorHostContext(
+		if
+			let cosmoAudioUnit = audioUnit as? CosmoPD101AUv3Ext_macOSExtensionAudioUnit,
+			cosmoAudioUnit.isStandaloneHostPresentation
+		{
+			return WebEditorHostContext(
+				runtimeMode: "standalone",
+				fitMode: "fit-bounds",
+				supportsStandaloneAppSettings: true
+			)
+		}
+		return WebEditorHostContext(
 			runtimeMode: cosmoAuv3RuntimeMode,
 			fitMode: cosmoAuv3FitMode,
 			supportsStandaloneAppSettings: cosmoAuv3SupportsStandaloneAppSettings
@@ -920,4 +930,3 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 			]
 		}
 	}
-

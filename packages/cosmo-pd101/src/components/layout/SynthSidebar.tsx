@@ -12,16 +12,25 @@ export default memo(function SynthSidebar() {
 	const waveDrawerOpen = mainPanelMode === "display";
 
 	return (
-		<aside className="flex h-full min-h-0 flex-col overflow-hidden">
+		<aside
+			data-auv3-passive-surface
+			className="flex h-full min-h-0 flex-col overflow-hidden"
+		>
 			<div className="min-w-full">
-				<div className="relative h-60 overflow-hidden">
+				<div
+					data-auv3-passive-surface
+					className="relative h-60 overflow-hidden"
+				>
 					<div className="absolute inset-0 p-3">
 						<ScopeMiniDisplay expanded={waveDrawerOpen} />
 					</div>
 				</div>
 			</div>
 			<SynthSidebarButtons />
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+			<div
+				data-auv3-passive-surface
+				className="flex min-h-0 flex-1 flex-col overflow-hidden"
+			>
 				{midiLearnOpen ? <MidiLearnPanel /> : <PresetVoiceSettingsPanel />}
 			</div>
 		</aside>

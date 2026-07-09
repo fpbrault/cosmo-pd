@@ -635,6 +635,7 @@ export default function ControlKnob({
 				ref={buttonRef}
 				type="button"
 				role="spinbutton"
+				data-auv3-gesture-control
 				className={`block touch-none rounded-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/30 disabled:border-transparent! disabled:bg-transparent! disabled:shadow-none! ${
 					disabled
 						? "cursor-not-allowed opacity-60"

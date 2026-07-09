@@ -73,6 +73,7 @@ export const SingleCycleDisplay = memo(function SingleCycleDisplay({
 			>
 				<canvas
 					ref={canvasRef}
+					data-auv3-passive-layer
 					width={width}
 					height={height}
 					className="bg-base-300/30"
@@ -335,7 +336,11 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 
 	return (
 		<div className="relative aspect-5/2 w-full overflow-hidden bg-base-300/30">
-			<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+			<canvas
+				ref={canvasRef}
+				data-auv3-passive-layer
+				className="absolute inset-0 h-full w-full"
+			/>
 		</div>
 	);
 });

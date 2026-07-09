@@ -14,12 +14,18 @@ export default memo(function SynthRendererMainPanel({
 	setMainPanelMode,
 }: SynthRendererMainPanelProps) {
 	return (
-		<main className="@container/phase flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-2xl [container-type:size]">
+		<main
+			data-auv3-passive-surface
+			className="@container/phase flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-2xl [container-type:size]"
+		>
 			<SynthRendererTopBar
 				mainPanelMode={mainPanelMode}
 				setMainPanelMode={setMainPanelMode}
 			/>
-			<div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+			<div
+				data-auv3-passive-surface
+				className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
+			>
 				<PhaseLinesSection className="main-panel-fill absolute inset-0" />
 				<SynthRendererDrawer />
 			</div>

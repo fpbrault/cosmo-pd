@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import {
+	hasGestureExceededSlop,
+	isAuv3HostedRuntime,
+	isMostlyVerticalGesture,
+} from "@/lib/ui/hostedGesture";
 import type { StepEnvelopeVoiceMarker } from "./stepEnvelopeGeometry";
 import {
 	buildEnvelopePoints,
@@ -12,6 +17,15 @@ import {
 } from "./stepEnvelopeGeometry";
 
 const HOVER_RADIUS_PX = 22;
+
+type EnvelopeDragState = {
+	pointerId: number;
+	stepIndex: number;
+	startClientX: number;
+	startClientY: number;
+	startLevel: number;
+	startRate: number;
+};
 
 type UseStepEnvelopeCanvasInteractionOptions = {
 	env: StepEnvData;
@@ -26,14 +40,8 @@ export function useStepEnvelopeCanvasInteraction({
 	onCommitEnvelope,
 }: UseStepEnvelopeCanvasInteractionOptions) {
 	const [hoverStep, setHoverStep] = useState<number | null>(null);
-	const [dragState, setDragState] = useState<{
-		pointerId: number;
-		stepIndex: number;
-		startClientX: number;
-		startClientY: number;
-		startLevel: number;
-		startRate: number;
-	} | null>(null);
+	const [dragState, setDragState] = useState<EnvelopeDragState | null>(null);
+	const pendingHostedTouchRef = useRef<EnvelopeDragState | null>(null);
 
 	const dragStateRef = useRef(dragState);
 	dragStateRef.current = dragState;
@@ -151,6 +159,31 @@ export function useStepEnvelopeCanvasInteraction({
 		[canvasRef, getRelativePointerPosition, normalizedEnv],
 	);
 
+	const activateDrag = useCallback(
+		(canvas: HTMLCanvasElement, nextDragState: EnvelopeDragState) => {
+			canvas.setPointerCapture(nextDragState.pointerId);
+			setHoverStep(nextDragState.stepIndex);
+			setDragState(nextDragState);
+			dragStateRef.current = nextDragState;
+			pendingHostedTouchRef.current = null;
+
+			cleanupDragRef.current?.();
+			const onWindowPointerEnd = (nativeEvent: PointerEvent) => {
+				endDrag(nativeEvent.pointerId);
+				window.removeEventListener("pointerup", onWindowPointerEnd);
+				window.removeEventListener("pointercancel", onWindowPointerEnd);
+				cleanupDragRef.current = null;
+			};
+			window.addEventListener("pointerup", onWindowPointerEnd);
+			window.addEventListener("pointercancel", onWindowPointerEnd);
+			cleanupDragRef.current = () => {
+				window.removeEventListener("pointerup", onWindowPointerEnd);
+				window.removeEventListener("pointercancel", onWindowPointerEnd);
+			};
+		},
+		[endDrag],
+	);
+
 	const handleCanvasPointerDown = useCallback(
 		(e: React.PointerEvent<HTMLCanvasElement>) => {
 			const canvas = canvasRef.current;
@@ -161,9 +194,6 @@ export function useStepEnvelopeCanvasInteraction({
 			const step = steps[closest.stepIndex];
 			if (!step) return;
 
-			canvas.setPointerCapture(e.pointerId);
-			setHoverStep(closest.stepIndex);
-
 			const newDragState = {
 				pointerId: e.pointerId,
 				stepIndex: closest.stepIndex,
@@ -172,30 +202,33 @@ export function useStepEnvelopeCanvasInteraction({
 				startLevel: step.level ?? 0,
 				startRate: step.rate ?? 0,
 			};
-			setDragState(newDragState);
-			dragStateRef.current = newDragState;
-
-			cleanupDragRef.current?.();
-
-			const onWindowPointerEnd = (nativeEvent: PointerEvent) => {
-				endDrag(nativeEvent.pointerId);
-				window.removeEventListener("pointerup", onWindowPointerEnd);
-				window.removeEventListener("pointercancel", onWindowPointerEnd);
-				cleanupDragRef.current = null;
-			};
-
-			window.addEventListener("pointerup", onWindowPointerEnd);
-			window.addEventListener("pointercancel", onWindowPointerEnd);
-			cleanupDragRef.current = () => {
-				window.removeEventListener("pointerup", onWindowPointerEnd);
-				window.removeEventListener("pointercancel", onWindowPointerEnd);
-			};
+			if (e.pointerType === "touch" && isAuv3HostedRuntime()) {
+				pendingHostedTouchRef.current = newDragState;
+				setHoverStep(closest.stepIndex);
+				return;
+			}
+			activateDrag(canvas, newDragState);
 		},
-		[canvasRef, endDrag, getClosestStepAtPointer, steps],
+		[activateDrag, canvasRef, getClosestStepAtPointer, steps],
 	);
 
 	const handleCanvasPointerMove = useCallback(
 		(e: React.PointerEvent<HTMLCanvasElement>) => {
+			const pendingTouch = pendingHostedTouchRef.current;
+			if (pendingTouch?.pointerId === e.pointerId) {
+				const deltaX = e.clientX - pendingTouch.startClientX;
+				const deltaY = e.clientY - pendingTouch.startClientY;
+				if (!hasGestureExceededSlop(deltaX, deltaY)) return;
+				if (isMostlyVerticalGesture(deltaX, deltaY)) {
+					pendingHostedTouchRef.current = null;
+					setHoverStep(null);
+					return;
+				}
+				const canvas = canvasRef.current;
+				if (!canvas) return;
+				activateDrag(canvas, pendingTouch);
+			}
+
 			const currentDrag = dragStateRef.current;
 			if (currentDrag && currentDrag.pointerId === e.pointerId) {
 				const pos = getRelativePointerPosition(e.clientX, e.clientY);
@@ -242,6 +275,7 @@ export function useStepEnvelopeCanvasInteraction({
 			}
 		},
 		[
+			activateDrag,
 			activeStepCount,
 			canvasRef,
 			getClosestStepAtPointer,
@@ -254,6 +288,9 @@ export function useStepEnvelopeCanvasInteraction({
 
 	const handleCanvasPointerUp = useCallback(
 		(e: React.PointerEvent<HTMLCanvasElement>) => {
+			if (pendingHostedTouchRef.current?.pointerId === e.pointerId) {
+				pendingHostedTouchRef.current = null;
+			}
 			endDrag(e.pointerId);
 		},
 		[endDrag],

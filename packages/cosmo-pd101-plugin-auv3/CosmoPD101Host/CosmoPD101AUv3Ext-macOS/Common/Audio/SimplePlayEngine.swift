@@ -118,6 +118,9 @@ extension AVAudioUnit {
     
 	fileprivate func loadAudioUnitViewController() async -> ViewController? {
 		NSLog("[SPE] loadAudioUnitViewController: requesting VC...")
+		var standaloneState = auAudioUnit.fullStateForDocument ?? [:]
+		standaloneState["CosmoStandaloneHostPresentation"] = true
+		auAudioUnit.fullStateForDocument = standaloneState
         let viewController = await withTaskGroup(of: ViewController?.self) { group in
             group.addTask {
                 let vc = await self.auAudioUnit.requestViewController()

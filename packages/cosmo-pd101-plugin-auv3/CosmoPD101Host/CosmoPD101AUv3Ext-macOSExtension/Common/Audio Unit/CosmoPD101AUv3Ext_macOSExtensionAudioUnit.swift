@@ -8,6 +8,7 @@ private let czAULog = OSLog(subsystem: "com.cosmo.pd101.auv3", category: "CzAU")
 
 public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unchecked Sendable {
 	static let maxSupportedFrameCount = 1024
+	static let standaloneHostPresentationStateKey = "CosmoStandaloneHostPresentation"
 
 	private let outputBus: AUAudioUnitBus
 	private var outputBusArrayStorage: AUAudioUnitBusArray!
@@ -23,6 +24,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	private var pendingFactoryPresetIndex: Int?
 	private var selectedFactoryPreset: AUAudioUnitPreset?
 	private var savedStateJson: String?
+	private(set) var isStandaloneHostPresentation = false
 	private lazy var availableFactoryPresets: [AUAudioUnitPreset] = buildFactoryPresets()
 	/// Called on the main thread when engine state changes from the native side (preset load, state restore).
 	/// The ViewController sets this to push params and optional preset metadata to the WebView.
@@ -93,6 +95,9 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	public override var fullStateForDocument: [String: Any]? {
 		get {
 			var state = super.fullStateForDocument ?? [:]
+			if isStandaloneHostPresentation {
+				state[Self.standaloneHostPresentationStateKey] = true
+			}
 			if let json = paramsJson() ?? savedStateJson {
 				state["CzParamsJson"] = json
 			}
@@ -100,6 +105,8 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		}
 		set {
 			super.fullStateForDocument = newValue
+			isStandaloneHostPresentation =
+				newValue?[Self.standaloneHostPresentationStateKey] as? Bool ?? false
 			if let json = newValue?["CzParamsJson"] as? String {
 				if hasAllocatedEngine {
 					os_log(.default, log: czAULog, "[CzAU] fullStateForDocument set: applying json len=%d", json.count)

@@ -298,7 +298,7 @@ describe("AUv3 bridge contract", () => {
 		const sessionSource = readText(xcodeWebEditorSessionPath);
 
 		expect(controllerSource).toContain(
-			'@objc public var cosmoAuv3FitMode: String = "fit-bounds"',
+			'@objc public var cosmoAuv3FitMode: String = "fit-width"',
 		);
 		expect(controllerSource).toContain(
 			'@objc public var cosmoAuv3RuntimeMode: String = "auv3-hosted"',
@@ -310,6 +310,7 @@ describe("AUv3 bridge contract", () => {
 
 	it("marks the containing standalone app as standalone before embedding the AU view", () => {
 		const hostAppSource = readText(xcodeViewControllerRepresentablePath);
+		const controllerSource = readText(xcodeControllerPath);
 		const simplePlayEngineSource = readText(
 			path.join(
 				packageRoot,
@@ -328,6 +329,12 @@ describe("AUv3 bridge contract", () => {
 		);
 		expect(simplePlayEngineSource).toContain(
 			"configureStandaloneAuv3ViewController(viewController)",
+		);
+		expect(simplePlayEngineSource).toContain(
+			'standaloneState["CosmoStandaloneHostPresentation"] = true',
+		);
+		expect(controllerSource).toContain(
+			"cosmoAudioUnit.isStandaloneHostPresentation",
 		);
 	});
 
