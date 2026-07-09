@@ -12,6 +12,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	private let outputBus: AUAudioUnitBus
 	private var outputBusArrayStorage: AUAudioUnitBusArray!
 	private var inputBusArrayStorage: AUAudioUnitBusArray!
+	private let engineLock = NSLock()
 	private var engine: CosmoPd101FfiEngineRef?
 	private var maxFrames: Int = 1024
 	private var voiceLimit: Int = 8
@@ -73,7 +74,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 				let normalized = availableFactoryPresets.first(where: { $0.number == preset.number }) ?? preset
 				selectedFactoryPreset = normalized
 				super.currentPreset = normalized
-				if engine != nil {
+				if hasAllocatedEngine {
 					if !applyFactoryPreset(index: index) {
 						os_log(.error, log: czAULog, "[CzAU] currentPreset set failed: index=%d", index)
 					}
@@ -100,7 +101,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		set {
 			super.fullStateForDocument = newValue
 			if let json = newValue?["CzParamsJson"] as? String {
-				if engine != nil {
+				if hasAllocatedEngine {
 					os_log(.default, log: czAULog, "[CzAU] fullStateForDocument set: applying json len=%d", json.count)
 					_ = setParamsJson(json, notifyWebView: true, isRaw: true)
 				} else {
@@ -145,17 +146,28 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		if let token = parameterObserverToken {
 			internalParameterTree?.removeParameterObserver(token)
 		}
-		cosmo_pd101_ffi_engine_destroy(engine)
+		let engineToDestroy = withEngineLock {
+			let engineToDestroy = engine
+			engine = nil
+			return engineToDestroy
+		}
+		cosmo_pd101_ffi_engine_destroy(engineToDestroy)
 	}
 
 	public override func allocateRenderResources() throws {
 		try super.allocateRenderResources()
 		maxFrames = max(Int(maximumFramesToRender), Self.maxSupportedFrameCount)
 		let sampleRate = Float(outputBus.format.sampleRate)
-		engine = cosmo_pd101_ffi_engine_create(sampleRate, maxFrames)
-		guard engine != nil else {
+		let createdEngine = cosmo_pd101_ffi_engine_create(sampleRate, maxFrames)
+		guard createdEngine != nil else {
 			throw NSError(domain: NSOSStatusErrorDomain, code: Int(kAudioUnitErr_FailedInitialization))
 		}
+		let oldEngine = withEngineLock {
+			let oldEngine = engine
+			engine = createdEngine
+			return oldEngine
+		}
+		cosmo_pd101_ffi_engine_destroy(oldEngine)
 		os_log(.default, log: czAULog, "[CzAU] allocateRenderResources: engine created sr=%.0f frames=%d pending=%@", sampleRate, maxFrames, pendingParamsJson != nil ? "yes" : "no")
 		_ = applyVoiceLimit(reason: "allocateRenderResources")
 		if let pending = pendingParamsJson {
@@ -176,28 +188,40 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public func setMidiChannel(_ channel: Int) {
 		let nextChannel = max(0, min(channel, 16))
-		guard nextChannel != midiChannel else { return }
-		if engine != nil {
+		guard nextChannel != withEngineLock({ midiChannel }) else { return }
+		withRetainedEngine { engine in
 			_ = cosmo_pd101_ffi_all_notes_off(engine)
 		}
-		midiChannel = nextChannel
+		withEngineLock {
+			midiChannel = nextChannel
+		}
 	}
 
 	public override func deallocateRenderResources() {
-		savedStateJson = paramsJson()
-		cosmo_pd101_ffi_engine_destroy(engine)
-		engine = nil
+		let engineToDestroy = withEngineLock {
+			let engineToDestroy = engine
+			engine = nil
+			return engineToDestroy
+		}
+		if let engineToDestroy {
+			savedStateJson = paramsJsonLocked(engineToDestroy)
+		}
+		cosmo_pd101_ffi_engine_destroy(engineToDestroy)
 		super.deallocateRenderResources()
 	}
 
 	public override func reset() {
-		_ = cosmo_pd101_ffi_reset_audio_state(engine)
+		withRetainedEngine { engine in
+			_ = cosmo_pd101_ffi_reset_audio_state(engine)
+		}
 	}
 
 	@discardableResult
 	public func setVoiceLimit(_ limit: Int) -> Bool {
-		voiceLimit = limit
-		guard engine != nil else {
+		withEngineLock {
+			voiceLimit = limit
+		}
+		guard hasAllocatedEngine else {
 			os_log(
 				.default,
 				log: czAULog,
@@ -210,15 +234,18 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	private func applyVoiceLimit(reason: String) -> Bool {
-		let status = cosmo_pd101_ffi_set_voice_limit(engine, voiceLimit)
+		let requestedLimit = withEngineLock { voiceLimit }
+		let status = withRetainedEngine { engine in
+			cosmo_pd101_ffi_set_voice_limit(engine, requestedLimit)
+		} ?? CosmoPd101FfiStatus.nullPointer.rawValue
 		let didApply = status == CosmoPd101FfiStatus.ok.rawValue
 		os_log(
 			.default,
 			log: czAULog,
 			"[CzAU] voice limit apply reason=%{public}@ requested=%d engine=%{public}@ status=%d",
 			reason,
-			voiceLimit,
-			engine != nil ? "ok" : "NIL",
+			requestedLimit,
+			hasAllocatedEngine ? "ok" : "NIL",
 			status
 		)
 		return didApply
@@ -226,12 +253,9 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public override var internalRenderBlock: AUInternalRenderBlock {
 		{ [weak self] _, _, frameCount, _, outputData, realtimeEventListHead, _ in
-			guard let self, let engine = self.engine else {
+			guard let self else {
 				return kAudioUnitErr_Uninitialized
 			}
-
-			self.consumeEvents(realtimeEventListHead)
-
 			let buffers = UnsafeMutableAudioBufferListPointer(outputData)
 			guard buffers.count >= 2,
 				let leftData = buffers[0].mData,
@@ -242,82 +266,150 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 			let frames = Int(frameCount)
 			let left = leftData.bindMemory(to: Float.self, capacity: frames)
 			let right = rightData.bindMemory(to: Float.self, capacity: frames)
+			guard self.engineLock.try() else {
+				self.clearOutput(left: left, right: right, frames: frames)
+				return noErr
+			}
+			guard let engine = self.engine else {
+				self.engineLock.unlock()
+				self.clearOutput(left: left, right: right, frames: frames)
+				return noErr
+			}
+			cosmo_pd101_ffi_engine_retain(engine)
+			self.engineLock.unlock()
+			defer { cosmo_pd101_ffi_engine_destroy(engine) }
+
+			self.consumeEvents(realtimeEventListHead, engine: engine)
+
 			let status = cosmo_pd101_ffi_render_stereo(engine, left, right, frames)
 			return status == CosmoPd101FfiStatus.ok.rawValue ? noErr : kAudioUnitErr_FailedInitialization
 		}
 	}
 
 	public func setParamsJson(_ json: String, notifyWebView: Bool = false, selectedPresetName: String? = nil, isRaw: Bool = false) -> Bool {
-		os_log(.default, log: czAULog, "[CzAU] setParamsJson: engine=%@ len=%d notify=%@ isRaw=%@", engine != nil ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no", isRaw ? "yes" : "no")
-		let didSet = json.withCString { pointer in
-			let status: Int32
-			if isRaw {
-				status = cosmo_pd101_ffi_set_params_json_raw(engine, pointer)
-			} else {
-				status = cosmo_pd101_ffi_set_params_json(engine, pointer)
+		os_log(.default, log: czAULog, "[CzAU] setParamsJson: engine=%@ len=%d notify=%@ isRaw=%@", hasAllocatedEngine ? "ok" : "NIL", json.count, notifyWebView ? "yes" : "no", isRaw ? "yes" : "no")
+		let didSet = withRetainedEngine { engine in
+			let didSet = json.withCString { pointer in
+				let status: Int32
+				if isRaw {
+					status = cosmo_pd101_ffi_set_params_json_raw(engine, pointer)
+				} else {
+					status = cosmo_pd101_ffi_set_params_json(engine, pointer)
+				}
+				return status == CosmoPd101FfiStatus.ok.rawValue
 			}
-			return status == CosmoPd101FfiStatus.ok.rawValue
-		}
+			if didSet {
+				syncParameterTreeFromEngineLocked(engine)
+			}
+			return didSet
+		} ?? false
 		os_log(.default, log: czAULog, "[CzAU] setParamsJson: didSet=%@", didSet ? "true" : "false")
 		guard didSet else { return false }
-		syncParameterTreeFromEngine()
 		if notifyWebView {
 			paramsChangedHandler?(json, selectedPresetName)
 		}
 		return true
 	}
 
-	private func ffiString(call: (UnsafeMutablePointer<UInt8>?, Int) -> Int) -> String? {
-		let required = call(nil, 0)
+	private var hasAllocatedEngine: Bool {
+		withEngineLock { engine != nil }
+	}
+
+	private func withEngineLock<T>(_ body: () -> T) -> T {
+		engineLock.lock()
+		defer { engineLock.unlock() }
+		return body()
+	}
+
+	@discardableResult
+	private func withRetainedEngine<T>(_ body: (CosmoPd101FfiEngineRef) -> T) -> T? {
+		guard let retainedEngine = withEngineLock({ () -> CosmoPd101FfiEngineRef? in
+			guard let engine else { return nil }
+			cosmo_pd101_ffi_engine_retain(engine)
+			return engine
+		}) else {
+			return nil
+		}
+		defer { cosmo_pd101_ffi_engine_destroy(retainedEngine) }
+		return body(retainedEngine)
+	}
+
+	private func clearOutput(left: UnsafeMutablePointer<Float>, right: UnsafeMutablePointer<Float>, frames: Int) {
+		for index in 0..<frames {
+			left[index] = 0
+			right[index] = 0
+		}
+	}
+
+	private func ffiString(engine: CosmoPd101FfiEngineRef, call: (CosmoPd101FfiEngineRef, UnsafeMutablePointer<UInt8>?, Int) -> Int) -> String? {
+		let required = call(engine, nil, 0)
 		guard required > 0 else { return nil }
 		var bytes = [UInt8](repeating: 0, count: required)
 		let written = bytes.withUnsafeMutableBufferPointer { buffer in
-			call(buffer.baseAddress, buffer.count)
+			call(engine, buffer.baseAddress, buffer.count)
 		}
 		guard written == required else { return nil }
 		return String(bytes: bytes, encoding: .utf8)
 	}
 
+	private func paramsJsonLocked(_ engine: CosmoPd101FfiEngineRef) -> String? {
+		ffiString(engine: engine, call: cosmo_pd101_ffi_get_params_json)
+	}
+
 	public func paramsJson() -> String? {
-		ffiString(call: { cosmo_pd101_ffi_get_params_json(engine, $0, $1) })
+		withRetainedEngine { engine in
+			paramsJsonLocked(engine)
+		} ?? nil
 	}
 
 	public func runtimeVoiceStatesJson() -> String? {
-		ffiString(call: { cosmo_pd101_ffi_get_runtime_voice_states_json(engine, $0, $1) })
+		withRetainedEngine { engine in
+			ffiString(engine: engine, call: cosmo_pd101_ffi_get_runtime_voice_states_json)
+		} ?? nil
 	}
 
 	public func runtimeModSourcesJson() -> String? {
-		ffiString(call: { cosmo_pd101_ffi_get_runtime_mod_sources_json(engine, $0, $1) })
+		withRetainedEngine { engine in
+			ffiString(engine: engine, call: cosmo_pd101_ffi_get_runtime_mod_sources_json)
+		} ?? nil
 	}
 
 	public func scopeData() -> (samples: [Float], sampleRate: Float, hz: Float) {
-		let required = cosmo_pd101_ffi_copy_scope_f32(engine, nil, 0, nil, nil)
-		guard required > 0 else { return ([], Float(outputBus.format.sampleRate), 0) }
-		#if os(iOS)
-		let maxScopeSamples = 512
-		#else
-		let maxScopeSamples = 1024
-		#endif
-		var samples = [Float](repeating: 0, count: required)
-		var sampleRate: Float = 0
-		var hz: Float = 0
-		let copied = samples.withUnsafeMutableBufferPointer { buffer in
-			cosmo_pd101_ffi_copy_scope_f32(engine, buffer.baseAddress, buffer.count, &sampleRate, &hz)
-		}
-		if copied < samples.count {
-			samples.removeSubrange(copied..<samples.count)
-		}
-		if samples.count > maxScopeSamples {
-			samples = Array(samples.suffix(maxScopeSamples))
-		}
-		for index in samples.indices {
-			let sample = samples[index]
-			samples[index] = sample.isFinite ? min(1, max(-1, sample)) : 0
-		}
-		return (samples, sampleRate, hz)
+		withRetainedEngine { engine in
+			let required = cosmo_pd101_ffi_copy_scope_f32(engine, nil, 0, nil, nil)
+			guard required > 0 else { return ([], Float(outputBus.format.sampleRate), 0) }
+			#if os(iOS)
+			let maxScopeSamples = 512
+			#else
+			let maxScopeSamples = 1024
+			#endif
+			var samples = [Float](repeating: 0, count: required)
+			var sampleRate: Float = 0
+			var hz: Float = 0
+			let copied = samples.withUnsafeMutableBufferPointer { buffer in
+				cosmo_pd101_ffi_copy_scope_f32(engine, buffer.baseAddress, buffer.count, &sampleRate, &hz)
+			}
+			if copied < samples.count {
+				samples.removeSubrange(copied..<samples.count)
+			}
+			if samples.count > maxScopeSamples {
+				samples = Array(samples.suffix(maxScopeSamples))
+			}
+			for index in samples.indices {
+				let sample = samples[index]
+				samples[index] = sample.isFinite ? min(1, max(-1, sample)) : 0
+			}
+			return (samples, sampleRate, hz)
+		} ?? ([], Float(outputBus.format.sampleRate), 0)
 	}
 
 	public func handleEngineEvent(type: String, payload: [String: Any]) {
+		withRetainedEngine { engine in
+			handleEngineEvent(type: type, payload: payload, engine: engine)
+		}
+	}
+
+	private func handleEngineEvent(type: String, payload: [String: Any], engine: CosmoPd101FfiEngineRef) {
 		switch type {
 		case "noteOn":
 			let note = UInt8(clamping: payload["note"] as? Int ?? 60)
@@ -365,11 +457,25 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	private func factoryPresetName(index: Int) -> String? {
-		ffiString(call: { cosmo_pd101_ffi_get_factory_preset_name(index, $0, $1) })
+		let required = cosmo_pd101_ffi_get_factory_preset_name(index, nil, 0)
+		guard required > 0 else { return nil }
+		var bytes = [UInt8](repeating: 0, count: required)
+		let written = bytes.withUnsafeMutableBufferPointer { buffer in
+			cosmo_pd101_ffi_get_factory_preset_name(index, buffer.baseAddress, buffer.count)
+		}
+		guard written == required else { return nil }
+		return String(bytes: bytes, encoding: .utf8)
 	}
 
 	private func factoryPresetParamsJson(index: Int) -> String? {
-		ffiString(call: { cosmo_pd101_ffi_get_factory_preset_params_json(index, $0, $1) })
+		let required = cosmo_pd101_ffi_get_factory_preset_params_json(index, nil, 0)
+		guard required > 0 else { return nil }
+		var bytes = [UInt8](repeating: 0, count: required)
+		let written = bytes.withUnsafeMutableBufferPointer { buffer in
+			cosmo_pd101_ffi_get_factory_preset_params_json(index, buffer.baseAddress, buffer.count)
+		}
+		guard written == required else { return nil }
+		return String(bytes: bytes, encoding: .utf8)
 	}
 
 	private func applyFactoryPreset(index: Int) -> Bool {
@@ -402,10 +508,12 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 	}
 
 	private func setParameter(address: AUParameterAddress, value: AUValue) {
-		_ = cosmo_pd101_ffi_set_parameter_value(engine, UInt32(address), Float(value))
+		withRetainedEngine { engine in
+			_ = cosmo_pd101_ffi_set_parameter_value(engine, UInt32(address), Float(value))
+		}
 	}
 
-	private func syncParameterTreeFromEngine() {
+	private func syncParameterTreeFromEngineLocked(_ engine: CosmoPd101FfiEngineRef) {
 		for parameter in internalParameterTree?.allParameters ?? [] {
 			var value: Float = parameter.value
 			let status = cosmo_pd101_ffi_get_parameter_value(engine, UInt32(parameter.address), &value)
@@ -416,14 +524,14 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		}
 	}
 
-	private func consumeEvents(_ eventList: UnsafePointer<AURenderEvent>?) {
+	private func consumeEvents(_ eventList: UnsafePointer<AURenderEvent>?, engine: CosmoPd101FfiEngineRef) {
 		var current = eventList
 		while let event = current {
 			switch renderEventType(event) {
 			case 8:
-				consumeLegacyMidiEvent(event)
+				consumeLegacyMidiEvent(event, engine: engine)
 			case 10:
-				consumeMidiEventList(event)
+				consumeMidiEventList(event, engine: engine)
 			default:
 				break
 			}
@@ -435,18 +543,19 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		event.pointee.head.eventType.rawValue
 	}
 
-	private func consumeLegacyMidiEvent(_ event: UnsafePointer<AURenderEvent>) {
+	private func consumeLegacyMidiEvent(_ event: UnsafePointer<AURenderEvent>, engine: CosmoPd101FfiEngineRef) {
 		let midiEvent = event.pointee.MIDI
 		let length = min(Int(midiEvent.length), 3)
 		guard length >= 1 else { return }
 		handleMidi(
 			status: midiEvent.data.0,
 			data1: length >= 2 ? midiEvent.data.1 : 0,
-			data2: length >= 3 ? midiEvent.data.2 : 0
+			data2: length >= 3 ? midiEvent.data.2 : 0,
+			engine: engine
 		)
 	}
 
-	private func consumeMidiEventList(_ event: UnsafePointer<AURenderEvent>) {
+	private func consumeMidiEventList(_ event: UnsafePointer<AURenderEvent>, engine: CosmoPd101FfiEngineRef) {
 		let eventListOffset = MemoryLayout<AUMIDIEventList>.offset(of: \AUMIDIEventList.eventList) ?? 20
 		let packetOffset = MemoryLayout<MIDIEventList>.offset(of: \MIDIEventList.packet) ?? 8
 		let eventListPointer = UnsafeRawPointer(event)
@@ -464,14 +573,14 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 			withUnsafePointer(to: packet.words) { wordsPointer in
 				let words = UnsafeRawPointer(wordsPointer).assumingMemoryBound(to: UInt32.self)
 				for wordIndex in 0..<wordCount {
-					handleUniversalMidiPacket(words[wordIndex])
+					handleUniversalMidiPacket(words[wordIndex], engine: engine)
 				}
 			}
 			packetPointer = MIDIEventPacketNext(packetPointer)
 		}
 	}
 
-	private func handleUniversalMidiPacket(_ word: UInt32) {
+	private func handleUniversalMidiPacket(_ word: UInt32, engine: CosmoPd101FfiEngineRef) {
 		let messageType = (word >> 28) & 0xF
 		guard messageType == 0x2 else {
 			return
@@ -480,10 +589,10 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		let status = UInt8((word >> 16) & 0xFF)
 		let data1 = UInt8((word >> 8) & 0x7F)
 		let data2 = UInt8(word & 0x7F)
-		handleMidi(status: status, data1: data1, data2: data2)
+		handleMidi(status: status, data1: data1, data2: data2, engine: engine)
 	}
 
-	private func handleMidi(status: UInt8, data1: UInt8, data2: UInt8) {
+	private func handleMidi(status: UInt8, data1: UInt8, data2: UInt8, engine: CosmoPd101FfiEngineRef) {
 		let message = status & 0xF0
 		let channel = Int(status & 0x0F) + 1
 		if midiChannel != 0 && channel != midiChannel {
@@ -500,7 +609,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 				_ = cosmo_pd101_ffi_note_on(engine, data1, 0, velocity)
 			}
 		case 0xB0:
-			handleControlChange(cc: data1, value: data2)
+			handleControlChange(cc: data1, value: data2, engine: engine)
 		case 0xD0:
 			_ = cosmo_pd101_ffi_set_aftertouch(engine, Float(data1) / 127.0)
 		case 0xA0:
@@ -514,7 +623,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		}
 	}
 
-	private func handleControlChange(cc: UInt8, value: UInt8) {
+	private func handleControlChange(cc: UInt8, value: UInt8, engine: CosmoPd101FfiEngineRef) {
 		let normalized = Float(value) / 127.0
 		switch cc {
 		case 1:

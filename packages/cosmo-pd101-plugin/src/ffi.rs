@@ -1,14 +1,21 @@
+use std::cell::UnsafeCell;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr;
 use std::slice;
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
 
+use cosmo_synth_engine::envelope::{
+    compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human,
+};
 use cosmo_synth_engine::params::{
     EngineParamReadoutFormatV1, SynthParams, engine_param_default_v1, engine_param_ui_meta_v1,
     set_parameter_value_by_key,
 };
+use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
+use crossbeam_queue::ArrayQueue;
 
 use crate::preset_library::PresetLibraryEntry;
 
@@ -16,6 +23,7 @@ const SCOPE_CAPACITY: usize = 4096;
 const PARAM_KEY_CAPACITY: usize = 64;
 const PARAM_LABEL_CAPACITY: usize = 64;
 const PARAM_FLAG_AUTOMATABLE: u32 = 1 << 0;
+const COMMAND_QUEUE_CAPACITY: usize = 1024;
 const FACTORY_PRESETS_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
 
 struct FactoryPresetEntry {
@@ -290,10 +298,13 @@ pub enum CosmoPd101FfiStatus {
     InvalidArgument = 2,
     BufferTooSmall = 3,
     JsonError = 4,
+    QueueFull = 5,
+    ConcurrentRender = 6,
 }
 
 struct ScopeRing {
     samples: Vec<f32>,
+    len: usize,
     cursor: usize,
     sample_rate: f32,
     hz: f32,
@@ -302,7 +313,8 @@ struct ScopeRing {
 impl ScopeRing {
     fn new(sample_rate: f32) -> Self {
         Self {
-            samples: Vec::with_capacity(SCOPE_CAPACITY),
+            samples: vec![0.0; SCOPE_CAPACITY],
+            len: 0,
             cursor: 0,
             sample_rate,
             hz: 220.0,
@@ -313,8 +325,9 @@ impl ScopeRing {
         self.sample_rate = sample_rate;
         self.hz = hz;
         for &sample in mono {
-            if self.samples.len() < SCOPE_CAPACITY {
-                self.samples.push(sample);
+            if self.len < SCOPE_CAPACITY {
+                self.samples[self.len] = sample;
+                self.len += 1;
             } else {
                 self.samples[self.cursor] = sample;
                 self.cursor = (self.cursor + 1) % SCOPE_CAPACITY;
@@ -323,13 +336,13 @@ impl ScopeRing {
     }
 
     fn copy_linear_i8(&self, output: &mut [i8]) -> Result<usize, CosmoPd101FfiStatus> {
-        let sample_count = self.samples.len();
+        let sample_count = self.len;
         if output.len() < sample_count {
             return Err(CosmoPd101FfiStatus::BufferTooSmall);
         }
 
         if sample_count < SCOPE_CAPACITY {
-            for (dest, sample) in output.iter_mut().zip(self.samples.iter()) {
+            for (dest, sample) in output.iter_mut().zip(self.samples[..self.len].iter()) {
                 *dest = sample_to_i8(*sample);
             }
             return Ok(sample_count);
@@ -346,13 +359,13 @@ impl ScopeRing {
     }
 
     fn copy_linear_f32(&self, output: &mut [f32]) -> Result<usize, CosmoPd101FfiStatus> {
-        let sample_count = self.samples.len();
+        let sample_count = self.len;
         if output.len() < sample_count {
             return Err(CosmoPd101FfiStatus::BufferTooSmall);
         }
 
         if sample_count < SCOPE_CAPACITY {
-            output[..sample_count].copy_from_slice(&self.samples);
+            output[..sample_count].copy_from_slice(&self.samples[..self.len]);
             return Ok(sample_count);
         }
 
@@ -361,17 +374,47 @@ impl ScopeRing {
         tail.copy_from_slice(&self.samples[..self.cursor]);
         Ok(sample_count)
     }
+
+    fn copy_from(&mut self, source: &Self) {
+        self.samples.copy_from_slice(&source.samples);
+        self.len = source.len;
+        self.cursor = source.cursor;
+        self.sample_rate = source.sample_rate;
+        self.hz = source.hz;
+    }
 }
 
-pub struct CosmoPd101FfiEngine {
+enum EngineCommand {
+    ResetAudioState,
+    SetVoiceLimit(usize),
+    SetParams(Arc<SynthParams>),
+    NoteOn {
+        note: u8,
+        frequency: f32,
+        velocity: f32,
+    },
+    NoteOff(u8),
+    AllNotesOff,
+    SetSustain(bool),
+    SetPitchBend(f32),
+    SetModWheel(f32),
+    SetAftertouch(f32),
+    SetPolyAftertouch {
+        note: u8,
+        value: f32,
+    },
+}
+
+struct FfiAudioState {
     processor: CosmoProcessor,
     scratch: Vec<f32>,
     max_frames: usize,
     scope: ScopeRing,
     last_scope_hz: f32,
+    voice_snapshot: Vec<RuntimeVoiceDebugState>,
 }
 
-impl CosmoPd101FfiEngine {
+impl FfiAudioState {
     fn new(sample_rate: f32, max_frames: usize) -> Self {
         Self {
             processor: CosmoProcessor::new(sample_rate),
@@ -379,6 +422,7 @@ impl CosmoPd101FfiEngine {
             max_frames,
             scope: ScopeRing::new(sample_rate),
             last_scope_hz: 220.0,
+            voice_snapshot: Vec::with_capacity(cosmo_synth_engine::params::MAX_VOICES),
         }
     }
 
@@ -392,11 +436,51 @@ impl CosmoPd101FfiEngine {
             .unwrap_or(0.0)
     }
 
-    fn render_to_scratch(&mut self, frames: usize) -> CosmoPd101FfiStatus {
+    fn apply_command(&mut self, command: EngineCommand, retired: &ArrayQueue<Arc<SynthParams>>) {
+        match command {
+            EngineCommand::ResetAudioState => self.processor.reset_audio_state(),
+            EngineCommand::SetVoiceLimit(limit) => self.processor.set_voice_limit(limit),
+            EngineCommand::SetParams(params) => {
+                let previous = Arc::clone(&self.processor.params);
+                self.processor.set_shared_params(params);
+                if let Err(previous) = retired.push(previous) {
+                    std::mem::forget(previous);
+                }
+            }
+            EngineCommand::NoteOn {
+                note,
+                frequency,
+                velocity,
+            } => self.processor.note_on(note, frequency, velocity),
+            EngineCommand::NoteOff(note) => self.processor.note_off(note),
+            EngineCommand::AllNotesOff => {
+                self.processor.set_sustain(false);
+                for note in 0u8..=127 {
+                    self.processor.note_off(note);
+                }
+            }
+            EngineCommand::SetSustain(on) => self.processor.set_sustain(on),
+            EngineCommand::SetPitchBend(value) => self.processor.set_pitch_bend(value),
+            EngineCommand::SetModWheel(value) => self.processor.set_mod_wheel(value),
+            EngineCommand::SetAftertouch(value) => self.processor.set_aftertouch(value),
+            EngineCommand::SetPolyAftertouch { note, value } => {
+                self.processor.set_poly_aftertouch(note, value);
+            }
+        }
+    }
+
+    fn render_to_scratch(
+        &mut self,
+        engine: &CosmoPd101FfiEngine,
+        frames: usize,
+    ) -> CosmoPd101FfiStatus {
         if frames > self.max_frames {
             return CosmoPd101FfiStatus::InvalidArgument;
         }
 
+        while let Some(command) = engine.commands.pop() {
+            self.apply_command(command, &engine.retired_params);
+        }
         {
             let block = &mut self.scratch[..frames];
             block.fill(0.0);
@@ -411,7 +495,103 @@ impl CosmoPd101FfiEngine {
         };
         self.scope
             .push_block(&self.scratch[..frames], self.processor.sample_rate, hz);
+        if let Ok(mut published_scope) = engine.scope_snapshot.try_lock() {
+            published_scope.copy_from(&self.scope);
+        }
+        if let Ok(mut published_voices) = engine.voice_snapshot.try_lock() {
+            self.processor
+                .write_runtime_voice_debug_state(&mut self.voice_snapshot);
+            published_voices.clear();
+            published_voices.extend_from_slice(&self.voice_snapshot);
+        }
+        if let Ok(mut published_mod_sources) = engine.mod_snapshot.try_lock() {
+            *published_mod_sources = self.processor.runtime_mod_sources();
+        }
         CosmoPd101FfiStatus::Ok
+    }
+}
+
+pub struct CosmoPd101FfiEngine {
+    audio: UnsafeCell<FfiAudioState>,
+    render_active: AtomicBool,
+    commands: ArrayQueue<EngineCommand>,
+    retired_params: ArrayQueue<Arc<SynthParams>>,
+    params: Mutex<Arc<SynthParams>>,
+    scope_snapshot: Mutex<ScopeRing>,
+    voice_snapshot: Mutex<Vec<RuntimeVoiceDebugState>>,
+    mod_snapshot: Mutex<RuntimeModSources>,
+}
+
+// SAFETY: only the render functions dereference `audio`, guarded against
+// concurrent entry by `render_active`. Other threads use queues and snapshots.
+unsafe impl Send for CosmoPd101FfiEngine {}
+unsafe impl Sync for CosmoPd101FfiEngine {}
+
+impl CosmoPd101FfiEngine {
+    fn new(sample_rate: f32, max_frames: usize) -> Self {
+        let params = Arc::new(SynthParams::default());
+        Self {
+            audio: UnsafeCell::new(FfiAudioState::new(sample_rate, max_frames)),
+            render_active: AtomicBool::new(false),
+            commands: ArrayQueue::new(COMMAND_QUEUE_CAPACITY),
+            retired_params: ArrayQueue::new(COMMAND_QUEUE_CAPACITY),
+            params: Mutex::new(params),
+            scope_snapshot: Mutex::new(ScopeRing::new(sample_rate)),
+            voice_snapshot: Mutex::new(Vec::with_capacity(cosmo_synth_engine::params::MAX_VOICES)),
+            mod_snapshot: Mutex::new(RuntimeModSources::default()),
+        }
+    }
+
+    fn drain_retired_params(&self) {
+        while self.retired_params.pop().is_some() {}
+    }
+
+    fn enqueue(&self, command: EngineCommand) -> CosmoPd101FfiStatus {
+        self.drain_retired_params();
+        match self.commands.push(command) {
+            Ok(()) => CosmoPd101FfiStatus::Ok,
+            Err(_) => CosmoPd101FfiStatus::QueueFull,
+        }
+    }
+
+    fn render_mono(&self, frames: usize, output: &mut [f32]) -> CosmoPd101FfiStatus {
+        if self
+            .render_active
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            return CosmoPd101FfiStatus::ConcurrentRender;
+        }
+        let status = unsafe { &mut *self.audio.get() }.render_to_scratch(self, frames);
+        if status == CosmoPd101FfiStatus::Ok {
+            let audio = unsafe { &*self.audio.get() };
+            output.copy_from_slice(&audio.scratch[..frames]);
+        }
+        self.render_active.store(false, Ordering::Release);
+        status
+    }
+
+    fn render_stereo(
+        &self,
+        frames: usize,
+        left: &mut [f32],
+        right: &mut [f32],
+    ) -> CosmoPd101FfiStatus {
+        if self
+            .render_active
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            return CosmoPd101FfiStatus::ConcurrentRender;
+        }
+        let status = unsafe { &mut *self.audio.get() }.render_to_scratch(self, frames);
+        if status == CosmoPd101FfiStatus::Ok {
+            let audio = unsafe { &*self.audio.get() };
+            left.copy_from_slice(&audio.scratch[..frames]);
+            right.copy_from_slice(&audio.scratch[..frames]);
+        }
+        self.render_active.store(false, Ordering::Release);
+        status
     }
 }
 
@@ -514,15 +694,6 @@ pub(crate) fn set_parameter_value(params: &mut SynthParams, key: &str, value: f3
     set_parameter_value_by_key(params, key, value)
 }
 
-fn engine_mut<'a>(
-    engine: *mut CosmoPd101FfiEngine,
-) -> Result<&'a mut CosmoPd101FfiEngine, CosmoPd101FfiStatus> {
-    if engine.is_null() {
-        return Err(CosmoPd101FfiStatus::NullPointer);
-    }
-    Ok(unsafe { &mut *engine })
-}
-
 fn engine_ref<'a>(
     engine: *const CosmoPd101FfiEngine,
 ) -> Result<&'a CosmoPd101FfiEngine, CosmoPd101FfiStatus> {
@@ -544,6 +715,24 @@ unsafe fn output_slice_mut<'a, T>(
     }
 }
 
+fn set_params_snapshot(engine: &CosmoPd101FfiEngine, params: SynthParams) -> CosmoPd101FfiStatus {
+    let params = Arc::new(params);
+    let mut published = engine
+        .params
+        .lock()
+        .unwrap_or_else(|poison| poison.into_inner());
+    engine.drain_retired_params();
+    if engine
+        .commands
+        .push(EngineCommand::SetParams(Arc::clone(&params)))
+        .is_err()
+    {
+        return CosmoPd101FfiStatus::QueueFull;
+    }
+    *published = params;
+    CosmoPd101FfiStatus::Ok
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_engine_create(
     sample_rate: f32,
@@ -553,7 +742,7 @@ pub extern "C" fn cosmo_pd101_ffi_engine_create(
         return ptr::null_mut();
     }
 
-    Box::into_raw(Box::new(CosmoPd101FfiEngine::new(sample_rate, max_frames)))
+    Arc::into_raw(Arc::new(CosmoPd101FfiEngine::new(sample_rate, max_frames))).cast_mut()
 }
 
 /// # Safety
@@ -564,7 +753,19 @@ pub extern "C" fn cosmo_pd101_ffi_engine_create(
 pub unsafe extern "C" fn cosmo_pd101_ffi_engine_destroy(engine: *mut CosmoPd101FfiEngine) {
     unsafe {
         if !engine.is_null() {
-            drop(Box::from_raw(engine));
+            Arc::decrement_strong_count(engine);
+        }
+    }
+}
+
+/// # Safety
+///
+/// `engine` must be a live pointer returned by [`cosmo_pd101_ffi_engine_create`].
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosmo_pd101_ffi_engine_retain(engine: *mut CosmoPd101FfiEngine) {
+    unsafe {
+        if !engine.is_null() {
+            Arc::increment_strong_count(engine);
         }
     }
 }
@@ -573,11 +774,10 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_engine_destroy(engine: *mut CosmoPd101F
 pub extern "C" fn cosmo_pd101_ffi_reset_audio_state(
     engine: *mut CosmoPd101FfiEngine,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.reset_audio_state();
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::ResetAudioState)
 }
 
 #[unsafe(no_mangle)]
@@ -585,11 +785,10 @@ pub extern "C" fn cosmo_pd101_ffi_set_voice_limit(
     engine: *mut CosmoPd101FfiEngine,
     limit: usize,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.set_voice_limit(limit);
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::SetVoiceLimit(limit))
 }
 
 /// # Safety
@@ -603,7 +802,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json(
     json: *const c_char,
 ) -> CosmoPd101FfiStatus {
     unsafe {
-        let Ok(engine) = engine_mut(engine) else {
+        let Ok(engine) = engine_ref(engine) else {
             return CosmoPd101FfiStatus::NullPointer;
         };
         if json.is_null() {
@@ -613,11 +812,11 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json(
         let Ok(json) = CStr::from_ptr(json).to_str() else {
             return CosmoPd101FfiStatus::InvalidArgument;
         };
-        let Ok(params) = serde_json::from_str::<SynthParams>(json) else {
+        let Ok(mut params) = serde_json::from_str::<SynthParams>(json) else {
             return CosmoPd101FfiStatus::JsonError;
         };
-        engine.processor.set_params(params);
-        CosmoPd101FfiStatus::Ok
+        normalize_synth_params_envelopes_to_raw_if_human(&mut params);
+        set_params_snapshot(engine, params)
     }
 }
 
@@ -638,7 +837,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json_raw(
     json: *const c_char,
 ) -> CosmoPd101FfiStatus {
     unsafe {
-        let Ok(engine) = engine_mut(engine) else {
+        let Ok(engine) = engine_ref(engine) else {
             return CosmoPd101FfiStatus::NullPointer;
         };
         if json.is_null() {
@@ -648,11 +847,11 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_set_params_json_raw(
         let Ok(json) = CStr::from_ptr(json).to_str() else {
             return CosmoPd101FfiStatus::InvalidArgument;
         };
-        let Ok(params) = serde_json::from_str::<SynthParams>(json) else {
+        let Ok(mut params) = serde_json::from_str::<SynthParams>(json) else {
             return CosmoPd101FfiStatus::JsonError;
         };
-        engine.processor.set_params_raw(params);
-        CosmoPd101FfiStatus::Ok
+        compute_env_level_norms(&mut params);
+        set_params_snapshot(engine, params)
     }
 }
 
@@ -671,7 +870,12 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_params_json(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
-        let Ok(json) = serde_json::to_string(engine.processor.params.as_ref()) else {
+        engine.drain_retired_params();
+        let params = engine
+            .params
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let Ok(json) = serde_json::to_string(params.as_ref()) else {
             return 0;
         };
         let bytes = json.as_bytes();
@@ -767,7 +971,12 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_voice_states_json(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
-        let Ok(json) = serde_json::to_string(&engine.processor.runtime_voice_debug_state()) else {
+        engine.drain_retired_params();
+        let snapshot = engine
+            .voice_snapshot
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let Ok(json) = serde_json::to_string(&*snapshot) else {
             return 0;
         };
         let bytes = json.as_bytes();
@@ -798,7 +1007,12 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_runtime_mod_sources_json(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
-        let Ok(json) = serde_json::to_string(&engine.processor.runtime_mod_sources()) else {
+        engine.drain_retired_params();
+        let snapshot = engine
+            .mod_snapshot
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let Ok(json) = serde_json::to_string(&*snapshot) else {
             return 0;
         };
         let bytes = json.as_bytes();
@@ -871,7 +1085,12 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_get_parameter_value(
         let Some(spec) = automatable_param_by_id(id) else {
             return CosmoPd101FfiStatus::InvalidArgument;
         };
-        let Some(value) = parameter_value(&engine.processor.params, spec.key) else {
+        engine.drain_retired_params();
+        let params = engine
+            .params
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let Some(value) = parameter_value(params.as_ref(), spec.key) else {
             return CosmoPd101FfiStatus::InvalidArgument;
         };
         *out_value = value;
@@ -885,7 +1104,7 @@ pub extern "C" fn cosmo_pd101_ffi_set_parameter_value(
     id: u32,
     value: f32,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
     let Some(spec) = automatable_param_by_id(id) else {
@@ -895,11 +1114,25 @@ pub extern "C" fn cosmo_pd101_ffi_set_parameter_value(
         return CosmoPd101FfiStatus::InvalidArgument;
     }
 
-    let mut params = (*engine.processor.params).clone();
+    let mut published = engine
+        .params
+        .lock()
+        .unwrap_or_else(|poison| poison.into_inner());
+    let mut params = (**published).clone();
     if !set_parameter_value(&mut params, spec.key, value.clamp(spec.min, spec.max)) {
         return CosmoPd101FfiStatus::InvalidArgument;
     }
-    engine.processor.set_params(params);
+    normalize_synth_params_envelopes_to_raw_if_human(&mut params);
+    let params = Arc::new(params);
+    engine.drain_retired_params();
+    if engine
+        .commands
+        .push(EngineCommand::SetParams(Arc::clone(&params)))
+        .is_err()
+    {
+        return CosmoPd101FfiStatus::QueueFull;
+    }
+    *published = params;
     CosmoPd101FfiStatus::Ok
 }
 
@@ -910,7 +1143,7 @@ pub extern "C" fn cosmo_pd101_ffi_note_on(
     frequency: f32,
     velocity: f32,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
     let frequency = if frequency > 0.0 {
@@ -918,10 +1151,11 @@ pub extern "C" fn cosmo_pd101_ffi_note_on(
     } else {
         midi_note_to_freq(note)
     };
-    engine
-        .processor
-        .note_on(note, frequency, velocity.clamp(0.0, 1.0));
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::NoteOn {
+        note,
+        frequency,
+        velocity: velocity.clamp(0.0, 1.0),
+    })
 }
 
 #[unsafe(no_mangle)]
@@ -929,25 +1163,20 @@ pub extern "C" fn cosmo_pd101_ffi_note_off(
     engine: *mut CosmoPd101FfiEngine,
     note: u8,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.note_off(note);
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::NoteOff(note))
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn cosmo_pd101_ffi_all_notes_off(
     engine: *mut CosmoPd101FfiEngine,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.set_sustain(false);
-    for note in 0u8..=127u8 {
-        engine.processor.note_off(note);
-    }
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::AllNotesOff)
 }
 
 #[unsafe(no_mangle)]
@@ -955,11 +1184,10 @@ pub extern "C" fn cosmo_pd101_ffi_set_sustain(
     engine: *mut CosmoPd101FfiEngine,
     on: bool,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.set_sustain(on);
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::SetSustain(on))
 }
 
 #[unsafe(no_mangle)]
@@ -967,11 +1195,10 @@ pub extern "C" fn cosmo_pd101_ffi_set_pitch_bend(
     engine: *mut CosmoPd101FfiEngine,
     value: f32,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.set_pitch_bend(value.clamp(-1.0, 1.0));
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::SetPitchBend(value.clamp(-1.0, 1.0)))
 }
 
 #[unsafe(no_mangle)]
@@ -979,11 +1206,10 @@ pub extern "C" fn cosmo_pd101_ffi_set_mod_wheel(
     engine: *mut CosmoPd101FfiEngine,
     value: f32,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.set_mod_wheel(value.clamp(0.0, 1.0));
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::SetModWheel(value.clamp(0.0, 1.0)))
 }
 
 #[unsafe(no_mangle)]
@@ -991,11 +1217,10 @@ pub extern "C" fn cosmo_pd101_ffi_set_aftertouch(
     engine: *mut CosmoPd101FfiEngine,
     value: f32,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine.processor.set_aftertouch(value.clamp(0.0, 1.0));
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::SetAftertouch(value.clamp(0.0, 1.0)))
 }
 
 #[unsafe(no_mangle)]
@@ -1004,13 +1229,13 @@ pub extern "C" fn cosmo_pd101_ffi_set_poly_aftertouch(
     note: u8,
     value: f32,
 ) -> CosmoPd101FfiStatus {
-    let Ok(engine) = engine_mut(engine) else {
+    let Ok(engine) = engine_ref(engine) else {
         return CosmoPd101FfiStatus::NullPointer;
     };
-    engine
-        .processor
-        .set_poly_aftertouch(note, value.clamp(0.0, 1.0));
-    CosmoPd101FfiStatus::Ok
+    engine.enqueue(EngineCommand::SetPolyAftertouch {
+        note,
+        value: value.clamp(0.0, 1.0),
+    })
 }
 
 /// # Safety
@@ -1025,18 +1250,13 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_mono(
     frames: usize,
 ) -> CosmoPd101FfiStatus {
     unsafe {
-        let Ok(engine) = engine_mut(engine) else {
+        let Ok(engine) = engine_ref(engine) else {
             return CosmoPd101FfiStatus::NullPointer;
         };
         let Ok(output) = output_slice_mut(output, frames) else {
             return CosmoPd101FfiStatus::NullPointer;
         };
-        let status = engine.render_to_scratch(frames);
-        if status != CosmoPd101FfiStatus::Ok {
-            return status;
-        }
-        output.copy_from_slice(&engine.scratch[..frames]);
-        CosmoPd101FfiStatus::Ok
+        engine.render_mono(frames, output)
     }
 }
 
@@ -1053,7 +1273,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_stereo(
     frames: usize,
 ) -> CosmoPd101FfiStatus {
     unsafe {
-        let Ok(engine) = engine_mut(engine) else {
+        let Ok(engine) = engine_ref(engine) else {
             return CosmoPd101FfiStatus::NullPointer;
         };
         let Ok(left) = output_slice_mut(output_left, frames) else {
@@ -1062,13 +1282,7 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_render_stereo(
         let Ok(right) = output_slice_mut(output_right, frames) else {
             return CosmoPd101FfiStatus::NullPointer;
         };
-        let status = engine.render_to_scratch(frames);
-        if status != CosmoPd101FfiStatus::Ok {
-            return status;
-        }
-        left.copy_from_slice(&engine.scratch[..frames]);
-        right.copy_from_slice(&engine.scratch[..frames]);
-        CosmoPd101FfiStatus::Ok
+        engine.render_stereo(frames, left, right)
     }
 }
 
@@ -1090,19 +1304,24 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_i8(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
+        engine.drain_retired_params();
+        let scope = engine
+            .scope_snapshot
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         if !out_sample_rate.is_null() {
-            *out_sample_rate = engine.scope.sample_rate;
+            *out_sample_rate = scope.sample_rate;
         }
         if !out_hz.is_null() {
-            *out_hz = engine.scope.hz;
+            *out_hz = scope.hz;
         }
         if output.is_null() || output_len == 0 {
-            return engine.scope.samples.len();
+            return scope.len;
         }
         let Ok(output) = output_slice_mut(output, output_len) else {
             return 0;
         };
-        engine.scope.copy_linear_i8(output).unwrap_or(0)
+        scope.copy_linear_i8(output).unwrap_or(0)
     }
 }
 
@@ -1124,25 +1343,31 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32(
         let Ok(engine) = engine_ref(engine) else {
             return 0;
         };
+        engine.drain_retired_params();
+        let scope = engine
+            .scope_snapshot
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         if !out_sample_rate.is_null() {
-            *out_sample_rate = engine.scope.sample_rate;
+            *out_sample_rate = scope.sample_rate;
         }
         if !out_hz.is_null() {
-            *out_hz = engine.scope.hz;
+            *out_hz = scope.hz;
         }
         if output.is_null() || output_len == 0 {
-            return engine.scope.samples.len();
+            return scope.len;
         }
         let Ok(output) = output_slice_mut(output, output_len) else {
             return 0;
         };
-        engine.scope.copy_linear_f32(output).unwrap_or(0)
+        scope.copy_linear_f32(output).unwrap_or(0)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::ffi::CString;
+    use std::thread;
 
     use super::*;
 
@@ -1217,19 +1442,25 @@ mod tests {
     fn ffi_set_voice_limit_accepts_valid_and_out_of_range_values() {
         let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
         assert!(!engine.is_null());
+        let mut output = vec![0.0; 64];
 
         assert_eq!(
             cosmo_pd101_ffi_set_voice_limit(engine, 4),
             CosmoPd101FfiStatus::Ok,
         );
-        assert_eq!(unsafe { &*engine }.processor.active_voice_limit(), 4);
+        unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) };
+        assert_eq!(
+            unsafe { &*engine }.mod_snapshot.lock().unwrap().voice_limit,
+            4
+        );
 
         assert_eq!(
             cosmo_pd101_ffi_set_voice_limit(engine, 0),
             CosmoPd101FfiStatus::Ok,
         );
+        unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) };
         assert_eq!(
-            unsafe { &*engine }.processor.active_voice_limit(),
+            unsafe { &*engine }.mod_snapshot.lock().unwrap().voice_limit as usize,
             cosmo_synth_engine::params::MIN_VOICE_LIMIT,
         );
 
@@ -1237,8 +1468,9 @@ mod tests {
             cosmo_pd101_ffi_set_voice_limit(engine, usize::MAX),
             CosmoPd101FfiStatus::Ok,
         );
+        unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) };
         assert_eq!(
-            unsafe { &*engine }.processor.active_voice_limit(),
+            unsafe { &*engine }.mod_snapshot.lock().unwrap().voice_limit as usize,
             cosmo_synth_engine::params::MAX_VOICES,
         );
 
@@ -1263,13 +1495,16 @@ mod tests {
             CosmoPd101FfiStatus::Ok,
         );
 
-        let voices = unsafe { &*engine }.processor.runtime_voice_debug_state();
+        let mut output = vec![0.0; 64];
+        unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) };
+        let voices = unsafe { &*engine }.voice_snapshot.lock().unwrap();
         let active_notes: Vec<_> = voices
             .iter()
             .filter(|voice| voice.active && voice.note.is_some())
             .map(|voice| (voice.index, voice.note))
             .collect();
         assert_eq!(active_notes, vec![(0, Some(64))]);
+        drop(voices);
 
         unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
     }
@@ -1495,6 +1730,81 @@ mod tests {
                 && voice.get("note").and_then(|value| value.as_u64()) == Some(60)
         }));
 
+        unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn ffi_retained_handle_survives_root_release() {
+        let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
+        assert!(!engine.is_null());
+
+        unsafe {
+            cosmo_pd101_ffi_engine_retain(engine);
+            cosmo_pd101_ffi_engine_destroy(engine);
+        }
+        assert_eq!(
+            cosmo_pd101_ffi_note_on(engine, 60, 0.0, 1.0),
+            CosmoPd101FfiStatus::Ok
+        );
+        let mut output = vec![0.0; 64];
+        assert_eq!(
+            unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) },
+            CosmoPd101FfiStatus::Ok
+        );
+        assert!(output.iter().any(|sample| sample.abs() > 0.000_001));
+
+        unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn ffi_control_and_snapshot_calls_are_safe_during_rendering() {
+        let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
+        assert!(!engine.is_null());
+        let engine_address = engine as usize;
+
+        unsafe { cosmo_pd101_ffi_engine_retain(engine) };
+        let control = thread::spawn(move || {
+            let engine = engine_address as *mut CosmoPd101FfiEngine;
+            for index in 0..500 {
+                assert_eq!(
+                    cosmo_pd101_ffi_set_mod_wheel(engine, (index % 100) as f32 / 100.0),
+                    CosmoPd101FfiStatus::Ok
+                );
+                let mut value = 0.0;
+                assert_eq!(
+                    unsafe { cosmo_pd101_ffi_get_parameter_value(engine, 1, &mut value) },
+                    CosmoPd101FfiStatus::Ok
+                );
+            }
+            unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+        });
+
+        let mut output = vec![0.0; 64];
+        for _ in 0..500 {
+            assert_eq!(
+                unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) },
+                CosmoPd101FfiStatus::Ok
+            );
+        }
+        control.join().unwrap();
+        unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn ffi_rejects_concurrent_render_entry() {
+        let engine = cosmo_pd101_ffi_engine_create(44_100.0, 64);
+        assert!(!engine.is_null());
+        unsafe { &*engine }
+            .render_active
+            .store(true, Ordering::Release);
+        let mut output = vec![0.0; 64];
+        assert_eq!(
+            unsafe { cosmo_pd101_ffi_render_mono(engine, output.as_mut_ptr(), output.len()) },
+            CosmoPd101FfiStatus::ConcurrentRender
+        );
+        unsafe { &*engine }
+            .render_active
+            .store(false, Ordering::Release);
         unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
     }
 }

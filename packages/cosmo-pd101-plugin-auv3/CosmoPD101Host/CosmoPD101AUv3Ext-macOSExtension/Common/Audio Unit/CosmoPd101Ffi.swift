@@ -6,6 +6,8 @@ public enum CosmoPd101FfiStatus: Int32 {
 	case invalidArgument = 2
 	case bufferTooSmall = 3
 	case jsonError = 4
+	case queueFull = 5
+	case concurrentRender = 6
 }
 
 public typealias CosmoPd101FfiEngineRef = OpaquePointer
@@ -15,6 +17,9 @@ func cosmo_pd101_ffi_engine_create(_ sampleRate: Float, _ maxFrames: Int) -> Cos
 
 @_silgen_name("cosmo_pd101_ffi_engine_destroy")
 func cosmo_pd101_ffi_engine_destroy(_ engine: CosmoPd101FfiEngineRef?)
+
+@_silgen_name("cosmo_pd101_ffi_engine_retain")
+func cosmo_pd101_ffi_engine_retain(_ engine: CosmoPd101FfiEngineRef?)
 
 @_silgen_name("cosmo_pd101_ffi_reset_audio_state")
 func cosmo_pd101_ffi_reset_audio_state(_ engine: CosmoPd101FfiEngineRef?) -> Int32

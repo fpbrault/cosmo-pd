@@ -27,9 +27,12 @@ typedef enum CosmoPd101FfiStatus {
     CosmoPd101FfiStatusInvalidArgument = 2,
     CosmoPd101FfiStatusBufferTooSmall = 3,
     CosmoPd101FfiStatusJsonError = 4,
+    CosmoPd101FfiStatusQueueFull = 5,
+    CosmoPd101FfiStatusConcurrentRender = 6,
 } CosmoPd101FfiStatus;
 
 CosmoPd101FfiEngine* cosmo_pd101_ffi_engine_create(float sample_rate, size_t max_frames);
+void cosmo_pd101_ffi_engine_retain(CosmoPd101FfiEngine* engine);
 void cosmo_pd101_ffi_engine_destroy(CosmoPd101FfiEngine* engine);
 
 CosmoPd101FfiStatus cosmo_pd101_ffi_reset_audio_state(CosmoPd101FfiEngine* engine);

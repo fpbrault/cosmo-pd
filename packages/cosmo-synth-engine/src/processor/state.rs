@@ -58,7 +58,7 @@ pub struct RuntimeVoiceLineState {
 }
 
 /// Full debug snapshot of one voice's runtime state.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct RuntimeVoiceDebugState {

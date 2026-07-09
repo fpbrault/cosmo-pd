@@ -13,6 +13,10 @@ const xcodeControllerPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/AudioUnitViewController.swift",
 );
+const xcodeAudioUnitPath = path.join(
+	packageRoot,
+	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/Audio Unit/CosmoPD101AUv3Ext_macOSExtensionAudioUnit.swift",
+);
 const xcodeWebEditorSessionPath = path.join(
 	packageRoot,
 	"CosmoPD101Host/CosmoPD101AUv3Ext-macOSExtension/Common/UI/WebEditorSession.swift",
@@ -177,6 +181,47 @@ describe("AUv3 bridge contract", () => {
 		expect(connectMatch?.[0]).toContain(
 			"guard let avAudioUnit = nextAudioUnit else",
 		);
+	});
+
+	it("retains the AUv3 engine without holding the lifecycle lock during render", () => {
+		const audioUnitSource = readText(xcodeAudioUnitPath);
+		const renderBlockMatch = audioUnitSource.match(
+			/public override var internalRenderBlock:[\s\S]*?\n\t}\n\n\tpublic func setParamsJson/,
+		);
+
+		expect(audioUnitSource).toContain("private let engineLock = NSLock()");
+		expect(audioUnitSource).toContain("private func withRetainedEngine");
+		expect(audioUnitSource).toContain("private func withEngineLock");
+		expect(renderBlockMatch?.[0]).toContain("engineLock.try()");
+		expect(renderBlockMatch?.[0]).toContain(
+			"cosmo_pd101_ffi_engine_retain(engine)",
+		);
+		expect(renderBlockMatch?.[0]).toContain("engineLock.unlock()");
+		expect(renderBlockMatch?.[0]).toContain(
+			"defer { cosmo_pd101_ffi_engine_destroy(engine) }",
+		);
+		expect(renderBlockMatch?.[0]).toContain("clearOutput(");
+		expect(renderBlockMatch?.[0]).toContain(
+			"consumeEvents(realtimeEventListHead, engine: engine)",
+		);
+		expect(renderBlockMatch?.[0]).not.toContain("engineLock.lock()");
+	});
+
+	it("detaches the AUv3 engine before snapshotting and releasing it", () => {
+		const audioUnitSource = readText(xcodeAudioUnitPath);
+		const deallocateMatch = audioUnitSource.match(
+			/public override func deallocateRenderResources\(\)[\s\S]*?\n\t}\n\n\tpublic override func reset/,
+		);
+
+		expect(deallocateMatch?.[0]).toContain("withEngineLock");
+		expect(deallocateMatch?.[0]).toContain("engine = nil");
+		expect(deallocateMatch?.[0]).toContain(
+			"savedStateJson = paramsJsonLocked(engineToDestroy)",
+		);
+		expect(deallocateMatch?.[0]).toContain(
+			"cosmo_pd101_ffi_engine_destroy(engineToDestroy)",
+		);
+		expect(deallocateMatch?.[0]).not.toContain("savedStateJson = paramsJson()");
 	});
 
 	it("has currentPresetSession keys matching PluginPresetSession", () => {
@@ -356,7 +401,7 @@ describe("AUv3 bridge contract", () => {
 		);
 
 		expect(audioUnitSource).toContain(
-			"guard nextChannel != midiChannel else { return }",
+			"guard nextChannel != withEngineLock({ midiChannel }) else { return }",
 		);
 		expect(audioUnitSource).toContain("cosmo_pd101_ffi_all_notes_off(engine)");
 	});
