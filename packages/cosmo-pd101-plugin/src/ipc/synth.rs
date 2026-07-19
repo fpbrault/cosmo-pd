@@ -25,6 +25,7 @@ pub(super) fn handle(
             synth_params.store(Arc::new(new_params.clone()));
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
+            publish_state_snapshot(context.shared_state.as_ref());
 
             Ok(PluginIpcResponse::SetParams)
         }

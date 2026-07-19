@@ -16,29 +16,25 @@ pub(super) fn handle(
     let preset_library = &context.shared_state.presets.library;
     match req {
         PluginIpcRequest::SetPresetName(name) => {
-            if let Ok(mut stored) = preset_session.lock() {
+            preset_session.rcu(|current| {
+                let mut stored = (**current).clone();
                 stored.active_preset_name_base = name.clone();
-            }
+                stored
+            });
+            publish_state_snapshot(context.shared_state.as_ref());
             Ok(PluginIpcResponse::SetPresetName)
         }
         PluginIpcRequest::GetPresetName => {
-            let name = preset_session
-                .lock()
-                .map(|session| session.active_preset_name_base.clone())
-                .unwrap_or_default();
+            let name = preset_session.load().active_preset_name_base.clone();
             Ok(PluginIpcResponse::GetPresetName(name))
         }
         PluginIpcRequest::GetPresetSession => {
-            let session = preset_session
-                .lock()
-                .map(|session| session.clone())
-                .map_err(|e| e.to_string())?;
+            let session = (**preset_session.load()).clone();
             Ok(PluginIpcResponse::GetPresetSession(session))
         }
         PluginIpcRequest::SetPresetSession(session) => {
-            if let Ok(mut stored) = preset_session.lock() {
-                *stored = session.clone();
-            }
+            preset_session.store(Arc::new(session.clone()));
+            publish_state_snapshot(context.shared_state.as_ref());
             Ok(PluginIpcResponse::SetPresetSession)
         }
         PluginIpcRequest::GetPresetLibrary { source } => {
@@ -159,11 +155,14 @@ pub(super) fn handle(
             rt_synth_params.store(Arc::new(rt_params));
             synth_params_version.fetch_add(1, Ordering::Release);
 
-            if let Ok(mut stored) = preset_session.lock() {
+            preset_session.rcu(|current| {
+                let mut stored = (**current).clone();
                 stored.active_preset_name_base = preset_name_val.clone();
                 stored.loaded_preset_id = Some(payload.preset_id.clone());
                 stored.is_dirty = false;
-            }
+                stored
+            });
+            publish_state_snapshot(context.shared_state.as_ref());
 
             Ok(PluginIpcResponse::LoadPreset(LoadPresetResponse {
                 preset_name: preset_name_val,
@@ -262,11 +261,14 @@ pub(super) fn handle(
                 lib.save_entry(entry).map_err(|e| e.to_string())?
             };
 
-            if let Ok(mut stored) = preset_session.lock() {
+            preset_session.rcu(|current| {
+                let mut stored = (**current).clone();
                 stored.active_preset_name_base = saved_entry.name.clone();
                 stored.loaded_preset_id = Some(saved_entry.id.clone());
                 stored.is_dirty = false;
-            }
+                stored
+            });
+            publish_state_snapshot(context.shared_state.as_ref());
 
             Ok(PluginIpcResponse::SavePreset(SavePresetResponse {
                 id: saved_entry.id,

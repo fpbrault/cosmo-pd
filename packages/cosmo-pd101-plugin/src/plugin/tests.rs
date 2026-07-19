@@ -88,13 +88,14 @@ fn make_handler_state() -> (
     let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
     let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
     let params = Arc::new(CzPluginParams::new());
-    let ps: SharedPresetSession =
-        Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
+    let ps: SharedPresetSession = Arc::new(ArcSwap::from_pointee(
+        crate::session_state::PresetSession::default(),
+    ));
     let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
     let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(PresetLibrary::from_embedded_factory(
         factory_json,
     )));
-    let es: SharedEditorState = Arc::new(Mutex::new(None));
+    let es: SharedEditorState = Arc::new(arc_swap::ArcSwapOption::empty());
     let mm: SharedMidiMappings =
         Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
     (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm)
@@ -161,13 +162,14 @@ fn get_params_rpc_returns_current_synth_params() {
     let sc: ScopeBuffer = Arc::new(Mutex::new(ScopeFrame::default()));
     let q: UiInputQueue = Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY));
     let params = Arc::new(CzPluginParams::new());
-    let ps: SharedPresetSession =
-        Arc::new(Mutex::new(crate::session_state::PresetSession::default()));
+    let ps: SharedPresetSession = Arc::new(ArcSwap::from_pointee(
+        crate::session_state::PresetSession::default(),
+    ));
     let factory_json = include_str!(concat!(env!("OUT_DIR"), "/minified_presets.json"));
     let pl: Arc<Mutex<PresetLibrary>> = Arc::new(Mutex::new(PresetLibrary::from_embedded_factory(
         factory_json,
     )));
-    let es: SharedEditorState = Arc::new(Mutex::new(None));
+    let es: SharedEditorState = Arc::new(arc_swap::ArcSwapOption::empty());
     let mm: SharedMidiMappings =
         Arc::new(Mutex::new(crate::session_state::MidiLearnState::default()));
 
@@ -437,7 +439,7 @@ fn program_change_applies_factory_preset() {
     let synth_params = plugin.shared_state.synth.synth_params.load();
     assert_eq!(synth_params.line_select, expected.line_select);
     assert!((synth_params.portamento.time - expected.portamento.time).abs() < 0.000_001);
-    let session = plugin.shared_state.presets.session.lock().unwrap().clone();
+    let session = (*plugin.shared_state.presets.session.load_full()).clone();
     assert_eq!(session.loaded_preset_id.as_deref(), Some(expected_id));
     assert_eq!(session.active_preset_name_base, expected_name);
 }
@@ -933,17 +935,16 @@ fn set_preset_name_rpc_stores_name() {
         &mm,
     );
     assert!(result.is_ok());
-    let stored = ps.lock().unwrap();
+    let stored = ps.load();
     assert_eq!(stored.active_preset_name_base, "Warm Pad");
 }
 
 #[test]
 fn get_preset_name_rpc_returns_current_name() {
     let (sp, rsp, rms, rvs, ts, ver, sc, q, params, ps, pl, es, mm) = make_handler_state();
-    {
-        let mut stored = ps.lock().unwrap();
-        stored.active_preset_name_base = "Factory Brass".to_string();
-    }
+    let mut stored = (*ps.load_full()).clone();
+    stored.active_preset_name_base = "Factory Brass".to_string();
+    ps.store(Arc::new(stored));
 
     let result = handle_ipc_invoke(
         PluginIpcRequest::GetPresetName,
@@ -975,14 +976,10 @@ fn save_state_includes_preset_name() {
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
 
-    plugin
-        .shared_state
-        .presets
-        .session
-        .lock()
-        .unwrap()
-        .active_preset_name_base = "Resonant Pad".to_string();
-    plugin.shared_state.presets.session.lock().unwrap().is_dirty = true;
+    let mut session = (*plugin.shared_state.presets.session.load_full()).clone();
+    session.active_preset_name_base = "Resonant Pad".to_string();
+    session.is_dirty = true;
+    plugin.shared_state.presets.session.store(Arc::new(session));
 
     let state = plugin.save_state();
     assert!(!state.is_empty());
@@ -999,6 +996,107 @@ fn save_state_includes_preset_name() {
 }
 
 #[test]
+fn snapshot_into_publishes_prebuilt_session_state() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+
+    let mut session = (*plugin.shared_state.presets.session.load_full()).clone();
+    session.active_preset_name_base = "Snapshot Pad".to_string();
+    plugin.shared_state.presets.session.store(Arc::new(session));
+    publish_state_snapshot(plugin.shared_state.as_ref());
+
+    let mut snapshot = Vec::new();
+    assert!(<CzPlugin as PluginLogic>::snapshot_into(
+        &plugin,
+        &mut snapshot
+    ));
+    assert_eq!(snapshot, plugin.save_state());
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&snapshot).expect("snapshot should be valid JSON");
+    assert_eq!(
+        parsed["presetSession"]["activePresetNameBase"],
+        "Snapshot Pad"
+    );
+}
+
+#[test]
+fn truce_envelope_restores_latest_host_parameter_value() {
+    use truce_core::export::PluginExport;
+    use truce_core::plugin::PluginRuntime;
+    use truce_core::state;
+    use truce_params::Params;
+
+    with_test_data_dir(|_| {
+        clear_test_global_settings();
+        let mut source = <Plugin as PluginExport>::create();
+        source.reset(&AudioConfig::new(48_000.0, 64));
+
+        let restored_volume = 0.37_f32;
+        let mut events = EventList::default();
+        events.push(Event {
+            sample_offset: 0,
+            port: 0,
+            body: EventBody::ParamChange {
+                id: CzPluginParamsParamId::Volume as u32,
+                value: f64::from(restored_volume),
+            },
+        });
+
+        let mut left = [0.0_f32; 64];
+        let mut right = [0.0_f32; 64];
+        let inputs: [&[f32]; 0] = [];
+        let mut outputs: [&mut [f32]; 2] = [&mut left, &mut right];
+        let mut buffer = AudioBuffer::from_slices_checked(&inputs, &mut outputs, 64);
+        let transport = TransportInfo::default();
+        let mut output_events = EventList::default();
+        let mut context = ProcessContext::new(&transport, 48_000.0, 64, &mut output_events);
+        source.process(&mut buffer, &events, &mut context);
+
+        let extra = source
+            .snapshot_slot()
+            .read()
+            .expect("process should publish custom state");
+        let (ids, values) = source.params().collect_values();
+        let persist = source.params().serialize_persist();
+        let hash = state::shared_plugin_state_hash(&<Plugin as PluginRuntime>::info());
+        let envelope = state::serialize_state(hash, &ids, &values, &extra, &persist);
+        let decoded = state::deserialize_state(&envelope, hash).expect("valid Truce envelope");
+
+        let mut restored = <Plugin as PluginExport>::create();
+        restored.reset(&AudioConfig::new(48_000.0, 64));
+        state::apply_state(&mut restored, &decoded);
+
+        assert!((restored.params().volume.value() - restored_volume).abs() < 0.000_001);
+    });
+}
+
+#[test]
+fn load_state_does_not_leave_a_deferred_reset_pending() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+    let state = plugin.save_state();
+
+    plugin
+        .shared_state
+        .preset_reset_pending
+        .store(true, Ordering::Release);
+    plugin.load_state(&state).unwrap();
+
+    assert_eq!(plugin.shared_state.state_snapshot.load().as_ref(), &state);
+    assert!(
+        !plugin
+            .shared_state
+            .preset_reset_pending
+            .load(Ordering::Acquire)
+    );
+}
+
+#[test]
 fn load_state_restores_preset_name() {
     with_test_data_dir(|_| {
         clear_test_global_settings();
@@ -1007,14 +1105,10 @@ fn load_state_restores_preset_name() {
         plugin.reset(48_000.0, 64);
 
         // Save state with a preset name
-        plugin
-            .shared_state
-            .presets
-            .session
-            .lock()
-            .unwrap()
-            .active_preset_name_base = "Bright Piano".to_string();
-        plugin.shared_state.presets.session.lock().unwrap().is_dirty = true;
+        let mut session = (*plugin.shared_state.presets.session.load_full()).clone();
+        session.active_preset_name_base = "Bright Piano".to_string();
+        session.is_dirty = true;
+        plugin.shared_state.presets.session.store(Arc::new(session));
         let state = plugin.save_state();
 
         // Create new plugin and load state
@@ -1026,15 +1120,14 @@ fn load_state_restores_preset_name() {
                 .shared_state
                 .presets
                 .session
-                .lock()
-                .unwrap()
+                .load()
                 .active_preset_name_base,
             "Bright Piano"
         );
 
         let result = plugin2.load_state(&state);
         assert!(result.is_ok());
-        let restored = plugin2.shared_state.presets.session.lock().unwrap().clone();
+        let restored = (*plugin2.shared_state.presets.session.load_full()).clone();
         assert_eq!(restored.active_preset_name_base, "Bright Piano");
         assert!(!restored.is_dirty);
     });
@@ -1052,13 +1145,9 @@ fn load_state_falls_back_to_old_format() {
     plugin.reset(48_000.0, 64);
 
     // Set a name to verify it's not overwritten
-    plugin
-        .shared_state
-        .presets
-        .session
-        .lock()
-        .unwrap()
-        .active_preset_name_base = "Existing Name".to_string();
+    let mut session = (*plugin.shared_state.presets.session.load_full()).clone();
+    session.active_preset_name_base = "Existing Name".to_string();
+    plugin.shared_state.presets.session.store(Arc::new(session));
 
     let result = plugin.load_state(&data);
     assert!(result.is_ok());
@@ -1068,8 +1157,7 @@ fn load_state_falls_back_to_old_format() {
             .shared_state
             .presets
             .session
-            .lock()
-            .unwrap()
+            .load()
             .active_preset_name_base,
         "Existing Name"
     );
@@ -1084,7 +1172,7 @@ fn cold_start_loads_plugin_startup_preset() {
         let mut plugin = CzPlugin::new(Arc::clone(&params));
         plugin.reset(48_000.0, 64);
 
-        let stored = plugin.shared_state.presets.session.lock().unwrap().clone();
+        let stored = (*plugin.shared_state.presets.session.load_full()).clone();
         let expected = plugin
             .shared_state
             .presets
@@ -1125,7 +1213,7 @@ fn cold_start_without_user_favorites_uses_factory_startup_preset_when_present() 
 
         plugin.reset(48_000.0, 64);
 
-        let stored = plugin.shared_state.presets.session.lock().unwrap().clone();
+        let stored = (*plugin.shared_state.presets.session.load_full()).clone();
         assert!(!stored.is_dirty);
         if let Some(entry_id) = stored.loaded_preset_id.clone() {
             let entry = plugin
@@ -1183,8 +1271,7 @@ fn restored_state_survives_later_resets_without_reapplying_startup_preset() {
                 .shared_state
                 .presets
                 .session
-                .lock()
-                .unwrap()
+                .load()
                 .loaded_preset_id
                 .is_some()
         );
@@ -1193,6 +1280,7 @@ fn restored_state_survives_later_resets_without_reapplying_startup_preset() {
             volume: 0.11,
             ..SynthParams::default()
         };
+        sync_all_daw_params_from_synth(&params, &restored_params);
         let restored_state = crate::session_state::PluginSessionState {
             synth_params: restored_params.clone(),
             preset_session: crate::session_state::PresetSession {
@@ -1207,7 +1295,7 @@ fn restored_state_survives_later_resets_without_reapplying_startup_preset() {
         plugin.load_state(&bytes).unwrap();
         plugin.reset(48_000.0, 64);
 
-        let restored_session = plugin.shared_state.presets.session.lock().unwrap().clone();
+        let restored_session = (*plugin.shared_state.presets.session.load_full()).clone();
         assert_eq!(restored_session.active_preset_name_base, "Saved Preset");
         assert_eq!(
             restored_session.loaded_preset_id.as_deref(),
