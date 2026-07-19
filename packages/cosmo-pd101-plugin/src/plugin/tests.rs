@@ -1047,6 +1047,30 @@ fn snapshot_into_publishes_prebuilt_session_state() {
         generation_after_publish
     );
 
+    plugin.startup_preset_resolved = true;
+    let mut left = [0.0_f32; 64];
+    let mut right = [0.0_f32; 64];
+    let inputs: [&[f32]; 0] = [];
+    let mut outputs: [&mut [f32]; 2] = [&mut left, &mut right];
+    let mut buffer = AudioBuffer::from_slices_checked(&inputs, &mut outputs, 64);
+    let transport = TransportInfo::default();
+    let mut output_events = EventList::default();
+    let mut context = ProcessContext::new(&transport, 48_000.0, 64, &mut output_events);
+    <CzPlugin as PluginLogic>::process(
+        &mut plugin,
+        params.as_ref(),
+        &mut buffer,
+        &EventList::default(),
+        &mut context,
+    );
+    assert_eq!(
+        plugin
+            .shared_state
+            .state_snapshot_generation
+            .load(Ordering::Acquire),
+        generation_after_publish
+    );
+
     let parsed: serde_json::Value =
         serde_json::from_slice(&snapshot).expect("snapshot should be valid JSON");
     assert_eq!(
