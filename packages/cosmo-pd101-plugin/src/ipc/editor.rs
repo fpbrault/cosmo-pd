@@ -7,14 +7,12 @@ pub(super) fn handle(
     let editor_state = &context.shared_state.editor.editor_state;
     match req {
         PluginIpcRequest::SetEditorState(state) => {
-            if let Ok(mut stored) = editor_state.lock() {
-                *stored = Some(state.clone());
-            }
+            editor_state.store(Some(Arc::new(state.clone())));
             publish_state_snapshot(context.shared_state.as_ref());
             Ok(PluginIpcResponse::SetEditorState)
         }
         PluginIpcRequest::GetEditorState => {
-            let state = editor_state.lock().map(|s| s.clone()).unwrap_or(None);
+            let state = editor_state.load_full().map(|state| (*state).clone());
             Ok(PluginIpcResponse::GetEditorState(state))
         }
         _ => unreachable!("method routed to wrong IPC domain"),

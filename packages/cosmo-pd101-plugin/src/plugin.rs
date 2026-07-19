@@ -46,18 +46,12 @@ pub(crate) fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
 
 pub(crate) fn session_state_bytes(shared_state: &PluginSharedState) -> Vec<u8> {
     let sp = shared_state.synth.synth_params.load();
-    let preset_session = shared_state
-        .presets
-        .session
-        .lock()
-        .map(|session| session.clone())
-        .unwrap_or_default();
+    let preset_session = (*shared_state.presets.session.load_full()).clone();
     let editor = shared_state
         .editor
         .editor_state
-        .lock()
-        .map(|s| s.clone())
-        .unwrap_or(None);
+        .load_full()
+        .map(|state| (*state).clone());
     let state = crate::session_state::PluginSessionState {
         synth_params: sp.as_ref().clone(),
         preset_session,
@@ -67,9 +61,29 @@ pub(crate) fn session_state_bytes(shared_state: &PluginSharedState) -> Vec<u8> {
 }
 
 pub(crate) fn publish_state_snapshot(shared_state: &PluginSharedState) {
+    let synth_version = shared_state
+        .synth
+        .synth_params_version
+        .load(Ordering::Acquire);
+    let snapshot = session_state_bytes(shared_state);
+    shared_state.state_snapshot.store(Arc::new(snapshot));
     shared_state
-        .state_snapshot
-        .store(Arc::new(session_state_bytes(shared_state)));
+        .state_snapshot_version
+        .store(synth_version, Ordering::Release);
+}
+
+#[derive(Clone, Copy)]
+struct PublishStateSnapshot;
+
+impl BackgroundTask for PublishStateSnapshot {
+    type Params = CzPluginParams;
+    const SERIALIZED: bool = true;
+
+    fn run(self, params: &Self::Params) {
+        if let Some(shared_state) = params.shared_state() {
+            publish_state_snapshot(shared_state.as_ref());
+        }
+    }
 }
 
 #[cfg(test)]
@@ -128,6 +142,7 @@ fn handle_ipc_invoke(
                 .unwrap_or_default(),
         ),
         state_snapshot: Arc::new(ArcSwap::from_pointee(Vec::new())),
+        state_snapshot_version: AtomicU64::new(0),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });
@@ -279,15 +294,17 @@ impl CzPluginDspState {
             .load(Ordering::Acquire);
         self.audio.daw_params_dirty = false;
 
-        if let Ok(mut session) = self.shared_state.presets.session.lock() {
+        self.shared_state.presets.session.rcu(|current| {
+            let mut session = (**current).clone();
             if preset_name.is_some() || preset_id.is_some() {
-                if let Some(name) = preset_name {
-                    session.active_preset_name_base = name;
+                if let Some(name) = &preset_name {
+                    session.active_preset_name_base = name.clone();
                 }
-                session.loaded_preset_id = preset_id;
+                session.loaded_preset_id.clone_from(&preset_id);
             }
             session.is_dirty = false;
-        }
+            session
+        });
 
         if let Some(proc) = self.audio.processor.as_mut() {
             proc.reset_audio_state();
@@ -424,7 +441,22 @@ impl PluginLogic for CzPlugin {
             .transport_snapshot
             .store(context.transport);
         state.sync_runtime_params_from_host_with_params(params, events);
-        state.render_audio_block(params, buffer, events, context)
+        let status = state.render_audio_block(params, buffer, events, context);
+        let synth_version = state
+            .shared_state
+            .synth
+            .synth_params_version
+            .load(Ordering::Acquire);
+        let snapshot_version = state
+            .shared_state
+            .state_snapshot_version
+            .load(Ordering::Acquire);
+        if synth_version != snapshot_version
+            && let Some(tasks) = context.tasks::<PublishStateSnapshot>()
+        {
+            tasks.spawn_coalescing(PublishStateSnapshot);
+        }
+        status
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
@@ -448,18 +480,24 @@ impl PluginLogic for CzPlugin {
 
         let synth_params = session.synth_params;
 
-        if let Ok(mut stored) = state.shared_state.presets.session.lock() {
-            if !session.preset_session.active_preset_name_base.is_empty()
-                || session.preset_session.loaded_preset_id.is_some()
-            {
-                *stored = session.preset_session.clone();
-            }
-            stored.is_dirty = false;
+        let mut stored_session = (*state.shared_state.presets.session.load_full()).clone();
+        if !session.preset_session.active_preset_name_base.is_empty()
+            || session.preset_session.loaded_preset_id.is_some()
+        {
+            stored_session = session.preset_session;
         }
+        stored_session.is_dirty = false;
+        state
+            .shared_state
+            .presets
+            .session
+            .store(Arc::new(stored_session));
 
-        if let Ok(mut stored) = state.shared_state.editor.editor_state.lock() {
-            *stored = session.editor_state;
-        }
+        state
+            .shared_state
+            .editor
+            .editor_state
+            .store(session.editor_state.map(Arc::new));
 
         let rt_params = Arc::new(build_rt_synth_params(&synth_params));
         state
@@ -487,20 +525,46 @@ impl PluginLogic for CzPlugin {
         state
             .shared_state
             .preset_reset_pending
-            .store(true, Ordering::Release);
+            .swap(false, Ordering::AcqRel);
         if let Some(proc) = state.audio.processor.as_mut() {
             proc.reset_audio_state();
             proc.set_shared_params(rt_params);
         }
-        publish_state_snapshot(state.shared_state.as_ref());
+        state
+            .shared_state
+            .state_snapshot
+            .store(Arc::new(data.to_vec()));
         Ok(())
     }
 
     fn state_changed(state: &mut Self::DspState, params: &Self::Params) {
-        let synth_params = state.shared_state.synth.synth_params.load();
-        sync_all_daw_params_from_synth(params, synth_params.as_ref());
+        let mut synth_params = (*state.shared_state.synth.synth_params.load_full()).clone();
+        apply_daw_params(&mut synth_params, params);
+        let rt_params = Arc::new(build_rt_synth_params(&synth_params));
+        state
+            .shared_state
+            .synth
+            .synth_params
+            .store(Arc::new(synth_params));
+        state
+            .shared_state
+            .synth
+            .rt_synth_params
+            .store(Arc::clone(&rt_params));
+        state.audio.cached_rt_synth_params = Arc::clone(&rt_params);
+        state
+            .shared_state
+            .synth
+            .synth_params_version
+            .fetch_add(1, Ordering::Release);
+        state.audio.cached_synth_params_version = state
+            .shared_state
+            .synth
+            .synth_params_version
+            .load(Ordering::Acquire);
+        state.audio.daw_params_dirty = false;
         if let Some(ref mut proc) = state.audio.processor {
-            proc.set_shared_params(state.audio.cached_rt_synth_params.clone());
+            proc.set_shared_params(rt_params);
         }
     }
 
@@ -515,6 +579,7 @@ impl PluginLogic for CzPlugin {
 truce::plugin! {
     logic: CzPlugin,
     params: CzPluginParams,
+    tasks: [PublishStateSnapshot],
 }
 
 // =============================================================================

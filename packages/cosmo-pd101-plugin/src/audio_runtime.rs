@@ -117,9 +117,11 @@ impl CzPluginDspState {
             .fetch_add(1, Ordering::Release)
             + 1;
         self.audio.daw_params_dirty = false;
-        if let Ok(mut session) = self.shared_state.presets.session.lock() {
-            session.is_dirty = true;
-        }
+        self.shared_state.presets.session.rcu(|current| {
+            let mut next = (**current).clone();
+            next.is_dirty = true;
+            next
+        });
 
         if update_processor && let Some(proc) = self.audio.processor.as_mut() {
             proc.set_shared_params(rt_params);
