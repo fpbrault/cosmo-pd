@@ -44,6 +44,34 @@ pub(crate) fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     rt_params
 }
 
+pub(crate) fn session_state_bytes(shared_state: &PluginSharedState) -> Vec<u8> {
+    let sp = shared_state.synth.synth_params.load();
+    let preset_session = shared_state
+        .presets
+        .session
+        .lock()
+        .map(|session| session.clone())
+        .unwrap_or_default();
+    let editor = shared_state
+        .editor
+        .editor_state
+        .lock()
+        .map(|s| s.clone())
+        .unwrap_or(None);
+    let state = crate::session_state::PluginSessionState {
+        synth_params: sp.as_ref().clone(),
+        preset_session,
+        editor_state: editor,
+    };
+    serde_json::to_vec(&state).unwrap_or_default()
+}
+
+pub(crate) fn publish_state_snapshot(shared_state: &PluginSharedState) {
+    shared_state
+        .state_snapshot
+        .store(Arc::new(session_state_bytes(shared_state)));
+}
+
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 fn handle_ipc_invoke(
@@ -99,6 +127,7 @@ fn handle_ipc_invoke(
                 .map(|state| state.clone())
                 .unwrap_or_default(),
         ),
+        state_snapshot: Arc::new(ArcSwap::from_pointee(Vec::new())),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });
@@ -111,16 +140,40 @@ fn handle_ipc_invoke(
 // Plugin struct
 // =============================================================================
 
-pub struct CzPlugin {
-    pub(crate) params: Arc<CzPluginParams>,
+pub struct CzPlugin;
+
+pub struct CzPluginDspState {
     pub(crate) audio: AudioRuntime,
     pub(crate) shared_state: Arc<PluginSharedState>,
+    #[cfg(test)]
+    pub(crate) test_params: Option<Arc<CzPluginParams>>,
     /// Prevents cold-start favorite selection from re-running on later resets.
     startup_preset_resolved: bool,
 }
 
 impl CzPlugin {
-    fn new(params: Arc<CzPluginParams>) -> Self {
+    #[cfg(test)]
+    #[allow(clippy::new_ret_no_self)]
+    pub(crate) fn new(params: Arc<CzPluginParams>) -> CzPluginDspState {
+        let mut state = CzPluginDspState::new(params.as_ref());
+        state.test_params = Some(params);
+        state
+    }
+
+    #[cfg(test)]
+    pub(crate) fn changed_param_ids(events: &EventList) -> Vec<u32> {
+        CzPluginDspState::changed_param_ids(events)
+    }
+}
+
+impl Default for CzPluginDspState {
+    fn default() -> Self {
+        CzPluginDspState::new(&CzPluginParams::new())
+    }
+}
+
+impl CzPluginDspState {
+    fn new(params: &CzPluginParams) -> Self {
         init_panic_hook();
         let default_params = SynthParams::default();
         let default_rt_params = build_rt_synth_params(&default_params);
@@ -155,21 +208,58 @@ impl CzPlugin {
             voice_limit as u8,
         ));
         params.set_shared_state(shared_state.clone());
+        publish_state_snapshot(shared_state.as_ref());
         Self {
-            params,
             audio,
             shared_state: shared_state.clone(),
+            #[cfg(test)]
+            test_params: None,
             startup_preset_resolved: false,
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn test_params(&self) -> Arc<CzPluginParams> {
+        self.test_params
+            .as_ref()
+            .expect("CzPlugin::new must store params for test helpers")
+            .clone()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn reset(&mut self, sample_rate: f64, max_block_size: usize) {
+        let params = self.test_params();
+        CzPlugin::reset(
+            self,
+            params.as_ref(),
+            &AudioConfig::new(sample_rate, max_block_size),
+        );
+    }
+
+    #[cfg(test)]
+    pub(crate) fn save_state(&self) -> Vec<u8> {
+        CzPlugin::save_state(self)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
+        let result = CzPlugin::load_state(self, data);
+        if result.is_ok() {
+            let params = self.test_params();
+            CzPlugin::state_changed(self, params.as_ref());
+        }
+        result
+    }
+
     fn apply_preset_state(
         &mut self,
+        plugin_params: &CzPluginParams,
         preset_id: Option<String>,
         preset_name: Option<String>,
         params: SynthParams,
+        publish_snapshot: bool,
     ) {
-        sync_all_daw_params_from_synth(&self.params, &params);
+        sync_all_daw_params_from_synth(plugin_params, &params);
 
         let rt_params = Arc::new(build_rt_synth_params(&params));
         self.shared_state.synth.synth_params.store(Arc::new(params));
@@ -203,9 +293,12 @@ impl CzPlugin {
             proc.reset_audio_state();
             proc.set_shared_params(rt_params);
         }
+        if publish_snapshot {
+            publish_state_snapshot(self.shared_state.as_ref());
+        }
     }
 
-    fn apply_startup_preset_if_needed(&mut self) {
+    fn apply_startup_preset_if_needed(&mut self, plugin_params: &CzPluginParams) {
         if self.startup_preset_resolved {
             return;
         }
@@ -232,137 +325,182 @@ impl CzPlugin {
             return;
         };
 
-        self.apply_preset_state(Some(entry.id), Some(entry.name), params);
+        self.apply_preset_state(
+            plugin_params,
+            Some(entry.id),
+            Some(entry.name),
+            params,
+            true,
+        );
     }
 
-    pub(crate) fn apply_factory_preset(&mut self, index: usize) {
+    pub(crate) fn apply_factory_preset(
+        &mut self,
+        plugin_params: &CzPluginParams,
+        index: usize,
+        publish_snapshot: bool,
+    ) {
         let Some(params) = crate::ffi::factory_preset_params(index).cloned() else {
             return;
         };
         let identity = crate::ffi::factory_preset_identity(index)
             .map(|(id, name)| (id.to_string(), name.to_string()));
         self.apply_preset_state(
+            plugin_params,
             identity.as_ref().map(|(id, _)| id.clone()),
             identity.as_ref().map(|(_, name)| name.clone()),
             params,
+            publish_snapshot,
         );
     }
 }
 
 impl PluginLogic for CzPlugin {
     type Params = CzPluginParams;
+    type DspState = CzPluginDspState;
 
-    fn reset(&mut self, sample_rate: f64, max_block_size: usize) {
+    fn init(params: &Self::Params, _cx: &InitContext) -> Self::DspState {
+        CzPluginDspState::new(params)
+    }
+
+    fn reset(state: &mut Self::DspState, params: &Self::Params, config: &AudioConfig) {
         append_log(&format!(
             "reset sample_rate={} log_path={}",
-            sample_rate,
+            config.sample_rate,
             plugin_log_path()
         ));
-        let sr = sample_rate as f32;
+        let sr = config.sample_rate as f32;
         let mut processor = CosmoProcessor::new(sr);
-        let mut current_params = (*self.shared_state.synth.synth_params.load_full()).clone();
-        apply_daw_params(&mut current_params, &self.params);
-        if !self.startup_preset_resolved {
-            self.shared_state
+        let mut current_params = (*state.shared_state.synth.synth_params.load_full()).clone();
+        apply_daw_params(&mut current_params, params);
+        if !state.startup_preset_resolved {
+            state
+                .shared_state
                 .synth
                 .synth_params
                 .store(Arc::new(current_params));
-            self.apply_startup_preset_if_needed();
-            current_params = (*self.shared_state.synth.synth_params.load_full()).clone();
+            state.apply_startup_preset_if_needed(params);
+            current_params = (*state.shared_state.synth.synth_params.load_full()).clone();
         }
         let rt_params = Arc::new(build_rt_synth_params(&current_params));
         processor.set_shared_params(Arc::clone(&rt_params));
-        self.shared_state
+        state
+            .shared_state
             .synth
             .synth_params
             .store(Arc::new(current_params));
-        self.shared_state
+        state
+            .shared_state
             .synth
             .rt_synth_params
             .store(Arc::clone(&rt_params));
-        self.audio.cached_rt_synth_params = rt_params;
-        self.audio.cached_synth_params_version = self
+        state.audio.cached_rt_synth_params = rt_params;
+        state.audio.cached_synth_params_version = state
             .shared_state
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
-        processor.set_voice_limit(self.audio.voice_limit);
-        self.audio.processor = Some(processor);
-        self.audio.mono_output.resize(max_block_size, 0.0);
-        self.audio.daw_params_dirty = false;
-        self.shared_state
+        processor.set_voice_limit(state.audio.voice_limit);
+        state.audio.processor = Some(processor);
+        state.audio.mono_output.resize(config.max_block_size, 0.0);
+        state.audio.daw_params_dirty = false;
+        state
+            .shared_state
             .telemetry
             .transport_snapshot
             .store(&TransportInfo::default());
     }
 
     fn process(
-        &mut self,
+        state: &mut Self::DspState,
+        params: &Self::Params,
         buffer: &mut AudioBuffer,
         events: &EventList,
         context: &mut ProcessContext,
     ) -> ProcessStatus {
-        self.shared_state
+        state
+            .shared_state
             .telemetry
             .transport_snapshot
             .store(context.transport);
-        self.sync_runtime_params_from_host(events);
-        self.render_audio_block(buffer, events, context)
+        state.sync_runtime_params_from_host_with_params(params, events);
+        state.render_audio_block(params, buffer, events, context)
     }
 
     fn bus_layouts() -> Vec<BusLayout> {
         vec![BusLayout::new().with_output("Main", ChannelConfig::Stereo)]
     }
 
-    fn save_state(&self) -> Vec<u8> {
-        let sp = self.shared_state.synth.synth_params.load();
-        let preset_session = self
-            .shared_state
-            .presets
-            .session
-            .lock()
-            .map(|session| session.clone())
-            .unwrap_or_default();
-        let editor = self
-            .shared_state
-            .editor
-            .editor_state
-            .lock()
-            .map(|s| s.clone())
-            .unwrap_or(None);
-        let state = crate::session_state::PluginSessionState {
-            synth_params: sp.as_ref().clone(),
-            preset_session,
-            editor_state: editor,
-        };
-        serde_json::to_vec(&state).unwrap_or_default()
+    fn save_state(state: &Self::DspState) -> Vec<u8> {
+        session_state_bytes(state.shared_state.as_ref())
     }
 
-    fn load_state(&mut self, data: &[u8]) -> Result<(), StateLoadError> {
+    fn snapshot_into(state: &Self::DspState, buf: &mut Vec<u8>) -> bool {
+        let snapshot = state.shared_state.state_snapshot.load();
+        buf.extend_from_slice(snapshot.as_ref());
+        true
+    }
+
+    fn load_state(state: &mut Self::DspState, data: &[u8]) -> Result<(), StateLoadError> {
         let session = crate::session_state::deserialize_state(data)
             .map_err(|_| StateLoadError::Malformed("unknown state format"))?;
-        self.startup_preset_resolved = true;
+        state.startup_preset_resolved = true;
 
-        let params = session.synth_params;
+        let synth_params = session.synth_params;
 
-        if let Ok(mut stored) = self.shared_state.presets.session.lock()
-            && (!session.preset_session.active_preset_name_base.is_empty()
-                || session.preset_session.loaded_preset_id.is_some())
-        {
-            *stored = session.preset_session.clone();
+        if let Ok(mut stored) = state.shared_state.presets.session.lock() {
+            if !session.preset_session.active_preset_name_base.is_empty()
+                || session.preset_session.loaded_preset_id.is_some()
+            {
+                *stored = session.preset_session.clone();
+            }
+            stored.is_dirty = false;
         }
 
-        if let Ok(mut stored) = self.shared_state.editor.editor_state.lock() {
+        if let Ok(mut stored) = state.shared_state.editor.editor_state.lock() {
             *stored = session.editor_state;
         }
 
-        self.apply_preset_state(None, None, params);
+        let rt_params = Arc::new(build_rt_synth_params(&synth_params));
+        state
+            .shared_state
+            .synth
+            .synth_params
+            .store(Arc::new(synth_params));
+        state
+            .shared_state
+            .synth
+            .rt_synth_params
+            .store(Arc::clone(&rt_params));
+        state.audio.cached_rt_synth_params = Arc::clone(&rt_params);
+        state
+            .shared_state
+            .synth
+            .synth_params_version
+            .fetch_add(1, Ordering::Release);
+        state.audio.cached_synth_params_version = state
+            .shared_state
+            .synth
+            .synth_params_version
+            .load(Ordering::Acquire);
+        state.audio.daw_params_dirty = false;
+        state
+            .shared_state
+            .preset_reset_pending
+            .store(true, Ordering::Release);
+        if let Some(proc) = state.audio.processor.as_mut() {
+            proc.reset_audio_state();
+            proc.set_shared_params(rt_params);
+        }
+        publish_state_snapshot(state.shared_state.as_ref());
         Ok(())
     }
 
-    fn state_changed(&mut self) {
-        if let Some(ref mut proc) = self.audio.processor {
-            proc.set_shared_params(self.audio.cached_rt_synth_params.clone());
+    fn state_changed(state: &mut Self::DspState, params: &Self::Params) {
+        let synth_params = state.shared_state.synth.synth_params.load();
+        sync_all_daw_params_from_synth(params, synth_params.as_ref());
+        if let Some(ref mut proc) = state.audio.processor {
+            proc.set_shared_params(state.audio.cached_rt_synth_params.clone());
         }
     }
 

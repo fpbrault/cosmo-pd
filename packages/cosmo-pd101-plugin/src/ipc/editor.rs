@@ -10,6 +10,7 @@ pub(super) fn handle(
             if let Ok(mut stored) = editor_state.lock() {
                 *stored = Some(state.clone());
             }
+            publish_state_snapshot(context.shared_state.as_ref());
             Ok(PluginIpcResponse::SetEditorState)
         }
         PluginIpcRequest::GetEditorState => {

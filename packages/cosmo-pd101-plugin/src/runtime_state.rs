@@ -55,6 +55,7 @@ pub type SynthParamsVersion = Arc<AtomicU64>;
 pub type SharedPresetSession = Arc<Mutex<PresetSession>>;
 pub type SharedEditorState = Arc<Mutex<Option<EditorState>>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
+pub type SharedStateSnapshot = Arc<ArcSwap<Vec<u8>>>;
 
 pub fn drain_and_coalesce_ui_param_changes(queue: &UiParamChangeQueue) -> Vec<UiParamChange> {
     let mut scalar_changes = HashMap::<String, f32>::new();
@@ -303,6 +304,9 @@ pub struct PluginSharedState {
     pub editor: EditorSessionState,
     pub presets: PresetService,
     pub midi_learn: MidiLearnService,
+    /// Pre-serialized custom state for Truce's audio-thread `snapshot_into`.
+    /// Updated by non-audio mutation paths; copied lock-free during process.
+    pub state_snapshot: SharedStateSnapshot,
     /// Runtime voice limit (1-16). Read/written by IPC, consumed by audio thread.
     pub voice_limit: AtomicU8,
     /// Set by `LoadPreset` IPC handler before publishing new params/version.
@@ -344,6 +348,7 @@ impl PluginSharedState {
             },
             presets: PresetService::new(preset_library.clone(), preset_session),
             midi_learn: MidiLearnService::new(midi_learn_state),
+            state_snapshot: Arc::new(ArcSwap::from_pointee(Vec::new())),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
         }

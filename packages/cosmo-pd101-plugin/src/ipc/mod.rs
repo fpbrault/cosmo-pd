@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::diagnostics::{append_log, append_log_debug, append_log_error, append_log_warn};
 use crate::params::{CzPluginParams, sync_all_daw_params_from_synth};
+use crate::plugin::publish_state_snapshot;
 use crate::runtime_state::PluginSharedState;
 
 mod editor;

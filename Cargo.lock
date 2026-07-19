@@ -3617,8 +3617,8 @@ checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 
 [[package]]
 name = "truce"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "truce-core",
  "truce-derive",
@@ -3630,8 +3630,8 @@ dependencies = [
 
 [[package]]
 name = "truce-au"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "cc",
  "crossbeam-queue",
@@ -3642,8 +3642,8 @@ dependencies = [
 
 [[package]]
 name = "truce-build"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "base64",
  "serde",
@@ -3653,8 +3653,8 @@ dependencies = [
 
 [[package]]
 name = "truce-clap"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "clap-sys",
  "crossbeam-queue",
@@ -3666,10 +3666,11 @@ dependencies = [
 
 [[package]]
 name = "truce-core"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
- "libc",
+ "crossbeam-queue",
+ "crossbeam-utils",
  "png",
  "truce-params",
  "truce-utils",
@@ -3677,8 +3678,8 @@ dependencies = [
 
 [[package]]
 name = "truce-cpu"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "tiny-skia",
  "truce-core",
@@ -3688,8 +3689,8 @@ dependencies = [
 
 [[package]]
 name = "truce-derive"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3702,8 +3703,8 @@ dependencies = [
 
 [[package]]
 name = "truce-driver"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "truce-core",
  "truce-params",
@@ -3711,8 +3712,8 @@ dependencies = [
 
 [[package]]
 name = "truce-font"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "skrifa",
  "tiny-skia",
@@ -3720,8 +3721,8 @@ dependencies = [
 
 [[package]]
 name = "truce-gui"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "baseview-truce",
  "log",
@@ -3743,8 +3744,8 @@ dependencies = [
 
 [[package]]
 name = "truce-gui-types"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "objc2",
  "truce-core",
@@ -3752,8 +3753,8 @@ dependencies = [
 
 [[package]]
 name = "truce-gui-utils"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "objc",
  "raw-window-handle 0.5.2",
@@ -3762,8 +3763,8 @@ dependencies = [
 
 [[package]]
 name = "truce-loader"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "crc32fast",
  "libloading 0.9.0",
@@ -3777,16 +3778,16 @@ dependencies = [
 
 [[package]]
 name = "truce-params"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "bitflags 2.13.0",
 ]
 
 [[package]]
 name = "truce-plugin"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "truce-core",
  "truce-gui-types",
@@ -3795,13 +3796,13 @@ dependencies = [
 
 [[package]]
 name = "truce-shim-types"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 
 [[package]]
 name = "truce-standalone"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "baseview-truce",
  "cpal",
@@ -3823,8 +3824,8 @@ dependencies = [
 
 [[package]]
 name = "truce-test"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "png",
  "toml 1.1.2+spec-1.1.0",
@@ -3832,17 +3833,18 @@ dependencies = [
  "truce-core",
  "truce-driver",
  "truce-params",
+ "truce-plugin",
 ]
 
 [[package]]
 name = "truce-utils"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 
 [[package]]
 name = "truce-vst3"
-version = "3.0.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=efa7b50d93f17b754e636fdd474971993fc49f26#efa7b50d93f17b754e636fdd474971993fc49f26"
+version = "6.0.0"
+source = "git+https://github.com/fpbrault/truce.git?rev=823de8002996adc592248b8ad390c1423780b858#823de8002996adc592248b8ad390c1423780b858"
 dependencies = [
  "cc",
  "crossbeam-queue",

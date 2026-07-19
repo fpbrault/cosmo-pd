@@ -29,6 +29,8 @@ use truce_core::editor::{Editor, RawWindowHandle};
 use wry::WebViewBuilder;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 use wry::WebViewBuilderExtDarwin;
+#[cfg(target_os = "macos")]
+use wry::WebViewExtMacOS;
 
 use crate::CzPluginParams;
 use crate::ipc::IpcContext;
@@ -705,6 +707,19 @@ fn apply_webview_size(
     let Some(wv) = &container.webview else {
         return true;
     };
+
+    #[cfg(target_os = "macos")]
+    {
+        let native_webview = wv.webview();
+        let is_attached =
+            unsafe { native_webview.superview().is_some() } && native_webview.window().is_some();
+        if !is_attached {
+            append_log_debug(&format!(
+                "skipping WebView resize to {width}x{height}: native view is not attached"
+            ));
+            return true;
+        }
+    }
 
     let resize_result = wv.set_bounds(wry::Rect {
         position: wry::dpi::LogicalPosition::new(0, 0).into(),

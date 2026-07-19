@@ -18,7 +18,7 @@ use crate::params::{
     read_current_daw_param_by_id, read_daw_param_by_id, sync_all_daw_params_from_synth,
     write_daw_param_by_id,
 };
-use crate::plugin::{CzPlugin, build_rt_synth_params};
+use crate::plugin::{CzPluginDspState, build_rt_synth_params};
 use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
@@ -59,7 +59,7 @@ impl AudioRuntime {
     }
 }
 
-impl CzPlugin {
+impl CzPluginDspState {
     fn enqueue_static_ui_scalar(&self, key: &'static str, value: f32) {
         let _ = self
             .shared_state
@@ -128,6 +128,7 @@ impl CzPlugin {
 
     pub(crate) fn apply_midi_mapping(
         &mut self,
+        params: &crate::params::CzPluginParams,
         channel: u8,
         cc: u8,
         value: u8,
@@ -159,7 +160,7 @@ impl CzPlugin {
         }
 
         let rt_params = Arc::new(build_rt_synth_params(&synth_params));
-        sync_all_daw_params_from_synth(&self.params, &synth_params);
+        sync_all_daw_params_from_synth(params, &synth_params);
         self.shared_state
             .synth
             .synth_params
@@ -206,7 +207,11 @@ impl CzPlugin {
         }
     }
 
-    pub(crate) fn sync_runtime_params_from_host(&mut self, events: &EventList) {
+    pub(crate) fn sync_runtime_params_from_host_with_params(
+        &mut self,
+        params: &crate::params::CzPluginParams,
+        events: &EventList,
+    ) {
         let changed_param_ids = Self::changed_param_ids(events);
         let has_param_change_events = !changed_param_ids.is_empty();
         let params_version = self
@@ -220,7 +225,7 @@ impl CzPlugin {
                 if changed_param_ids.contains(&param_id) {
                     continue;
                 }
-                let Some(current) = read_current_daw_param_by_id(&self.params, param_id) else {
+                let Some(current) = read_current_daw_param_by_id(params, param_id) else {
                     continue;
                 };
                 let Some(cached) =
@@ -250,13 +255,13 @@ impl CzPlugin {
         // envelope values, corrupting levels and rates.
         let previous_rt = (*self.audio.cached_rt_synth_params).clone();
         let merged = if params_version != self.audio.cached_synth_params_version {
-            let mut params = (*self.shared_state.synth.rt_synth_params.load_full()).clone();
-            apply_daw_params(&mut params, &self.params);
-            params
+            let mut merged_params = (*self.shared_state.synth.rt_synth_params.load_full()).clone();
+            apply_daw_params(&mut merged_params, params);
+            merged_params
         } else {
-            let mut params = (*self.audio.cached_rt_synth_params).clone();
-            apply_daw_params(&mut params, &self.params);
-            params
+            let mut merged_params = (*self.audio.cached_rt_synth_params).clone();
+            apply_daw_params(&mut merged_params, params);
+            merged_params
         };
 
         let mut merged = merged;
@@ -314,12 +319,24 @@ impl CzPlugin {
             .store(self.audio.cached_rt_synth_params.clone());
     }
 
-    pub(crate) fn handle_cc_side_effects(&mut self, channel: u8, cc: u8, value: u8) {
+    #[cfg(test)]
+    pub(crate) fn sync_runtime_params_from_host(&mut self, events: &EventList) {
+        let params = self.test_params();
+        self.sync_runtime_params_from_host_with_params(params.as_ref(), events);
+    }
+
+    pub(crate) fn handle_cc_side_effects(
+        &mut self,
+        params: &crate::params::CzPluginParams,
+        channel: u8,
+        cc: u8,
+        value: u8,
+    ) {
         let _ = self
             .shared_state
             .midi_learn
             .capture_pending_binding(channel, cc);
-        let changes = self.apply_midi_mapping(channel, cc, value);
+        let changes = self.apply_midi_mapping(params, channel, cc, value);
         for change in changes {
             let ui_change = match change.target {
                 AppliedMidiParamTarget::Scalar => NativeUiParamChange::Scalar {
@@ -349,16 +366,20 @@ impl CzPlugin {
             .push((channel, cc, value));
     }
 
-    pub(crate) fn handle_host_event_side_effects(&mut self, body: &EventBody) {
+    pub(crate) fn handle_host_event_side_effects(
+        &mut self,
+        params: &crate::params::CzPluginParams,
+        body: &EventBody,
+    ) {
         match body {
             EventBody::ControlChange {
                 channel, cc, value, ..
-            } => self.handle_cc_side_effects(*channel, *cc, *value),
+            } => self.handle_cc_side_effects(params, *channel, *cc, *value),
             EventBody::ControlChange2 {
                 channel, cc, value, ..
             } => {
                 let raw_value = (*value / 128) as u8;
-                self.handle_cc_side_effects(*channel, *cc, raw_value);
+                self.handle_cc_side_effects(params, *channel, *cc, raw_value);
             }
             EventBody::ParamChange { id, value } => {
                 self.audio.daw_params_dirty = true;
@@ -370,7 +391,7 @@ impl CzPlugin {
             | EventBody::ProgramChange2 { program, .. }
                 if usize::from(*program) < crate::ffi::factory_preset_count() =>
             {
-                self.apply_factory_preset(usize::from(*program));
+                self.apply_factory_preset(params, usize::from(*program), false);
             }
             _ => {}
         }
@@ -426,7 +447,12 @@ impl CzPlugin {
         }
     }
 
-    pub(crate) fn collect_block_input_events(&mut self, events: &EventList, num_samples: usize) {
+    pub(crate) fn collect_block_input_events(
+        &mut self,
+        params: &crate::params::CzPluginParams,
+        events: &EventList,
+        num_samples: usize,
+    ) {
         self.audio.block_input_events.clear();
 
         for _ in 0..MAX_UI_INPUT_EVENTS_PER_BLOCK {
@@ -441,7 +467,7 @@ impl CzPlugin {
 
         for event in events.iter() {
             let sample_offset = (event.sample_offset as usize).min(num_samples);
-            self.handle_host_event_side_effects(&event.body);
+            self.handle_host_event_side_effects(params, &event.body);
             if let Some(engine_event) = Self::host_event_to_engine_event(&event.body) {
                 self.audio.block_input_events.push(CosmoTimedInputEvent {
                     sample_offset,
@@ -457,7 +483,18 @@ impl CzPlugin {
         events: &EventList,
         num_samples: usize,
     ) {
-        self.collect_block_input_events(events, num_samples);
+        let params = self.test_params();
+        self.process_host_events_into_buffer_with_params(params.as_ref(), events, num_samples);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn process_host_events_into_buffer_with_params(
+        &mut self,
+        params: &crate::params::CzPluginParams,
+        events: &EventList,
+        num_samples: usize,
+    ) {
+        self.collect_block_input_events(params, events, num_samples);
         if let Some(proc) = self.audio.processor.as_mut() {
             proc.process_block(
                 &mut self.audio.mono_output[..num_samples],
@@ -469,7 +506,17 @@ impl CzPlugin {
 
     #[cfg(test)]
     pub(crate) fn handle_host_event(&mut self, body: &EventBody) {
-        self.handle_host_event_side_effects(body);
+        let params = self.test_params();
+        self.handle_host_event_with_params(params.as_ref(), body);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn handle_host_event_with_params(
+        &mut self,
+        params: &crate::params::CzPluginParams,
+        body: &EventBody,
+    ) {
+        self.handle_host_event_side_effects(params, body);
         if let Some(engine_event) = Self::host_event_to_engine_event(body)
             && let Some(proc) = self.audio.processor.as_mut()
         {
@@ -486,6 +533,7 @@ impl CzPlugin {
 
     pub(crate) fn render_audio_block(
         &mut self,
+        params: &crate::params::CzPluginParams,
         buffer: &mut AudioBuffer,
         events: &EventList,
         context: &mut ProcessContext,
@@ -507,7 +555,7 @@ impl CzPlugin {
             self.audio.set_voice_limit(shared_voice_limit);
         }
 
-        self.collect_block_input_events(events, num_samples);
+        self.collect_block_input_events(params, events, num_samples);
         if let Some(proc) = self.audio.processor.as_mut() {
             proc.process_block(
                 &mut self.audio.mono_output[..num_samples],

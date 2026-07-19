@@ -999,6 +999,37 @@ fn save_state_includes_preset_name() {
 }
 
 #[test]
+fn snapshot_into_publishes_prebuilt_session_state() {
+    clear_test_global_settings();
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(Arc::clone(&params));
+    plugin.reset(48_000.0, 64);
+
+    plugin
+        .shared_state
+        .presets
+        .session
+        .lock()
+        .unwrap()
+        .active_preset_name_base = "Snapshot Pad".to_string();
+    publish_state_snapshot(plugin.shared_state.as_ref());
+
+    let mut snapshot = Vec::new();
+    assert!(<CzPlugin as PluginLogic>::snapshot_into(
+        &plugin,
+        &mut snapshot
+    ));
+    assert_eq!(snapshot, plugin.save_state());
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&snapshot).expect("snapshot should be valid JSON");
+    assert_eq!(
+        parsed["presetSession"]["activePresetNameBase"],
+        "Snapshot Pad"
+    );
+}
+
+#[test]
 fn load_state_restores_preset_name() {
     with_test_data_dir(|_| {
         clear_test_global_settings();

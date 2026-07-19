@@ -19,6 +19,7 @@ pub(super) fn handle(
             if let Ok(mut stored) = preset_session.lock() {
                 stored.active_preset_name_base = name.clone();
             }
+            publish_state_snapshot(context.shared_state.as_ref());
             Ok(PluginIpcResponse::SetPresetName)
         }
         PluginIpcRequest::GetPresetName => {
@@ -39,6 +40,7 @@ pub(super) fn handle(
             if let Ok(mut stored) = preset_session.lock() {
                 *stored = session.clone();
             }
+            publish_state_snapshot(context.shared_state.as_ref());
             Ok(PluginIpcResponse::SetPresetSession)
         }
         PluginIpcRequest::GetPresetLibrary { source } => {
@@ -164,6 +166,7 @@ pub(super) fn handle(
                 stored.loaded_preset_id = Some(payload.preset_id.clone());
                 stored.is_dirty = false;
             }
+            publish_state_snapshot(context.shared_state.as_ref());
 
             Ok(PluginIpcResponse::LoadPreset(LoadPresetResponse {
                 preset_name: preset_name_val,
@@ -267,6 +270,7 @@ pub(super) fn handle(
                 stored.loaded_preset_id = Some(saved_entry.id.clone());
                 stored.is_dirty = false;
             }
+            publish_state_snapshot(context.shared_state.as_ref());
 
             Ok(PluginIpcResponse::SavePreset(SavePresetResponse {
                 id: saved_entry.id,
