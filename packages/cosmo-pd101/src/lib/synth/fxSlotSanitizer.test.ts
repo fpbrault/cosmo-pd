@@ -100,26 +100,27 @@ describe("fxSlotSanitizer", () => {
 		useSynthStore.setState(useSynthStore.getInitialState());
 	});
 
-	it.each(
-		FX_DEFINITIONS,
-	)("serializes manual defaults for %s with engine-safe types", (definition) => {
-		useSynthStore.getState().setFxSlotType(0, definition.slotType);
-		const params = useSynthStore.getState().gatherState().params;
-		const sanitized = sanitizeSynthParamsForEngine(params);
-		const slot = sanitized.fxSlots?.[0];
+	it.each(FX_DEFINITIONS)(
+		"serializes manual defaults for %s with engine-safe types",
+		(definition) => {
+			useSynthStore.getState().setFxSlotType(0, definition.slotType);
+			const params = useSynthStore.getState().gatherState().params;
+			const sanitized = sanitizeSynthParamsForEngine(params);
+			const slot = sanitized.fxSlots?.[0];
 
-		expect(slot?.type).toBe(definition.slotType);
-		expect(() => JSON.parse(JSON.stringify(sanitized))).not.toThrow();
-		if (!slot || slot.type === "empty") {
-			throw new Error(`Expected populated slot for ${definition.slotType}`);
-		}
-		expect(typeof (slot.params as Record<string, unknown>).enabled).toBe(
-			"boolean",
-		);
-		for (const control of definition.controls) {
-			expectTypedControlValue(slot, control);
-		}
-	});
+			expect(slot?.type).toBe(definition.slotType);
+			expect(() => JSON.parse(JSON.stringify(sanitized))).not.toThrow();
+			if (!slot || slot.type === "empty") {
+				throw new Error(`Expected populated slot for ${definition.slotType}`);
+			}
+			expect(typeof (slot.params as Record<string, unknown>).enabled).toBe(
+				"boolean",
+			);
+			for (const control of definition.controls) {
+				expectTypedControlValue(slot, control);
+			}
+		},
+	);
 
 	it.each(
 		FX_DEFINITIONS.flatMap((definition) =>

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use arc_swap::ArcSwap;
+use arc_swap::{ArcSwap, ArcSwapOption};
 use cosmo_synth_engine::params::{AlgoControlId, SynthParams};
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
@@ -52,9 +52,10 @@ pub type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 pub type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
 pub type SharedTransportSnapshot = Arc<TransportSnapshot>;
 pub type SynthParamsVersion = Arc<AtomicU64>;
-pub type SharedPresetSession = Arc<Mutex<PresetSession>>;
-pub type SharedEditorState = Arc<Mutex<Option<EditorState>>>;
+pub type SharedPresetSession = Arc<ArcSwap<PresetSession>>;
+pub type SharedEditorState = Arc<ArcSwapOption<EditorState>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
+pub type SharedStateSnapshot = Arc<ArcSwap<Vec<u8>>>;
 
 pub fn drain_and_coalesce_ui_param_changes(queue: &UiParamChangeQueue) -> Vec<UiParamChange> {
     let mut scalar_changes = HashMap::<String, f32>::new();
@@ -303,6 +304,11 @@ pub struct PluginSharedState {
     pub editor: EditorSessionState,
     pub presets: PresetService,
     pub midi_learn: MidiLearnService,
+    /// Pre-serialized custom state for Truce's audio-thread `snapshot_into`.
+    /// Updated off the audio thread; copied lock-free during process.
+    pub state_snapshot: SharedStateSnapshot,
+    /// Synth parameter version represented by `state_snapshot`.
+    pub state_snapshot_version: AtomicU64,
     /// Runtime voice limit (1-16). Read/written by IPC, consumed by audio thread.
     pub voice_limit: AtomicU8,
     /// Set by `LoadPreset` IPC handler before publishing new params/version.
@@ -320,7 +326,7 @@ impl PluginSharedState {
         midi_learn_state: MidiLearnState,
         voice_limit: u8,
     ) -> Self {
-        let preset_session = Arc::new(Mutex::new(PresetSession::default()));
+        let preset_session = Arc::new(ArcSwap::from_pointee(PresetSession::default()));
         Self {
             synth: SynthParamState {
                 synth_params: Arc::new(ArcSwap::new(Arc::new(default_params))),
@@ -340,10 +346,12 @@ impl PluginSharedState {
                 pending_param_changes_flushed_via_ipc: Arc::new(AtomicBool::new(false)),
             },
             editor: EditorSessionState {
-                editor_state: Arc::new(Mutex::new(None)),
+                editor_state: Arc::new(ArcSwapOption::empty()),
             },
             presets: PresetService::new(preset_library.clone(), preset_session),
             midi_learn: MidiLearnService::new(midi_learn_state),
+            state_snapshot: Arc::new(ArcSwap::from_pointee(Vec::new())),
+            state_snapshot_version: AtomicU64::new(0),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
         }
