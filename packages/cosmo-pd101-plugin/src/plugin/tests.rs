@@ -1001,11 +1001,37 @@ fn snapshot_into_publishes_prebuilt_session_state() {
     let params = Arc::new(CzPluginParams::new());
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
+    let synth_version_before = plugin
+        .shared_state
+        .synth
+        .synth_params_version
+        .load(Ordering::Acquire);
+    let generation_before = plugin
+        .shared_state
+        .state_snapshot_generation
+        .load(Ordering::Acquire);
 
     let mut session = (*plugin.shared_state.presets.session.load_full()).clone();
     session.active_preset_name_base = "Snapshot Pad".to_string();
     plugin.shared_state.presets.session.store(Arc::new(session));
     publish_state_snapshot(plugin.shared_state.as_ref());
+    let generation_after_publish = plugin
+        .shared_state
+        .state_snapshot_generation
+        .load(Ordering::Acquire);
+    assert_eq!(
+        plugin
+            .shared_state
+            .synth
+            .synth_params_version
+            .load(Ordering::Acquire),
+        synth_version_before
+    );
+    assert!(generation_after_publish > generation_before);
+    assert_eq!(
+        <CzPlugin as PluginLogic>::snapshot_version(&plugin),
+        Some(generation_after_publish)
+    );
 
     let mut snapshot = Vec::new();
     assert!(<CzPlugin as PluginLogic>::snapshot_into(
@@ -1013,6 +1039,37 @@ fn snapshot_into_publishes_prebuilt_session_state() {
         &mut snapshot
     ));
     assert_eq!(snapshot, plugin.save_state());
+    assert_eq!(
+        plugin
+            .shared_state
+            .state_snapshot_generation
+            .load(Ordering::Acquire),
+        generation_after_publish
+    );
+
+    plugin.startup_preset_resolved = true;
+    let mut left = [0.0_f32; 64];
+    let mut right = [0.0_f32; 64];
+    let inputs: [&[f32]; 0] = [];
+    let mut outputs: [&mut [f32]; 2] = [&mut left, &mut right];
+    let mut buffer = AudioBuffer::from_slices_checked(&inputs, &mut outputs, 64);
+    let transport = TransportInfo::default();
+    let mut output_events = EventList::default();
+    let mut context = ProcessContext::new(&transport, 48_000.0, 64, &mut output_events);
+    <CzPlugin as PluginLogic>::process(
+        &mut plugin,
+        params.as_ref(),
+        &mut buffer,
+        &EventList::default(),
+        &mut context,
+    );
+    assert_eq!(
+        plugin
+            .shared_state
+            .state_snapshot_generation
+            .load(Ordering::Acquire),
+        generation_after_publish
+    );
 
     let parsed: serde_json::Value =
         serde_json::from_slice(&snapshot).expect("snapshot should be valid JSON");
@@ -1080,6 +1137,10 @@ fn load_state_does_not_leave_a_deferred_reset_pending() {
     let mut plugin = CzPlugin::new(Arc::clone(&params));
     plugin.reset(48_000.0, 64);
     let state = plugin.save_state();
+    let generation_before = plugin
+        .shared_state
+        .state_snapshot_generation
+        .load(Ordering::Acquire);
 
     plugin
         .shared_state
@@ -1088,6 +1149,15 @@ fn load_state_does_not_leave_a_deferred_reset_pending() {
     plugin.load_state(&state).unwrap();
 
     assert_eq!(plugin.shared_state.state_snapshot.load().as_ref(), &state);
+    let generation_after = plugin
+        .shared_state
+        .state_snapshot_generation
+        .load(Ordering::Acquire);
+    assert!(generation_after > generation_before);
+    assert_eq!(
+        <CzPlugin as PluginLogic>::snapshot_version(&plugin),
+        Some(generation_after)
+    );
     assert!(
         !plugin
             .shared_state
