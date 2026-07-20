@@ -25,7 +25,7 @@
 		"package:release:windows": "bun run build:web && bun run gen:factory-presets && cargo truce package",
 		"package:release:linux": "bun run build:web && bun run gen:factory-presets && cargo truce package",
 		"validate": "cargo truce validate --pluginval --auval",
-		"validate:strict": "cargo truce validate --pluginval --auval -p cosmo-pd101-plugin",
+		"validate:strict": "cargo truce validate --pluginval --clap --auval -p cosmo-pd101-plugin",
 		"uninstall": "cargo truce uninstall --vst3 --clap --au2"
 	}
 }

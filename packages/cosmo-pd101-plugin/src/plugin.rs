@@ -61,15 +61,21 @@ pub(crate) fn session_state_bytes(shared_state: &PluginSharedState) -> Vec<u8> {
 }
 
 pub(crate) fn publish_state_snapshot(shared_state: &PluginSharedState) {
+    publish_serialized_state_snapshot(shared_state, session_state_bytes(shared_state));
+}
+
+fn publish_serialized_state_snapshot(shared_state: &PluginSharedState, snapshot: Vec<u8>) {
     let synth_version = shared_state
         .synth
         .synth_params_version
         .load(Ordering::Acquire);
-    let snapshot = session_state_bytes(shared_state);
     shared_state.state_snapshot.store(Arc::new(snapshot));
     shared_state
-        .state_snapshot_version
+        .state_snapshot_synth_version
         .store(synth_version, Ordering::Release);
+    shared_state
+        .state_snapshot_generation
+        .fetch_add(1, Ordering::Release);
 }
 
 #[derive(Clone, Copy)]
@@ -142,7 +148,8 @@ fn handle_ipc_invoke(
                 .unwrap_or_default(),
         ),
         state_snapshot: Arc::new(ArcSwap::from_pointee(Vec::new())),
-        state_snapshot_version: AtomicU64::new(0),
+        state_snapshot_synth_version: AtomicU64::new(0),
+        state_snapshot_generation: AtomicU64::new(0),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
     });
@@ -447,11 +454,11 @@ impl PluginLogic for CzPlugin {
             .synth
             .synth_params_version
             .load(Ordering::Acquire);
-        let snapshot_version = state
+        let snapshot_synth_version = state
             .shared_state
-            .state_snapshot_version
+            .state_snapshot_synth_version
             .load(Ordering::Acquire);
-        if synth_version != snapshot_version
+        if synth_version != snapshot_synth_version
             && let Some(tasks) = context.tasks::<PublishStateSnapshot>()
         {
             tasks.spawn_coalescing(PublishStateSnapshot);
@@ -471,6 +478,15 @@ impl PluginLogic for CzPlugin {
         let snapshot = state.shared_state.state_snapshot.load();
         buf.extend_from_slice(snapshot.as_ref());
         true
+    }
+
+    fn snapshot_version(state: &Self::DspState) -> Option<u64> {
+        Some(
+            state
+                .shared_state
+                .state_snapshot_generation
+                .load(Ordering::Acquire),
+        )
     }
 
     fn load_state(state: &mut Self::DspState, data: &[u8]) -> Result<(), StateLoadError> {
@@ -530,10 +546,7 @@ impl PluginLogic for CzPlugin {
             proc.reset_audio_state();
             proc.set_shared_params(rt_params);
         }
-        state
-            .shared_state
-            .state_snapshot
-            .store(Arc::new(data.to_vec()));
+        publish_serialized_state_snapshot(state.shared_state.as_ref(), data.to_vec());
         Ok(())
     }
 

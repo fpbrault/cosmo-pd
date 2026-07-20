@@ -308,7 +308,9 @@ pub struct PluginSharedState {
     /// Updated off the audio thread; copied lock-free during process.
     pub state_snapshot: SharedStateSnapshot,
     /// Synth parameter version represented by `state_snapshot`.
-    pub state_snapshot_version: AtomicU64,
+    pub state_snapshot_synth_version: AtomicU64,
+    /// Monotonic generation for Truce's `snapshot_version` gate.
+    pub state_snapshot_generation: AtomicU64,
     /// Runtime voice limit (1-16). Read/written by IPC, consumed by audio thread.
     pub voice_limit: AtomicU8,
     /// Set by `LoadPreset` IPC handler before publishing new params/version.
@@ -351,7 +353,8 @@ impl PluginSharedState {
             presets: PresetService::new(preset_library.clone(), preset_session),
             midi_learn: MidiLearnService::new(midi_learn_state),
             state_snapshot: Arc::new(ArcSwap::from_pointee(Vec::new())),
-            state_snapshot_version: AtomicU64::new(0),
+            state_snapshot_synth_version: AtomicU64::new(0),
+            state_snapshot_generation: AtomicU64::new(0),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
         }
