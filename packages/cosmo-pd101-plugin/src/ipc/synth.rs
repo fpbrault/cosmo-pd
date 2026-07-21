@@ -7,6 +7,8 @@ pub(super) fn handle(
     context: &IpcContext,
     req: &PluginIpcRequest,
 ) -> Result<PluginIpcResponse, String> {
+    context.shared_state.telemetry.drain_latest();
+
     let synth_params = &context.shared_state.synth.synth_params;
     let rt_synth_params = &context.shared_state.synth.rt_synth_params;
     let runtime_mod_sources = &context.shared_state.telemetry.runtime_mod_sources;

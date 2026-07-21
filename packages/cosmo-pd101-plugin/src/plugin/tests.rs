@@ -41,6 +41,35 @@ fn synth_params_json(params: &SynthParams) -> serde_json::Value {
     serde_json::to_value(params).unwrap()
 }
 
+fn process_test_block(plugin: &mut CzPluginDspState, events: &EventList) -> ProcessStatus {
+    let mut left = [0.0_f32; 64];
+    let mut right = [0.0_f32; 64];
+    let inputs: [&[f32]; 0] = [];
+    let mut outputs: [&mut [f32]; 2] = [&mut left, &mut right];
+    let mut buffer = AudioBuffer::from_slices_checked(&inputs, &mut outputs, 64);
+    let transport = TransportInfo::default();
+    let mut output_events = EventList::default();
+    let mut context = ProcessContext::new(&transport, 48_000.0, 64, &mut output_events);
+    let params = plugin.test_params();
+    <CzPlugin as PluginLogic>::process(plugin, params.as_ref(), &mut buffer, events, &mut context)
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn process_callback_telemetry_path_does_not_allocate() {
+    let params = Arc::new(CzPluginParams::new());
+    let mut plugin = CzPlugin::new(params);
+    plugin.reset(48_000.0, 64);
+    let events = EventList::default();
+
+    process_test_block(&mut plugin, &events);
+    plugin.shared_state.telemetry.drain_latest();
+
+    assert_no_alloc::assert_no_alloc(|| {
+        process_test_block(&mut plugin, &events);
+    });
+}
+
 #[test]
 fn debug_logs_follow_global_settings_log_level() {
     with_test_data_dir(|_| {

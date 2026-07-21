@@ -19,7 +19,7 @@ use crate::params::{
     write_daw_param_by_id,
 };
 use crate::plugin::{CzPluginDspState, build_rt_synth_params};
-use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey};
+use crate::runtime_state::{NativeUiParamChange, NativeUiParamKey, ScopeFrame};
 
 pub(crate) const MAX_UI_INPUT_EVENTS_PER_BLOCK: usize = 64;
 
@@ -31,6 +31,7 @@ pub struct AudioRuntime {
     pub(crate) mono_output: Vec<f32>,
     pub(crate) daw_params_dirty: bool,
     pub(crate) last_scope_hz: f32,
+    pub(crate) scope_frame: ScopeFrame,
     pub(crate) voice_limit: usize,
 }
 
@@ -44,6 +45,7 @@ impl AudioRuntime {
             mono_output: Vec::new(),
             daw_params_dirty: true,
             last_scope_hz: 220.0,
+            scope_frame: ScopeFrame::default(),
             voice_limit: crate::global_settings::DEFAULT_VOICE_LIMIT as usize,
         }
     }
@@ -585,18 +587,23 @@ impl CzPluginDspState {
         } else {
             self.audio.last_scope_hz
         };
-        if let Ok(mut scope) = self.shared_state.telemetry.scope_buffer.try_lock() {
-            scope.push_block(mono_output, proc.sample_rate, hz);
+        self.audio
+            .scope_frame
+            .push_block(mono_output, proc.sample_rate, hz);
+        if let Some(mut telemetry) = self.shared_state.telemetry.exchange.acquire_frame() {
+            telemetry.mod_sources = proc.runtime_mod_sources();
+            telemetry.voice_count =
+                proc.write_runtime_voice_debug_state_slice(&mut telemetry.voice_states);
+            self.audio
+                .scope_frame
+                .copy_linear_into(&mut telemetry.scope_samples);
+            telemetry.scope_sample_rate = proc.sample_rate;
+            telemetry.scope_hz = hz;
+            self.shared_state
+                .telemetry
+                .exchange
+                .publish_frame(telemetry);
         }
-
-        self.shared_state
-            .telemetry
-            .runtime_mod_sources
-            .store(Arc::new(proc.runtime_mod_sources()));
-        self.shared_state
-            .telemetry
-            .runtime_voice_states
-            .store(Arc::new(proc.runtime_voice_debug_state()));
 
         let peak = mono_output[..num_samples]
             .iter()

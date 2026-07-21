@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use arc_swap::{ArcSwap, ArcSwapOption};
-use cosmo_synth_engine::params::{AlgoControlId, SynthParams};
+use cosmo_synth_engine::params::{AlgoControlId, MAX_VOICES, SynthParams};
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use crossbeam_queue::ArrayQueue;
@@ -21,6 +21,7 @@ pub const SCOPE_CAPACITY: usize = 4096;
 pub const UI_INPUT_QUEUE_CAPACITY: usize = 1024;
 pub const MIDI_CC_QUEUE_CAPACITY: usize = 128;
 pub const UI_PARAM_CHANGE_QUEUE_CAPACITY: usize = 128;
+const RUNTIME_TELEMETRY_FRAME_COUNT: usize = 3;
 
 pub type ScopeBuffer = Arc<Mutex<ScopeFrame>>;
 pub type UiInputQueue = Arc<ArrayQueue<CosmoInputEvent>>;
@@ -56,6 +57,87 @@ pub type SharedPresetSession = Arc<ArcSwap<PresetSession>>;
 pub type SharedEditorState = Arc<ArcSwapOption<EditorState>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
 pub type SharedStateSnapshot = Arc<ArcSwap<Vec<u8>>>;
+
+pub struct RuntimeTelemetryFrame {
+    pub mod_sources: RuntimeModSources,
+    pub voice_states: [RuntimeVoiceDebugState; MAX_VOICES],
+    pub voice_count: usize,
+    pub scope_samples: [f32; SCOPE_CAPACITY],
+    pub scope_sample_rate: f32,
+    pub scope_hz: f32,
+}
+
+impl Default for RuntimeTelemetryFrame {
+    fn default() -> Self {
+        Self {
+            mod_sources: RuntimeModSources::default(),
+            voice_states: [RuntimeVoiceDebugState::default(); MAX_VOICES],
+            voice_count: 0,
+            scope_samples: [0.0; SCOPE_CAPACITY],
+            scope_sample_rate: 44_100.0,
+            scope_hz: 220.0,
+        }
+    }
+}
+
+pub struct RuntimeTelemetryExchange {
+    free_frames: ArrayQueue<Box<RuntimeTelemetryFrame>>,
+    ready_frames: ArrayQueue<Box<RuntimeTelemetryFrame>>,
+    coalesced_frames: AtomicU64,
+}
+
+impl Default for RuntimeTelemetryExchange {
+    fn default() -> Self {
+        let exchange = Self {
+            free_frames: ArrayQueue::new(RUNTIME_TELEMETRY_FRAME_COUNT),
+            ready_frames: ArrayQueue::new(RUNTIME_TELEMETRY_FRAME_COUNT),
+            coalesced_frames: AtomicU64::new(0),
+        };
+        for _ in 0..RUNTIME_TELEMETRY_FRAME_COUNT {
+            let _ = exchange
+                .free_frames
+                .push(Box::new(RuntimeTelemetryFrame::default()));
+        }
+        exchange
+    }
+}
+
+impl RuntimeTelemetryExchange {
+    pub fn acquire_frame(&self) -> Option<Box<RuntimeTelemetryFrame>> {
+        self.free_frames.pop().or_else(|| {
+            let frame = self.ready_frames.pop();
+            if frame.is_some() {
+                self.coalesced_frames.fetch_add(1, Ordering::Relaxed);
+            }
+            frame
+        })
+    }
+
+    pub fn publish_frame(&self, frame: Box<RuntimeTelemetryFrame>) {
+        if let Err(frame) = self.ready_frames.push(frame) {
+            self.coalesced_frames.fetch_add(1, Ordering::Relaxed);
+            let _ = self.free_frames.push(frame);
+        }
+    }
+
+    fn take_latest(&self) -> Option<Box<RuntimeTelemetryFrame>> {
+        let mut latest = self.ready_frames.pop()?;
+        while let Some(next) = self.ready_frames.pop() {
+            self.release_frame(latest);
+            self.coalesced_frames.fetch_add(1, Ordering::Relaxed);
+            latest = next;
+        }
+        Some(latest)
+    }
+
+    fn release_frame(&self, frame: Box<RuntimeTelemetryFrame>) {
+        let _ = self.free_frames.push(frame);
+    }
+
+    pub fn coalesced_frames(&self) -> u64 {
+        self.coalesced_frames.load(Ordering::Relaxed)
+    }
+}
 
 pub fn drain_and_coalesce_ui_param_changes(queue: &UiParamChangeQueue) -> Vec<UiParamChange> {
     let mut scalar_changes = HashMap::<String, f32>::new();
@@ -155,6 +237,24 @@ impl ScopeFrame {
             out.extend_from_slice(&self.samples[..self.cursor]);
             out
         }
+    }
+
+    pub fn copy_linear_into(&self, output: &mut [f32; SCOPE_CAPACITY]) {
+        if self.samples.len() < SCOPE_CAPACITY {
+            output.fill(0.0);
+            output[..self.samples.len()].copy_from_slice(&self.samples);
+            return;
+        }
+        let split = SCOPE_CAPACITY - self.cursor;
+        output[..split].copy_from_slice(&self.samples[self.cursor..]);
+        output[split..].copy_from_slice(&self.samples[..self.cursor]);
+    }
+
+    fn replace_linear(&mut self, samples: &[f32; SCOPE_CAPACITY], sample_rate: f32, hz: f32) {
+        self.samples.copy_from_slice(samples);
+        self.cursor = 0;
+        self.sample_rate = sample_rate;
+        self.hz = hz;
     }
 }
 
@@ -278,6 +378,27 @@ pub struct RuntimeTelemetry {
     pub runtime_voice_states: SharedRuntimeVoiceStates,
     pub transport_snapshot: SharedTransportSnapshot,
     pub scope_buffer: ScopeBuffer,
+    pub exchange: Arc<RuntimeTelemetryExchange>,
+}
+
+impl RuntimeTelemetry {
+    pub fn drain_latest(&self) -> bool {
+        let Some(frame) = self.exchange.take_latest() else {
+            return false;
+        };
+        self.runtime_mod_sources.store(Arc::new(frame.mod_sources));
+        self.runtime_voice_states
+            .store(Arc::new(frame.voice_states[..frame.voice_count].to_vec()));
+        if let Ok(mut scope) = self.scope_buffer.lock() {
+            scope.replace_linear(
+                &frame.scope_samples,
+                frame.scope_sample_rate,
+                frame.scope_hz,
+            );
+        }
+        self.exchange.release_frame(frame);
+        true
+    }
 }
 
 #[derive(Clone)]
@@ -340,6 +461,7 @@ impl PluginSharedState {
                 runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
                 transport_snapshot: Arc::new(TransportSnapshot::default()),
                 scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
+                exchange: Arc::new(RuntimeTelemetryExchange::default()),
             },
             ui: UiEventQueues {
                 ui_input_queue: Arc::new(ArrayQueue::new(UI_INPUT_QUEUE_CAPACITY)),
@@ -389,5 +511,58 @@ mod tests {
 
         assert_eq!(state.synth.synth_params.load().volume, 0.42);
         assert_eq!(state.synth.synth_params_version.load(Ordering::Acquire), 1);
+    }
+
+    #[test]
+    fn telemetry_exchange_coalesces_to_latest_frame() {
+        let exchange = RuntimeTelemetryExchange::default();
+        for value in [0.1, 0.2, 0.3, 0.4] {
+            let mut frame = exchange
+                .acquire_frame()
+                .expect("preallocated telemetry frame");
+            frame.mod_sources.lfo1 = value;
+            exchange.publish_frame(frame);
+        }
+
+        let latest = exchange.take_latest().expect("published telemetry frame");
+        assert_eq!(latest.mod_sources.lfo1, 0.4);
+        assert!(exchange.coalesced_frames() > 0);
+        exchange.release_frame(latest);
+    }
+
+    #[test]
+    fn telemetry_drain_updates_ipc_snapshots() {
+        let params = SynthParams::default();
+        let library = Arc::new(Mutex::new(PresetLibrary::from_embedded_factory("[]")));
+        let state = PluginSharedState::new(
+            params.clone(),
+            params,
+            library,
+            MidiLearnState::default(),
+            crate::global_settings::DEFAULT_VOICE_LIMIT,
+        );
+        let mut frame = state
+            .telemetry
+            .exchange
+            .acquire_frame()
+            .expect("preallocated telemetry frame");
+        frame.mod_sources.lfo1 = 0.75;
+        frame.voice_count = 1;
+        frame.voice_states[0].active = true;
+        frame.voice_states[0].note = Some(64);
+        frame.scope_samples[0] = 0.5;
+        frame.scope_sample_rate = 48_000.0;
+        frame.scope_hz = 330.0;
+        state.telemetry.exchange.publish_frame(frame);
+
+        assert!(state.telemetry.drain_latest());
+        assert_eq!(state.telemetry.runtime_mod_sources.load().lfo1, 0.75);
+        let voices = state.telemetry.runtime_voice_states.load();
+        assert_eq!(voices.len(), 1);
+        assert_eq!(voices[0].note, Some(64));
+        let scope = state.telemetry.scope_buffer.lock().unwrap();
+        assert_eq!(scope.samples()[0], 0.5);
+        assert_eq!(scope.sample_rate(), 48_000.0);
+        assert_eq!(scope.hz(), 330.0);
     }
 }

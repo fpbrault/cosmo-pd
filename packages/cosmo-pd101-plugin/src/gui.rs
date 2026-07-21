@@ -532,6 +532,8 @@ impl Editor for CzEditor {
     }
 
     fn idle(&mut self) {
+        self.shared_state.telemetry.drain_latest();
+
         #[cfg(target_os = "macos")]
         if !is_main_thread() {
             let should_schedule_main_thread_sync = self
