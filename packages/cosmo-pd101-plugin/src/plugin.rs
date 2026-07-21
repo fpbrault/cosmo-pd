@@ -121,6 +121,7 @@ fn handle_ipc_invoke(
             runtime_voice_states: runtime_voice_states.clone(),
             transport_snapshot: transport_snapshot.clone(),
             scope_buffer: scope_buffer.clone(),
+            exchange: Arc::new(crate::runtime_state::RuntimeTelemetryExchange::default()),
         },
         ui: crate::runtime_state::UiEventQueues {
             ui_input_queue: ui_input_queue.clone(),

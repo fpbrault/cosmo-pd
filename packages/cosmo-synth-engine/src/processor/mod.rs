@@ -145,6 +145,14 @@ impl CosmoProcessor {
     }
 
     pub fn write_runtime_voice_debug_state(&self, output: &mut Vec<RuntimeVoiceDebugState>) {
+        output.resize(self.voices.len(), RuntimeVoiceDebugState::default());
+        self.write_runtime_voice_debug_state_slice(output);
+    }
+
+    pub fn write_runtime_voice_debug_state_slice(
+        &self,
+        output: &mut [RuntimeVoiceDebugState],
+    ) -> usize {
         let is_shared_mod_env = self.params.mod_env.retrig_mode != ModEnvRetrigMode::Poly;
         let shared_mod_env = RuntimeModEnvState {
             value: self.shared_mod_env.output,
@@ -152,9 +160,14 @@ impl CosmoProcessor {
             releasing: self.shared_mod_env.is_releasing(),
             release_start: self.shared_mod_env.release_start(),
         };
-        output.clear();
-        output.extend(self.voices.iter().enumerate().map(|(index, voice)| {
-            RuntimeVoiceDebugState {
+        let count = output.len().min(self.voices.len());
+        for (index, (slot, voice)) in output
+            .iter_mut()
+            .zip(self.voices.iter())
+            .take(count)
+            .enumerate()
+        {
+            *slot = RuntimeVoiceDebugState {
                 index,
                 active: !voice.is_silent,
                 is_releasing: voice.is_releasing,
@@ -226,8 +239,9 @@ impl CosmoProcessor {
                         prev_level: voice.line2_env.dca.prev_level,
                     },
                 },
-            }
-        }));
+            };
+        }
+        count
     }
 
     /// Copy FX-relevant fields from `self.params` into the `FxChain`.
