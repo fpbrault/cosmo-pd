@@ -39,6 +39,36 @@ test.describe("Plugin shell visual smoke", () => {
 		});
 	});
 
+	test("keeps scope delivery active when switching from display to fx and mod", async ({
+		page,
+	}) => {
+		const displayButton = page.getByRole("button", {
+			name: "DISPLAY",
+			exact: true,
+		});
+		const fxButton = page.getByRole("button", { name: "FX", exact: true });
+		const modButton = page.getByRole("button", { name: "MOD", exact: true });
+
+		await displayButton.click();
+		await expect(displayButton).toHaveAttribute("aria-pressed", "true");
+		await expect
+			.poll(() => page.evaluate(() => typeof window.__czOnScope))
+			.toBe("function");
+
+		await fxButton.click();
+		await expect(fxButton).toHaveAttribute("aria-pressed", "true");
+		await expect
+			.poll(() => page.evaluate(() => typeof window.__czOnScope))
+			.toBe("function");
+
+		await displayButton.click();
+		await modButton.click();
+		await expect(modButton).toHaveAttribute("aria-pressed", "true");
+		await expect
+			.poll(() => page.evaluate(() => typeof window.__czOnScope))
+			.toBe("function");
+	});
+
 	test("persists synth shell UI state across reloads", async ({ page }) => {
 		await expect(page.getByTestId("test-harness")).toBeVisible();
 
