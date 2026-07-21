@@ -163,6 +163,7 @@ export function useStepEnvelopeCanvasInteraction({
 
 			canvas.setPointerCapture(e.pointerId);
 			setHoverStep(closest.stepIndex);
+
 			const newDragState = {
 				pointerId: e.pointerId,
 				stepIndex: closest.stepIndex,
@@ -175,12 +176,14 @@ export function useStepEnvelopeCanvasInteraction({
 			dragStateRef.current = newDragState;
 
 			cleanupDragRef.current?.();
+
 			const onWindowPointerEnd = (nativeEvent: PointerEvent) => {
 				endDrag(nativeEvent.pointerId);
 				window.removeEventListener("pointerup", onWindowPointerEnd);
 				window.removeEventListener("pointercancel", onWindowPointerEnd);
 				cleanupDragRef.current = null;
 			};
+
 			window.addEventListener("pointerup", onWindowPointerEnd);
 			window.addEventListener("pointercancel", onWindowPointerEnd);
 			cleanupDragRef.current = () => {

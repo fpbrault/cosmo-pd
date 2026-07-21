@@ -73,14 +73,8 @@ export default function PhaseLinesSection({
 			<div className="cz-collapse-header cz-section-slanted-title shrink-0 justify-center py-0">
 				Phase Lines
 			</div>
-			<div
-				data-auv3-passive-surface
-				className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2 [@container_phase_(max-height:620px)]:p-1"
-			>
-				<div
-					data-auv3-passive-surface
-					className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2 [@container_phase_(max-height:620px)]:gap-1"
-				>
+			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2 [@container_phase_(max-height:620px)]:p-1">
+				<div className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2 [@container_phase_(max-height:620px)]:gap-1">
 					<div className="flex w-16 shrink-0 flex-col justify-evenly gap-5 self-stretch [@container_phase_(max-height:620px)]:w-14 [@container_phase_(max-height:620px)]:gap-2">
 						{leftTabGroups.map((group) => {
 							return (

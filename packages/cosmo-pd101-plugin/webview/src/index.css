@@ -15,11 +15,3 @@ body,
 [data-auv3-hosted] {
 	touch-action: pan-y;
 }
-
-[data-auv3-hosted] [data-auv3-passive-surface] {
-	touch-action: pan-y;
-}
-
-[data-auv3-hosted] [data-auv3-passive-layer] {
-	pointer-events: none;
-}

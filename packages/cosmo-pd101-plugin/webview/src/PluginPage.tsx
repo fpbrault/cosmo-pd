@@ -516,6 +516,31 @@ export default function PluginPage({
 		...zoomStyle,
 		transformOrigin: "top left",
 	};
+	const rendererContent = (
+		<PresetManagerProvider value={presetManager}>
+			<SynthRenderer
+				runtime={runtime}
+				appVersion={appVersion}
+				bottomBarExtra={utilityExtra}
+				keyboardSettingsExtra={
+					showStandaloneIosSettings ? (
+						<Auv3StandaloneSettingsSection />
+					) : undefined
+				}
+				disableAudioGate
+				miniKeyboard={{
+					activeNotes: runtime.activeNotes,
+					pitchBend: runtime.pitchBend,
+					modWheel: runtime.modWheel,
+					onNoteOn: runtime.sendNoteOn,
+					onNoteOff: runtime.sendNoteOff,
+					onPitchBend: runtime.sendPitchBend,
+					onModWheel: runtime.sendModWheel,
+					onPolyAftertouch: runtime.sendPolyAftertouch,
+				}}
+			/>
+		</PresetManagerProvider>
+	);
 
 	if (isAuv3WebView) {
 		if (isIosHostedAuv3) {
@@ -542,29 +567,7 @@ export default function PluginPage({
 									className="absolute top-0 left-0 origin-top-left"
 									style={auv3ZoomStyle}
 								>
-									<PresetManagerProvider value={presetManager}>
-										<SynthRenderer
-											runtime={runtime}
-											appVersion={appVersion}
-											bottomBarExtra={utilityExtra}
-											keyboardSettingsExtra={
-												showStandaloneIosSettings ? (
-													<Auv3StandaloneSettingsSection />
-												) : undefined
-											}
-											disableAudioGate
-											miniKeyboard={{
-												activeNotes: runtime.activeNotes,
-												pitchBend: runtime.pitchBend,
-												modWheel: runtime.modWheel,
-												onNoteOn: runtime.sendNoteOn,
-												onNoteOff: runtime.sendNoteOff,
-												onPitchBend: runtime.sendPitchBend,
-												onModWheel: runtime.sendModWheel,
-												onPolyAftertouch: runtime.sendPolyAftertouch,
-											}}
-										/>
-									</PresetManagerProvider>
+									{rendererContent}
 								</div>
 							</div>
 						</div>
@@ -589,29 +592,7 @@ export default function PluginPage({
 						className="absolute top-0 left-0 origin-top-left"
 						style={auv3ZoomStyle}
 					>
-						<PresetManagerProvider value={presetManager}>
-							<SynthRenderer
-								runtime={runtime}
-								appVersion={appVersion}
-								bottomBarExtra={utilityExtra}
-								keyboardSettingsExtra={
-									showStandaloneIosSettings ? (
-										<Auv3StandaloneSettingsSection />
-									) : undefined
-								}
-								disableAudioGate
-								miniKeyboard={{
-									activeNotes: runtime.activeNotes,
-									pitchBend: runtime.pitchBend,
-									modWheel: runtime.modWheel,
-									onNoteOn: runtime.sendNoteOn,
-									onNoteOff: runtime.sendNoteOff,
-									onPitchBend: runtime.sendPitchBend,
-									onModWheel: runtime.sendModWheel,
-									onPolyAftertouch: runtime.sendPolyAftertouch,
-								}}
-							/>
-						</PresetManagerProvider>
+						{rendererContent}
 					</div>
 				</div>
 			</div>
@@ -631,29 +612,7 @@ export default function PluginPage({
 				}}
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
-					<PresetManagerProvider value={presetManager}>
-						<SynthRenderer
-							runtime={runtime}
-							appVersion={appVersion}
-							bottomBarExtra={utilityExtra}
-							keyboardSettingsExtra={
-								showStandaloneIosSettings ? (
-									<Auv3StandaloneSettingsSection />
-								) : undefined
-							}
-							disableAudioGate
-							miniKeyboard={{
-								activeNotes: runtime.activeNotes,
-								pitchBend: runtime.pitchBend,
-								modWheel: runtime.modWheel,
-								onNoteOn: runtime.sendNoteOn,
-								onNoteOff: runtime.sendNoteOff,
-								onPitchBend: runtime.sendPitchBend,
-								onModWheel: runtime.sendModWheel,
-								onPolyAftertouch: runtime.sendPolyAftertouch,
-							}}
-						/>
-					</PresetManagerProvider>
+					{rendererContent}
 				</div>
 			</div>
 		</div>
