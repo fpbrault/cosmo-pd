@@ -14,6 +14,10 @@ type UsePluginSynthRuntimeParams = {
 	eventSink: (type: string, payload: Record<string, unknown>) => void;
 };
 
+type ScopeFrameSubscriber = Parameters<
+	NonNullable<SynthRuntime["subscribeScopeFrames"]>
+>[0];
+
 export function usePluginSynthRuntime({
 	eventSink,
 }: UsePluginSynthRuntimeParams): SynthRuntime {
@@ -21,6 +25,7 @@ export function usePluginSynthRuntime({
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const scopeActiveHzRef = useRef(220);
+	const scopeFrameSubscribersRef = useRef(new Set<ScopeFrameSubscriber>());
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -31,28 +36,49 @@ export function usePluginSynthRuntime({
 		midiInputEnabled: false,
 	});
 
-	const subscribeScopeFrames = useCallback<
-		NonNullable<SynthRuntime["subscribeScopeFrames"]>
-	>((onFrame) => {
-		window.__czOnScope = (samples, sampleRate, hz) => {
+	const dispatchScopeFrame = useCallback<NonNullable<Window["__czOnScope"]>>(
+		(samples, sampleRate, hz) => {
 			const nextHz = normalizeScopeHz(hz);
 			if (hasMeaningfulScopeHzChange(scopeActiveHzRef.current, nextHz)) {
 				scopeActiveHzRef.current = nextHz;
 				setScopeActiveHz(nextHz);
 			}
-			onFrame({
+			const frame = {
 				samples:
 					samples instanceof Float32Array
 						? samples
 						: Float32Array.from(samples),
 				sampleRate,
 				hz: nextHz,
-			});
-		};
-		return () => {
-			window.__czOnScope = undefined;
-		};
-	}, []);
+			};
+			for (const subscriber of scopeFrameSubscribersRef.current) {
+				subscriber(frame);
+			}
+		},
+		[],
+	);
+
+	const subscribeScopeFrames = useCallback<
+		NonNullable<SynthRuntime["subscribeScopeFrames"]>
+	>(
+		(onFrame) => {
+			const subscribers = scopeFrameSubscribersRef.current;
+			subscribers.add(onFrame);
+			if (subscribers.size === 1) {
+				window.__czOnScope = dispatchScopeFrame;
+			}
+			return () => {
+				subscribers.delete(onFrame);
+				if (
+					subscribers.size === 0 &&
+					window.__czOnScope === dispatchScopeFrame
+				) {
+					window.__czOnScope = undefined;
+				}
+			};
+		},
+		[dispatchScopeFrame],
+	);
 
 	return useMemo(
 		() => ({
