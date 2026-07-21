@@ -296,7 +296,7 @@ describe("PluginPage", () => {
 		expect(recomputeDirtyState).toHaveBeenCalled();
 	});
 
-	it("fits AUv3 hosted content with the same centered fit-bounds layout as standalone", () => {
+	it("fits iOS AUv3 hosted content to width in a top-anchored scroll viewport", () => {
 		(
 			window as Window & {
 				__czHostPlatform?: string;
@@ -325,8 +325,8 @@ describe("PluginPage", () => {
 			scale: 0.5,
 			scaledWidth: 684,
 			scaledHeight: 456,
-			offsetX: 42,
-			offsetY: 24,
+			offsetX: 0,
+			offsetY: 0,
 		});
 
 		const { container } = render(<PluginPage appVersion="0.2.0" />);
@@ -334,25 +334,52 @@ describe("PluginPage", () => {
 		const scaledFrame = container.querySelector(
 			'[style*="transform: scale(0.5)"]',
 		);
-		const centeredWrapper = scaledFrame?.parentElement as HTMLElement;
+		const contentWrapper = scaledFrame?.parentElement as HTMLElement;
+		const scrollSpacer = contentWrapper.parentElement as HTMLElement;
 
 		expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 			expect.objectContaining({
-				hostWidth: 684,
+				hostWidth: 652,
 				hostHeight: 456,
-				fitMode: "fit-bounds",
+				fitMode: "fit-width",
 			}),
 		);
+		expect(hostedViewport).toHaveAttribute("data-auv3-hosted");
 		expect(hostedViewport.className).toContain("overflow-hidden");
 		expect(hostedViewport.className).not.toContain("overflow-y-auto");
-		expect(hostedViewport.className).not.toContain("overflow-x-hidden");
+		expect(container.querySelector("#auv3-hosted-scroll-viewport")).toHaveClass(
+			"overflow-y-auto",
+			"overflow-x-hidden",
+		);
 		expect(scaledFrame).toBeInstanceOf(HTMLElement);
 		expect((scaledFrame as HTMLElement).style.transform).toBe("scale(0.5)");
 		expect((scaledFrame as HTMLElement).style.transformOrigin).toBe("top left");
-		expect(centeredWrapper.style.left).toBe("42px");
-		expect(centeredWrapper.style.top).toBe("24px");
-		expect(centeredWrapper.style.width).toBe("684px");
-		expect(centeredWrapper.style.height).toBe("456px");
+		expect(contentWrapper.className).toContain("top-0");
+		expect(contentWrapper.className).toContain("left-0");
+		expect(contentWrapper.style.width).toBe("684px");
+		expect(contentWrapper.style.height).toBe("456px");
+		expect(scrollSpacer.style.height).toBe("456px");
+	});
+
+	it("keeps the containing AUv3 app off the hosted layout path", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
+				__czSupportsStandaloneAppSettings?: boolean;
+			}
+		).__czHostPlatform = "ios";
+		window.__czRuntimeMode = "auv3-hosted";
+		window.__czSupportsStandaloneAppSettings = true;
+
+		const { container } = render(<PluginPage appVersion="0.2.0" />);
+		const viewport = container.firstElementChild as HTMLElement;
+
+		expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
+			expect.objectContaining({ fitMode: "fit-bounds" }),
+		);
+		expect(viewport).not.toHaveAttribute("data-auv3-hosted");
+		expect(viewport.className).toContain("overflow-hidden");
 	});
 
 	it("lets AUv3 hosted content adapt its renderer aspect ratio to portrait hosts", () => {
@@ -399,10 +426,10 @@ describe("PluginPage", () => {
 
 			expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 				expect.objectContaining({
-					hostWidth: 768,
+					hostWidth: 736,
 					hostHeight: 1024,
 					deviceLandscapeAspectRatio: 4 / 3,
-					fitMode: "fit-bounds",
+					fitMode: "fit-width",
 				}),
 			);
 		} finally {
@@ -460,10 +487,10 @@ describe("PluginPage", () => {
 
 			expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 				expect.objectContaining({
-					hostWidth: 684,
+					hostWidth: 652,
 					hostHeight: 456,
 					deviceLandscapeAspectRatio: 16 / 11,
-					fitMode: "fit-bounds",
+					fitMode: "fit-width",
 				}),
 			);
 		} finally {
@@ -615,7 +642,7 @@ describe("PluginPage", () => {
 		}
 	});
 
-	it("shows AUv3 app settings in AUv3 webviews without waiting for the standalone support flag", () => {
+	it("hides standalone app settings in hosted AUv3 webviews without standalone support", () => {
 		(
 			window as Window & {
 				__czHostPlatform?: string;
@@ -628,6 +655,30 @@ describe("PluginPage", () => {
 				__czRuntimeMode?: string;
 			}
 		).__czRuntimeMode = "auv3-hosted";
+
+		const { queryByText } = render(<PluginPage appVersion="0.2.0" />);
+
+		expect(queryByText("AUv3 App")).toBeNull();
+	});
+
+	it("shows standalone app settings in hosted AUv3 webviews when standalone support flag is set", () => {
+		(
+			window as Window & {
+				__czHostPlatform?: string;
+				__czRuntimeMode?: string;
+				__czSupportsStandaloneAppSettings?: boolean;
+			}
+		).__czHostPlatform = "ios";
+		(
+			window as Window & {
+				__czRuntimeMode?: string;
+			}
+		).__czRuntimeMode = "auv3-hosted";
+		(
+			window as Window & {
+				__czSupportsStandaloneAppSettings?: boolean;
+			}
+		).__czSupportsStandaloneAppSettings = true;
 
 		const { getByText } = render(<PluginPage appVersion="0.2.0" />);
 
@@ -955,10 +1006,10 @@ describe("PluginPage", () => {
 		await vi.waitFor(() => {
 			expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 				expect.objectContaining({
-					hostWidth: 800,
+					hostWidth: 768,
 					hostHeight: 600,
 					deviceLandscapeAspectRatio: 16 / 11,
-					fitMode: "fit-bounds",
+					fitMode: "fit-width",
 				}),
 			);
 		});
@@ -1015,10 +1066,10 @@ describe("PluginPage", () => {
 			await vi.waitFor(() => {
 				expect(mockComputeAuv3HostFitLayout).toHaveBeenLastCalledWith(
 					expect.objectContaining({
-						hostWidth: 900,
+						hostWidth: 868,
 						hostHeight: 700,
 						deviceLandscapeAspectRatio: 4 / 3,
-						fitMode: "fit-bounds",
+						fitMode: "fit-width",
 					}),
 				);
 			});

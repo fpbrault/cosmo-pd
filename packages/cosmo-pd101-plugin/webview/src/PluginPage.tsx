@@ -21,6 +21,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import Auv3HostedScrollbar from "./Auv3HostedScrollbar";
 import Auv3StandaloneSettingsSection from "./Auv3StandaloneSettingsSection";
 import { createPluginPresetManagerRepository } from "./hooks/createPluginPresetManagerRepository";
 import { usePluginParamBridge } from "./hooks/usePluginParamBridge";
@@ -44,6 +45,7 @@ type HostSize = {
 type HostContext = {
 	hostPlatform?: Window["__czHostPlatform"];
 	runtimeMode?: Window["__czRuntimeMode"];
+	fitMode?: Auv3FitMode;
 	supportsStandaloneAppSettings: boolean;
 };
 
@@ -57,9 +59,12 @@ type PluginRendererLayout = {
 	offsetY: number;
 };
 
+const AUV3_HOSTED_SCROLLBAR_GUTTER_PX = 32;
+
 declare global {
 	interface Window {
 		__czHostSize?: HostSize;
+		__czAuv3FitMode?: Auv3FitMode;
 	}
 }
 
@@ -111,6 +116,7 @@ function readHostContext(): HostContext {
 	return {
 		hostPlatform: window.__czHostPlatform,
 		runtimeMode: window.__czRuntimeMode,
+		fitMode: window.__czAuv3FitMode,
 		supportsStandaloneAppSettings:
 			window.__czSupportsStandaloneAppSettings === true,
 	};
@@ -186,10 +192,16 @@ export default function PluginPage({
 	}, []);
 
 	const isIosHost = hostContext.hostPlatform === "ios";
+	const resolvedAuv3FitMode =
+		hostContext.fitMode ??
+		(hostContext.runtimeMode === "auv3-hosted" &&
+		!hostContext.supportsStandaloneAppSettings
+			? "fit-width"
+			: "fit-bounds");
+	const isIosHostedAuv3 = isIosHost && resolvedAuv3FitMode === "fit-width";
 	const isAuv3WebView =
 		hostContext.hostPlatform === "ios" || hostContext.hostPlatform === "macos";
 	const showStandaloneIosSettings =
-		isAuv3WebView ||
 		hostContext.supportsStandaloneAppSettings ||
 		hostContext.runtimeMode === "standalone";
 	const isLikelyIosDevice =
@@ -200,6 +212,7 @@ export default function PluginPage({
 	const gatherPresetState = useSynthStore((s) => s.gatherPresetState);
 
 	const frameRef = useRef<HTMLDivElement | null>(null);
+	const hostedScrollViewportRef = useRef<HTMLDivElement | null>(null);
 	const [rendererFrame, setRendererFrame] =
 		useState<PluginRendererLayout | null>(() => {
 			const initialLayout = computeRendererFrameLayout({
@@ -318,12 +331,14 @@ export default function PluginPage({
 					preferNativeHostSize: !event || event.type === "cz-host-size-changed",
 				});
 				const fitLayout = computeAuv3HostFitLayout({
-					hostWidth: hostBounds.width,
+					hostWidth: isIosHostedAuv3
+						? Math.max(hostBounds.width - AUV3_HOSTED_SCROLLBAR_GUTTER_PX, 1)
+						: hostBounds.width,
 					hostHeight: hostBounds.height,
 					deviceLandscapeAspectRatio:
 						hostBounds.deviceLandscapeAspectRatio ??
 						getScreenLandscapeAspectRatio(),
-					fitMode: "fit-bounds",
+					fitMode: hostBounds.fitMode ?? resolvedAuv3FitMode,
 				});
 				nextLayout = fitLayout ? toAuv3PluginRendererLayout(fitLayout) : null;
 			} else {
@@ -373,7 +388,13 @@ export default function PluginPage({
 			window.removeEventListener("cz-host-size-changed", updateFrameSize);
 			window.visualViewport?.removeEventListener("resize", updateFrameSize);
 		};
-	}, [isAuv3WebView, isIosHost, isLikelyIosDevice]);
+	}, [
+		isAuv3WebView,
+		isIosHost,
+		isIosHostedAuv3,
+		isLikelyIosDevice,
+		resolvedAuv3FitMode,
+	]);
 
 	useEffect(() => {
 		if (!bridgeReady) {
@@ -495,8 +516,67 @@ export default function PluginPage({
 		...zoomStyle,
 		transformOrigin: "top left",
 	};
+	const rendererContent = (
+		<PresetManagerProvider value={presetManager}>
+			<SynthRenderer
+				runtime={runtime}
+				appVersion={appVersion}
+				bottomBarExtra={utilityExtra}
+				keyboardSettingsExtra={
+					showStandaloneIosSettings ? (
+						<Auv3StandaloneSettingsSection />
+					) : undefined
+				}
+				disableAudioGate
+				miniKeyboard={{
+					activeNotes: runtime.activeNotes,
+					pitchBend: runtime.pitchBend,
+					modWheel: runtime.modWheel,
+					onNoteOn: runtime.sendNoteOn,
+					onNoteOff: runtime.sendNoteOff,
+					onPitchBend: runtime.sendPitchBend,
+					onModWheel: runtime.sendModWheel,
+					onPolyAftertouch: runtime.sendPolyAftertouch,
+				}}
+			/>
+		</PresetManagerProvider>
+	);
 
 	if (isAuv3WebView) {
+		if (isIosHostedAuv3) {
+			return (
+				<div
+					ref={frameRef}
+					data-auv3-hosted
+					className="relative h-full w-full overflow-hidden bg-cz-panel"
+				>
+					<div
+						ref={hostedScrollViewportRef}
+						id="auv3-hosted-scroll-viewport"
+						className="h-full w-[calc(100%_-_2rem)] overflow-y-auto overflow-x-hidden"
+					>
+						<div className="relative w-full" style={{ height: scaledHeight }}>
+							<div
+								className="absolute top-0 left-0 overflow-hidden"
+								style={{
+									width: scaledWidth,
+									height: scaledHeight,
+								}}
+							>
+								<div
+									className="absolute top-0 left-0 origin-top-left"
+									style={auv3ZoomStyle}
+								>
+									{rendererContent}
+								</div>
+							</div>
+						</div>
+					</div>
+					<Auv3HostedScrollbar viewportRef={hostedScrollViewportRef} />
+				</div>
+			);
+		}
+
 		return (
 			<div ref={frameRef} className="relative h-full w-full overflow-hidden">
 				<div
@@ -512,29 +592,7 @@ export default function PluginPage({
 						className="absolute top-0 left-0 origin-top-left"
 						style={auv3ZoomStyle}
 					>
-						<PresetManagerProvider value={presetManager}>
-							<SynthRenderer
-								runtime={runtime}
-								appVersion={appVersion}
-								bottomBarExtra={utilityExtra}
-								keyboardSettingsExtra={
-									showStandaloneIosSettings ? (
-										<Auv3StandaloneSettingsSection />
-									) : undefined
-								}
-								disableAudioGate
-								miniKeyboard={{
-									activeNotes: runtime.activeNotes,
-									pitchBend: runtime.pitchBend,
-									modWheel: runtime.modWheel,
-									onNoteOn: runtime.sendNoteOn,
-									onNoteOff: runtime.sendNoteOff,
-									onPitchBend: runtime.sendPitchBend,
-									onModWheel: runtime.sendModWheel,
-									onPolyAftertouch: runtime.sendPolyAftertouch,
-								}}
-							/>
-						</PresetManagerProvider>
+						{rendererContent}
 					</div>
 				</div>
 			</div>
@@ -554,29 +612,7 @@ export default function PluginPage({
 				}}
 			>
 				<div className="absolute top-0 left-0" style={zoomStyle}>
-					<PresetManagerProvider value={presetManager}>
-						<SynthRenderer
-							runtime={runtime}
-							appVersion={appVersion}
-							bottomBarExtra={utilityExtra}
-							keyboardSettingsExtra={
-								showStandaloneIosSettings ? (
-									<Auv3StandaloneSettingsSection />
-								) : undefined
-							}
-							disableAudioGate
-							miniKeyboard={{
-								activeNotes: runtime.activeNotes,
-								pitchBend: runtime.pitchBend,
-								modWheel: runtime.modWheel,
-								onNoteOn: runtime.sendNoteOn,
-								onNoteOff: runtime.sendNoteOff,
-								onPitchBend: runtime.sendPitchBend,
-								onModWheel: runtime.sendModWheel,
-								onPolyAftertouch: runtime.sendPolyAftertouch,
-							}}
-						/>
-					</PresetManagerProvider>
+					{rendererContent}
 				</div>
 			</div>
 		</div>

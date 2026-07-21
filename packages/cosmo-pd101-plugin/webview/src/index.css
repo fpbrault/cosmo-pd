@@ -11,3 +11,7 @@ body,
 	overflow: hidden;
 	background: transparent;
 }
+
+[data-auv3-hosted] {
+	touch-action: pan-y;
+}
