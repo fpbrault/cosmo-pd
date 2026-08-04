@@ -97,7 +97,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	keyboardRange: 0,
 	keyboardHeight: 160,
 	keyboardInputMode: "velocity",
-	pcKeyboardOverlayVisible: true,
+	pcKeyboardOverlayVisible: false,
 	libraryModeOpen: false,
 	scopeCycles: 2,
 	scopeVerticalZoom: 1,

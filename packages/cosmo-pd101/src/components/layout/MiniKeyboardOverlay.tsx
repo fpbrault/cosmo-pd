@@ -40,7 +40,7 @@ export default function MiniKeyboardOverlay({
 	);
 	const polyMode = useSynthStore((s) => s.polyMode);
 
-	const startNote = 48 + keyboardRange * 12;
+	const startNote = 36 + keyboardRange * 12;
 	const activeSet = useMemo(() => new Set(activeNotes), [activeNotes]);
 	const blackKeyWidth = getBlackKeyWidthPercent(keyboardOctaves);
 	const { whiteKeys, blackKeys } = useMemo(

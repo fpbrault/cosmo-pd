@@ -13,6 +13,7 @@ describe("synthUiStore", () => {
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
 			keyboardVisible: true,
+			pcKeyboardOverlayVisible: false,
 		});
 	});
 
@@ -21,6 +22,7 @@ describe("synthUiStore", () => {
 		useSynthUiStore.getState().setPhaseLinePanelTab("line2-envelopes");
 		useSynthUiStore.getState().setActiveEnvTab("dca");
 		useSynthUiStore.getState().setKeyboardVisible(false);
+		useSynthUiStore.getState().setPcKeyboardOverlayVisible(true);
 		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
 
 		useSynthUiStore.setState({
@@ -28,6 +30,7 @@ describe("synthUiStore", () => {
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
 			keyboardVisible: true,
+			pcKeyboardOverlayVisible: false,
 		});
 		expect(savedState).not.toBeNull();
 		localStorage.setItem(SYNTH_UI_STATE_STORAGE_KEY, savedState ?? "");
@@ -39,6 +42,7 @@ describe("synthUiStore", () => {
 			phaseLinePanelTab: "line2-envelopes",
 			activeEnvTab: "dca",
 			keyboardVisible: false,
+			pcKeyboardOverlayVisible: true,
 		});
 	});
 
@@ -63,6 +67,21 @@ describe("synthUiStore", () => {
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
 			keyboardVisible: true,
+			pcKeyboardOverlayVisible: false,
 		});
+	});
+
+	it("preserves an explicitly persisted PC key label preference", async () => {
+		localStorage.setItem(
+			SYNTH_UI_STATE_STORAGE_KEY,
+			JSON.stringify({
+				state: { pcKeyboardOverlayVisible: true },
+				version: 0,
+			}),
+		);
+
+		await useSynthUiStore.persist.rehydrate();
+
+		expect(useSynthUiStore.getState().pcKeyboardOverlayVisible).toBe(true);
 	});
 });
