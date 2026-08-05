@@ -24,8 +24,9 @@ export function EnvelopeKeyFollowControl({
 				showTicks={false}
 				centerDetent={false}
 				max={9}
-				className="w-64"
+				className="w-52"
 				step={1}
+				labelPlacement="inline"
 				onChange={(value) => envelopes.setDcwKeyFollow(Math.round(value))}
 				orientation="horizontal"
 			/>
@@ -42,8 +43,9 @@ export function EnvelopeKeyFollowControl({
 				showTicks={false}
 				centerDetent={false}
 				max={9}
-				className="w-64"
+				className="w-52"
 				step={1}
+				labelPlacement="inline"
 				onChange={(value) => envelopes.setDcaKeyFollow(Math.round(value))}
 				orientation="horizontal"
 			/>

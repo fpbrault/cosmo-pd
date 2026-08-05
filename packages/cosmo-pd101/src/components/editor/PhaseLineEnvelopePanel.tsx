@@ -4,6 +4,7 @@ import Card from "@/components/primitives/Card";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { EnvelopeKeyFollowControl } from "./EnvelopeKeyFollowControl";
+import { EnvelopePresetControls } from "./EnvelopePresetControls";
 import type { PhaseLineEnvelopeModel } from "./phaseLineTypes";
 import StepEnvelopeEditor from "./StepEnvelopeEditor";
 import { StepEnvelopePreview } from "./StepEnvelopePreview";
@@ -69,13 +70,6 @@ export function PhaseLineEnvelopePanel({
 					/>
 				))}
 			</div>
-			<div className="mb-2 flex justify-end">
-				<EnvelopeKeyFollowControl
-					envKind={activeEnvTab}
-					lineIndex={lineIndex}
-					envelopes={envelopes}
-				/>
-			</div>
 			<StepEnvelopeEditor
 				title={activeEnv.title}
 				env={activeEnv.env}
@@ -85,6 +79,20 @@ export function PhaseLineEnvelopePanel({
 				lineIndex={lineIndex}
 				envKind={activeEnvTab}
 				voiceMarkers={voiceMarkers}
+				headerActions={
+					<EnvelopePresetControls
+						envKind={activeEnvTab}
+						lineIndex={lineIndex}
+						envelopes={envelopes}
+					/>
+				}
+				headerRightActions={
+					<EnvelopeKeyFollowControl
+						envKind={activeEnvTab}
+						lineIndex={lineIndex}
+						envelopes={envelopes}
+					/>
+				}
 			/>
 		</Card>
 	);

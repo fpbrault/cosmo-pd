@@ -43,6 +43,7 @@ export function EnvelopesSection({
 	const activeEnv = envMap[activeEnvTab];
 	const envelopes: PhaseLineEnvelopeModel = {
 		envs: envMap,
+		targets: [],
 		dcwKeyFollow,
 		setDcwKeyFollow: onDcwKeyFollowChange,
 		dcaKeyFollow,

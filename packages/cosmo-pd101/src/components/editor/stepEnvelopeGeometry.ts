@@ -8,9 +8,6 @@ export type StepEnvelopeVoiceMarker = {
 	color?: string;
 };
 
-const STEP_KEYS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"] as const;
-const DEFAULT_STEP = { level: 0, rate: 50 };
-
 export type EnvPoint = {
 	index: number;
 	x: number;
@@ -24,31 +21,7 @@ export function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, value));
 }
 
-function normalizeStepCount(stepCount: number) {
-	return clamp(Math.round(stepCount), 1, STEP_KEYS.length);
-}
-
-function getPaddedSteps(steps: StepEnvData["steps"]) {
-	return STEP_KEYS.map((_, index) => {
-		const step = steps[index];
-		return step ? { ...step } : { ...DEFAULT_STEP };
-	});
-}
-
-export function normalizeEnvelope(env: StepEnvData): StepEnvData {
-	const stepCount = normalizeStepCount(env.stepCount);
-	const steps = getPaddedSteps(env.steps);
-	const endStepIndex = stepCount - 1;
-	if (steps[endStepIndex]) {
-		steps[endStepIndex] = { ...steps[endStepIndex], level: 0 };
-	}
-	return {
-		...env,
-		steps,
-		stepCount,
-		sustainStep: clamp(Math.round(env.sustainStep), 0, stepCount - 1),
-	};
-}
+export { normalizeEnvelope } from "@/lib/synth/envelopeData";
 
 export function editorStepDuration(rate: number): number {
 	const clampedRate = clamp(Math.round(rate), 0, 99);

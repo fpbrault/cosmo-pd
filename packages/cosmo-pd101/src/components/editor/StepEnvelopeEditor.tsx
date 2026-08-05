@@ -1,4 +1,11 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+	memo,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
 import StepEnvelopeStepCard from "./StepEnvelopeStepCard";
@@ -17,6 +24,8 @@ interface StepEnvelopeEditorProps {
 	lineIndex?: 1 | 2;
 	envKind?: EnvKind;
 	voiceMarkers?: StepEnvelopeVoiceMarker[];
+	headerActions?: ReactNode;
+	headerRightActions?: ReactNode;
 }
 
 export type { StepEnvelopeVoiceMarker };
@@ -30,6 +39,8 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 	lineIndex = 1,
 	envKind = "dco",
 	voiceMarkers = [],
+	headerActions,
+	headerRightActions,
 }: StepEnvelopeEditorProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const commitEnvelope = useCallback(
@@ -124,11 +135,15 @@ const StepEnvelopeEditor = memo(function StepEnvelopeEditor({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col space-y-3">
-			<div className="flex items-center justify-between">
-				<span className="font-semibold text-2xs text-base-content/70 uppercase tracking-[0.24em]">
-					{title}
-				</span>
-				<div className="flex items-center gap-2">
+			<div className="flex min-w-0 items-center justify-between gap-2">
+				<div className="flex min-w-0 items-center gap-2">
+					<span className="font-semibold text-2xs text-base-content/70 uppercase tracking-[0.24em]">
+						{title}
+					</span>
+					{headerActions}
+				</div>
+				<div className="flex shrink-0 items-center gap-2">
+					{headerRightActions}
 					<label className="flex items-center gap-1 text-xs">
 						<input
 							type="checkbox"

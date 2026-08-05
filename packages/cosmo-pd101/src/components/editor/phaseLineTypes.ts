@@ -66,8 +66,18 @@ export type PhaseLineEnvelopeEntry = {
 	envColor: string;
 };
 
+export type PhaseLineEnvelopeTarget = {
+	id: string;
+	lineIndex: LineIndex;
+	envKind: EnvTab;
+	label: string;
+	env: StepEnvData;
+	setEnv: (env: StepEnvData) => void;
+};
+
 export type PhaseLineEnvelopeModel = {
 	envs: Record<EnvTab, PhaseLineEnvelopeEntry>;
+	targets: PhaseLineEnvelopeTarget[];
 	dcwKeyFollow: number;
 	setDcwKeyFollow: (value: number) => void;
 	dcaKeyFollow: number;

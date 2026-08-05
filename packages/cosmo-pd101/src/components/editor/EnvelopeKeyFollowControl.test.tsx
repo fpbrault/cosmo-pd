@@ -19,12 +19,18 @@ vi.mock("@/components/controls/SynthParamKnob", () => ({
 vi.mock("@/components/controls/SynthParamSlider", () => ({
 	default: ({
 		label,
+		labelPlacement,
 		onChange,
 	}: {
 		label: string;
+		labelPlacement?: string;
 		onChange: (value: number) => void;
 	}) => (
-		<button type="button" onClick={() => onChange(4)}>
+		<button
+			type="button"
+			data-label-placement={labelPlacement}
+			onClick={() => onChange(4)}
+		>
 			{label}
 		</button>
 	),
@@ -51,6 +57,7 @@ const createEnvelopes = () => ({
 			envColor: "#fff",
 		},
 	},
+	targets: [],
 	dcwKeyFollow: 0,
 	setDcwKeyFollow: vi.fn(),
 	dcaKeyFollow: 0,
@@ -70,6 +77,10 @@ describe("EnvelopeKeyFollowControl", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Key Follow" }));
 		expect(envelopes.setDcwKeyFollow).toHaveBeenCalledWith(4);
+		expect(screen.getByRole("button", { name: "Key Follow" })).toHaveAttribute(
+			"data-label-placement",
+			"inline",
+		);
 	});
 
 	it("routes DCA key follow changes", () => {

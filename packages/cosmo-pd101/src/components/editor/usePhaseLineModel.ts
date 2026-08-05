@@ -7,6 +7,7 @@ import type {
 	AlgoControlValueV1,
 	BaseWaveform,
 } from "@/lib/synth/bindings/synth";
+import { createPhaseLineEnvelopeTargets } from "./phaseLineEnvelopeTargets";
 import type { PhaseLineModel } from "./phaseLineTypes";
 
 const isLineAudible = (lineIndex: LineIndex, lineSelect: unknown): boolean => {
@@ -173,6 +174,18 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 						envColor: "#f97316",
 					},
 				},
+				targets: createPhaseLineEnvelopeTargets({
+					line1: {
+						dco: { env: line1DcoEnv, setEnv: setLine1DcoEnv },
+						dcw: { env: line1DcwEnv, setEnv: setLine1DcwEnv },
+						dca: { env: line1DcaEnv, setEnv: setLine1DcaEnv },
+					},
+					line2: {
+						dco: { env: line2DcoEnv, setEnv: setLine2DcoEnv },
+						dcw: { env: line2DcwEnv, setEnv: setLine2DcwEnv },
+						dca: { env: line2DcaEnv, setEnv: setLine2DcaEnv },
+					},
+				}),
 				dcwKeyFollow: (isLine1
 					? line1DcwKeyFollow
 					: line2DcwKeyFollow) as number,
