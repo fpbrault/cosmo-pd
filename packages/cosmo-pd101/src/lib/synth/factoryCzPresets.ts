@@ -557,7 +557,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				line1: {
 					algo: "cz101",
 					algo2: "cheby",
-					algoBlend: 0.015498068,
+					algoBlend: 0.0,
 					baseWaveformA: "cosine",
 					baseWaveformB: "sine",
 					window: "off",
@@ -3230,7 +3230,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				line1: {
 					algo: "fold",
 					algo2: "bend",
-					algoBlend: 0.02,
+					algoBlend: 0.0,
 					baseWaveformA: "sine",
 					baseWaveformB: "sine",
 					window: "off",
@@ -4550,7 +4550,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				line1: {
 					algo: "sync",
 					algo2: "cz101",
-					algoBlend: 0.015,
+					algoBlend: 0.0,
 					baseWaveformA: "sine",
 					baseWaveformB: "cosine",
 					window: "off",
@@ -19910,7 +19910,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				line1: {
 					algo: "twist",
 					algo2: "bend",
-					algoBlend: 0.4749961,
+					algoBlend: 0.48,
 					baseWaveformA: "sine",
 					baseWaveformB: "sine",
 					window: "off",
@@ -20075,7 +20075,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				line2: {
 					algo: "fold",
 					algo2: "skew",
-					algoBlend: 0.55732423,
+					algoBlend: 0.55,
 					baseWaveformA: "sine",
 					baseWaveformB: "sine",
 					window: "off",
@@ -50326,7 +50326,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				line2: {
 					algo: "pinch",
 					algo2: "fold",
-					algoBlend: 0.51,
+					algoBlend: 0.5,
 					baseWaveformA: "sine",
 					baseWaveformB: "sine",
 					window: "off",

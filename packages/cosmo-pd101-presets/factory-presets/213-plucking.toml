@@ -65,7 +65,7 @@ sustainStep = 0
 [params.line2]
 algo = "pinch"
 algo2 = "fold"
-algoBlend = 0.51
+algoBlend = 0.5
 algoControlsA = [{ id = "pinchFocus", value = 0.30029297 }, { id = "pinchAsym", value = 0.32300782 }, { id = "pinchCurve", value = 0.63693357 }, { id = "pinchDrive", value = 0.68103516 }]
 algoControlsB = [{ id = "foldStages", value = 0.5 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = -0.07039063 }, { id = "foldSoftness", value = 0.30445313 }]
 baseWaveformA = "sine"

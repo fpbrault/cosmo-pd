@@ -30,7 +30,7 @@ volume = 1
 [params.line1]
 algo = "sync"
 algo2 = "cz101"
-algoBlend = 0.015
+algoBlend = 0
 algoControlsA = [{ id = "syncRatio", value = 0.5 }, { id = "syncPhase", value = 0 }, { id = "syncCurve", value = 0.5 }, { id = "syncWindow", value = 0.5 }]
 algoControlsB = []
 baseWaveformA = "sine"

@@ -30,7 +30,7 @@ volume = 1
 [params.line1]
 algo = "twist"
 algo2 = "bend"
-algoBlend = 0.4749961
+algoBlend = 0.48
 algoControlsA = [{ id = "twistHarmonics", value = 0.6020153 }, { id = "twistDepth", value = 0.47965 }, { id = "twistPhase", value = 0 }, { id = "twistShape", value = 0.53207046 }]
 algoControlsB = [{ id = "bendCurve", value = 0.5 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
 baseWaveformA = "sine"
@@ -66,7 +66,7 @@ sustainStep = 2
 [params.line2]
 algo = "fold"
 algo2 = "skew"
-algoBlend = 0.55732423
+algoBlend = 0.55
 algoControlsA = [{ id = "foldStages", value = 0.5 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = 0 }, { id = "foldSoftness", value = 0 }]
 algoControlsB = [{ id = "skewBias", value = 0.2 }, { id = "skewCurve", value = 0.5 }, { id = "skewSpread", value = 0 }, { id = "skewTilt", value = 0 }]
 baseWaveformA = "sine"

@@ -31,7 +31,7 @@ volume = 1
 [params.line1]
 algo = "cz101"
 algo2 = "cheby"
-algoBlend = 0.015498068
+algoBlend = 0
 algoControlsA = [{ id = "preset", value = 1 }, { id = "waveform1", value = 1 }, { id = "waveform2", value = 1 }, { id = "windowFunction", value = 0 }]
 algoControlsB = [{ id = "chebyOrder", value = 0.68992954 }, { id = "chebyTilt", value = 0 }, { id = "chebyWarp", value = 0 }]
 baseWaveformA = "cosine"

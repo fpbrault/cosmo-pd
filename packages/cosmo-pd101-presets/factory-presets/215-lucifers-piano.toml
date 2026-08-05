@@ -30,7 +30,7 @@ volume = 1
 [params.line1]
 algo = "fold"
 algo2 = "bend"
-algoBlend = 0.02
+algoBlend = 0
 algoControlsA = [{ id = "foldStages", value = 0.580386 }, { id = "foldTilt", value = 0 }, { id = "foldSymmetry", value = 0 }, { id = "foldSoftness", value = 0 }]
 algoControlsB = [{ id = "bendCurve", value = 0.77660155 }, { id = "bendBias", value = 0 }, { id = "bendKnee", value = 0.5 }]
 baseWaveformA = "sine"
