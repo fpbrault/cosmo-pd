@@ -5,6 +5,7 @@ import ControlKnob from "@/components/controls/ControlKnob";
 import { MacroLabelEditorPopover } from "@/components/modals/MacroLabelEditorPopover";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthStore } from "@/features/synth/synthStore";
+import { getParamTooltip } from "@/lib/synth/paramMeta";
 
 function useMacroValue(index: number): number {
 	return useSynthStore((s) => {
@@ -107,6 +108,10 @@ const MacroKnob = memo(function MacroKnob({
 	const midiLearn = useMidiLearnTarget({
 		targetKey: `macro${macroIndex + 1}`,
 	});
+	const tooltip = `Macro “${label}”: ${
+		getParamTooltip(`macro${macroIndex + 1}`) ??
+		"sends this user-assigned control value to mapped destinations."
+	}`;
 
 	const handleChange = useCallback(
 		(v: number) => {
@@ -128,6 +133,7 @@ const MacroKnob = memo(function MacroKnob({
 				min={0}
 				max={1}
 				label={label}
+				tooltip={tooltip}
 				variant="accent"
 				color={
 					macroIndex === 0

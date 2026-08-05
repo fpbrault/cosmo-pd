@@ -4,11 +4,31 @@ import {
 	ENGINE_PARAM_UI_META_BY_KEY,
 	getEngineParamDefault,
 	getEngineParamUiMeta,
+	getEnumTooltip,
+	getParamTooltip,
 	isNativeMidiMappingParamKey,
 	requireEngineParamDefault,
 } from "./paramMeta";
 
 describe("paramMeta", () => {
+	it("resolves translated parameter tooltips at call time", () => {
+		expect(getParamTooltip("portamentoRate")).toBe(
+			"Sets glide speed when portamento mode is Rate.",
+		);
+		expect(getParamTooltip("pitchBendRange")).toBe(
+			"Sets maximum pitch bend range in semitones.",
+		);
+		expect(getParamTooltip("velocityCurve")).toBe(
+			"Shapes how keyboard velocity maps to output level.",
+		);
+	});
+
+	it("resolves descriptive enum-value tooltips at call time", () => {
+		expect(getEnumTooltip("lineSelect", "L1")).toBe(
+			"Play oscillator line 1 only.",
+		);
+	});
+
 	it("getEngineParamDefault returns default for existing params", () => {
 		const meta = ENGINE_PARAM_UI_META_V1.find(
 			(m) => typeof m.paramDefault === "number",

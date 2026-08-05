@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import CzButton from "@/components/primitives/CzButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import { MOD_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
+import { getEnumTooltip } from "@/lib/synth/paramMeta";
 
 export default function ModModeControl() {
 	const { t } = useTranslation("synth");
@@ -25,7 +25,7 @@ export default function ModModeControl() {
 						active={modMode === mode}
 						disabled={mode !== "normal" && !dualLineMode}
 						onClick={() => setModMode(mode)}
-						tooltip={MOD_MODE_TOOLTIPS[mode]}
+						tooltip={getEnumTooltip("modMode", mode)}
 						className="flex-1"
 					>
 						{t(`modMode.${mode}`)}

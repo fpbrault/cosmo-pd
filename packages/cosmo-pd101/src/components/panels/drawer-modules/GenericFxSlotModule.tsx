@@ -1,9 +1,11 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
+import { HoverInfoTrigger } from "@/components/layout/HoverInfo";
 import {
 	getFxControlLabel,
 	getFxControlOptionLabel,
+	getFxControlOptionTooltip,
 } from "@/components/panels/drawer-modules/custom/utils";
 import FxSlotKnob from "@/components/panels/drawer-modules/FxSlotKnob";
 import { useFxSlotModule } from "@/components/panels/drawer-modules/FxSlotModuleContext";
@@ -102,6 +104,7 @@ const FxButtonGroupControl = memo(function FxButtonGroupControl({
 			: null;
 	const resolvedLabel = getFxControlLabel(config.type, ctrl.param);
 	const groupAlignment = ctrl.centered ? "items-center" : "items-stretch";
+	const binaryTooltip = `Toggle ${resolvedLabel.toLowerCase()}.`;
 
 	return (
 		<div className="min-w-0" style={gridPlacementStyle}>
@@ -112,43 +115,63 @@ const FxButtonGroupControl = memo(function FxButtonGroupControl({
 					</span>
 				) : null}
 				{binaryToggleState ? (
-					<Button
-						type="button"
-						onClick={() =>
-							setFxSlotParams(slot, {
-								[ctrl.param]: binaryToggleState.isOn
-									? binaryToggleState.offOption.value
-									: binaryToggleState.onOption.value,
-							})
-						}
-						className={`btn btn-xs h-8 min-h-0 justify-self-center px-4 ${
-							binaryToggleState.isOn
-								? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-								: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-						}`}
-					>
-						{binaryToggleState.isOn
-							? `● ${binaryToggleState.onOption.label.toUpperCase()}`
-							: `○ ${binaryToggleState.onOption.label.toUpperCase()}`}
-					</Button>
+					<HoverInfoTrigger message={binaryTooltip}>
+						{(hoverHandlers) => (
+							<Button
+								type="button"
+								onClick={() =>
+									setFxSlotParams(slot, {
+										[ctrl.param]: binaryToggleState.isOn
+											? binaryToggleState.offOption.value
+											: binaryToggleState.onOption.value,
+									})
+								}
+								title={binaryTooltip}
+								data-hover-info={binaryTooltip}
+								{...hoverHandlers}
+								className={`btn btn-xs h-8 min-h-0 justify-self-center px-4 ${
+									binaryToggleState.isOn
+										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
+										: "border-cz-border bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
+								}`}
+							>
+								{binaryToggleState.isOn
+									? `● ${binaryToggleState.onOption.label.toUpperCase()}`
+									: `○ ${binaryToggleState.onOption.label.toUpperCase()}`}
+							</Button>
+						)}
+					</HoverInfoTrigger>
 				) : (
 					<div className="join w-full overflow-hidden rounded-md border border-cz-border/65">
-						{localizedOptions.map((option) => (
-							<Button
-								key={option.value}
-								type="button"
-								className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
-									params[ctrl.param] === option.value
-										? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-										: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
-								}`}
-								onClick={() =>
-									setFxSlotParams(slot, { [ctrl.param]: option.value })
-								}
-							>
-								{option.label}
-							</Button>
-						))}
+						{localizedOptions.map((option) => {
+							const tooltip = getFxControlOptionTooltip(
+								config.type,
+								ctrl.param,
+								option.value,
+							);
+							return (
+								<HoverInfoTrigger key={option.value} message={tooltip}>
+									{(hoverHandlers) => (
+										<Button
+											type="button"
+											title={tooltip}
+											data-hover-info={tooltip}
+											{...hoverHandlers}
+											className={`join-item btn btn-xs h-8 min-h-0 flex-1 rounded-none border-0 px-2 ${
+												params[ctrl.param] === option.value
+													? "border-amber-500/60 bg-amber-500/20 text-amber-300"
+													: "bg-transparent text-cz-cream/60 hover:text-cz-cream/90"
+											}`}
+											onClick={() =>
+												setFxSlotParams(slot, { [ctrl.param]: option.value })
+											}
+										>
+											{option.label}
+										</Button>
+									)}
+								</HoverInfoTrigger>
+							);
+						})}
 					</div>
 				)}
 			</div>

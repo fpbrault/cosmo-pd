@@ -161,6 +161,20 @@ export default memo(function SynthSidebarButtons() {
 					? midiLearnOpen
 					: isEnabled(button.id);
 		const customColor = getCustomColor(button.id);
+		const effectName =
+			slotType && slotType !== "empty"
+				? (FX_UI_META[slotType as FxSlotType]?.title ?? bottomLabel)
+				: undefined;
+		const tooltip =
+			button.id === "global"
+				? "Open global tempo and voice-allocation settings."
+				: button.id === "midiLearn"
+					? "Open MIDI learn bindings and assign hardware controls."
+					: button.id === "modTarget"
+						? "Enter modulation-target mode, then choose a destination control."
+						: button.id === "vintage"
+							? "Toggle the vintage DAC coloration."
+							: `Toggle ${effectName ?? `effect slot ${button.id.slice(2)}`}; long-press to open its FX editor.`;
 		return (
 			<CzTabButton
 				key={button.id}
@@ -174,6 +188,7 @@ export default memo(function SynthSidebarButtons() {
 				}
 				topLabel={button.topLabel}
 				bottomLabel={bottomLabel}
+				tooltip={tooltip}
 			/>
 		);
 	};

@@ -1,4 +1,5 @@
 import ControlKnob from "@/components/controls/ControlKnob";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import type { EnvKind } from "@/lib/synth/modTargets";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
@@ -33,6 +34,10 @@ export default function StepEnvelopeStepCard({
 	const isActiveStep = stepIndex < activeStepCount;
 	const isEndStep = stepIndex === activeStepCount - 1;
 	const isSustainStep = stepIndex === sustainStep;
+	const sustainTooltip = "Hold this step's level while the note remains held.";
+	const endTooltip = "Mark this step as the final active envelope step.";
+	const sustainHoverHandlers = useHoverInfoHandlers(sustainTooltip);
+	const endHoverHandlers = useHoverInfoHandlers(endTooltip);
 
 	return (
 		<fieldset
@@ -92,6 +97,9 @@ export default function StepEnvelopeStepCard({
 					onClick={onSetSustain}
 					disabled={!isActiveStep}
 					aria-pressed={isSustainStep}
+					title={sustainTooltip}
+					data-hover-info={sustainTooltip}
+					{...sustainHoverHandlers}
 					className={`rounded border px-1 py-1 font-semibold text-[0.55rem] uppercase tracking-[0.18em] transition-colors ${
 						isSustainStep
 							? "border-warning/60 bg-warning/15 text-warning"
@@ -104,6 +112,9 @@ export default function StepEnvelopeStepCard({
 					type="button"
 					onClick={onSetEnd}
 					aria-pressed={isEndStep}
+					title={endTooltip}
+					data-hover-info={endTooltip}
+					{...endHoverHandlers}
 					className={`rounded border px-1 py-1 font-semibold text-[0.55rem] uppercase tracking-[0.18em] transition-colors ${
 						isEndStep
 							? "border-cz-gold/60 bg-cz-gold/15 text-cz-gold"

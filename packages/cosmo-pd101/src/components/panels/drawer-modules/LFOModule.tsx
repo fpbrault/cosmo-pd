@@ -1,17 +1,20 @@
 import { useMemo, useState } from "react";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import {
+	HoverInfoTrigger,
+	useHoverInfoHandlers,
+} from "@/components/layout/HoverInfo";
 import LfoDisplay from "@/components/panels/drawer-modules/LfoDisplay";
 import { LFO_RATE_TRANSFORM } from "@/components/panels/drawer-modules/lfoRateTransform";
 import { getSyncCyclesPerBeat } from "@/components/panels/drawer-modules/syncDivisions";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
-import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { LFO_PRESET_DATA } from "@/lib/synth/bindings/synth";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+import { getParamTooltip } from "@/lib/synth/paramMeta";
 
 interface LfoModuleProps {
 	id: 1 | 2;
@@ -29,6 +32,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 	const lfoSymmetryKey = id === 1 ? "lfoSymmetry" : "lfo2Symmetry";
 	const lfoRetriggerKey = id === 1 ? "lfoRetrigger" : "lfo2Retrigger";
 	const lfoOffsetKey = id === 1 ? "lfoOffset" : "lfo2Offset";
+	const retriggerTooltip = getParamTooltip(lfoRetriggerKey);
+	const retriggerHoverHandlers = useHoverInfoHandlers(retriggerTooltip);
 	const { value: tempoBpm } = useSynthParam("tempoBpm");
 
 	const { value: lfoWaveform, setValue: setLfoWaveform } =
@@ -132,19 +137,27 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 							["saw", "saw"],
 							["inv", "invertedSaw"],
 						] as const
-					).map(([label, w]) => (
-						<Button
-							key={w}
-							type="button"
-							className={`join-item btn btn-xs h-7 min-h-0 flex-1 rounded-none border-0 px-1.5 ${
-								lfoWaveform === w ? "btn-secondary" : "btn-outline"
-							}`}
-							onClick={() => setLfoWaveform(w)}
-							title={`Select ${label} waveform for LFO ${id}.`}
-						>
-							{label}
-						</Button>
-					))}
+					).map(([label, w]) => {
+						const tooltip = `Select a ${label} waveform for LFO ${id}.`;
+						return (
+							<HoverInfoTrigger key={w} message={tooltip}>
+								{(hoverHandlers) => (
+									<Button
+										type="button"
+										className={`join-item btn btn-xs h-7 min-h-0 flex-1 rounded-none border-0 px-1.5 ${
+											lfoWaveform === w ? "btn-secondary" : "btn-outline"
+										}`}
+										onClick={() => setLfoWaveform(w)}
+										title={tooltip}
+										data-hover-info={tooltip}
+										{...hoverHandlers}
+									>
+										{label}
+									</Button>
+								)}
+							</HoverInfoTrigger>
+						);
+					})}
 				</div>
 				<Button
 					type="button"
@@ -152,7 +165,9 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						lfoRetrigger ? "btn-secondary" : "btn-outline"
 					}`}
 					onClick={() => setLfoRetrigger(!lfoRetrigger)}
-					title={PARAM_META[lfoRetriggerKey as SynthParamKey]?.tooltip}
+					title={retriggerTooltip}
+					data-hover-info={retriggerTooltip}
+					{...retriggerHoverHandlers}
 				>
 					Retrig
 				</Button>

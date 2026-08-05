@@ -8,10 +8,6 @@ import {
 	type EngineParamUiMetaV1,
 } from "@/lib/synth/bindings/synth";
 
-export type ParamMeta = {
-	tooltip: string;
-};
-
 export type EngineParamUiMetaWithRangeV1 = EngineParamUiMetaV1 & {
 	min?: number;
 	max?: number;
@@ -48,20 +44,11 @@ export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 	{} as Partial<Record<SynthParamKey, EngineParamUiMetaWithRangeV1>>,
 );
 
-/** Canonical tooltip text for engine parameters, owned by the frontend i18n resources. */
-export const PARAM_META: Partial<Record<SynthParamKey, ParamMeta>> =
-	ENGINE_PARAM_UI_META_V1.reduce(
-		(acc, meta) => {
-			acc[meta.key as SynthParamKey] = {
-				tooltip:
-					i18n.t(`params.${meta.key}.tooltip`, {
-						defaultValue: meta.key,
-					}) || meta.key,
-			};
-			return acc;
-		},
-		{} as Partial<Record<SynthParamKey, ParamMeta>>,
-	);
+/** Resolves translated tooltip text at use time, after i18n has initialized. */
+export function getParamTooltip(key: string): string | undefined {
+	const tooltip = i18n.t(`params.${key}.tooltip`, { defaultValue: "" });
+	return tooltip && tooltip !== key ? tooltip : undefined;
+}
 
 const ENGINE_PARAM_DEFAULTS_BY_KEY = new Map<string, number>(
 	ENGINE_PARAM_UI_META_V1.flatMap((meta) =>
@@ -88,28 +75,23 @@ export function requireEngineParamDefault(key: string): number {
 	throw new Error(`Missing engine numeric default for parameter: ${key}`);
 }
 
-/** Frontend-owned enum value keys for controls. */
-const ENUM_VALUE_KEYS: Partial<Record<string, readonly string[]>> = {
-	lineSelect: ["L1", "L1+L2", "L2", "L1+L1'", "L1+L2'"],
-	modMode: ["normal", "ring", "noise"],
-	filterType: ["lp", "hp", "bp"],
-	portamentoMode: ["rate", "time"],
-	modEnvMode: ["adsr", "adr"],
-	modEnvRetrigMode: ["poly", "mono", "legato"],
-};
+/** Resolves translated enum-value tooltip text at use time. */
+export function getEnumTooltip(key: string, value: string): string | undefined {
+	const tooltip = i18n.t(`enumTooltips.${key}.${value}`, {
+		defaultValue: "",
+	});
+	if (tooltip && tooltip !== value) {
+		return tooltip;
+	}
 
-function buildEnumTooltipMap(key: string): Partial<Record<string, string>> {
-	const values = ENUM_VALUE_KEYS[key] ?? [];
-	return values.reduce(
-		(acc, value) => {
-			acc[value] =
-				i18n.t(`enumTooltips.${key}.${value}`, {
-					defaultValue: value,
-				}) || value;
-			return acc;
-		},
-		{} as Partial<Record<string, string>>,
-	);
+	const engineMeta = ENGINE_PARAM_UI_META_V1.find((meta) => meta.key === key);
+	if (engineMeta?.readoutFormat.kind === "enumMap") {
+		return engineMeta.readoutFormat.values.find(
+			(entry) => entry.value === value,
+		)?.label;
+	}
+
+	return undefined;
 }
 
 export function getEngineParamUiMeta(
@@ -117,19 +99,3 @@ export function getEngineParamUiMeta(
 ): EngineParamUiMetaWithRangeV1 | undefined {
 	return ENGINE_PARAM_UI_META_BY_KEY[key as SynthParamKey];
 }
-
-/** Canonical tooltips for `lineSelect` enum values. */
-export const LINE_SELECT_TOOLTIPS = buildEnumTooltipMap("lineSelect");
-
-/** Canonical tooltips for `modMode` enum values. */
-export const MOD_MODE_TOOLTIPS = buildEnumTooltipMap("modMode");
-
-/** Canonical tooltips for `portamentoMode` enum values. */
-export const PORTAMENTO_MODE_TOOLTIPS = buildEnumTooltipMap("portamentoMode");
-
-/** Canonical tooltips for `modEnvMode` enum values. */
-export const MOD_ENV_MODE_TOOLTIPS = buildEnumTooltipMap("modEnvMode");
-
-/** Canonical tooltips for `modEnvRetrigMode` enum values. */
-export const MOD_ENV_RETRIG_MODE_TOOLTIPS =
-	buildEnumTooltipMap("modEnvRetrigMode");

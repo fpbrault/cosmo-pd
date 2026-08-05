@@ -3,14 +3,13 @@ import type {
 	FxSlotModuleConfig,
 	KnobControlDef,
 } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
-import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { i18n } from "@/i18n";
 import {
 	FX_DEFINITIONS_V1,
 	type FxSlotType,
 	type ModDestination,
 } from "@/lib/synth/bindings/synth";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+import { getParamTooltip } from "@/lib/synth/paramMeta";
 
 function humanizeIdentifier(value: string): string {
 	return value
@@ -57,7 +56,7 @@ export function getTooltip(key: string): string | undefined {
 		return i18nTooltip;
 	}
 
-	const metaTooltip = PARAM_META[key as SynthParamKey]?.tooltip;
+	const metaTooltip = getParamTooltip(key);
 	if (metaTooltip && metaTooltip !== key) {
 		return metaTooltip;
 	}
@@ -104,6 +103,25 @@ export function getFxControlOptionLabel(
 		return optionLabel;
 	}
 	return optionKey.toUpperCase();
+}
+
+export function getFxControlOptionTooltip(
+	type: FxSlotType,
+	controlId: string,
+	optionValue: number | string,
+): string {
+	const optionKey = String(optionValue);
+	const explicitTooltip = i18n.t(
+		`fx.controls.${type}.${controlId}.optionTooltips.${optionKey}`,
+		{ defaultValue: "" },
+	);
+	if (explicitTooltip) {
+		return explicitTooltip;
+	}
+
+	const optionLabel = getFxControlOptionLabel(type, controlId, optionValue);
+	const controlLabel = getFxControlLabel(type, controlId).toLowerCase();
+	return `Select ${optionLabel} for ${controlLabel}.`;
 }
 
 export function getFxControlTooltip(

@@ -48,22 +48,39 @@ export default function PhaseLinesSection({
 		tabs: Array<{
 			id: PhaseLinePanelTab;
 			bottomLabel: string;
+			tooltip: string;
 		}>;
 	}> = [
 		{
 			label: "L1",
 			color: "blue",
 			tabs: [
-				{ id: "line1-algos", bottomLabel: "WAVE FORM" },
-				{ id: "line1-envelopes", bottomLabel: "ENV" },
+				{
+					id: "line1-algos",
+					bottomLabel: "WAVE FORM",
+					tooltip: "Edit line 1's oscillator algorithms and waveform blend.",
+				},
+				{
+					id: "line1-envelopes",
+					bottomLabel: "ENV",
+					tooltip: "Edit line 1's DCO, DCW, and DCA envelopes.",
+				},
 			],
 		},
 		{
 			label: "L2",
 			color: "red",
 			tabs: [
-				{ id: "line2-algos", bottomLabel: "WAVE FORM" },
-				{ id: "line2-envelopes", bottomLabel: "ENV" },
+				{
+					id: "line2-algos",
+					bottomLabel: "WAVE FORM",
+					tooltip: "Edit line 2's oscillator algorithms and waveform blend.",
+				},
+				{
+					id: "line2-envelopes",
+					bottomLabel: "ENV",
+					tooltip: "Edit line 2's DCO, DCW, and DCA envelopes.",
+				},
 			],
 		},
 	];
@@ -92,6 +109,7 @@ export default function PhaseLinesSection({
 											onClick={() => setActiveTab(tab.id)}
 											topLabel=""
 											bottomLabel={tab.bottomLabel}
+											tooltip={tab.tooltip}
 											color={group.color}
 											showLed
 										/>

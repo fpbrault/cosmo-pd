@@ -70,6 +70,12 @@
 		"line1Octave": {
 			"tooltip": "Transposes both lines by octave steps (shared)."
 		},
+		"lineOctave": {
+			"tooltip": "Transposes the selected line in octave steps."
+		},
+		"line2DetuneOctave": {
+			"tooltip": "Shifts line 2's detuned voice by whole octaves."
+		},
 		"line2Octave": {
 			"tooltip": "Relative octave shift for line 2."
 		},
@@ -150,6 +156,12 @@
 		},
 		"randomRate": {
 			"tooltip": "Sets sample-and-hold random modulation refresh rate."
+		},
+		"randomRateMode": {
+			"tooltip": "Chooses free-running hertz mode or BPM-synced division mode for random modulation."
+		},
+		"randomSyncDivision": {
+			"tooltip": "Chooses the rhythmic division for BPM-synced random modulation."
 		},
 		"modEnvAttack": {
 			"tooltip": "Sets modulation envelope attack time."
@@ -237,6 +249,36 @@
 		},
 		"modWheelVibratoDepth": {
 			"tooltip": "Sets how much mod wheel movement affects vibrato depth."
+		},
+		"lfoRetrigger": {
+			"tooltip": "Restarts LFO 1's phase when a new note starts."
+		},
+		"lfo2Retrigger": {
+			"tooltip": "Restarts LFO 2's phase when a new note starts."
+		},
+		"line1DcwKeyFollow": {
+			"tooltip": "Scales line 1's DCW envelope response with keyboard pitch."
+		},
+		"line2DcwKeyFollow": {
+			"tooltip": "Scales line 2's DCW envelope response with keyboard pitch."
+		},
+		"line1DcaKeyFollow": {
+			"tooltip": "Scales line 1's DCA envelope response with keyboard pitch."
+		},
+		"line2DcaKeyFollow": {
+			"tooltip": "Scales line 2's DCA envelope response with keyboard pitch."
+		},
+		"macro1": {
+			"tooltip": "Sends the first user-assigned macro value to mapped destinations."
+		},
+		"macro2": {
+			"tooltip": "Sends the second user-assigned macro value to mapped destinations."
+		},
+		"macro3": {
+			"tooltip": "Sends the third user-assigned macro value to mapped destinations."
+		},
+		"macro4": {
+			"tooltip": "Sends the fourth user-assigned macro value to mapped destinations."
 		}
 	},
 	"enumTooltips": {
@@ -818,6 +860,10 @@
 					"options": {
 						"0": "Digital",
 						"1": "Tape"
+					},
+					"optionTooltips": {
+						"0": "Use clean digital delay repeats.",
+						"1": "Add tape-style saturation and high-frequency rolloff to delay repeats."
 					}
 				}
 			},
@@ -829,6 +875,12 @@
 						"2": "Saw",
 						"3": "Inverted Saw",
 						"4": "Sq"
+					},
+					"optionTooltips": {
+						"1": "Use a triangle LFO shape for smooth, repeating modulation.",
+						"2": "Use a rising saw LFO shape for ramped modulation.",
+						"3": "Use a falling saw LFO shape for inverted ramped modulation.",
+						"4": "Use a square LFO shape for abrupt modulation changes."
 					}
 				}
 			},
@@ -839,6 +891,11 @@
 						"0": "Sine",
 						"1": "Tri",
 						"2": "Sq"
+					},
+					"optionTooltips": {
+						"0": "Use a sine LFO shape for smooth tremolo.",
+						"1": "Use a triangle LFO shape for smoothly ramped tremolo.",
+						"2": "Use a square LFO shape for abrupt tremolo changes."
 					}
 				}
 			},
@@ -849,6 +906,11 @@
 						"0": "OD",
 						"1": "Dist",
 						"2": "Fuzz"
+					},
+					"optionTooltips": {
+						"0": "Choose overdrive for a warm, moderate gain character.",
+						"1": "Choose distortion for a harder, more compressed gain character.",
+						"2": "Choose fuzz for an aggressive, heavily clipped gain character."
 					}
 				}
 			},
@@ -859,6 +921,11 @@
 						"0": "I",
 						"1": "II",
 						"2": "I+II"
+					},
+					"optionTooltips": {
+						"0": "Use Juno Chorus mode I for the first chorus voice.",
+						"1": "Use Juno Chorus mode II for the second chorus voice.",
+						"2": "Combine both Juno Chorus voices for a wider effect."
 					}
 				}
 			}
