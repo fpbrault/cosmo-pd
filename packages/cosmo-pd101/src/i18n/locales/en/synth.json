@@ -1002,7 +1002,7 @@
 		"presetNavigator": {
 			"previous": "Load the previous preset in the current navigation list.",
 			"next": "Load the next preset in the current navigation list.",
-			"openLibrary": "Open the preset library. Current preset: {{name}}.",
+			"openLibrary": "Open the preset library.",
 			"closeLibrary": "Close the preset library."
 		},
 		"module": {

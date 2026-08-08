@@ -27,9 +27,7 @@ export default function PresetNavigator({
 	const nextTooltip = t("tooltips.presetNavigator.next");
 	const libraryTooltip = isLibraryModeOpen
 		? t("tooltips.presetNavigator.closeLibrary")
-		: t("tooltips.presetNavigator.openLibrary", {
-				name: activePresetName,
-			});
+		: t("tooltips.presetNavigator.openLibrary");
 	const previousHoverHandlers = useHoverInfoHandlers(previousTooltip);
 	const libraryHoverHandlers = useHoverInfoHandlers(libraryTooltip);
 	const nextHoverHandlers = useHoverInfoHandlers(nextTooltip);
