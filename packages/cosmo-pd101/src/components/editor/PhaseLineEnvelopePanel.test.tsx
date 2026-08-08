@@ -30,8 +30,26 @@ vi.mock("./StepEnvelopePreview", () => ({
 }));
 
 vi.mock("./StepEnvelopeEditor", () => ({
-	default: ({ title }: { title: string }) => (
-		<div data-testid="step-env-editor">{title}</div>
+	default: ({
+		title,
+		headerActions,
+		headerRightActions,
+	}: {
+		title: string;
+		headerActions?: React.ReactNode;
+		headerRightActions?: React.ReactNode;
+	}) => (
+		<div data-testid="step-env-editor">
+			{title}
+			{headerActions}
+			{headerRightActions}
+		</div>
+	),
+}));
+
+vi.mock("./EnvelopePresetControls", () => ({
+	EnvelopePresetControls: () => (
+		<div data-testid="envelope-preset-controls">Envelope presets</div>
 	),
 }));
 
@@ -57,6 +75,7 @@ describe("PhaseLineEnvelopePanel", () => {
 						dcw: { title: "DCW", env, setEnv: vi.fn(), envColor: "#fff" },
 						dca: { title: "DCA", env, setEnv: vi.fn(), envColor: "#fff" },
 					},
+					targets: [],
 					dcwKeyFollow: 0,
 					setDcwKeyFollow: vi.fn(),
 					dcaKeyFollow: 0,
@@ -71,5 +90,11 @@ describe("PhaseLineEnvelopePanel", () => {
 		expect(setActiveEnvTab).toHaveBeenCalledWith("dca");
 		expect(screen.getByTestId("key-follow")).toHaveTextContent("dcw");
 		expect(screen.getByTestId("step-env-editor")).toHaveTextContent("DCW");
+		expect(screen.getByTestId("step-env-editor")).toContainElement(
+			screen.getByTestId("envelope-preset-controls"),
+		);
+		expect(screen.getByTestId("step-env-editor")).toContainElement(
+			screen.getByTestId("key-follow"),
+		);
 	});
 });

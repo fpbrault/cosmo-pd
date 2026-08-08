@@ -10,6 +10,7 @@ export type ModulePresetOption = {
 
 type ModulePresetPopoverProps = {
 	title: string;
+	saveDialogTitle?: string;
 	value: string;
 	options: ModulePresetOption[];
 	onChange: (value: string) => void;
@@ -46,10 +47,12 @@ function SaveAsDialog({
 	open,
 	onClose,
 	onSave,
+	title,
 }: {
 	open: boolean;
 	onClose: () => void;
 	onSave: (name: string) => void;
+	title: string;
 }) {
 	const { t } = useTranslation("synth");
 	const [name, setName] = useState("");
@@ -72,9 +75,7 @@ function SaveAsDialog({
 			}}
 		>
 			<div className="modal-box rounded-md border border-cz-border bg-cz-panel">
-				<h3 className="mb-4 font-bold text-cz-cream-light text-lg">
-					{t("modulePreset.saveDialogTitle")}
-				</h3>
+				<h3 className="mb-4 font-bold text-cz-cream-light text-lg">{title}</h3>
 				<input
 					ref={inputRef}
 					type="text"
@@ -115,6 +116,7 @@ function SaveAsDialog({
 
 export default function ModulePresetPopover({
 	title,
+	saveDialogTitle,
 	value,
 	options,
 	onChange,
@@ -319,6 +321,7 @@ export default function ModulePresetPopover({
 			<SaveAsDialog
 				open={saveDialogOpen}
 				onClose={() => setSaveDialogOpen(false)}
+				title={saveDialogTitle ?? t("modulePreset.saveDialogTitle")}
 				onSave={(name) => {
 					onSavePreset?.(name);
 					setSaveDialogOpen(false);

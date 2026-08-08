@@ -18,7 +18,7 @@ export interface PopoverProps {
 	onClose: () => void;
 	triggerRef: React.RefObject<Element | null>;
 	children: ReactNode;
-	role?: "dialog" | "listbox";
+	role?: "dialog" | "listbox" | "menu";
 	ariaLabel?: string;
 	ariaDescribedby?: string;
 	ariaLabelledby?: string;

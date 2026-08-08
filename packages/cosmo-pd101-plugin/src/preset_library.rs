@@ -1810,5 +1810,24 @@ mod tests {
 
         assert!(library.delete_fx_module_preset(&saved.id).unwrap());
         assert!(library.list_fx_module_presets("delay").unwrap().is_empty());
+
+        let envelope = library
+            .save_fx_module_preset(
+                "Envelope Shape".to_string(),
+                "envelope".to_string(),
+                serde_json::json!({
+                    "envelope": {
+                        "steps": [],
+                        "sustainStep": 0,
+                        "stepCount": 1,
+                        "loop": false
+                    }
+                }),
+            )
+            .unwrap();
+        let envelope_list = library.list_fx_module_presets("envelope").unwrap();
+        assert_eq!(envelope_list.len(), 1);
+        assert_eq!(envelope_list[0].id, envelope.id);
+        assert_eq!(envelope_list[0].module_type, "envelope");
     }
 }

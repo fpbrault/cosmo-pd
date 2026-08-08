@@ -33,6 +33,7 @@ interface SynthParamSliderProps {
 	onChange?: (value: number) => void;
 	disabled?: boolean;
 	label?: string;
+	labelPlacement?: "top" | "inline";
 	labelClassName?: string;
 	color?: string;
 	min?: number;
@@ -85,6 +86,7 @@ function SynthParamSliderInner({
 	onChange,
 	disabled = false,
 	label,
+	labelPlacement = "top",
 	labelClassName,
 	color = "#fbbf24",
 	min,
@@ -131,6 +133,7 @@ function SynthParamSliderInner({
 	});
 
 	const resolvedLabel = label?.trim() ? label : paramKey;
+	const inlineLabel = labelPlacement === "inline" && Boolean(label);
 	const resolvedTooltip = tooltip?.trim()
 		? tooltip
 		: state.syncMode
@@ -405,7 +408,7 @@ function SynthParamSliderInner({
 	const slider = (
 		<div
 			ref={containerRef}
-			className={`relative select-none ${disabled ? "opacity-50" : ""} ${className}`.trim()}
+			className={`relative select-none ${inlineLabel ? "flex items-center gap-2" : ""} ${disabled ? "opacity-50" : ""} ${className}`.trim()}
 			onPointerEnter={() => {
 				setHovered((wasHovered) => {
 					if (!wasHovered) {
@@ -418,7 +421,7 @@ function SynthParamSliderInner({
 		>
 			{label ? (
 				<div
-					className={`mb-1 text-center font-semibold text-[0.58rem] text-cz-cream uppercase tracking-[0.2em] ${labelClassName ?? ""}`.trim()}
+					className={`${inlineLabel ? "shrink-0 whitespace-nowrap" : "mb-1 text-center"} font-semibold text-[0.58rem] text-cz-cream uppercase tracking-[0.2em] ${labelClassName ?? ""}`.trim()}
 				>
 					{label}
 				</div>
@@ -451,7 +454,7 @@ function SynthParamSliderInner({
 				className={`relative rounded-md border border-cz-border/80 bg-cz-inset/85 shadow-inner ${
 					orientation === "vertical"
 						? "mx-auto cursor-ns-resize"
-						: "cursor-ew-resize"
+						: `cursor-ew-resize ${inlineLabel ? "min-w-0 flex-1" : ""}`
 				}`}
 				style={{
 					touchAction: "none",

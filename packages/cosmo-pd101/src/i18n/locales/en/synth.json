@@ -1104,6 +1104,15 @@
 		"savePlus": "+ Save",
 		"delete": "Delete"
 	},
+	"envelopePreset": {
+		"title": "Envelope",
+		"saveDialogTitle": "Save Envelope Preset As",
+		"copy": "copy",
+		"copyAria": "Copy envelope shape",
+		"copyTargets": "Copy to",
+		"copyTargetsAria": "Envelope copy targets",
+		"current": "Current"
+	},
 	"infoBar": {
 		"info": "Info",
 		"hideKeys": "Hide Keys",
