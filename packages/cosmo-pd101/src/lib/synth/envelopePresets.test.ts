@@ -5,16 +5,14 @@ describe("builtin envelope presets", () => {
 	it("provides normalized shape-only factory presets for the supplied shapes", () => {
 		expect(BUILTIN_ENVELOPE_PRESETS.map((preset) => preset.label)).toEqual([
 			"Pluck",
-			"Single",
+			"Flat",
 			"Alternator",
-			"Sustain",
-			"Slow Ramp",
+			"Short Swell",
+			"Pluck and Rise",
 			"Classic Decay",
-			"Falling Contour",
-			"Scatter",
+			"Sustain then Decay",
 			"Pulse Loop",
-			"Snap",
-			"Rhythm",
+			"Long Swell",
 		]);
 
 		for (const preset of BUILTIN_ENVELOPE_PRESETS) {

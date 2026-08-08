@@ -39,8 +39,8 @@ export const BUILTIN_ENVELOPE_PRESETS: BuiltinEnvelopePreset[] = [
 		),
 	},
 	{
-		id: "single",
-		label: "Single",
+		id: "flat",
+		label: "Flat",
 		envelope: createEnvelope([{ level: 0, rate: 80 }], 0),
 	},
 	{
@@ -61,8 +61,8 @@ export const BUILTIN_ENVELOPE_PRESETS: BuiltinEnvelopePreset[] = [
 		),
 	},
 	{
-		id: "sustain",
-		label: "Sustain",
+		id: "shortSwell",
+		label: "Short Swell",
 		envelope: createEnvelope(
 			[
 				{ level: 99, rate: 55 },
@@ -72,13 +72,13 @@ export const BUILTIN_ENVELOPE_PRESETS: BuiltinEnvelopePreset[] = [
 		),
 	},
 	{
-		id: "slowRamp",
-		label: "Slow Ramp",
+		id: "pluckAndRise",
+		label: "Pluck and Rise",
 		envelope: createEnvelope(
 			[
 				{ level: 82, rate: 82 },
-				{ level: 50, rate: 45 },
-				{ level: 54, rate: 35 },
+				{ level: 25, rate: 45 },
+				{ level: 66, rate: 35 },
 				{ level: 0, rate: 25 },
 			],
 			2,
@@ -97,8 +97,8 @@ export const BUILTIN_ENVELOPE_PRESETS: BuiltinEnvelopePreset[] = [
 		),
 	},
 	{
-		id: "fallingContour",
-		label: "Falling Contour",
+		id: "sustainThenDecay",
+		label: "Sustain then Decay",
 		envelope: createEnvelope(
 			[
 				{ level: 90, rate: 90 },
@@ -107,23 +107,6 @@ export const BUILTIN_ENVELOPE_PRESETS: BuiltinEnvelopePreset[] = [
 				{ level: 0, rate: 20 },
 			],
 			2,
-		),
-	},
-	{
-		id: "scatter",
-		label: "Scatter",
-		envelope: createEnvelope(
-			[
-				{ level: 80, rate: 90 },
-				{ level: 32, rate: 90 },
-				{ level: 65, rate: 90 },
-				{ level: 30, rate: 90 },
-				{ level: 28, rate: 90 },
-				{ level: 78, rate: 75 },
-				{ level: 72, rate: 35 },
-				{ level: 0, rate: 25 },
-			],
-			6,
 		),
 	},
 	{
@@ -145,31 +128,14 @@ export const BUILTIN_ENVELOPE_PRESETS: BuiltinEnvelopePreset[] = [
 		),
 	},
 	{
-		id: "snap",
-		label: "Snap",
+		id: "longSwell",
+		label: "Long Swell",
 		envelope: createEnvelope(
 			[
 				{ level: 99, rate: 25 },
 				{ level: 0, rate: 75 },
 			],
 			0,
-		),
-	},
-	{
-		id: "rhythm",
-		label: "Rhythm",
-		envelope: createEnvelope(
-			[
-				{ level: 90, rate: 75 },
-				{ level: 75, rate: 50 },
-				{ level: 42, rate: 40 },
-				{ level: 78, rate: 45 },
-				{ level: 30, rate: 35 },
-				{ level: 65, rate: 30 },
-				{ level: 18, rate: 40 },
-				{ level: 0, rate: 30 },
-			],
-			1,
 		),
 	},
 ];

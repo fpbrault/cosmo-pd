@@ -33,30 +33,26 @@ describe("useEnvelopePresetController", () => {
 		await waitFor(() => expect(storage.listEnvelopePresets).toHaveBeenCalled());
 		expect(result.current.presetOptions.map((option) => option.label)).toEqual([
 			"Pluck",
-			"Single",
+			"Flat",
 			"Alternator",
-			"Sustain",
-			"Slow Ramp",
+			"Short Swell",
+			"Pluck and Rise",
 			"Classic Decay",
-			"Falling Contour",
-			"Scatter",
+			"Sustain then Decay",
 			"Pulse Loop",
-			"Snap",
-			"Rhythm",
+			"Long Swell",
 		]);
 		expect(result.current.builtinPresetIds).toEqual(
 			new Set([
 				"pluck",
-				"single",
+				"flat",
 				"alternator",
-				"sustain",
-				"slowRamp",
+				"shortSwell",
+				"pluckAndRise",
 				"classicDecay",
-				"fallingContour",
-				"scatter",
+				"sustainThenDecay",
 				"pulseLoop",
-				"snap",
-				"rhythm",
+				"longSwell",
 			]),
 		);
 
