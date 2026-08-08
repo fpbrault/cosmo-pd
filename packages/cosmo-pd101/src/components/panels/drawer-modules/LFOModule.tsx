@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import {
@@ -22,6 +23,7 @@ interface LfoModuleProps {
 }
 
 export default function LfoModule({ id, color }: LfoModuleProps) {
+	const { t } = useTranslation("synth");
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const transport = useHostTransport();
 	const lfoWaveformKey = id === 1 ? "lfoWaveform" : "lfo2Waveform";
@@ -81,8 +83,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		previewRateHz > 0;
 
 	const transportStatus = transport.available
-		? `${transport.playing ? "Host Run" : "Host Stop"} ${transport.tempo.toFixed(1)} BPM ${transport.timeSigNum}/${transport.timeSigDen}`
-		: `Manual ${tempoBpm.toFixed(1)} BPM`;
+		? `${t(transport.playing ? "lfo.transportHostRun" : "lfo.transportHostStop")} ${transport.tempo.toFixed(1)} ${t("globalVoice.bpm")} ${transport.timeSigNum}/${transport.timeSigDen}`
+		: `${t("lfo.transportManual")} ${tempoBpm.toFixed(1)} ${t("globalVoice.bpm")}`;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -106,7 +108,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 
 	return (
 		<ModuleFrame
-			title={`LFO ${id}`}
+			title={t("lfo.title", { id })}
 			color={color}
 			enabled
 			hideToggle={true}
@@ -137,8 +139,12 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 							["saw", "saw"],
 							["inv", "invertedSaw"],
 						] as const
-					).map(([label, w]) => {
-						const tooltip = `Select a ${label} waveform for LFO ${id}.`;
+					).map(([waveformKey, w]) => {
+						const waveformLabel = t(`lfo.waveforms.${waveformKey}`);
+						const tooltip = t("tooltips.lfo.waveform", {
+							waveform: waveformLabel,
+							id,
+						});
 						return (
 							<HoverInfoTrigger key={w} message={tooltip}>
 								{(hoverHandlers) => (
@@ -152,7 +158,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 										data-hover-info={tooltip}
 										{...hoverHandlers}
 									>
-										{label}
+										{waveformLabel}
 									</Button>
 								)}
 							</HoverInfoTrigger>
@@ -169,19 +175,19 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					data-hover-info={retriggerTooltip}
 					{...retriggerHoverHandlers}
 				>
-					Retrig
+					{t("lfo.retrigger")}
 				</Button>
 			</div>
 			<SynthParamKnob
 				paramKey={lfoRateKey}
-				label="Rate"
+				label={t("lfo.rate")}
 				color="#27588f"
 				size={54}
 				modDestination={resolveTargetFromMetadata("lfo.rate", {
 					lfoIndex: id,
 				})}
 				midiTargetKey={`lfo${id}RateKnob`}
-				midiLabel={`LFO ${id} Rate`}
+				midiLabel={t("lfo.rateMidi", { id })}
 				uiTransform={LFO_RATE_TRANSFORM}
 				sync
 			/>
@@ -189,7 +195,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoDepthKey}
 				color="#27588f"
 				size={54}
-				label="Depth"
+				label={t("lfo.depth")}
 				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 				modDestination={resolveTargetFromMetadata("lfo.depth", {
 					lfoIndex: id,
@@ -202,7 +208,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				bipolar
 				color="#27588f"
 				size={54}
-				label="Offset"
+				label={t("lfo.offset")}
 				valueFormatter={(value) =>
 					`${(value as number) >= 0 ? "+" : ""}${(value as number).toFixed(2)}`
 				}
@@ -214,7 +220,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoSymmetryKey}
 				color="#27588f"
 				size={54}
-				label="Sym."
+				label={t("lfo.symmetry")}
 				modDestination={resolveTargetFromMetadata("lfo.symmetry", {
 					lfoIndex: id,
 				})}

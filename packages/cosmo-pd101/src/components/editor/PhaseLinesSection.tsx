@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Card, { joinClasses } from "@/components/primitives/Card";
 import CzTabButton from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
@@ -15,6 +16,7 @@ export default function PhaseLinesSection({
 	onActiveTabChange,
 	className,
 }: PhaseLinesSectionProps) {
+	const { t } = useTranslation("synth");
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
 	const setActiveTab = useSynthUiStore((s) => s.setPhaseLinePanelTab);
 	const { value: lineSelect } = useSynthParam("lineSelect");
@@ -26,7 +28,7 @@ export default function PhaseLinesSection({
 		? "algos"
 		: "envelopes";
 	const activeLineIndex = activeLine === "line1" ? 1 : 2;
-	const activeLineLabel = activeLine === "line1" ? "Line 1" : "Line 2";
+	const activeLineLabel = t(`editor.${activeLine}`);
 
 	const isLineAudible = (line: "line1" | "line2"): boolean => {
 		if (lineSelect === "L1+L2'") return true;
@@ -43,7 +45,7 @@ export default function PhaseLinesSection({
 
 	const panelClassName = joinClasses("h-full min-h-0 flex flex-col", className);
 	const leftTabGroups: Array<{
-		label: "L1" | "L2";
+		label: string;
 		color: "red" | "blue";
 		tabs: Array<{
 			id: PhaseLinePanelTab;
@@ -52,34 +54,34 @@ export default function PhaseLinesSection({
 		}>;
 	}> = [
 		{
-			label: "L1",
+			label: t("editor.line1Short"),
 			color: "blue",
 			tabs: [
 				{
 					id: "line1-algos",
-					bottomLabel: "WAVE FORM",
-					tooltip: "Edit line 1's oscillator algorithms and waveform blend.",
+					bottomLabel: t("editor.waveForm"),
+					tooltip: t("tooltips.phaseLine.line1Algos"),
 				},
 				{
 					id: "line1-envelopes",
-					bottomLabel: "ENV",
-					tooltip: "Edit line 1's DCO, DCW, and DCA envelopes.",
+					bottomLabel: t("editor.envelope"),
+					tooltip: t("tooltips.phaseLine.line1Envelopes"),
 				},
 			],
 		},
 		{
-			label: "L2",
+			label: t("editor.line2Short"),
 			color: "red",
 			tabs: [
 				{
 					id: "line2-algos",
-					bottomLabel: "WAVE FORM",
-					tooltip: "Edit line 2's oscillator algorithms and waveform blend.",
+					bottomLabel: t("editor.waveForm"),
+					tooltip: t("tooltips.phaseLine.line2Algos"),
 				},
 				{
 					id: "line2-envelopes",
-					bottomLabel: "ENV",
-					tooltip: "Edit line 2's DCO, DCW, and DCA envelopes.",
+					bottomLabel: t("editor.envelope"),
+					tooltip: t("tooltips.phaseLine.line2Envelopes"),
 				},
 			],
 		},
@@ -88,7 +90,7 @@ export default function PhaseLinesSection({
 	return (
 		<Card variant="panel-slanted" padding="none" className={panelClassName}>
 			<div className="cz-collapse-header cz-section-slanted-title shrink-0 justify-center py-0">
-				Phase Lines
+				{t("editor.phaseLines")}
 			</div>
 			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2 [@container_phase_(max-height:620px)]:p-1">
 				<div className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2 [@container_phase_(max-height:620px)]:gap-1">
@@ -123,8 +125,10 @@ export default function PhaseLinesSection({
 						{!activeLineIsAudible && (
 							<div className="absolute inset-0 z-30 flex items-center justify-center rounded bg-black/70 backdrop-blur-[5px]">
 								<div className="px-3 text-center font-semibold text-cz-cream/80 text-xs tracking-wide">
-									{activeLineLabel} is currently inactive in{" "}
-									{inaudibleLineSelectLabel} mode
+									{t("tooltips.phaseLine.inactive", {
+										line: activeLineLabel,
+										mode: inaudibleLineSelectLabel,
+									})}
 								</div>
 							</div>
 						)}

@@ -32,6 +32,15 @@
 		"delay": "Delay",
 		"reverb": "Reverb"
 	},
+	"sidebar": {
+		"global": "Global",
+		"midi": "MIDI",
+		"learn": "Learn",
+		"modTarget": "MOD+",
+		"vintageTop": "Vint",
+		"vintageBottom": "age",
+		"fxPrefix": "FX"
+	},
 	"common": {
 		"lineSelect": "Line Select",
 		"modulation": "Modulation",
@@ -931,6 +940,76 @@
 			}
 		}
 	},
+	"tooltips": {
+		"algorithm": {
+			"previous": "Select the previous phase-distortion algorithm.",
+			"next": "Select the next phase-distortion algorithm."
+		},
+		"baseWave": {
+			"cosine": "Use a cosine cycle for the oscillator base shape.",
+			"sine": "Use a sine cycle for the oscillator base shape.",
+			"triangle": "Use a triangle cycle for the oscillator base shape.",
+			"saw": "Use a sawtooth cycle for a brighter, harmonically rich shape.",
+			"square": "Use a square cycle with strong odd-harmonic character."
+		},
+		"phaseLine": {
+			"line1Algos": "Edit line 1's oscillator algorithms and waveform blend.",
+			"line1Envelopes": "Edit line 1's DCO, DCW, and DCA envelopes.",
+			"line2Algos": "Edit line 2's oscillator algorithms and waveform blend.",
+			"line2Envelopes": "Edit line 2's DCO, DCW, and DCA envelopes.",
+			"envelope": "Select the {{title}} envelope for this line.",
+			"envelopeAria": "Show {{title}} envelope",
+			"stepAria": "Step {{step}}",
+			"envelopeLevel": "Sets envelope level for step {{step}}.",
+			"envelopeRate": "Sets envelope transition speed for step {{step}}.",
+			"envelopeSustain": "Hold this step's level while the note remains held.",
+			"envelopeEnd": "Mark this step as the final active envelope step.",
+			"inactive": "{{line}} is currently inactive in {{mode}} mode.",
+			"levelLabel": "Lvl",
+			"rateLabel": "Rate",
+			"sustainLabel": "SUS",
+			"endLabel": "END"
+		},
+		"keyboard": {
+			"hide": "Hide the on-screen keyboard.",
+			"show": "Show the on-screen keyboard.",
+			"settings": "Open on-screen keyboard settings."
+		},
+		"sidebar": {
+			"global": "Open global tempo and voice-allocation settings.",
+			"midiLearn": "Open MIDI learn bindings and assign hardware controls.",
+			"modTarget": "Enter modulation-target mode, then choose a destination control.",
+			"vintage": "Toggle the vintage DAC coloration.",
+			"effectSlotName": "effect slot {{slot}}",
+			"effectSlot": "Toggle {{effect}}; long-press to open its FX editor."
+		},
+		"fx": {
+			"toggle": "Toggle {{effect}}.",
+			"optionFallback": "Select {{option}} for {{control}}.",
+			"preset": "Choose a {{title}} preset."
+		},
+		"lfo": {
+			"waveform": "Select a {{waveform}} waveform for LFO {{id}}."
+		},
+		"macro": {
+			"assignment": "Macro “{{label}}”: {{description}}",
+			"fallbackDescription": "sends this user-assigned control value to mapped destinations."
+		},
+		"voice": {
+			"tempo": "Sets the manual BPM used by tempo-synced modulation when host transport is unavailable.",
+			"voiceLimit": "Sets the maximum number of simultaneous voices."
+		},
+		"presetNavigator": {
+			"previous": "Load the previous preset in the current navigation list.",
+			"next": "Load the next preset in the current navigation list.",
+			"openLibrary": "Open the preset library. Current preset: {{name}}.",
+			"closeLibrary": "Close the preset library."
+		},
+		"module": {
+			"enable": "Enable {{title}}.",
+			"disable": "Disable {{title}}."
+		}
+	},
 	"algoUi": {
 		"noControlsForThisAlgo": "No controls for this algo",
 		"showControlDescription": "Show control description",
@@ -958,7 +1037,21 @@
 		"singleCycle": "Single Cycle",
 		"a": "A",
 		"b": "B",
-		"blend": "Blend"
+		"blend": "Blend",
+		"phaseLines": "Phase Lines",
+		"line1": "Line 1",
+		"line2": "Line 2",
+		"line1Short": "L1",
+		"line2Short": "L2",
+		"waveForm": "WAVE FORM",
+		"envelope": "ENV",
+		"baseWaveLabels": {
+			"cosine": "Cos",
+			"sine": "Sin",
+			"triangle": "Tri",
+			"saw": "Saw",
+			"square": "Sqr"
+		}
 	},
 	"midiLearn": {
 		"tableHeaderCh": "Ch",
@@ -1228,6 +1321,23 @@
 		"editAria": "Edit macro labels"
 	},
 	"lfo": {
-		"loop": "Loop"
+		"title": "LFO {{id}}",
+		"loop": "Loop",
+		"retrigger": "Retrig",
+		"rate": "Rate",
+		"depth": "Depth",
+		"offset": "Offset",
+		"symmetry": "Sym.",
+		"rateMidi": "LFO {{id}} Rate",
+		"transportHostRun": "Host Run",
+		"transportHostStop": "Host Stop",
+		"transportManual": "Manual",
+		"waveforms": {
+			"sine": "sine",
+			"triangle": "triangle",
+			"square": "square",
+			"saw": "saw",
+			"invertedSaw": "inverted saw"
+		}
 	}
 }

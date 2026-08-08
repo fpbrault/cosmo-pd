@@ -83,6 +83,7 @@ const FxButtonGroupControl = memo(function FxButtonGroupControl({
 	ctrl: ButtonGroupControlDef;
 	moduleColumns: number;
 }) {
+	const { t } = useTranslation("synth");
 	const { config, slot, params, setFxSlotParams } = useFxSlotModule();
 	const localizedOptions = ctrl.options.map((option) => ({
 		...option,
@@ -104,7 +105,9 @@ const FxButtonGroupControl = memo(function FxButtonGroupControl({
 			: null;
 	const resolvedLabel = getFxControlLabel(config.type, ctrl.param);
 	const groupAlignment = ctrl.centered ? "items-center" : "items-stretch";
-	const binaryTooltip = `Toggle ${resolvedLabel.toLowerCase()}.`;
+	const binaryTooltip = t("tooltips.fx.toggle", {
+		effect: resolvedLabel.toLowerCase(),
+	});
 
 	return (
 		<div className="min-w-0" style={gridPlacementStyle}>

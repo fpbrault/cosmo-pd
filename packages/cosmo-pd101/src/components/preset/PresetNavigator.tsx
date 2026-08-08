@@ -23,12 +23,13 @@ export default function PresetNavigator({
 }: PresetNavigatorProps) {
 	const { t } = useTranslation("synth");
 	const toggleLibrary = () => onLibraryModeChange?.(!isLibraryModeOpen);
-	const previousTooltip =
-		"Load the previous preset in the current navigation list.";
-	const nextTooltip = "Load the next preset in the current navigation list.";
+	const previousTooltip = t("tooltips.presetNavigator.previous");
+	const nextTooltip = t("tooltips.presetNavigator.next");
 	const libraryTooltip = isLibraryModeOpen
-		? "Close the preset library."
-		: `Open the preset library. Current preset: ${activePresetName}.`;
+		? t("tooltips.presetNavigator.closeLibrary")
+		: t("tooltips.presetNavigator.openLibrary", {
+				name: activePresetName,
+			});
 	const previousHoverHandlers = useHoverInfoHandlers(previousTooltip);
 	const libraryHoverHandlers = useHoverInfoHandlers(libraryTooltip);
 	const nextHoverHandlers = useHoverInfoHandlers(nextTooltip);

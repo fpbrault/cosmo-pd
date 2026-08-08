@@ -26,9 +26,9 @@ export default function SynthInfoBar({
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
 	const keyboardTooltip = keyboardVisible
-		? "Hide the on-screen keyboard."
-		: "Show the on-screen keyboard.";
-	const settingsTooltip = "Open on-screen keyboard settings.";
+		? t("tooltips.keyboard.hide")
+		: t("tooltips.keyboard.show");
+	const settingsTooltip = t("tooltips.keyboard.settings");
 	const keyboardHoverHandlers = useHoverInfoHandlers(keyboardTooltip);
 	const settingsHoverHandlers = useHoverInfoHandlers(settingsTooltip);
 

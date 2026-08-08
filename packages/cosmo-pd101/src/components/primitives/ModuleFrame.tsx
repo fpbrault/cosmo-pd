@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { MdDragIndicator, MdPowerSettingsNew } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
@@ -37,9 +38,13 @@ function ModuleHeader({
 	hideToggle = false,
 	onToggleEnabled,
 }: ModuleHeaderProps) {
+	const { t } = useTranslation("synth");
 	const slotCtx = useFxSlotContext();
 	const resolvedHeaderAction = headerAction ?? slotCtx?.typeSelector;
-	const powerTooltip = `${enabled ? "Disable" : "Enable"} ${title}.`;
+	const powerTooltip = t(
+		enabled ? "tooltips.module.disable" : "tooltips.module.enable",
+		{ title },
+	);
 	const powerHoverHandlers = useHoverInfoHandlers(powerTooltip);
 
 	return (
@@ -53,7 +58,7 @@ function ModuleHeader({
 					type="button"
 					onClick={onToggleEnabled}
 					disabled={!onToggleEnabled}
-					aria-label={enabled ? `Disable ${title}` : `Enable ${title}`}
+					aria-label={powerTooltip}
 					title={powerTooltip}
 					data-hover-info={powerTooltip}
 					{...powerHoverHandlers}

@@ -34,9 +34,8 @@ export default function GlobalVoicePanel() {
 		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
 	const voiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
 	const setVoiceLimit = useGlobalSynthSettings((s) => s.setVoiceLimit);
-	const tempoTooltip =
-		"Sets the manual BPM used by tempo-synced modulation when host transport is unavailable.";
-	const voiceLimitTooltip = "Sets the maximum number of simultaneous voices.";
+	const tempoTooltip = t("tooltips.voice.tempo");
+	const voiceLimitTooltip = t("tooltips.voice.voiceLimit");
 	const tempoHoverHandlers = useHoverInfoHandlers(tempoTooltip);
 	const voiceLimitHoverHandlers = useHoverInfoHandlers(voiceLimitTooltip);
 	return (

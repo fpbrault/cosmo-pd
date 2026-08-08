@@ -138,7 +138,7 @@ export default function PresetPopover({
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
-	const presetTooltip = `Choose a ${title} preset.`;
+	const presetTooltip = t("tooltips.fx.preset", { title });
 	const presetHoverHandlers = useHoverInfoHandlers(presetTooltip);
 
 	const hasManageActions = onSavePreset || (onDeletePreset && builtinPresetIds);

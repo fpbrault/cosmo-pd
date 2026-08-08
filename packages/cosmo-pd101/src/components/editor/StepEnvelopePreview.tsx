@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { drawEnvPreview, normalizeEnvelope } from "./stepEnvelopeGeometry";
@@ -18,6 +19,7 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 	active = false,
 	onClick,
 }: StepEnvelopePreviewProps) {
+	const { t } = useTranslation("synth");
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const normalizedEnv = useMemo(() => normalizeEnvelope(env), [env]);
 	const drawPreview = useCallback(() => {
@@ -25,7 +27,7 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 			drawEnvPreview(canvasRef.current, normalizedEnv, color, null, [], true);
 		}
 	}, [color, normalizedEnv]);
-	const tooltip = `Select the ${title} envelope for this line.`;
+	const tooltip = t("tooltips.phaseLine.envelope", { title });
 	const hoverHandlers = useHoverInfoHandlers(tooltip);
 
 	useEffect(() => {
@@ -45,7 +47,7 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 			type="button"
 			onClick={onClick}
 			aria-pressed={active}
-			aria-label={`Show ${title} envelope`}
+			aria-label={t("tooltips.phaseLine.envelopeAria", { title })}
 			title={tooltip}
 			data-hover-info={tooltip}
 			{...hoverHandlers}

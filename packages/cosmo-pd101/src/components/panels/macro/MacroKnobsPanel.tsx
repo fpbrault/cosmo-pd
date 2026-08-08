@@ -102,16 +102,19 @@ const MacroKnob = memo(function MacroKnob({
 	macroIndex,
 	size,
 }: MacroKnobProps) {
+	const { t } = useTranslation("synth");
 	const value = useMacroValue(macroIndex);
 	const setter = useMacroSetter(macroIndex);
 	const label = useMacroLabel(macroIndex);
 	const midiLearn = useMidiLearnTarget({
 		targetKey: `macro${macroIndex + 1}`,
 	});
-	const tooltip = `Macro “${label}”: ${
-		getParamTooltip(`macro${macroIndex + 1}`) ??
-		"sends this user-assigned control value to mapped destinations."
-	}`;
+	const tooltip = t("tooltips.macro.assignment", {
+		label,
+		description:
+			getParamTooltip(`macro${macroIndex + 1}`) ??
+			t("tooltips.macro.fallbackDescription"),
+	});
 
 	const handleChange = useCallback(
 		(v: number) => {

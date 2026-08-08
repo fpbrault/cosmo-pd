@@ -121,7 +121,10 @@ export function getFxControlOptionTooltip(
 
 	const optionLabel = getFxControlOptionLabel(type, controlId, optionValue);
 	const controlLabel = getFxControlLabel(type, controlId).toLowerCase();
-	return `Select ${optionLabel} for ${controlLabel}.`;
+	return i18n.t("tooltips.fx.optionFallback", {
+		option: optionLabel,
+		control: controlLabel,
+	});
 }
 
 export function getFxControlTooltip(

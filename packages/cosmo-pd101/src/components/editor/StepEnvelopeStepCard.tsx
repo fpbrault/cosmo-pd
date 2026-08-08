@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import ControlKnob from "@/components/controls/ControlKnob";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
@@ -31,17 +32,20 @@ export default function StepEnvelopeStepCard({
 	onSetSustain,
 	onSetEnd,
 }: StepEnvelopeStepCardProps) {
+	const { t } = useTranslation("synth");
 	const isActiveStep = stepIndex < activeStepCount;
 	const isEndStep = stepIndex === activeStepCount - 1;
 	const isSustainStep = stepIndex === sustainStep;
-	const sustainTooltip = "Hold this step's level while the note remains held.";
-	const endTooltip = "Mark this step as the final active envelope step.";
+	const sustainTooltip = t("tooltips.phaseLine.envelopeSustain");
+	const endTooltip = t("tooltips.phaseLine.envelopeEnd");
 	const sustainHoverHandlers = useHoverInfoHandlers(sustainTooltip);
 	const endHoverHandlers = useHoverInfoHandlers(endTooltip);
 
 	return (
 		<fieldset
-			aria-label={`Step ${stepIndex + 1}`}
+			aria-label={t("tooltips.phaseLine.stepAria", {
+				step: stepIndex + 1,
+			})}
 			className={`flex flex-col rounded-xl border px-1 py-2 transition-colors ${
 				!isActiveStep
 					? "border-base-300/30 bg-base-300/10"
@@ -63,8 +67,10 @@ export default function StepEnvelopeStepCard({
 					size={64}
 					min={0}
 					max={99}
-					label="Lvl"
-					tooltip={`Sets envelope level for step ${stepIndex + 1}.`}
+					label={t("tooltips.phaseLine.levelLabel")}
+					tooltip={t("tooltips.phaseLine.envelopeLevel", {
+						step: stepIndex + 1,
+					})}
 					valueFormatter={(v) => `${Math.round(v)}`}
 					color={!isActiveStep || isEndStep ? "#6b7280" : levelKnobColor}
 					modDestination={resolveTargetFromMetadata("env.stepLevel", {
@@ -79,8 +85,10 @@ export default function StepEnvelopeStepCard({
 					disabled={!isActiveStep}
 					min={0}
 					max={99}
-					label="Rate"
-					tooltip={`Sets envelope transition speed for step ${stepIndex + 1}.`}
+					label={t("tooltips.phaseLine.rateLabel")}
+					tooltip={t("tooltips.phaseLine.envelopeRate", {
+						step: stepIndex + 1,
+					})}
 					valueFormatter={(v) => `${Math.round(v)}`}
 					color={!isActiveStep ? "#6b7280" : "#a3a3a3"}
 					size={64}
@@ -106,7 +114,7 @@ export default function StepEnvelopeStepCard({
 							: "border-base-300/60 bg-base-100/40 text-base-content/70"
 					} disabled:cursor-not-allowed disabled:opacity-40`}
 				>
-					SUS
+					{t("tooltips.phaseLine.sustainLabel")}
 				</button>
 				<button
 					type="button"
@@ -121,7 +129,7 @@ export default function StepEnvelopeStepCard({
 							: "border-base-300/60 bg-base-100/40 text-base-content/70"
 					}`}
 				>
-					END
+					{t("tooltips.phaseLine.endLabel")}
 				</button>
 			</div>
 		</fieldset>

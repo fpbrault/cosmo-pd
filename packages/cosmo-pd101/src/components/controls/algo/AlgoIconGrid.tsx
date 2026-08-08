@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	getPdAlgoBehaviorDescription,
 	PD_ALGOS,
@@ -48,16 +49,15 @@ export default function AlgoIconGrid({
 	columns?: number;
 	color?: string;
 }) {
+	const { t } = useTranslation("synth");
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const previousLabel = useAlgoUiText("previousAlgorithm");
 	const nextLabel = useAlgoUiText("nextAlgorithm");
-	const previousHoverHandlers = useHoverInfoHandlers(
-		"Select the previous phase-distortion algorithm.",
-	);
-	const nextHoverHandlers = useHoverInfoHandlers(
-		"Select the next phase-distortion algorithm.",
-	);
+	const previousTooltip = t("tooltips.algorithm.previous");
+	const nextTooltip = t("tooltips.algorithm.next");
+	const previousHoverHandlers = useHoverInfoHandlers(previousTooltip);
+	const nextHoverHandlers = useHoverInfoHandlers(nextTooltip);
 	const behaviorPrefix = useAlgoUiText("behaviorTooltip");
 	const changeAlgorithmLabel = useAlgoUiText("changeAlgorithm");
 
@@ -146,7 +146,8 @@ export default function AlgoIconGrid({
 					type="button"
 					onClick={() => navigate(-1)}
 					aria-label={previousLabel}
-					data-hover-info="Select the previous phase-distortion algorithm."
+					title={previousTooltip}
+					data-hover-info={previousTooltip}
 					{...previousHoverHandlers}
 					className={[
 						"@max-[780px]:border-r @max-[780px]:px-1.5 @max-[780px]:[grid-area:prev]",
@@ -171,7 +172,8 @@ export default function AlgoIconGrid({
 					type="button"
 					onClick={() => navigate(1)}
 					aria-label={nextLabel}
-					data-hover-info="Select the next phase-distortion algorithm."
+					title={nextTooltip}
+					data-hover-info={nextTooltip}
 					{...nextHoverHandlers}
 					className={[
 						"@max-[780px]:px-1.5 @max-[780px]:[grid-area:next]",
