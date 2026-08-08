@@ -7,15 +7,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 0,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -540,12 +533,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -557,15 +545,8 @@
 		"description": "An atmospheric pad combined with an otherworldly gritty texture. Use the mod wheel to add more brightness and more grit.",
 		"starred": true,
 		"sortIndex": 1,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -1056,12 +1037,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -1073,15 +1049,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 2,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -1527,12 +1496,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -1544,15 +1508,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 3,
-		"tags": [
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -1995,12 +1952,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -2012,16 +1964,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 4,
-		"tags": [
-			"piano",
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano", "keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -2423,12 +2367,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -2440,15 +2379,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 5,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -2860,12 +2792,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -2877,16 +2804,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 6,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -3299,12 +3218,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -3316,15 +3230,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 7,
-		"tags": [
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -3785,12 +3692,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -3802,15 +3704,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 8,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -4223,12 +4118,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -4240,15 +4130,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 9,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -4661,12 +4544,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -4678,16 +4556,8 @@
 		"description": "",
 		"starred": true,
 		"sortIndex": 10,
-		"tags": [
-			"lead",
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["lead", "synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -5094,12 +4964,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -5111,15 +4976,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 11,
-		"tags": [
-			"guitar"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["guitar"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -5549,12 +5407,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -5566,15 +5419,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 12,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -6004,12 +5850,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -6021,16 +5862,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 13,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -6443,12 +6276,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -6460,16 +6288,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 14,
-		"tags": [
-			"synth",
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -6882,12 +6702,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -6899,15 +6714,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 15,
-		"tags": [
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -7320,12 +7128,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -7337,16 +7140,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 16,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -7776,12 +7571,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -7793,15 +7583,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 17,
-		"tags": [
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -8197,12 +7980,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -8214,15 +7992,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 18,
-		"tags": [
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -8652,12 +8423,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -8669,15 +8435,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 19,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -9090,12 +8849,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -9107,15 +8861,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 20,
-		"tags": [
-			"drum"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["drum"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -9511,12 +9258,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -9528,15 +9270,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 21,
-		"tags": [
-			"drum"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["drum"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -9949,12 +9684,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -9966,15 +9696,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 22,
-		"tags": [
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -10370,12 +10093,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -10387,15 +10105,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 23,
-		"tags": [
-			"organ"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["organ"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -10808,12 +10519,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -10825,15 +10531,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 24,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -11263,12 +10962,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -11280,16 +10974,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 25,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -11719,12 +11405,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -11736,16 +11417,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 26,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -12175,12 +11848,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -12192,16 +11860,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 27,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -12631,12 +12291,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -12648,16 +12303,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 28,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -13070,12 +12717,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -13087,17 +12729,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 29,
-		"tags": [
-			"pluck",
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck", "synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -13510,12 +13143,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -13527,17 +13155,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 30,
-		"tags": [
-			"string",
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["string", "synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -13933,12 +13552,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -13950,16 +13564,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 31,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -14372,12 +13978,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -14389,15 +13990,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 32,
-		"tags": [
-			"bell"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bell"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -14827,12 +14421,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -14844,15 +14433,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 33,
-		"tags": [
-			"guitar"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["guitar"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -15265,12 +14847,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -15282,15 +14859,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 34,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -15703,12 +15273,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -15720,16 +15285,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 35,
-		"tags": [
-			"bell",
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bell", "piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -16159,12 +15716,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -16176,16 +15728,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 36,
-		"tags": [
-			"bell",
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bell", "wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -16581,12 +16125,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -16598,15 +16137,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 37,
-		"tags": [
-			"bell"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bell"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -17036,12 +16568,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -17053,15 +16580,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 38,
-		"tags": [
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -17474,12 +16994,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -17491,15 +17006,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 39,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -17912,12 +17420,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -17929,15 +17432,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 40,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -18350,12 +17846,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -18367,15 +17858,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 41,
-		"tags": [
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -18788,12 +18272,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -18805,15 +18284,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 42,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -19209,12 +18681,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -19226,15 +18693,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 43,
-		"tags": [
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -19664,12 +19124,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -19681,15 +19136,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 44,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -20085,12 +19533,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -20102,15 +19545,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 45,
-		"tags": [
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -20540,12 +19976,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -20557,15 +19988,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 46,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -21077,12 +20501,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -21094,15 +20513,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 47,
-		"tags": [
-			"string"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["string"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -21515,12 +20927,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -21532,15 +20939,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 48,
-		"tags": [
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -21936,12 +21336,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -21953,16 +21348,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 49,
-		"tags": [
-			"bell",
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bell", "effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -22358,12 +21745,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -22375,15 +21757,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 50,
-		"tags": [
-			"pluck"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -22796,12 +22171,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -22813,15 +22183,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 51,
-		"tags": [
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -23217,12 +22580,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -23234,15 +22592,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 52,
-		"tags": [
-			"pluck"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -23638,12 +22989,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -23655,16 +23001,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 53,
-		"tags": [
-			"pluck",
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck", "keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -24060,12 +23398,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -24077,15 +23410,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 54,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -24560,12 +23886,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -24577,16 +23898,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 55,
-		"tags": [
-			"pluck",
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck", "bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -24999,12 +24312,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -25016,15 +24324,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 56,
-		"tags": [
-			"organ"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["organ"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -25420,12 +24721,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -25437,15 +24733,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 57,
-		"tags": [
-			"guitar"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["guitar"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -25875,12 +25164,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -25892,15 +25176,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 58,
-		"tags": [
-			"guitar"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["guitar"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -26313,12 +25590,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -26330,15 +25602,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 59,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -26734,12 +25999,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -26751,15 +26011,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 60,
-		"tags": [
-			"organ"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["organ"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -27189,12 +26442,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -27206,15 +26454,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 61,
-		"tags": [
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -27627,12 +26868,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -27644,15 +26880,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 62,
-		"tags": [
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -28048,12 +27277,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -28065,15 +27289,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 63,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -28486,12 +27703,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -28503,15 +27715,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 64,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -28941,12 +28146,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -28958,15 +28158,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 65,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -29379,12 +28572,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -29396,15 +28584,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 66,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -29817,12 +28998,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -29834,15 +29010,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 67,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -30255,12 +29424,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -30272,15 +29436,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 68,
-		"tags": [
-			"drum"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["drum"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -30693,12 +29850,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -30710,15 +29862,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 69,
-		"tags": [
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -31148,12 +30293,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -31165,15 +30305,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 70,
-		"tags": [
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -31586,12 +30719,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -31603,15 +30731,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 71,
-		"tags": [
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -32041,12 +31162,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -32058,15 +31174,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 72,
-		"tags": [
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -32496,12 +31605,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -32513,15 +31617,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 73,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -32934,12 +32031,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -32951,16 +32043,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 74,
-		"tags": [
-			"pluck",
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck", "piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -33356,12 +32440,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -33373,15 +32452,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 75,
-		"tags": [
-			"organ"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["organ"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -33777,12 +32849,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -33794,15 +32861,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 76,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -34198,12 +33258,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -34215,15 +33270,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 77,
-		"tags": [
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -34619,12 +33667,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -34636,15 +33679,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 78,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -35040,12 +34076,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -35057,16 +34088,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 79,
-		"tags": [
-			"synth",
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -35496,12 +34519,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -35513,16 +34531,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 80,
-		"tags": [
-			"synth",
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -35935,12 +34945,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -35952,16 +34957,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 81,
-		"tags": [
-			"synth",
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -36374,12 +35371,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -36391,15 +35383,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 82,
-		"tags": [
-			"guitar"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["guitar"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -36795,12 +35780,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -36812,15 +35792,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 83,
-		"tags": [
-			"wind"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["wind"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -37233,12 +36206,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -37250,15 +36218,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 84,
-		"tags": [
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -37688,12 +36649,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -37705,16 +36661,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 85,
-		"tags": [
-			"voice",
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["voice", "pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -38110,12 +37058,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -38127,15 +37070,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 86,
-		"tags": [
-			"guitar"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["guitar"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -38531,12 +37467,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -38548,15 +37479,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 87,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -38969,12 +37893,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -38986,16 +37905,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 88,
-		"tags": [
-			"piano",
-			"keys"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano", "keys"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -39425,12 +38336,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -39442,15 +38348,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 89,
-		"tags": [
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -39846,12 +38745,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -39863,15 +38757,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 90,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -40301,12 +39188,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -40318,15 +39200,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 91,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -40722,12 +39597,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -40739,15 +39609,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 92,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -41177,12 +40040,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -41194,15 +40052,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 93,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -41632,12 +40483,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -41649,15 +40495,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 94,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -42087,12 +40926,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -42104,15 +40938,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 95,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -42542,12 +41369,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -42559,15 +41381,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 96,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -42980,12 +41795,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -42997,15 +41807,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 97,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -43435,12 +42238,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -43452,15 +42250,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 98,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -43890,12 +42681,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -43907,15 +42693,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 99,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -44328,12 +43107,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -44345,15 +43119,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 100,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -44783,12 +43550,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -44800,15 +43562,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 101,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -45221,12 +43976,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -45238,15 +43988,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 102,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -45659,12 +44402,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -45676,15 +44414,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 103,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -46114,12 +44845,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -46131,15 +44857,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 104,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -46569,12 +45288,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -46586,15 +45300,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 105,
-		"tags": [
-			"synth"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -46990,12 +45697,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -47007,15 +45709,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 106,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -47442,12 +46137,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -47459,16 +46149,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 107,
-		"tags": [
-			"synth",
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -47864,12 +46546,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -47881,15 +46558,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 108,
-		"tags": [
-			"pluck"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pluck"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -48302,12 +46972,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -48319,16 +46984,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 109,
-		"tags": [
-			"synth",
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -48724,12 +47381,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -48741,15 +47393,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 110,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -49222,12 +47867,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -49239,17 +47879,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 111,
-		"tags": [
-			"synth",
-			"effect",
-			"pluck"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "effect", "pluck"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -49662,12 +48293,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -49679,16 +48305,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 112,
-		"tags": [
-			"synth",
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -50101,12 +48719,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -50118,15 +48731,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 113,
-		"tags": [
-			"organ"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["organ"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -50536,12 +49142,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -50553,16 +49154,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 114,
-		"tags": [
-			"synth",
-			"effect"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "effect"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -50958,12 +49551,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -50975,15 +49563,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 115,
-		"tags": [
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -51379,12 +49960,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -51396,15 +49972,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 116,
-		"tags": [
-			"piano"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["piano"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -51817,12 +50386,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -51834,16 +50398,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 117,
-		"tags": [
-			"keys",
-			"pluck"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["keys", "pluck"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -52283,12 +50839,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -52300,15 +50851,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 118,
-		"tags": [
-			"brass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["brass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -52752,12 +51296,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -52769,16 +51308,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 119,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -53221,12 +51752,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -53238,16 +51764,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 120,
-		"tags": [
-			"synth",
-			"lead"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["synth", "lead"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -53690,12 +52208,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -53707,15 +52220,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 121,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -54171,12 +52677,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -54188,15 +52689,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 122,
-		"tags": [
-			"bass"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["bass"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -54626,12 +53120,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	},
@@ -54643,15 +53132,8 @@
 		"description": "",
 		"starred": false,
 		"sortIndex": 123,
-		"tags": [
-			"pad"
-		],
-		"macroLabels": [
-			"Brightness",
-			"Timbre",
-			"Time",
-			"Movement"
-		],
+		"tags": ["pad"],
+		"macroLabels": ["Brightness", "Timbre", "Time", "Movement"],
 		"factoryVersion": 1,
 		"data": {
 			"schemaVersion": 1,
@@ -55069,12 +53551,7 @@
 				"macro2": 0.0,
 				"macro3": 0.0,
 				"macro4": 0.0,
-				"macroLabels": [
-					"Brightness",
-					"Timbre",
-					"Time",
-					"Movement"
-				]
+				"macroLabels": ["Brightness", "Timbre", "Time", "Movement"]
 			}
 		}
 	}
