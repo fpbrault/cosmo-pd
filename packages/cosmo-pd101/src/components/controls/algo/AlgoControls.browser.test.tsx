@@ -16,7 +16,7 @@ vi.mock("@/lib/synth/modDestination", () => ({
 		algoControlTargetFromSlotMock(...args),
 }));
 
-vi.mock("../ControlKnob", () => ({
+vi.mock("../parameters/ControlKnob", () => ({
 	default: (props: Record<string, unknown>) => {
 		knobSpy(props);
 		return <div data-testid="mock-knob">{String(props.label)}</div>;

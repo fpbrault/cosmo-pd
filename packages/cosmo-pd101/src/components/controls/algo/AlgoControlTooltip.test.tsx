@@ -12,7 +12,7 @@ vi.mock("@/lib/synth/i18nAlgo", () => ({
 		)[key] ?? key,
 }));
 
-vi.mock("../../layout/HoverInfo", () => ({
+vi.mock("../../layout/shell/HoverInfo", () => ({
 	useHoverInfoHandlers: () => ({
 		onMouseEnter: vi.fn(),
 		onMouseLeave: vi.fn(),

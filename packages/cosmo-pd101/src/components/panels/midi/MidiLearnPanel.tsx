@@ -1,8 +1,8 @@
 import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import Button from "@/components/controls/Button";
-import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
+import SynthPanelContainer from "@/components/layout/shell/SynthPanelContainer";
+import Button from "@/components/primitives/buttons/Button";
 import { getMidiLearnTargetLabel } from "@/features/synth/midiLearnRegistry";
 import {
 	type MidiBinding,

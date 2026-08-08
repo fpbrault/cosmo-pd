@@ -1,6 +1,6 @@
-import Button from "@/components/controls/Button";
+import Button from "@/components/primitives/buttons/Button";
 import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
-import { useHoverInfoHandlers } from "../../layout/HoverInfo";
+import { useHoverInfoHandlers } from "../../layout/shell/HoverInfo";
 
 export default function AlgoControlTooltip({
 	description,

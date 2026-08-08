@@ -5,7 +5,7 @@ import {
 } from "@/lib/synth/algoUiCatalog";
 import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
-import { HoverInfoTrigger } from "../../layout/HoverInfo";
+import { HoverInfoTrigger } from "../../layout/shell/HoverInfo";
 
 function CzMonogramIcon({
 	size,

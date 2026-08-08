@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
+import { useHoverInfoHandlers } from "@/components/layout/shell/HoverInfo";
 import { useAlgoControl } from "@/lib/synth/i18nAlgo";
 import AlgoControlTooltip from "./AlgoControlTooltip";
 import type {

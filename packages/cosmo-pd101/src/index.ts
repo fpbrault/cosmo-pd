@@ -3,7 +3,7 @@ export {
 	type Auv3FitMode,
 	type Auv3HostFitLayout,
 	computeAuv3HostFitLayout,
-} from "./components/renderer/auv3HostFitLayout";
+} from "./components/renderer/frame/auv3HostFitLayout";
 export {
 	computeRendererFrameLayout,
 	type RendererFrameLayout,
@@ -11,12 +11,12 @@ export {
 	SYNTH_RENDERER_DESIGN_WIDTH,
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
 	SYNTH_RENDERER_MIN_ASPECT_RATIO,
-} from "./components/renderer/rendererFrameLayout";
+} from "./components/renderer/frame/rendererFrameLayout";
 export {
 	default as SynthRenderer,
 	SharedSynthRenderer,
 	type SynthRendererProps,
-} from "./components/renderer/SynthRenderer";
+} from "./components/renderer/shell/SynthRenderer";
 export {
 	PresetManagerProvider,
 	usePresetManager,

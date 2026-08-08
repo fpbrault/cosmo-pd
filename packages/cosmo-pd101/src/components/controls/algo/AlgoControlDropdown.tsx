@@ -1,6 +1,6 @@
 import { memo } from "react";
-import Button from "@/components/controls/Button";
-import { HoverInfoTrigger } from "@/components/layout/HoverInfo";
+import { HoverInfoTrigger } from "@/components/layout/shell/HoverInfo";
+import Button from "@/components/primitives/buttons/Button";
 import {
 	getAlgoControlOptionLabel,
 	useAlgoControl,

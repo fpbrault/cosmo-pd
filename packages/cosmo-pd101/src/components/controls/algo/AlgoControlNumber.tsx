@@ -2,7 +2,7 @@ import { memo } from "react";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useAlgoControl } from "@/lib/synth/i18nAlgo";
 import { algoControlTargetFromSlot } from "@/lib/synth/modDestination";
-import ControlKnob from "../ControlKnob";
+import ControlKnob from "../parameters/ControlKnob";
 import type {
 	AlgoControlBinding,
 	AlgoControlRuntime,

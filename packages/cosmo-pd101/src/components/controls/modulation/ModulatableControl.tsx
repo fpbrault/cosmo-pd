@@ -7,7 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import Popover from "@/components/primitives/Popover";
+import Popover from "@/components/primitives/overlays/Popover";
 import { useModMatrix } from "@/context/ModMatrixContext";
 import { useModulationTarget } from "@/features/synth/hooks/useModulationTarget";
 import type {

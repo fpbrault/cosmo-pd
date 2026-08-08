@@ -1,0 +1,288 @@
+import { memo } from "react";
+import { useTranslation } from "react-i18next";
+import SynthTextInput from "@/components/controls/text/SynthTextInput";
+import Button from "@/components/primitives/buttons/Button";
+import type { FilterOptions } from "../hooks/usePresetLibraryState";
+import { getPresetTagCheckboxClassName } from "../metadata/presetTagTone";
+
+type SortKey = "star" | "favorite" | "name" | "bank" | "author" | "tags";
+
+type PresetLibraryHeaderProps = {
+	activePresetName: string;
+	totalCount: number;
+	search: string;
+	onSearchChange: (value: string) => void;
+	onClearSearch: () => void;
+	onClose: () => void;
+	bankOptions: FilterOptions;
+	selectedBankFilter: string | null;
+	onSelectBankFilter: (bank: string) => void;
+	onClearBankFilter: () => void;
+	authorOptions: FilterOptions;
+	selectedAuthorFilter: string | null;
+	onSelectAuthorFilter: (author: string) => void;
+	onClearAuthorFilter: () => void;
+	tagOptions: FilterOptions;
+	selectedTagFilters: string[];
+	onToggleTagFilter: (tag: string) => void;
+	onClearTagFilters: () => void;
+	showOnlyUserPresets: boolean;
+	onToggleShowOnlyUserPresets: () => void;
+	onToggleSort: (key: SortKey) => void;
+	sortIndicator: (key: SortKey) => string;
+};
+
+export default memo(function PresetLibraryHeader({
+	activePresetName,
+	totalCount,
+	search,
+	onSearchChange,
+	onClearSearch,
+	onClose,
+	bankOptions,
+	selectedBankFilter,
+	onSelectBankFilter,
+	onClearBankFilter,
+	authorOptions,
+	selectedAuthorFilter,
+	onSelectAuthorFilter,
+	onClearAuthorFilter,
+	tagOptions,
+	selectedTagFilters,
+	onToggleTagFilter,
+	onClearTagFilters,
+	showOnlyUserPresets,
+	onToggleShowOnlyUserPresets,
+	onToggleSort,
+	sortIndicator: getSortIndicator,
+}: PresetLibraryHeaderProps) {
+	const { t } = useTranslation("synth");
+	return (
+		<div className="grid grid-cols-[1fr_auto] items-start gap-3 border-cz-border border-b bg-cz-body px-5 py-4">
+			<div>
+				<p className="font-mono text-3xs text-cz-gold uppercase tracking-[0.32em]">
+					{t("presetLibrary.title")}
+				</p>
+				<h2 className="mt-1 truncate font-bold font-mono text-cz-cream text-xl">
+					{activePresetName}
+				</h2>
+			</div>
+			<div className="flex flex-wrap place-content-end items-center gap-2">
+				<p className="font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.2em]">
+					{totalCount}{" "}
+					{totalCount === 1
+						? t("presetLibrary.foundSingular")
+						: t("presetLibrary.foundPlural")}
+				</p>
+				<div className="flex min-w-64 items-center overflow-hidden rounded-md border border-cz-border bg-cz-inset">
+					<SynthTextInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder={t("presetLibrary.searchPlaceholder")}
+						className="h-10 min-w-0 flex-1 bg-transparent px-3 text-cz-cream text-sm placeholder-cz-cream-dim/70 outline-none"
+					/>
+					<button
+						type="button"
+						className="btn btn-ghost btn-xs mr-2 h-6 min-h-0 rounded-sm border border-cz-border/70 px-1.5 text-cz-cream-dim hover:border-cz-light-blue/60 hover:bg-cz-body hover:text-cz-cream disabled:border-cz-border/30 disabled:text-cz-cream-dim/40"
+						aria-label={t("presetLibrary.clearSearchAria")}
+						disabled={search.length === 0}
+						onClick={onClearSearch}
+					>
+						x
+					</button>
+				</div>
+				<Button
+					type="button"
+					className={`btn btn-sm ${showOnlyUserPresets ? "btn-secondary" : "border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"}`}
+					onClick={onToggleShowOnlyUserPresets}
+				>
+					{t("presetLibrary.userOnly")}
+				</Button>
+				<Button
+					type="button"
+					className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"
+					onClick={onClose}
+				>
+					{t("presetLibrary.return")}
+				</Button>
+			</div>
+			<div className="flex gap-1">
+				<fieldset className="fieldset">
+					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						{t("presetLibrary.filterAuthor")}
+					</legend>
+					<form
+						className="filter"
+						onSubmit={(event) => event.preventDefault()}
+						onReset={(event) => {
+							event.preventDefault();
+							onClearAuthorFilter();
+						}}
+					>
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-auto">
+							{authorOptions.map((option) => {
+								const active = option.value === selectedAuthorFilter;
+								return (
+									<input
+										key={option.value}
+										type="radio"
+										name="author-filter"
+										className="btn btn-sm btn-primary btn-soft max-w-32 text-left after:truncate"
+										checked={active}
+										aria-label={option.value}
+										disabled={option.disabled}
+										onChange={() => {
+											onSelectAuthorFilter(option.value);
+										}}
+									/>
+								);
+							})}
+							<input
+								type="reset"
+								value="x"
+								className="btn btn-square btn-sm"
+								aria-label={t("presetLibrary.clearAuthorFilters")}
+								disabled={selectedAuthorFilter === null}
+							/>
+						</div>
+					</form>
+				</fieldset>
+				<fieldset className="fieldset">
+					<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+						{t("presetLibrary.filterBank")}
+					</legend>
+					<form
+						className="filter"
+						onSubmit={(event) => event.preventDefault()}
+						onReset={(event) => {
+							event.preventDefault();
+							onClearBankFilter();
+						}}
+					>
+						<div className="flex h-22 min-w-64 flex-wrap gap-2 overflow-auto">
+							{bankOptions.map((option) => {
+								const active = option.value === selectedBankFilter;
+								return (
+									<input
+										key={option.value}
+										type="radio"
+										name="bank-filter"
+										className="btn btn-sm btn-secondary btn-soft"
+										checked={active}
+										aria-label={option.value}
+										disabled={option.disabled}
+										onChange={() => {
+											onSelectBankFilter(option.value);
+										}}
+									/>
+								);
+							})}
+							<input
+								type="reset"
+								value="x"
+								className="btn btn-square btn-sm"
+								aria-label={t("presetLibrary.clearBankFilters")}
+								disabled={selectedBankFilter === null}
+							/>
+						</div>
+					</form>
+				</fieldset>
+			</div>
+			<fieldset className="fieldset max-w-164">
+				<legend className="fieldset-legend font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.18em]">
+					{t("presetLibrary.filterTags")}
+				</legend>
+				<form
+					onSubmit={(event) => event.preventDefault()}
+					onReset={(event) => {
+						event.preventDefault();
+						onClearTagFilters();
+					}}
+				>
+					<div className="flex flex-wrap gap-2">
+						{tagOptions.map((option) => {
+							const checked = selectedTagFilters.includes(option.value);
+							return (
+								<label
+									key={option.value}
+									className={getPresetTagCheckboxClassName(
+										option.value,
+										checked,
+										option.disabled,
+									)}
+								>
+									<input
+										type="checkbox"
+										name="tag-filter"
+										className="peer sr-only"
+										checked={checked}
+										disabled={option.disabled}
+										onChange={() => {
+											onToggleTagFilter(option.value);
+										}}
+									/>
+									{option.value.toLowerCase()}
+								</label>
+							);
+						})}
+						<input
+							type="reset"
+							value="x"
+							className="btn btn-square btn-sm"
+							aria-label={t("presetLibrary.clearTagFilters")}
+							disabled={selectedTagFilters.length === 0}
+						/>
+					</div>
+				</form>
+			</fieldset>
+			<div className="col-span-2 mr-68 grid grid-cols-[2.5rem_2.5rem_minmax(14rem,1fr)_minmax(8rem,1fr)_9rem_minmax(10rem,1fr)] border-cz-border border-b bg-cz-body px-4 py-2 font-mono text-4xs text-cz-cream-dim uppercase tracking-[0.22em]">
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("star")}
+				>
+					★{getSortIndicator("star")}
+				</button>
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("favorite")}
+				>
+					♥{getSortIndicator("favorite")}
+				</button>
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("name")}
+				>
+					{t("presetLibrary.sortName")}
+					{getSortIndicator("name")}
+				</button>
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("bank")}
+				>
+					{t("presetLibrary.sortBank")}
+					{getSortIndicator("bank")}
+				</button>
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("author")}
+				>
+					{t("presetLibrary.sortAuthor")}
+					{getSortIndicator("author")}
+				</button>
+				<button
+					type="button"
+					className="text-left hover:text-cz-cream"
+					onClick={() => onToggleSort("tags")}
+				>
+					{t("presetLibrary.sortTags")}
+					{getSortIndicator("tags")}
+				</button>
+			</div>
+		</div>
+	);
+});

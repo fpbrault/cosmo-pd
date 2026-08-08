@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import Button from "@/components/controls/Button";
+import Button from "@/components/primitives/buttons/Button";
 import type { ModRoute } from "@/lib/synth/bindings/synth";
-import ControlKnob from "../ControlKnob";
+import ControlKnob from "../parameters/ControlKnob";
 import { MOD_SOURCE_META } from "./modRouteMeta";
 
 interface ModRouteRowProps {

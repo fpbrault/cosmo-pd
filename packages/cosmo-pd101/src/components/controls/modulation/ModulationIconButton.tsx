@@ -1,5 +1,5 @@
 import type React from "react";
-import Button from "@/components/controls/Button";
+import Button from "@/components/primitives/buttons/Button";
 
 interface ModulationIconButtonProps {
 	hasActiveRoutes: boolean;

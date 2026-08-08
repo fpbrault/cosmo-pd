@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import Card from "./Card";
-import CzButton from "./CzButton";
-import CzTabButton from "./CzTabButton";
+import CzButton from "./buttons/CzButton";
+import CzTabButton from "./buttons/CzTabButton";
+import Card from "./containers/Card";
 
 describe("primitive components (browser)", () => {
 	it("renders Card as a custom element with expected classes", () => {

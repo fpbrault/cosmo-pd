@@ -1,5 +1,5 @@
 import { memo } from "react";
-import Card from "@/components/primitives/Card";
+import Card from "@/components/primitives/containers/Card";
 import type { Algo } from "@/lib/synth/bindings/synth";
 import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import AlgoControlItem from "./AlgoControlItem";

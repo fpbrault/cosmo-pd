@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import ControlKnob from "./ControlKnob";
-import LineSelectControl from "./LineSelectControl";
-import ModModeControl from "./ModModeControl";
+import ControlKnob from "./parameters/ControlKnob";
+import LineSelectControl from "./selectors/LineSelectControl";
+import ModModeControl from "./selectors/ModModeControl";
 
 const useSynthParamMock = vi.fn();
 const useOptionalSynthControllerMock = vi.fn();

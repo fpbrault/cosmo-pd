@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
 import { useModulationTargetStore } from "@/features/synth/modulationTargetStore";
 import type { ModMatrix } from "@/lib/synth/bindings/synth";
-import ControlKnob from "../ControlKnob";
+import ControlKnob from "../parameters/ControlKnob";
 
 function ModulationHarness() {
 	const [modMatrix, setModMatrix] = useState<ModMatrix>({ routes: [] });

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import CzControlSelect from "./CzControlSelect";
 
-vi.mock("@/components/controls/Button", () => ({
+vi.mock("@/components/primitives/buttons/Button", () => ({
 	default: ({
 		children,
 		...props
@@ -17,7 +17,7 @@ vi.mock("@/components/controls/Button", () => ({
 	),
 }));
 
-vi.mock("@/components/layout/HoverInfo", () => ({
+vi.mock("@/components/layout/shell/HoverInfo", () => ({
 	HoverInfoTrigger: ({
 		children,
 	}: {

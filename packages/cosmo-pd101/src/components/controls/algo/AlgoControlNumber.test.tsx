@@ -18,7 +18,7 @@ vi.mock("@/lib/synth/i18nAlgo", () => ({
 	}),
 }));
 
-vi.mock("../ControlKnob", () => ({
+vi.mock("../parameters/ControlKnob", () => ({
 	default: (props: Record<string, unknown>) => {
 		knobSpy(props);
 		return <div data-testid="mock-knob">{String(props.label)}</div>;

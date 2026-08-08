@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import Button from "@/components/controls/Button";
+import Button from "@/components/primitives/buttons/Button";
 import type { ModDestination, ModSource } from "@/lib/synth/bindings/synth";
 import { MOD_SOURCE_META, MOD_SOURCE_OPTIONS } from "./modRouteMeta";
 

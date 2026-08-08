@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MdSettings } from "react-icons/md";
-import ControlKnob from "@/components/controls/ControlKnob";
-import { MacroLabelEditorPopover } from "@/components/modals/MacroLabelEditorPopover";
+import ControlKnob from "@/components/controls/parameters/ControlKnob";
+import { MacroLabelEditorPopover } from "@/components/modals/popovers/MacroLabelEditorPopover";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 import { useSynthStore } from "@/features/synth/synthStore";
 

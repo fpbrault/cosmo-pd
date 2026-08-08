@@ -1,2 +1,2 @@
-export { GlobalVoiceModal } from "./GlobalVoiceModal";
-export { SynthBrandInfoModal } from "./SynthBrandInfoModal";
+export { GlobalVoiceModal } from "./overlays/GlobalVoiceModal";
+export { SynthBrandInfoModal } from "./overlays/SynthBrandInfoModal";

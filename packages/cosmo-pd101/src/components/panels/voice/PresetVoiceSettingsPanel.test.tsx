@@ -8,7 +8,7 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	useSynthParam: (key: string) => useSynthParamMock(key),
 }));
 
-vi.mock("@/components/controls/SynthParamKnob", () => ({
+vi.mock("@/components/controls/parameters/SynthParamKnob", () => ({
 	default: ({
 		label,
 		onChange,

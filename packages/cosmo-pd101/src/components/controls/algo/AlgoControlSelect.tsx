@@ -1,5 +1,5 @@
 import { memo } from "react";
-import CzButton from "@/components/primitives/CzButton";
+import CzButton from "@/components/primitives/buttons/CzButton";
 import {
 	getAlgoControlOptionLabel,
 	useAlgoControl,

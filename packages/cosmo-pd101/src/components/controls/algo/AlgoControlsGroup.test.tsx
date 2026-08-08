@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import AlgoControlsGroup from "./AlgoControlsGroup";
 
-vi.mock("@/components/primitives/Card", () => ({
+vi.mock("@/components/primitives/containers/Card", () => ({
 	default: ({ children }: { children: ReactNode }) => (
 		<div data-testid="card">{children}</div>
 	),

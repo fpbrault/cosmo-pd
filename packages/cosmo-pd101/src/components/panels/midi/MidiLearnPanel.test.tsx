@@ -22,7 +22,7 @@ vi.mock("@/features/synth/midiLearnRegistry", () => ({
 	getMidiLearnTargetLabel: vi.fn(() => "Macro 1"),
 }));
 
-vi.mock("@/components/layout/SynthPanelContainer", () => ({
+vi.mock("@/components/layout/shell/SynthPanelContainer", () => ({
 	default: ({ children }: { children: React.ReactNode }) => (
 		<div>{children}</div>
 	),

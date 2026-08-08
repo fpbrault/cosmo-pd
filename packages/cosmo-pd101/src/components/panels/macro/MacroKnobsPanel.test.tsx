@@ -43,7 +43,7 @@ vi.mock("@/features/synth/synthStore", () => ({
 	),
 }));
 
-vi.mock("@/components/primitives/Popover", () => ({
+vi.mock("@/components/primitives/overlays/Popover", () => ({
 	default: ({
 		open,
 		children,
@@ -62,7 +62,7 @@ vi.mock("@/features/synth/hooks/useMidiLearnTarget", () => ({
 	})),
 }));
 
-vi.mock("@/components/controls/ControlKnob", () => ({
+vi.mock("@/components/controls/parameters/ControlKnob", () => ({
 	default: ({
 		label,
 		onChange,

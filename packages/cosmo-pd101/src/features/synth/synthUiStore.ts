@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import {
 	SCOPE_VISUALIZATION_MODES,
 	type ScopeVisualizationMode,
-} from "@/components/panels/analysis/scope-visualizations/renderScopeVisualization";
+} from "@/components/panels/analysis/scope/rendering/renderScopeVisualization";
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
 export type MainPanelMode = "phase" | "fx" | "mod" | "display";

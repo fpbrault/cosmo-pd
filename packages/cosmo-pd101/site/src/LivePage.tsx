@@ -19,8 +19,8 @@ import {
 	SYNTH_RENDERER_DESIGN_HEIGHT,
 	SYNTH_RENDERER_DESIGN_WIDTH,
 	SYNTH_RENDERER_MAX_ASPECT_RATIO,
-} from "../../src/components/renderer/rendererFrameLayout";
-import { SharedSynthRenderer } from "../../src/components/renderer/SynthRenderer";
+} from "../../src/components/renderer/frame/rendererFrameLayout";
+import { SharedSynthRenderer } from "../../src/components/renderer/shell/SynthRenderer";
 import { PresetManagerProvider } from "../../src/context/PresetManagerContext";
 import { createWebPresetManagerRepository } from "../../src/features/synth/createWebPresetManagerRepository";
 import { useSynthStore } from "../../src/features/synth/synthStore";
