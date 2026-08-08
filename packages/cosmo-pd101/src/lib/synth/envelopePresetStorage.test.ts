@@ -49,6 +49,30 @@ describe("envelopePresetStorage", () => {
 				patch: { envelope: { steps: [] } },
 				updatedAtUnixMs: 124,
 			},
+			{
+				id: "bad-2",
+				name: "Null Patch",
+				moduleType: "envelope",
+				patch: null,
+				updatedAtUnixMs: 125,
+			},
+			{
+				id: "bad-3",
+				name: "Null Step",
+				moduleType: "envelope",
+				patch: {
+					envelope: {
+						steps: [
+							{ level: null, rate: 1 },
+							...Array.from({ length: 7 }, () => ({ level: 0, rate: 1 })),
+						],
+						sustainStep: 0,
+						stepCount: 8,
+						loop: false,
+					},
+				},
+				updatedAtUnixMs: 126,
+			},
 		]);
 		window.__czDeleteFxModulePreset = vi.fn().mockResolvedValue(undefined);
 

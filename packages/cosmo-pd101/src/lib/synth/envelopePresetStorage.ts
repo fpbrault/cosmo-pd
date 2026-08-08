@@ -25,15 +25,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function isFiniteNumberOrNull(value: unknown): value is number | null {
-	return (
-		value === null || (typeof value === "number" && Number.isFinite(value))
-	);
+function isFiniteNumber(value: unknown): value is number {
+	return typeof value === "number" && Number.isFinite(value);
 }
 
-function parseEnvelopePatch(
-	patch: Record<string, unknown>,
-): EnvelopePresetPatch | null {
+function parseEnvelopePatch(patch: unknown): EnvelopePresetPatch | null {
+	if (!isRecord(patch)) {
+		return null;
+	}
 	const rawEnvelope = patch.envelope;
 	if (!isRecord(rawEnvelope) || !Array.isArray(rawEnvelope.steps)) {
 		return null;
@@ -42,26 +41,20 @@ function parseEnvelopePatch(
 		return null;
 	}
 
-	const steps = rawEnvelope.steps.map((rawStep) => {
-		if (!isRecord(rawStep)) return null;
+	const steps: { level: number; rate: number }[] = [];
+	for (const rawStep of rawEnvelope.steps) {
 		if (
-			!isFiniteNumberOrNull(rawStep.level) ||
-			!isFiniteNumberOrNull(rawStep.rate)
+			!isRecord(rawStep) ||
+			!isFiniteNumber(rawStep.level) ||
+			!isFiniteNumber(rawStep.rate)
 		) {
 			return null;
 		}
-		return { level: rawStep.level, rate: rawStep.rate };
-	});
-	if (steps.some((step) => step === null)) {
-		return null;
+		steps.push({ level: rawStep.level, rate: rawStep.rate });
 	}
-	const validSteps = steps.filter(
-		(step): step is { level: number | null; rate: number | null } =>
-			step !== null,
-	);
 	if (
-		typeof rawEnvelope.sustainStep !== "number" ||
-		typeof rawEnvelope.stepCount !== "number" ||
+		!isFiniteNumber(rawEnvelope.sustainStep) ||
+		!isFiniteNumber(rawEnvelope.stepCount) ||
 		typeof rawEnvelope.loop !== "boolean"
 	) {
 		return null;
@@ -69,7 +62,7 @@ function parseEnvelopePatch(
 
 	return {
 		envelope: normalizeEnvelope({
-			steps: validSteps,
+			steps,
 			sustainStep: rawEnvelope.sustainStep,
 			stepCount: rawEnvelope.stepCount,
 			loop: rawEnvelope.loop,
