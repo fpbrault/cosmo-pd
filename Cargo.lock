@@ -594,7 +594,7 @@ dependencies = [
  "truce-au",
  "truce-clap",
  "truce-core",
- "truce-params",
+ "truce-params 1.0.1",
  "truce-standalone",
  "truce-test",
  "truce-vst3",
@@ -3619,7 +3619,7 @@ dependencies = [
  "truce-derive",
  "truce-gui-types",
  "truce-loader",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-plugin",
 ]
 
@@ -3631,7 +3631,7 @@ dependencies = [
  "cc",
  "crossbeam-queue",
  "truce-core",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-shim-types",
 ]
 
@@ -3656,7 +3656,7 @@ dependencies = [
  "log",
  "objc",
  "truce-core",
- "truce-params",
+ "truce-params 6.3.0",
 ]
 
 [[package]]
@@ -3667,7 +3667,7 @@ dependencies = [
  "crossbeam-queue",
  "crossbeam-utils",
  "png",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-utils",
 ]
 
@@ -3692,7 +3692,7 @@ dependencies = [
  "syn 2.0.119",
  "toml 1.1.4+spec-1.1.0",
  "truce-build",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-utils",
 ]
 
@@ -3702,7 +3702,7 @@ version = "6.3.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
 dependencies = [
  "truce-core",
- "truce-params",
+ "truce-params 6.3.0",
 ]
 
 [[package]]
@@ -3732,7 +3732,7 @@ dependencies = [
  "truce-cpu",
  "truce-gui-types",
  "truce-gui-utils",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-plugin",
  "wgpu",
 ]
@@ -3767,8 +3767,16 @@ dependencies = [
  "parking_lot",
  "truce-core",
  "truce-gui-types",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-plugin",
+]
+
+[[package]]
+name = "truce-params"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "bitflags 2.13.1",
 ]
 
 [[package]]
@@ -3786,7 +3794,7 @@ source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a26
 dependencies = [
  "truce-core",
  "truce-gui-types",
- "truce-params",
+ "truce-params 6.3.0",
 ]
 
 [[package]]
@@ -3811,7 +3819,7 @@ dependencies = [
  "rfd",
  "truce-core",
  "truce-gui",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-utils",
  "windows-sys 0.61.2",
  "x11-dl",
@@ -3827,7 +3835,7 @@ dependencies = [
  "truce-build",
  "truce-core",
  "truce-driver",
- "truce-params",
+ "truce-params 6.3.0",
  "truce-plugin",
 ]
 
@@ -3844,7 +3852,7 @@ dependencies = [
  "cc",
  "crossbeam-queue",
  "truce-core",
- "truce-params",
+ "truce-params 6.3.0",
 ]
 
 [[package]]
