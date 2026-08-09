@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
-import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
 import Popover from "@/components/primitives/Popover";
+import PresetPopover from "@/components/primitives/PresetPopover";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import { normalizeEnvelope } from "@/lib/synth/envelopeData";
 import type {
@@ -123,7 +123,7 @@ export function EnvelopePresetControls({
 
 	return (
 		<div className="flex shrink-0 items-end gap-1">
-			<ModulePresetPopover
+			<PresetPopover
 				title={t("envelopePreset.title")}
 				saveDialogTitle={t("envelopePreset.saveDialogTitle")}
 				value={selectedPreset}

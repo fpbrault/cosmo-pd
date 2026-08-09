@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ModulePresetOption } from "@/components/primitives/ModulePresetPopover";
+import type { PresetOption } from "@/components/primitives/PresetPopover";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import {
 	deleteEnvelopePreset,
@@ -37,7 +37,7 @@ export function useEnvelopePresetController({
 		};
 	}, []);
 
-	const presetOptions = useMemo<ModulePresetOption[]>(
+	const presetOptions = useMemo<PresetOption[]>(
 		() => [
 			...BUILTIN_ENVELOPE_PRESETS.map((preset) => ({
 				id: preset.id,

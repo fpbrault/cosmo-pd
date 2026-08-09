@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import Popover from "@/components/primitives/Popover";
 
-export type ModulePresetOption = {
+export type PresetOption = {
 	id: string;
 	label?: string;
 };
 
-type ModulePresetPopoverProps = {
+export type PresetPopoverProps = {
 	title: string;
 	saveDialogTitle?: string;
 	value: string;
-	options: ModulePresetOption[];
+	options: PresetOption[];
 	onChange: (value: string) => void;
 	accentColor?: string;
 	disabled?: boolean;
@@ -57,6 +57,7 @@ function SaveAsDialog({
 	const { t } = useTranslation("synth");
 	const [name, setName] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
+	const titleId = useId();
 
 	useEffect(() => {
 		if (open) {
@@ -69,13 +70,16 @@ function SaveAsDialog({
 		<dialog
 			className="modal"
 			open={open}
+			aria-labelledby={titleId}
 			onCancel={(event) => {
 				event.preventDefault();
 				onClose();
 			}}
 		>
 			<div className="modal-box rounded-md border border-cz-border bg-cz-panel">
-				<h3 className="mb-4 font-bold text-cz-cream-light text-lg">{title}</h3>
+				<h3 id={titleId} className="mb-4 font-bold text-cz-cream-light text-lg">
+					{title}
+				</h3>
 				<input
 					ref={inputRef}
 					type="text"
@@ -114,7 +118,7 @@ function SaveAsDialog({
 	);
 }
 
-export default function ModulePresetPopover({
+export default function PresetPopover({
 	title,
 	saveDialogTitle,
 	value,
@@ -125,7 +129,7 @@ export default function ModulePresetPopover({
 	builtinPresetIds,
 	onSavePreset,
 	onDeletePreset,
-}: ModulePresetPopoverProps) {
+}: PresetPopoverProps) {
 	const { t } = useTranslation("synth");
 	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const borderColor = colorAlpha(accentColor ?? "", 0.65);

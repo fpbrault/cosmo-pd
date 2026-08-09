@@ -1,7 +1,7 @@
 import { MdDragIndicator, MdPowerSettingsNew } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { useFxSlotContext } from "@/components/panels/FxSlotContext";
-import ModulePresetPopover from "@/components/primitives/ModulePresetPopover";
+import PresetPopover from "@/components/primitives/PresetPopover";
 
 // --- UTILS ---
 function contrastColor(hex: string): "black" | "white" {
@@ -13,7 +13,7 @@ function contrastColor(hex: string): "black" | "white" {
 }
 
 // --- TYPES ---
-import type { ModulePresetOption } from "@/components/primitives/ModulePresetPopover";
+import type { PresetOption } from "@/components/primitives/PresetPopover";
 
 // --- HEADER COMPONENT ---
 type ModuleHeaderProps = {
@@ -89,7 +89,7 @@ type ModuleFrameProps = {
 	color: string;
 	headerAction?: React.ReactNode;
 	presetValue?: string;
-	presetOptions?: ModulePresetOption[];
+	presetOptions?: PresetOption[];
 	onPresetChange?: (value: string) => void;
 	presetDisabled?: boolean;
 	builtinPresetIds?: Set<string>;
@@ -174,7 +174,7 @@ export default function ModuleFrame({
 					style={{ backgroundColor: color, color: textColor }}
 					className="relative flex w-full items-end justify-end pt-1 font-medium text-xs"
 				>
-					<ModulePresetPopover
+					<PresetPopover
 						title={`${title} Presets`}
 						value={presetValue ?? ""}
 						options={presetOptions}
