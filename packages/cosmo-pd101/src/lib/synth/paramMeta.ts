@@ -24,6 +24,24 @@ export const ENGINE_MIDI_PARAM_RANGES_BY_KEY = new Map<
 
 const ALGO_CONTROL_SLOT_KEY = /^line[12]AlgoControl[1-8]$/;
 
+const PARAM_TOOLTIP_LINE_ALIASES: Record<
+	string,
+	{ key: string; line: number }
+> = {
+	warpAAmount: { key: "warpAmount", line: 1 },
+	warpBAmount: { key: "warpAmount", line: 2 },
+	algoBlendA: { key: "algoBlend", line: 1 },
+	algoBlendB: { key: "algoBlend", line: 2 },
+};
+
+function translateTooltip(
+	path: string,
+	options: Record<string, unknown> = {},
+): string | undefined {
+	const tooltip = i18n.t(path, { defaultValue: "", ...options });
+	return tooltip && tooltip !== path ? tooltip : undefined;
+}
+
 export function isNativeMidiMappingParamKey(key: string): boolean {
 	return (
 		ENGINE_MIDI_PARAM_RANGES_BY_KEY.has(key) || ALGO_CONTROL_SLOT_KEY.test(key)
@@ -46,8 +64,26 @@ export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 
 /** Resolves translated tooltip text at use time, after i18n has initialized. */
 export function getParamTooltip(key: string): string | undefined {
-	const tooltip = i18n.t(`params.${key}.tooltip`, { defaultValue: "" });
-	return tooltip && tooltip !== key ? tooltip : undefined;
+	const alias = PARAM_TOOLTIP_LINE_ALIASES[key];
+	if (alias) {
+		const sharedTooltip = translateTooltip(`params.line.${alias.key}.tooltip`, {
+			line: alias.line,
+		});
+		if (sharedTooltip) return sharedTooltip;
+	}
+
+	const lineMatch = /^line([12])(.+)$/.exec(key);
+	if (lineMatch) {
+		const sharedKey = lineMatch[2].replace(/^./, (character) =>
+			character.toLowerCase(),
+		);
+		const sharedTooltip = translateTooltip(`params.line.${sharedKey}.tooltip`, {
+			line: Number(lineMatch[1]),
+		});
+		if (sharedTooltip) return sharedTooltip;
+	}
+
+	return translateTooltip(`params.${key}.tooltip`);
 }
 
 const ENGINE_PARAM_DEFAULTS_BY_KEY = new Map<string, number>(
@@ -77,10 +113,15 @@ export function requireEngineParamDefault(key: string): number {
 
 /** Resolves translated enum-value tooltip text at use time. */
 export function getEnumTooltip(key: string, value: string): string | undefined {
-	const tooltip = i18n.t(`enumTooltips.${key}.${value}`, {
-		defaultValue: "",
-	});
-	if (tooltip && tooltip !== value) {
+	if (key === "lineSelect" && (value === "L1" || value === "L2")) {
+		const lineOnlyTooltip = translateTooltip(`enumTooltips.${key}.lineOnly`, {
+			line: value.slice(1),
+		});
+		if (lineOnlyTooltip) return lineOnlyTooltip;
+	}
+
+	const tooltip = translateTooltip(`enumTooltips.${key}.${value}`);
+	if (tooltip) {
 		return tooltip;
 	}
 

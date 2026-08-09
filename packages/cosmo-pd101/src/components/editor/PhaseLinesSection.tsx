@@ -45,6 +45,7 @@ export default function PhaseLinesSection({
 
 	const panelClassName = joinClasses("h-full min-h-0 flex flex-col", className);
 	const leftTabGroups: Array<{
+		line: 1 | 2;
 		label: string;
 		color: "red" | "blue";
 		tabs: Array<{
@@ -54,34 +55,36 @@ export default function PhaseLinesSection({
 		}>;
 	}> = [
 		{
+			line: 1,
 			label: t("editor.line1Short"),
 			color: "blue",
 			tabs: [
 				{
 					id: "line1-algos",
 					bottomLabel: t("editor.waveForm"),
-					tooltip: t("tooltips.phaseLine.line1Algos"),
+					tooltip: t("tooltips.phaseLine.algos", { line: 1 }),
 				},
 				{
 					id: "line1-envelopes",
 					bottomLabel: t("editor.envelope"),
-					tooltip: t("tooltips.phaseLine.line1Envelopes"),
+					tooltip: t("tooltips.phaseLine.envelopes", { line: 1 }),
 				},
 			],
 		},
 		{
+			line: 2,
 			label: t("editor.line2Short"),
 			color: "red",
 			tabs: [
 				{
 					id: "line2-algos",
 					bottomLabel: t("editor.waveForm"),
-					tooltip: t("tooltips.phaseLine.line2Algos"),
+					tooltip: t("tooltips.phaseLine.algos", { line: 2 }),
 				},
 				{
 					id: "line2-envelopes",
 					bottomLabel: t("editor.envelope"),
-					tooltip: t("tooltips.phaseLine.line2Envelopes"),
+					tooltip: t("tooltips.phaseLine.envelopes", { line: 2 }),
 				},
 			],
 		},
@@ -98,7 +101,7 @@ export default function PhaseLinesSection({
 						{leftTabGroups.map((group) => {
 							return (
 								<div
-									key={group.label}
+									key={group.line}
 									className="flex h-full flex-col justify-center gap-4 rounded-lg bg-cz-inset/80 p-1.5 py-3 @min-[780px]:pb-10 [@container_phase_(max-height:620px)]:gap-2 [@container_phase_(max-height:620px)]:py-1 [@container_phase_(max-height:620px)]:pb-1"
 								>
 									<div className="text-center font-bold text-[0.6rem] text-cz-cream tracking-[0.12em]">

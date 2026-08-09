@@ -58,23 +58,22 @@
 		"volume": {
 			"tooltip": "Sets the global synth output level."
 		},
-		"warpAAmount": {
-			"tooltip": "Sets base harmonic warp amount for this line."
-		},
-		"warpBAmount": {
-			"tooltip": "Sets base harmonic warp amount for this line."
-		},
-		"algoBlendA": {
-			"tooltip": "Crossfades between Algo A and Algo B outputs."
-		},
-		"algoBlendB": {
-			"tooltip": "Crossfades between Algo A and Algo B outputs."
-		},
-		"line1Level": {
-			"tooltip": "Sets base output level for this line."
-		},
-		"line2Level": {
-			"tooltip": "Sets base output level for this line."
+		"line": {
+			"warpAmount": {
+				"tooltip": "Sets amount of phase distortion applied to line {{line}}."
+			},
+			"algoBlend": {
+				"tooltip": "Controls the mix between the two selected algorithms for line {{line}}."
+			},
+			"level": {
+				"tooltip": "Sets base output level for line {{line}}."
+			},
+			"dcwKeyFollow": {
+				"tooltip": "Scales line {{line}}'s DCW envelope response with keyboard pitch."
+			},
+			"dcaKeyFollow": {
+				"tooltip": "Scales line {{line}}'s DCA envelope response with keyboard pitch."
+			}
 		},
 		"line1Octave": {
 			"tooltip": "Transposes both lines by octave steps (shared)."
@@ -265,18 +264,6 @@
 		"lfo2Retrigger": {
 			"tooltip": "Restarts LFO 2's phase when a new note starts."
 		},
-		"line1DcwKeyFollow": {
-			"tooltip": "Scales line 1's DCW envelope response with keyboard pitch."
-		},
-		"line2DcwKeyFollow": {
-			"tooltip": "Scales line 2's DCW envelope response with keyboard pitch."
-		},
-		"line1DcaKeyFollow": {
-			"tooltip": "Scales line 1's DCA envelope response with keyboard pitch."
-		},
-		"line2DcaKeyFollow": {
-			"tooltip": "Scales line 2's DCA envelope response with keyboard pitch."
-		},
 		"macro1": {
 			"tooltip": "Sends the first user-assigned macro value to mapped destinations."
 		},
@@ -292,9 +279,8 @@
 	},
 	"enumTooltips": {
 		"lineSelect": {
-			"L1": "Play oscillator line 1 only.",
+			"lineOnly": "Play oscillator line {{line}} only.",
 			"L1+L2": "Layer oscillator lines 1 and 2.",
-			"L2": "Play oscillator line 2 only.",
 			"L1+L1'": "Stack line 1 with a detuned variant.",
 			"L1+L2'": "Layer line 1 with a detuned line 2 variant."
 		},
@@ -953,10 +939,8 @@
 			"square": "Use a square cycle with strong odd-harmonic character."
 		},
 		"phaseLine": {
-			"line1Algos": "Edit line 1's oscillator algorithms and waveform blend.",
-			"line1Envelopes": "Edit line 1's DCO, DCW, and DCA envelopes.",
-			"line2Algos": "Edit line 2's oscillator algorithms and waveform blend.",
-			"line2Envelopes": "Edit line 2's DCO, DCW, and DCA envelopes.",
+			"algos": "Edit line {{line}}'s oscillator algorithms and waveform blend.",
+			"envelopes": "Edit line {{line}}'s DCO, DCW, and DCA envelopes.",
 			"envelope": "Select the {{title}} envelope for this line.",
 			"envelopeAria": "Show {{title}} envelope",
 			"stepAria": "Step {{step}}",

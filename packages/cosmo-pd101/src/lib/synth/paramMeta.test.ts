@@ -21,11 +21,23 @@ describe("paramMeta", () => {
 		expect(getParamTooltip("velocityCurve")).toBe(
 			"Shapes how keyboard velocity maps to output level.",
 		);
+		expect(getParamTooltip("line1Level")).toBe(
+			"Sets base output level for line 1.",
+		);
+		expect(getParamTooltip("line2Level")).toBe(
+			"Sets base output level for line 2.",
+		);
+		expect(getParamTooltip("warpBAmount")).toBe(
+			"Sets amount of phase distortion applied to line 2.",
+		);
 	});
 
 	it("resolves descriptive enum-value tooltips at call time", () => {
 		expect(getEnumTooltip("lineSelect", "L1")).toBe(
 			"Play oscillator line 1 only.",
+		);
+		expect(getEnumTooltip("lineSelect", "L2")).toBe(
+			"Play oscillator line 2 only.",
 		);
 	});
 
