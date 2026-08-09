@@ -134,10 +134,10 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					{(
 						[
 							["sine", "sine"],
-							["tri", "triangle"],
-							["sq", "square"],
+							["triangle", "triangle"],
+							["square", "square"],
 							["saw", "saw"],
-							["inv", "invertedSaw"],
+							["invertedSaw", "invertedSaw"],
 						] as const
 					).map(([waveformKey, w]) => {
 						const waveformLabel = t(`lfo.waveforms.${waveformKey}`);
