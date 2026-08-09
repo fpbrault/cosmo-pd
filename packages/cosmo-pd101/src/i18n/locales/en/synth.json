@@ -56,7 +56,7 @@
 	},
 	"params": {
 		"volume": {
-			"tooltip": "Sets the global synth output level."
+			"tooltip": "Sets the global synth volume level."
 		},
 		"line": {
 			"warpAmount": {
@@ -66,7 +66,7 @@
 				"tooltip": "Controls the mix between the two selected algorithms for line {{line}}."
 			},
 			"level": {
-				"tooltip": "Sets base output level for line {{line}}."
+				"tooltip": "Sets base volume level for line {{line}}."
 			},
 			"dcwKeyFollow": {
 				"tooltip": "Scales line {{line}}'s DCW envelope response with keyboard pitch."
@@ -253,7 +253,7 @@
 			"tooltip": "Sets maximum pitch bend range in semitones."
 		},
 		"velocityCurve": {
-			"tooltip": "Shapes how keyboard velocity maps to output level."
+			"tooltip": "Shapes how keyboard velocity maps to DCA level."
 		},
 		"modWheelVibratoDepth": {
 			"tooltip": "Sets how much mod wheel movement affects vibrato depth."
@@ -321,7 +321,7 @@
 	"algos": {
 		"cz101": {
 			"name": "Classic",
-			"behavior": "Classic CZ phase-distortion core. Use DCW and the CZ preset controls to shape the harmonic contour.",
+			"behavior": "Classic CZ-style phase-distortion. Use DCW and the CZ preset controls to shape the harmonic contour.",
 			"controls": {
 				"preset": {
 					"label": "Preset",

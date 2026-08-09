@@ -19,13 +19,13 @@ describe("paramMeta", () => {
 			"Sets maximum pitch bend range in semitones.",
 		);
 		expect(getParamTooltip("velocityCurve")).toBe(
-			"Shapes how keyboard velocity maps to output level.",
+			"Shapes how keyboard velocity maps to DCA level.",
 		);
 		expect(getParamTooltip("line1Level")).toBe(
-			"Sets base output level for line 1.",
+			"Sets base volume level for line 1.",
 		);
 		expect(getParamTooltip("line2Level")).toBe(
-			"Sets base output level for line 2.",
+			"Sets base volume level for line 2.",
 		);
 		expect(getParamTooltip("warpBAmount")).toBe(
 			"Sets amount of phase distortion applied to line 2.",
