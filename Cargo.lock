@@ -517,6 +517,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "core_maths"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77745e017f5edba1a9c1d854f6f3a52dac8a12dd5af5d2f54aecf61e43d80d30"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "coreaudio-rs"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -593,8 +602,8 @@ dependencies = [
  "truce",
  "truce-au",
  "truce-clap",
- "truce-core",
- "truce-params",
+ "truce-core 6.3.0",
+ "truce-params 6.3.0",
  "truce-standalone",
  "truce-test",
  "truce-vst3",
@@ -1061,12 +1070,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
-name = "font-types"
-version = "0.12.2"
+name = "fontdue"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a7299a780854a6d391be2ae1c8521c9368471b559dbfd6a8dbd9f407eaff100"
+checksum = "7894823fa221401399e2598f8b63f81ac77ff5c63248b7656779bff1632d7d3d"
 dependencies = [
- "bytemuck",
+ "hashbrown 0.15.5",
+ "ttf-parser",
 ]
 
 [[package]]
@@ -1522,6 +1532,8 @@ version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 dependencies = [
+ "allocator-api2",
+ "equivalent",
  "foldhash 0.1.5",
 ]
 
@@ -2810,17 +2822,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "read-fonts"
-version = "0.40.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "487889119a5f19ff7c0a20637196bdc76b9f54ebec17e3588b5d75e4999f8773"
-dependencies = [
- "bytemuck",
- "font-types",
- "once_cell",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3140,16 +3141,6 @@ name = "siphasher"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649"
-
-[[package]]
-name = "skrifa"
-version = "0.43.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cbe997d0f2480442d727488fbe2150779114cbe480ecdbadef58b33e0318ffb"
-dependencies = [
- "bytemuck",
- "read-fonts",
-]
 
 [[package]]
 name = "slab"
@@ -3615,12 +3606,12 @@ name = "truce"
 version = "6.3.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
 dependencies = [
- "truce-core",
+ "truce-core 6.3.0",
  "truce-derive",
- "truce-gui-types",
+ "truce-gui-types 6.3.0",
  "truce-loader",
- "truce-params",
- "truce-plugin",
+ "truce-params 6.3.0",
+ "truce-plugin 6.3.0",
 ]
 
 [[package]]
@@ -3630,8 +3621,8 @@ source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a26
 dependencies = [
  "cc",
  "crossbeam-queue",
- "truce-core",
- "truce-params",
+ "truce-core 6.3.0",
+ "truce-params 6.3.0",
  "truce-shim-types",
 ]
 
@@ -3643,7 +3634,7 @@ dependencies = [
  "base64",
  "serde",
  "toml 1.1.4+spec-1.1.0",
- "truce-utils",
+ "truce-utils 6.3.0",
 ]
 
 [[package]]
@@ -3655,8 +3646,18 @@ dependencies = [
  "crossbeam-queue",
  "log",
  "objc",
- "truce-core",
- "truce-params",
+ "truce-core 6.3.0",
+ "truce-params 6.3.0",
+]
+
+[[package]]
+name = "truce-core"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "png",
+ "truce-params 1.0.1",
+ "truce-utils 1.0.1",
 ]
 
 [[package]]
@@ -3667,19 +3668,20 @@ dependencies = [
  "crossbeam-queue",
  "crossbeam-utils",
  "png",
- "truce-params",
- "truce-utils",
+ "truce-params 6.3.0",
+ "truce-utils 6.3.0",
 ]
 
 [[package]]
 name = "truce-cpu"
-version = "6.3.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 dependencies = [
+ "fontdue",
  "tiny-skia",
- "truce-core",
+ "truce-core 1.0.1",
  "truce-font",
- "truce-gui-types",
+ "truce-gui-types 1.0.1",
 ]
 
 [[package]]
@@ -3692,8 +3694,8 @@ dependencies = [
  "syn 2.0.119",
  "toml 1.1.4+spec-1.1.0",
  "truce-build",
- "truce-params",
- "truce-utils",
+ "truce-params 6.3.0",
+ "truce-utils 6.3.0",
 ]
 
 [[package]]
@@ -3701,23 +3703,19 @@ name = "truce-driver"
 version = "6.3.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
 dependencies = [
- "truce-core",
- "truce-params",
+ "truce-core 6.3.0",
+ "truce-params 6.3.0",
 ]
 
 [[package]]
 name = "truce-font"
-version = "6.3.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
-dependencies = [
- "skrifa",
- "tiny-skia",
-]
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 
 [[package]]
 name = "truce-gui"
-version = "6.3.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 dependencies = [
  "baseview-truce",
  "log",
@@ -3728,13 +3726,22 @@ dependencies = [
  "objc2-ui-kit",
  "pollster",
  "raw-window-handle 0.5.2",
- "truce-core",
+ "truce-core 1.0.1",
  "truce-cpu",
- "truce-gui-types",
+ "truce-gui-types 1.0.1",
  "truce-gui-utils",
- "truce-params",
- "truce-plugin",
+ "truce-params 1.0.1",
+ "truce-plugin 1.0.1",
  "wgpu",
+]
+
+[[package]]
+name = "truce-gui-types"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "objc2",
+ "truce-core 1.0.1",
 ]
 
 [[package]]
@@ -3743,17 +3750,16 @@ version = "6.3.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
 dependencies = [
  "objc2",
- "truce-core",
+ "truce-core 6.3.0",
 ]
 
 [[package]]
 name = "truce-gui-utils"
-version = "6.3.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 dependencies = [
  "objc",
  "raw-window-handle 0.5.2",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3765,10 +3771,18 @@ dependencies = [
  "libloading 0.9.0",
  "log",
  "parking_lot",
- "truce-core",
- "truce-gui-types",
- "truce-params",
- "truce-plugin",
+ "truce-core 6.3.0",
+ "truce-gui-types 6.3.0",
+ "truce-params 6.3.0",
+ "truce-plugin 6.3.0",
+]
+
+[[package]]
+name = "truce-params"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "bitflags 2.13.1",
 ]
 
 [[package]]
@@ -3781,12 +3795,22 @@ dependencies = [
 
 [[package]]
 name = "truce-plugin"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
+dependencies = [
+ "truce-core 1.0.1",
+ "truce-gui-types 1.0.1",
+ "truce-params 1.0.1",
+]
+
+[[package]]
+name = "truce-plugin"
 version = "6.3.0"
 source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
 dependencies = [
- "truce-core",
- "truce-gui-types",
- "truce-params",
+ "truce-core 6.3.0",
+ "truce-gui-types 6.3.0",
+ "truce-params 6.3.0",
 ]
 
 [[package]]
@@ -3796,8 +3820,8 @@ source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a26
 
 [[package]]
 name = "truce-standalone"
-version = "6.3.0"
-source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a262259eb7b19d5f959#86633b266b9f70166ed32a262259eb7b19d5f959"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 dependencies = [
  "baseview-truce",
  "cpal",
@@ -3809,10 +3833,10 @@ dependencies = [
  "pico-args",
  "raw-window-handle 0.5.2",
  "rfd",
- "truce-core",
+ "truce-core 1.0.1",
  "truce-gui",
- "truce-params",
- "truce-utils",
+ "truce-params 1.0.1",
+ "truce-utils 1.0.1",
  "windows-sys 0.61.2",
  "x11-dl",
 ]
@@ -3825,11 +3849,16 @@ dependencies = [
  "png",
  "toml 1.1.4+spec-1.1.0",
  "truce-build",
- "truce-core",
+ "truce-core 6.3.0",
  "truce-driver",
- "truce-params",
- "truce-plugin",
+ "truce-params 6.3.0",
+ "truce-plugin 6.3.0",
 ]
+
+[[package]]
+name = "truce-utils"
+version = "1.0.1"
+source = "git+https://github.com/fpbrault/truce.git?rev=466e8bf8439b30e12a50358624c89be8e7807eea#466e8bf8439b30e12a50358624c89be8e7807eea"
 
 [[package]]
 name = "truce-utils"
@@ -3843,8 +3872,17 @@ source = "git+https://github.com/fpbrault/truce.git?rev=86633b266b9f70166ed32a26
 dependencies = [
  "cc",
  "crossbeam-queue",
- "truce-core",
- "truce-params",
+ "truce-core 6.3.0",
+ "truce-params 6.3.0",
+]
+
+[[package]]
+name = "ttf-parser"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
+dependencies = [
+ "core_maths",
 ]
 
 [[package]]
