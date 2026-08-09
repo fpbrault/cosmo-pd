@@ -28,8 +28,6 @@ const PARAM_TOOLTIP_LINE_ALIASES: Record<
 	string,
 	{ key: string; line: number }
 > = {
-	warpAAmount: { key: "warpAmount", line: 1 },
-	warpBAmount: { key: "warpAmount", line: 2 },
 	algoBlendA: { key: "algoBlend", line: 1 },
 	algoBlendB: { key: "algoBlend", line: 2 },
 };

@@ -12,11 +12,11 @@ pub struct CzPluginParams {
     #[param(name = "Volume", range = "linear(0.0, 1.0)", default = 1.0, unit = "%")]
     pub volume: FloatParam,
 
-    #[param(name = "Warp A Amount", range = "linear(0.0, 1.0)", default = 0.0)]
-    pub warp_a_amount: FloatParam,
+    #[param(name = "Line 1 DCW Amount", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub line1_dcw_amount: FloatParam,
 
-    #[param(name = "Warp B Amount", range = "linear(0.0, 1.0)", default = 0.0)]
-    pub warp_b_amount: FloatParam,
+    #[param(name = "Line 2 DCW Amount", range = "linear(0.0, 1.0)", default = 0.0)]
+    pub line2_dcw_amount: FloatParam,
 
     #[param(name = "Algo Blend A", range = "linear(0.0, 1.0)", default = 0.5)]
     pub algo_blend_a: FloatParam,
@@ -117,8 +117,8 @@ impl CzPluginParams {
 
 pub fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
     synth.volume = params.volume.value();
-    synth.line1.dcw_base = params.warp_a_amount.value();
-    synth.line2.dcw_base = params.warp_b_amount.value();
+    synth.line1.dcw_base = params.line1_dcw_amount.value();
+    synth.line2.dcw_base = params.line2_dcw_amount.value();
     synth.line1.algo_blend = params.algo_blend_a.value();
     synth.line2.algo_blend = params.algo_blend_b.value();
     synth.line1.dca_base = params.line1_level.value();
@@ -152,8 +152,8 @@ pub fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bo
     let value = value as f32;
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => synth.volume = value,
-        x if x == CzPluginParamsParamId::WarpAAmount as u32 => synth.line1.dcw_base = value,
-        x if x == CzPluginParamsParamId::WarpBAmount as u32 => synth.line2.dcw_base = value,
+        x if x == CzPluginParamsParamId::Line1DcwAmount as u32 => synth.line1.dcw_base = value,
+        x if x == CzPluginParamsParamId::Line2DcwAmount as u32 => synth.line2.dcw_base = value,
         x if x == CzPluginParamsParamId::AlgoBlendA as u32 => synth.line1.algo_blend = value,
         x if x == CzPluginParamsParamId::AlgoBlendB as u32 => synth.line2.algo_blend = value,
         x if x == CzPluginParamsParamId::Line1Level as u32 => synth.line1.dca_base = value,
@@ -189,8 +189,8 @@ pub fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bo
 pub fn daw_param_key_by_id(id: u32) -> Option<&'static str> {
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => Some("volume"),
-        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some("warpAAmount"),
-        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some("warpBAmount"),
+        x if x == CzPluginParamsParamId::Line1DcwAmount as u32 => Some("line1DcwAmount"),
+        x if x == CzPluginParamsParamId::Line2DcwAmount as u32 => Some("line2DcwAmount"),
         x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some("algoBlendA"),
         x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some("algoBlendB"),
         x if x == CzPluginParamsParamId::Line1Level as u32 => Some("line1Level"),
@@ -226,8 +226,8 @@ pub fn daw_param_key_by_id(id: u32) -> Option<&'static str> {
 pub fn daw_param_id_by_key(key: &str) -> Option<u32> {
     match key {
         "volume" => Some(CzPluginParamsParamId::Volume as u32),
-        "warpAAmount" => Some(CzPluginParamsParamId::WarpAAmount as u32),
-        "warpBAmount" => Some(CzPluginParamsParamId::WarpBAmount as u32),
+        "line1DcwAmount" => Some(CzPluginParamsParamId::Line1DcwAmount as u32),
+        "line2DcwAmount" => Some(CzPluginParamsParamId::Line2DcwAmount as u32),
         "algoBlendA" => Some(CzPluginParamsParamId::AlgoBlendA as u32),
         "algoBlendB" => Some(CzPluginParamsParamId::AlgoBlendB as u32),
         "line1Level" => Some(CzPluginParamsParamId::Line1Level as u32),
@@ -262,8 +262,8 @@ pub fn daw_param_id_by_key(key: &str) -> Option<u32> {
 pub fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => Some(synth.volume),
-        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some(synth.line1.dcw_base),
-        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some(synth.line2.dcw_base),
+        x if x == CzPluginParamsParamId::Line1DcwAmount as u32 => Some(synth.line1.dcw_base),
+        x if x == CzPluginParamsParamId::Line2DcwAmount as u32 => Some(synth.line2.dcw_base),
         x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some(synth.line1.algo_blend),
         x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some(synth.line2.algo_blend),
         x if x == CzPluginParamsParamId::Line1Level as u32 => Some(synth.line1.dca_base),
@@ -298,8 +298,12 @@ pub fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
 pub fn read_current_daw_param_by_id(params: &CzPluginParams, id: u32) -> Option<f32> {
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => Some(params.volume.value()),
-        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some(params.warp_a_amount.value()),
-        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some(params.warp_b_amount.value()),
+        x if x == CzPluginParamsParamId::Line1DcwAmount as u32 => {
+            Some(params.line1_dcw_amount.value())
+        }
+        x if x == CzPluginParamsParamId::Line2DcwAmount as u32 => {
+            Some(params.line2_dcw_amount.value())
+        }
         x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some(params.algo_blend_a.value()),
         x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some(params.algo_blend_b.value()),
         x if x == CzPluginParamsParamId::Line1Level as u32 => Some(params.line1_level.value()),
@@ -345,8 +349,12 @@ pub fn read_current_daw_param_by_id(params: &CzPluginParams, id: u32) -> Option<
 
 pub fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthParams) {
     params.volume.set_value(synth.volume as f64);
-    params.warp_a_amount.set_value(synth.line1.dcw_base as f64);
-    params.warp_b_amount.set_value(synth.line2.dcw_base as f64);
+    params
+        .line1_dcw_amount
+        .set_value(synth.line1.dcw_base as f64);
+    params
+        .line2_dcw_amount
+        .set_value(synth.line2.dcw_base as f64);
     params.algo_blend_a.set_value(synth.line1.algo_blend as f64);
     params.algo_blend_b.set_value(synth.line2.algo_blend as f64);
     params.line1_level.set_value(synth.line1.dca_base as f64);
@@ -388,8 +396,8 @@ pub fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthPara
 
 pub const DAW_PARAM_IDS: &[u32] = &[
     CzPluginParamsParamId::Volume as u32,
-    CzPluginParamsParamId::WarpAAmount as u32,
-    CzPluginParamsParamId::WarpBAmount as u32,
+    CzPluginParamsParamId::Line1DcwAmount as u32,
+    CzPluginParamsParamId::Line2DcwAmount as u32,
     CzPluginParamsParamId::AlgoBlendA as u32,
     CzPluginParamsParamId::AlgoBlendB as u32,
     CzPluginParamsParamId::Line1Level as u32,

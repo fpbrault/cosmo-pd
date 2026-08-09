@@ -29,8 +29,8 @@ describe("PerLineParametersCard", () => {
 		render(
 			<PerLineParametersCard
 				parameters={{
-					warpAmount: 0,
-					setWarpAmount: vi.fn(),
+					dcwAmount: 0,
+					setDcwAmount: vi.fn(),
 					level: 0,
 					setLevel: vi.fn(),
 					octave: 0,

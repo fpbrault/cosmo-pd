@@ -116,13 +116,13 @@ const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
     },
     AutomatableParamSpec {
         id: 2,
-        key: "warpAAmount",
+        key: "line1DcwAmount",
         min: 0.0,
         max: 1.0,
     },
     AutomatableParamSpec {
         id: 3,
-        key: "warpBAmount",
+        key: "line2DcwAmount",
         min: 0.0,
         max: 1.0,
     },
@@ -657,8 +657,8 @@ fn write_c_char_array<const N: usize>(dest: &mut [c_char; N], value: &str) {
 fn parameter_value(params: &SynthParams, key: &str) -> Option<f32> {
     match key {
         "volume" => Some(params.volume),
-        "warpAAmount" => Some(params.line1.dcw_base),
-        "warpBAmount" => Some(params.line2.dcw_base),
+        "line1DcwAmount" => Some(params.line1.dcw_base),
+        "line2DcwAmount" => Some(params.line2.dcw_base),
         "algoBlendA" => Some(params.line1.algo_blend),
         "algoBlendB" => Some(params.line2.algo_blend),
         "line1Level" => Some(params.line1.dca_base),

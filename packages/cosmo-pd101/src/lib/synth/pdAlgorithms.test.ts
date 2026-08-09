@@ -176,8 +176,8 @@ describe("pdAlgorithms", () => {
 	describe("computeWaveform", () => {
 		it("computes waveform data", () => {
 			const params = {
-				warpAAmount: 0.5,
-				warpBAmount: 0.5,
+				line1DcwAmount: 0.5,
+				line2DcwAmount: 0.5,
 				warpAAlgo: "bend" as Algo,
 				warpBAlgo: "sync" as Algo,
 				algo2A: null,
@@ -200,8 +200,8 @@ describe("pdAlgorithms", () => {
 
 		it("computes waveform with secondary algorithms and pmPre false", () => {
 			const params = {
-				warpAAmount: 0.5,
-				warpBAmount: 0.5,
+				line1DcwAmount: 0.5,
+				line2DcwAmount: 0.5,
 				warpAAlgo: "bend" as Algo,
 				warpBAlgo: "sync" as Algo,
 				algo2A: "pinch" as Algo,

@@ -12,7 +12,7 @@ Enveloppes à paliers de 8 étapes -- une caractéristique distinctive du Casio 
 | Enveloppe | Contrôle | ID Paramètre |
 |-----------|---------|--------------|
 | **Enveloppe DCO** | Hauteur (fréquence) | `dcoEnv` |
-| **Enveloppe DCW** | Profondeur de déformation | `dcwEnv` |
+| **Enveloppe DCW** | Quantité DCW | `dcwEnv` |
 | **Enveloppe DCA** | Amplitude (volume) | `dcaEnv` |
 
 Plus une **Enveloppe de Modulation** séparée (ADSR à 4 étages) pour le routage de modulation.

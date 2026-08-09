@@ -22,14 +22,14 @@ function PerLineParametersCardInner({
 			</div>
 			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-center gap-3 [@container_phase_(max-height:620px)]:gap-1">
 				<SynthParamKnob
-					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
+					paramKey={lineIndex === 1 ? "line1DcwAmount" : "line2DcwAmount"}
 					label="DCW Amt"
-					value={parameters.warpAmount}
+					value={parameters.dcwAmount}
 					size={64}
 					variant="accent"
 					color="#9cb937"
 					modDestination={lineIndex === 1 ? "line1DcwBase" : "line2DcwBase"}
-					onChange={parameters.setWarpAmount}
+					onChange={parameters.setDcwAmount}
 				/>
 				<SynthParamKnob
 					paramKey={lineIndex === 1 ? "line1Level" : "line2Level"}

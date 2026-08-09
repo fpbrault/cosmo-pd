@@ -14,8 +14,8 @@ struct CosmoParameterSpec: Sendable {
 
 let cosmoParameterSpecs: [CosmoParameterSpec] = [
 	.init(id: 1, key: "volume", name: "Volume", min: 0, max: 1, defaultValue: 0.4, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
-	.init(id: 2, key: "warpAAmount", name: "Line 1 DCW", min: 0, max: 1, defaultValue: 0, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
-	.init(id: 3, key: "warpBAmount", name: "Line 2 DCW", min: 0, max: 1, defaultValue: 0, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
+	.init(id: 2, key: "line1DcwAmount", name: "Line 1 DCW Amount", min: 0, max: 1, defaultValue: 0, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
+	.init(id: 3, key: "line2DcwAmount", name: "Line 2 DCW Amount", min: 0, max: 1, defaultValue: 0, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
 	.init(id: 4, key: "algoBlendA", name: "Line 1 Blend", min: 0, max: 1, defaultValue: 0, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
 	.init(id: 5, key: "algoBlendB", name: "Line 2 Blend", min: 0, max: 1, defaultValue: 0, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),
 	.init(id: 6, key: "line1Level", name: "Line 1 Level", min: 0, max: 1, defaultValue: 1, unit: .generic, flags: [.flag_IsWritable, .flag_IsReadable, .flag_CanRamp]),

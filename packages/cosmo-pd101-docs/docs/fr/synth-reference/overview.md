@@ -50,7 +50,7 @@ Chaque ligne possède son propre algorithme, trois enveloppes à 8 étapes (DCO/
 | Terme | Signification |
 |-------|---------------|
 | **DCO** | Oscillateur contrôlé numériquement -- hauteur/fréquence |
-| **DCW** | Formeur d'onde contrôlé numériquement -- quantité de déformation |
+| **DCW** | Formeur d'onde contrôlé numériquement -- quantité DCW |
 | **DCA** | Amplificateur contrôlé numériquement -- amplitude |
 | **Algorithme** | Fonction mathématique qui déforme la phase |
 | **Enveloppe** | 8 étapes à palier contrôlant un paramètre dans le temps |

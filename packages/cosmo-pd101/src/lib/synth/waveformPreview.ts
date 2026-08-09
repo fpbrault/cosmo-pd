@@ -521,8 +521,8 @@ interface WaveformData {
 }
 
 export function computeWaveform(params: {
-	warpAAmount: number;
-	warpBAmount: number;
+	line1DcwAmount: number;
+	line2DcwAmount: number;
 	warpAAlgo: PdAlgo;
 	warpBAlgo: PdAlgo;
 	algo2A: PdAlgo | null;
@@ -618,7 +618,7 @@ export function computeWaveform(params: {
 					resolved: algoA,
 					czControls: line1CzA,
 					phase: line1Phase,
-					dcw: params.warpAAmount * (1 - blendA),
+					dcw: params.line1DcwAmount * (1 - blendA),
 					baseWaveform: params.line1BaseWaveformA ?? "sine",
 					algoControls: params.line1AlgoControlsA,
 					cycleIndex: line1Cycle,
@@ -630,7 +630,7 @@ export function computeWaveform(params: {
 					resolved: algo2A,
 					czControls: line1CzB,
 					phase: line1Phase,
-					dcw: params.warpAAmount * blendA,
+					dcw: params.line1DcwAmount * blendA,
 					baseWaveform: params.line1BaseWaveformB ?? "sine",
 					algoControls: params.line1AlgoControlsB,
 					cycleIndex: line1Cycle,
@@ -644,7 +644,7 @@ export function computeWaveform(params: {
 					resolved: algoA,
 					czControls: line1CzA,
 					phase: line1Phase,
-					dcw: params.warpAAmount,
+					dcw: params.line1DcwAmount,
 					baseWaveform: params.line1BaseWaveformA ?? "sine",
 					algoControls: params.line1AlgoControlsA,
 					cycleIndex: line1Cycle,
@@ -662,7 +662,7 @@ export function computeWaveform(params: {
 					resolved: algoB,
 					czControls: line2CzA,
 					phase: line2Phase,
-					dcw: params.warpBAmount * (1 - blendB),
+					dcw: params.line2DcwAmount * (1 - blendB),
 					baseWaveform: params.line2BaseWaveformA ?? "sine",
 					algoControls: params.line2AlgoControlsA,
 					cycleIndex: line2Cycle,
@@ -674,7 +674,7 @@ export function computeWaveform(params: {
 					resolved: algo2B,
 					czControls: line2CzB,
 					phase: line2Phase,
-					dcw: params.warpBAmount * blendB,
+					dcw: params.line2DcwAmount * blendB,
 					baseWaveform: params.line2BaseWaveformB ?? "sine",
 					algoControls: params.line2AlgoControlsB,
 					cycleIndex: line2Cycle,
@@ -688,7 +688,7 @@ export function computeWaveform(params: {
 					resolved: algoB,
 					czControls: line2CzA,
 					phase: line2Phase,
-					dcw: params.warpBAmount,
+					dcw: params.line2DcwAmount,
 					baseWaveform: params.line2BaseWaveformA ?? "sine",
 					algoControls: params.line2AlgoControlsA,
 					cycleIndex: line2Cycle,

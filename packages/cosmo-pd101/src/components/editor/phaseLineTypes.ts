@@ -42,8 +42,8 @@ export type PhaseLineAlgoModel = {
 };
 
 export type PhaseLineParametersModel = {
-	warpAmount: number;
-	setWarpAmount: (value: number) => void;
+	dcwAmount: number;
+	setDcwAmount: (value: number) => void;
 	level: number;
 	setLevel: (value: number) => void;
 	octave: number;

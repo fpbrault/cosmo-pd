@@ -204,13 +204,13 @@ const AUTOMATABLE_PARAMS: &[AutomatableParamSpec] = &[
         step: None,
     },
     AutomatableParamSpec {
-        key: "warpAAmount",
+        key: "line1DcwAmount",
         min: 0.0,
         max: 1.0,
         step: None,
     },
     AutomatableParamSpec {
-        key: "warpBAmount",
+        key: "line2DcwAmount",
         min: 0.0,
         max: 1.0,
         step: None,
@@ -409,8 +409,8 @@ const MIDI_MAPPING_EXTRA_RANGES_V1: &[EngineParamRangeV1] = &[
 pub fn set_parameter_value_by_key(params: &mut SynthParams, key: &str, value: f32) -> bool {
     match key {
         "volume" => params.volume = value,
-        "warpAAmount" => params.line1.dcw_base = value,
-        "warpBAmount" => params.line2.dcw_base = value,
+        "line1DcwAmount" => params.line1.dcw_base = value,
+        "line2DcwAmount" => params.line2.dcw_base = value,
         "algoBlendA" => params.line1.algo_blend = value,
         "algoBlendB" => params.line2.algo_blend = value,
         "line1Level" => params.line1.dca_base = value,
@@ -626,6 +626,28 @@ mod tests {
             Some((-60.0, 60.0))
         );
         assert_eq!(parameter_range_for_key("missing"), None);
+    }
+
+    #[test]
+    fn dcw_amount_keys_map_to_the_line_dcw_bases() {
+        let mut params = SynthParams::default();
+
+        assert_eq!(parameter_range_for_key("line1DcwAmount"), Some((0.0, 1.0)));
+        assert_eq!(parameter_range_for_key("line2DcwAmount"), Some((0.0, 1.0)));
+        assert!(set_parameter_value_by_key(
+            &mut params,
+            "line1DcwAmount",
+            0.25
+        ));
+        assert!(set_parameter_value_by_key(
+            &mut params,
+            "line2DcwAmount",
+            0.75
+        ));
+        assert_eq!(params.line1.dcw_base, 0.25);
+        assert_eq!(params.line2.dcw_base, 0.75);
+        assert!(!set_parameter_value_by_key(&mut params, "warpAAmount", 0.5));
+        assert!(!set_parameter_value_by_key(&mut params, "warpBAmount", 0.5));
     }
 
     #[test]

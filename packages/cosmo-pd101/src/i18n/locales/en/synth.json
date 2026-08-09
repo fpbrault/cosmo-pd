@@ -59,8 +59,8 @@
 			"tooltip": "Sets the global synth volume level."
 		},
 		"line": {
-			"warpAmount": {
-				"tooltip": "Sets amount of phase distortion applied to line {{line}}."
+			"dcwAmount": {
+				"tooltip": "Sets the DCW amount for line {{line}}."
 			},
 			"algoBlend": {
 				"tooltip": "Controls the mix between the two selected algorithms for line {{line}}."

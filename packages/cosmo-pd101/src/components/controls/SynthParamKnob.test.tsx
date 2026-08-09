@@ -47,8 +47,8 @@ const {
 		lfo2RateMode: "hz",
 		lfo2SyncDivision: "quarter",
 		tempoBpm: 120,
-		warpAAmount: 0,
-		warpBAmount: 0,
+		line1DcwAmount: 0,
+		line2DcwAmount: 0,
 		pitchBendRange: 0,
 		portamentoRate: 0,
 		portamentoEnabled: 0,
@@ -166,8 +166,8 @@ describe("SynthParamKnob", () => {
 			lfo2RateMode: "hz",
 			lfo2SyncDivision: "quarter",
 			tempoBpm: 120,
-			warpAAmount: 0,
-			warpBAmount: 0,
+			line1DcwAmount: 0,
+			line2DcwAmount: 0,
 			pitchBendRange: 0,
 			portamentoRate: 0,
 			portamentoEnabled: 0,
@@ -306,13 +306,13 @@ describe("SynthParamKnob", () => {
 	});
 
 	it("passes curve from meta", () => {
-		mockMetaByKey.warpAAmount = buildMeta({
-			key: "warpAAmount",
+		mockMetaByKey.line1DcwAmount = buildMeta({
+			key: "line1DcwAmount",
 			readoutFormat: { kind: "decimal" },
 			curve: "exponential2",
 		});
 		render(
-			<SynthParamKnob paramKey="warpAAmount" value={0} onChange={vi.fn()} />,
+			<SynthParamKnob paramKey="line1DcwAmount" value={0} onChange={vi.fn()} />,
 		);
 
 		expect(screen.getByTestId("control-knob")).toHaveAttribute(
@@ -322,12 +322,12 @@ describe("SynthParamKnob", () => {
 	});
 
 	it("defaults curve to linear when meta has none", () => {
-		mockMetaByKey.warpBAmount = buildMeta({
-			key: "warpBAmount",
+		mockMetaByKey.line2DcwAmount = buildMeta({
+			key: "line2DcwAmount",
 			readoutFormat: { kind: "percent" },
 		});
 		render(
-			<SynthParamKnob paramKey="warpBAmount" value={0} onChange={vi.fn()} />,
+			<SynthParamKnob paramKey="line2DcwAmount" value={0} onChange={vi.fn()} />,
 		);
 
 		expect(screen.getByTestId("control-knob")).toHaveAttribute(
