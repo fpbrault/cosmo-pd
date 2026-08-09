@@ -32,6 +32,15 @@
 		"delay": "Delay",
 		"reverb": "Reverb"
 	},
+	"sidebar": {
+		"global": "Global",
+		"midi": "MIDI",
+		"learn": "Learn",
+		"modTarget": "MOD+",
+		"vintageTop": "Vint",
+		"vintageBottom": "age",
+		"fxPrefix": "FX"
+	},
 	"common": {
 		"lineSelect": "Line Select",
 		"modulation": "Modulation",
@@ -47,28 +56,33 @@
 	},
 	"params": {
 		"volume": {
-			"tooltip": "Sets the global synth output level."
+			"tooltip": "Sets the global synth volume level."
 		},
-		"warpAAmount": {
-			"tooltip": "Sets base harmonic warp amount for this line."
-		},
-		"warpBAmount": {
-			"tooltip": "Sets base harmonic warp amount for this line."
-		},
-		"algoBlendA": {
-			"tooltip": "Crossfades between Algo A and Algo B outputs."
-		},
-		"algoBlendB": {
-			"tooltip": "Crossfades between Algo A and Algo B outputs."
-		},
-		"line1Level": {
-			"tooltip": "Sets base output level for this line."
-		},
-		"line2Level": {
-			"tooltip": "Sets base output level for this line."
+		"line": {
+			"warpAmount": {
+				"tooltip": "Sets amount of phase distortion applied to line {{line}}."
+			},
+			"algoBlend": {
+				"tooltip": "Controls the mix between the two selected algorithms for line {{line}}."
+			},
+			"level": {
+				"tooltip": "Sets base volume level for line {{line}}."
+			},
+			"dcwKeyFollow": {
+				"tooltip": "Scales line {{line}}'s DCW envelope response with keyboard pitch."
+			},
+			"dcaKeyFollow": {
+				"tooltip": "Scales line {{line}}'s DCA envelope response with keyboard pitch."
+			}
 		},
 		"line1Octave": {
 			"tooltip": "Transposes both lines by octave steps (shared)."
+		},
+		"lineOctave": {
+			"tooltip": "Transposes the selected line in octave steps."
+		},
+		"line2DetuneOctave": {
+			"tooltip": "Shifts line 2's detuned voice by whole octaves."
 		},
 		"line2Octave": {
 			"tooltip": "Relative octave shift for line 2."
@@ -150,6 +164,12 @@
 		},
 		"randomRate": {
 			"tooltip": "Sets sample-and-hold random modulation refresh rate."
+		},
+		"randomRateMode": {
+			"tooltip": "Chooses free-running hertz mode or BPM-synced division mode for random modulation."
+		},
+		"randomSyncDivision": {
+			"tooltip": "Chooses the rhythmic division for BPM-synced random modulation."
 		},
 		"modEnvAttack": {
 			"tooltip": "Sets modulation envelope attack time."
@@ -233,17 +253,34 @@
 			"tooltip": "Sets maximum pitch bend range in semitones."
 		},
 		"velocityCurve": {
-			"tooltip": "Shapes how keyboard velocity maps to output level."
+			"tooltip": "Shapes how keyboard velocity maps to DCA level."
 		},
 		"modWheelVibratoDepth": {
 			"tooltip": "Sets how much mod wheel movement affects vibrato depth."
+		},
+		"lfoRetrigger": {
+			"tooltip": "Restarts LFO 1's phase when a new note starts."
+		},
+		"lfo2Retrigger": {
+			"tooltip": "Restarts LFO 2's phase when a new note starts."
+		},
+		"macro1": {
+			"tooltip": "Sends the first user-assigned macro value to mapped destinations."
+		},
+		"macro2": {
+			"tooltip": "Sends the second user-assigned macro value to mapped destinations."
+		},
+		"macro3": {
+			"tooltip": "Sends the third user-assigned macro value to mapped destinations."
+		},
+		"macro4": {
+			"tooltip": "Sends the fourth user-assigned macro value to mapped destinations."
 		}
 	},
 	"enumTooltips": {
 		"lineSelect": {
-			"L1": "Play oscillator line 1 only.",
+			"lineOnly": "Play oscillator line {{line}} only.",
 			"L1+L2": "Layer oscillator lines 1 and 2.",
-			"L2": "Play oscillator line 2 only.",
 			"L1+L1'": "Stack line 1 with a detuned variant.",
 			"L1+L2'": "Layer line 1 with a detuned line 2 variant."
 		},
@@ -284,7 +321,7 @@
 	"algos": {
 		"cz101": {
 			"name": "Classic",
-			"behavior": "Classic CZ phase-distortion core. Use DCW and the CZ preset controls to shape the harmonic contour.",
+			"behavior": "Classic CZ-style phase-distortion. Use DCW and the CZ preset controls to shape the harmonic contour.",
 			"controls": {
 				"preset": {
 					"label": "Preset",
@@ -818,6 +855,10 @@
 					"options": {
 						"0": "Digital",
 						"1": "Tape"
+					},
+					"optionTooltips": {
+						"0": "Use clean digital delay repeats.",
+						"1": "Add tape-style saturation and high-frequency rolloff to delay repeats."
 					}
 				}
 			},
@@ -829,6 +870,12 @@
 						"2": "Saw",
 						"3": "Inverted Saw",
 						"4": "Sq"
+					},
+					"optionTooltips": {
+						"1": "Use a triangle LFO shape for smooth, repeating modulation.",
+						"2": "Use a rising saw LFO shape for ramped modulation.",
+						"3": "Use a falling saw LFO shape for inverted ramped modulation.",
+						"4": "Use a square LFO shape for abrupt modulation changes."
 					}
 				}
 			},
@@ -839,6 +886,11 @@
 						"0": "Sine",
 						"1": "Tri",
 						"2": "Sq"
+					},
+					"optionTooltips": {
+						"0": "Use a sine LFO shape for smooth tremolo.",
+						"1": "Use a triangle LFO shape for smoothly ramped tremolo.",
+						"2": "Use a square LFO shape for abrupt tremolo changes."
 					}
 				}
 			},
@@ -849,6 +901,11 @@
 						"0": "OD",
 						"1": "Dist",
 						"2": "Fuzz"
+					},
+					"optionTooltips": {
+						"0": "Choose overdrive for a warm, moderate gain character.",
+						"1": "Choose distortion for a harder, more compressed gain character.",
+						"2": "Choose fuzz for an aggressive, heavily clipped gain character."
 					}
 				}
 			},
@@ -859,9 +916,82 @@
 						"0": "I",
 						"1": "II",
 						"2": "I+II"
+					},
+					"optionTooltips": {
+						"0": "Use Juno Chorus mode I for the first chorus voice.",
+						"1": "Use Juno Chorus mode II for the second chorus voice.",
+						"2": "Combine both Juno Chorus voices for a wider effect."
 					}
 				}
 			}
+		}
+	},
+	"tooltips": {
+		"algorithm": {
+			"previous": "Select the previous phase-distortion algorithm.",
+			"next": "Select the next phase-distortion algorithm."
+		},
+		"baseWave": {
+			"cosine": "Use a cosine cycle for the oscillator base shape.",
+			"sine": "Use a sine cycle for the oscillator base shape.",
+			"triangle": "Use a triangle cycle for the oscillator base shape.",
+			"saw": "Use a sawtooth cycle for a brighter, harmonically rich shape.",
+			"square": "Use a square cycle with strong odd-harmonic character."
+		},
+		"phaseLine": {
+			"algos": "Edit line {{line}}'s oscillator algorithms and waveform blend.",
+			"envelopes": "Edit line {{line}}'s DCO, DCW, and DCA envelopes.",
+			"envelope": "Select the {{title}} envelope for this line.",
+			"envelopeAria": "Show {{title}} envelope",
+			"stepAria": "Step {{step}}",
+			"envelopeLevel": "Sets envelope level for step {{step}}.",
+			"envelopeRate": "Sets envelope transition speed for step {{step}}.",
+			"envelopeSustain": "Hold this step's level while the note remains held.",
+			"envelopeEnd": "Mark this step as the final active envelope step.",
+			"inactive": "{{line}} is currently inactive in {{mode}} mode.",
+			"levelLabel": "Lvl",
+			"rateLabel": "Rate",
+			"sustainLabel": "SUS",
+			"endLabel": "END"
+		},
+		"keyboard": {
+			"hide": "Hide the on-screen keyboard.",
+			"show": "Show the on-screen keyboard.",
+			"settings": "Open on-screen keyboard settings."
+		},
+		"sidebar": {
+			"global": "Open global tempo and voice-allocation settings.",
+			"midiLearn": "Open MIDI learn bindings and assign hardware controls.",
+			"modTarget": "Enter modulation-target mode, then choose a destination control.",
+			"vintage": "Toggle the vintage DAC coloration.",
+			"effectSlotName": "effect slot {{slot}}",
+			"effectSlot": "Toggle {{effect}}; long-press to open its FX editor."
+		},
+		"fx": {
+			"toggle": "Toggle {{effect}}.",
+			"optionFallback": "Select {{option}} for {{control}}.",
+			"preset": "Choose a {{title}} preset."
+		},
+		"lfo": {
+			"waveform": "Select a {{waveform}} waveform for LFO {{id}}."
+		},
+		"macro": {
+			"assignment": "Macro “{{label}}”: {{description}}",
+			"fallbackDescription": "sends this user-assigned control value to mapped destinations."
+		},
+		"voice": {
+			"tempo": "Sets the manual BPM used by tempo-synced modulation when host transport is unavailable.",
+			"voiceLimit": "Sets the maximum number of simultaneous voices."
+		},
+		"presetNavigator": {
+			"previous": "Load the previous preset in the current navigation list.",
+			"next": "Load the next preset in the current navigation list.",
+			"openLibrary": "Open the preset library.",
+			"closeLibrary": "Close the preset library."
+		},
+		"module": {
+			"enable": "Enable {{title}}.",
+			"disable": "Disable {{title}}."
 		}
 	},
 	"algoUi": {
@@ -891,7 +1021,21 @@
 		"singleCycle": "Single Cycle",
 		"a": "A",
 		"b": "B",
-		"blend": "Blend"
+		"blend": "Blend",
+		"phaseLines": "Phase Lines",
+		"line1": "Line 1",
+		"line2": "Line 2",
+		"line1Short": "L1",
+		"line2Short": "L2",
+		"waveForm": "WAVE FORM",
+		"envelope": "ENV",
+		"baseWaveLabels": {
+			"cosine": "Cos",
+			"sine": "Sin",
+			"triangle": "Tri",
+			"saw": "Saw",
+			"square": "Sqr"
+		}
 	},
 	"midiLearn": {
 		"tableHeaderCh": "Ch",
@@ -1161,6 +1305,23 @@
 		"editAria": "Edit macro labels"
 	},
 	"lfo": {
-		"loop": "Loop"
+		"title": "LFO {{id}}",
+		"loop": "Loop",
+		"retrigger": "Retrig",
+		"rate": "Rate",
+		"depth": "Depth",
+		"offset": "Offset",
+		"symmetry": "Sym.",
+		"rateMidi": "LFO {{id}} Rate",
+		"transportHostRun": "Host Run",
+		"transportHostStop": "Host Stop",
+		"transportManual": "Manual",
+		"waveforms": {
+			"sine": "sine",
+			"triangle": "triangle",
+			"square": "square",
+			"saw": "saw",
+			"invertedSaw": "inverted saw"
+		}
 	}
 }

@@ -91,7 +91,7 @@ vi.mock("@/components/controls/ControlKnob", () => ({
 
 vi.mock("@/lib/synth/paramMeta", () => ({
 	ENGINE_PARAM_UI_META_BY_KEY: mockMetaByKey,
-	PARAM_META: mockParamMeta,
+	getParamTooltip: (key: string) => mockParamMeta[key]?.tooltip,
 	getEngineParamDefault: (...args: unknown[]) => mockGetDefault(...args),
 }));
 
@@ -285,7 +285,7 @@ describe("SynthParamKnob", () => {
 		expect(knob).toHaveAttribute("data-prop-bipolar", "true");
 	});
 
-	it("passes tooltip from PARAM_META", () => {
+	it("passes tooltip from runtime param metadata", () => {
 		mockParamMeta.volume = { tooltip: "Adjust the output level" };
 		render(<SynthParamKnob paramKey="volume" value={0.5} onChange={vi.fn()} />);
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import ModEnvDisplay from "@/components/panels/drawer-modules/ModEnvDisplay";
 import BadgeToggle from "@/components/primitives/BadgeToggle";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
@@ -15,10 +16,7 @@ import {
 } from "@/features/synth/SynthParamController";
 import type { ModEnvMode, ModEnvRetrigMode } from "@/lib/synth/bindings/synth";
 import { MOD_ENV_PRESET_DATA } from "@/lib/synth/bindings/synth";
-import {
-	MOD_ENV_MODE_TOOLTIPS,
-	MOD_ENV_RETRIG_MODE_TOOLTIPS,
-} from "@/lib/synth/paramMeta";
+import { getEnumTooltip } from "@/lib/synth/paramMeta";
 import {
 	buildAdsrGeometry,
 	envSecondsToNorm,
@@ -27,6 +25,33 @@ import {
 	normToEnvSeconds,
 } from "./modEnvelopePreview";
 import { useModEnvelopePreviewDrag } from "./useModEnvelopePreviewDrag";
+
+function RetriggerModeButton({
+	mode,
+	active,
+	onClick,
+}: {
+	mode: "poly" | "mono" | "legato";
+	active: boolean;
+	onClick: () => void;
+}) {
+	const tooltip = getEnumTooltip("modEnvRetrigMode", mode);
+	const hoverHandlers = useHoverInfoHandlers(tooltip);
+	const label = mode === "poly" ? "Poly" : mode === "mono" ? "Mono" : "Legato";
+
+	return (
+		<button
+			type="button"
+			className={`join-item btn btn-xs ${active ? "btn-primary" : ""}`}
+			onClick={onClick}
+			title={tooltip}
+			data-hover-info={tooltip}
+			{...hoverHandlers}
+		>
+			{label}
+		</button>
+	);
+}
 
 export default function ModEnveloppeModule() {
 	const { t } = useTranslation("synth");
@@ -49,6 +74,10 @@ export default function ModEnveloppeModule() {
 	const { value: modEnvRetrigMode, setValue: setModEnvRetrigMode } =
 		useSynthParam("modEnvRetrigMode");
 	const isAdr = modEnvMode === "adr";
+	const modEnvModeTooltip = getEnumTooltip(
+		"modEnvMode",
+		isAdr ? "adr" : "adsr",
+	);
 
 	useEffect(() => {
 		const unregisterLiveVoiceStates =
@@ -159,21 +188,16 @@ export default function ModEnveloppeModule() {
 					label="ADR"
 					className="text-nowrap px-0"
 					onClick={() => setModEnvMode(isAdr ? "adsr" : "adr")}
-					tooltip={MOD_ENV_MODE_TOOLTIPS[isAdr ? "adr" : "adsr"]}
+					tooltip={modEnvModeTooltip}
 				/>
 				<div className="join">
 					{(["poly", "mono", "legato"] as const).map((mode) => (
-						<button
+						<RetriggerModeButton
 							key={mode}
-							type="button"
-							className={`join-item btn btn-xs ${
-								modEnvRetrigMode === mode ? "btn-primary" : ""
-							}`}
+							mode={mode}
+							active={modEnvRetrigMode === mode}
 							onClick={() => setModEnvRetrigMode(mode)}
-							title={MOD_ENV_RETRIG_MODE_TOOLTIPS[mode]}
-						>
-							{mode === "poly" ? "Poly" : mode === "mono" ? "Mono" : "Legato"}
-						</button>
+						/>
 					))}
 				</div>
 			</div>

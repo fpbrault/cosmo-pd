@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import MidiLearnOverlay from "@/components/controls/MidiLearnOverlay";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import { useMidiLearnTarget } from "@/features/synth/hooks/useMidiLearnTarget";
 
 type PresetNavigatorProps = {
@@ -22,6 +23,14 @@ export default function PresetNavigator({
 }: PresetNavigatorProps) {
 	const { t } = useTranslation("synth");
 	const toggleLibrary = () => onLibraryModeChange?.(!isLibraryModeOpen);
+	const previousTooltip = t("tooltips.presetNavigator.previous");
+	const nextTooltip = t("tooltips.presetNavigator.next");
+	const libraryTooltip = isLibraryModeOpen
+		? t("tooltips.presetNavigator.closeLibrary")
+		: t("tooltips.presetNavigator.openLibrary");
+	const previousHoverHandlers = useHoverInfoHandlers(previousTooltip);
+	const libraryHoverHandlers = useHoverInfoHandlers(libraryTooltip);
+	const nextHoverHandlers = useHoverInfoHandlers(nextTooltip);
 	const previousMidiLearn = useMidiLearnTarget({
 		targetKey: "presetPrevious",
 		label: t("presetNavigator.previousPresetMidi"),
@@ -58,6 +67,9 @@ export default function PresetNavigator({
 						onContextMenu={previousMidiLearn.onContextMenu}
 						disabled={presetCount === 0}
 						aria-label={t("presetNavigator.previousPreset")}
+						title={previousTooltip}
+						data-hover-info={previousTooltip}
+						{...previousHoverHandlers}
 					>
 						<svg
 							viewBox="0 -960 960 960"
@@ -83,6 +95,9 @@ export default function PresetNavigator({
 						aria-label={`${t("presetNavigator.presetStatus", {
 							name: activePresetName,
 						})}. ${isLibraryModeOpen ? t("presetNavigator.closeLibrary") : t("presetNavigator.openLibrary")}`}
+						title={libraryTooltip}
+						data-hover-info={libraryTooltip}
+						{...libraryHoverHandlers}
 					>
 						<div
 							aria-hidden="true"
@@ -128,6 +143,9 @@ export default function PresetNavigator({
 						onContextMenu={nextMidiLearn.onContextMenu}
 						disabled={presetCount === 0}
 						aria-label={t("presetNavigator.nextPreset")}
+						title={nextTooltip}
+						data-hover-info={nextTooltip}
+						{...nextHoverHandlers}
 					>
 						<svg
 							viewBox="0 -960 960 960"

@@ -4,11 +4,43 @@ import {
 	ENGINE_PARAM_UI_META_BY_KEY,
 	getEngineParamDefault,
 	getEngineParamUiMeta,
+	getEnumTooltip,
+	getParamTooltip,
 	isNativeMidiMappingParamKey,
 	requireEngineParamDefault,
 } from "./paramMeta";
 
 describe("paramMeta", () => {
+	it("resolves translated parameter tooltips at call time", () => {
+		expect(getParamTooltip("portamentoRate")).toBe(
+			"Sets glide speed when portamento mode is Rate.",
+		);
+		expect(getParamTooltip("pitchBendRange")).toBe(
+			"Sets maximum pitch bend range in semitones.",
+		);
+		expect(getParamTooltip("velocityCurve")).toBe(
+			"Shapes how keyboard velocity maps to DCA level.",
+		);
+		expect(getParamTooltip("line1Level")).toBe(
+			"Sets base volume level for line 1.",
+		);
+		expect(getParamTooltip("line2Level")).toBe(
+			"Sets base volume level for line 2.",
+		);
+		expect(getParamTooltip("warpBAmount")).toBe(
+			"Sets amount of phase distortion applied to line 2.",
+		);
+	});
+
+	it("resolves descriptive enum-value tooltips at call time", () => {
+		expect(getEnumTooltip("lineSelect", "L1")).toBe(
+			"Play oscillator line 1 only.",
+		);
+		expect(getEnumTooltip("lineSelect", "L2")).toBe(
+			"Play oscillator line 2 only.",
+		);
+	});
+
 	it("getEngineParamDefault returns default for existing params", () => {
 		const meta = ENGINE_PARAM_UI_META_V1.find(
 			(m) => typeof m.paramDefault === "number",

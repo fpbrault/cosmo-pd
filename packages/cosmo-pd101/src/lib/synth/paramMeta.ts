@@ -8,10 +8,6 @@ import {
 	type EngineParamUiMetaV1,
 } from "@/lib/synth/bindings/synth";
 
-export type ParamMeta = {
-	tooltip: string;
-};
-
 export type EngineParamUiMetaWithRangeV1 = EngineParamUiMetaV1 & {
 	min?: number;
 	max?: number;
@@ -27,6 +23,24 @@ export const ENGINE_MIDI_PARAM_RANGES_BY_KEY = new Map<
 >(ENGINE_MIDI_PARAM_RANGES_V1.map((range) => [range.key, range] as const));
 
 const ALGO_CONTROL_SLOT_KEY = /^line[12]AlgoControl[1-8]$/;
+
+const PARAM_TOOLTIP_LINE_ALIASES: Record<
+	string,
+	{ key: string; line: number }
+> = {
+	warpAAmount: { key: "warpAmount", line: 1 },
+	warpBAmount: { key: "warpAmount", line: 2 },
+	algoBlendA: { key: "algoBlend", line: 1 },
+	algoBlendB: { key: "algoBlend", line: 2 },
+};
+
+function translateTooltip(
+	path: string,
+	options: Record<string, unknown> = {},
+): string | undefined {
+	const tooltip = i18n.t(path, { defaultValue: "", ...options });
+	return tooltip && tooltip !== path ? tooltip : undefined;
+}
 
 export function isNativeMidiMappingParamKey(key: string): boolean {
 	return (
@@ -48,20 +62,29 @@ export const ENGINE_PARAM_UI_META_BY_KEY: Partial<
 	{} as Partial<Record<SynthParamKey, EngineParamUiMetaWithRangeV1>>,
 );
 
-/** Canonical tooltip text for engine parameters, owned by the frontend i18n resources. */
-export const PARAM_META: Partial<Record<SynthParamKey, ParamMeta>> =
-	ENGINE_PARAM_UI_META_V1.reduce(
-		(acc, meta) => {
-			acc[meta.key as SynthParamKey] = {
-				tooltip:
-					i18n.t(`params.${meta.key}.tooltip`, {
-						defaultValue: meta.key,
-					}) || meta.key,
-			};
-			return acc;
-		},
-		{} as Partial<Record<SynthParamKey, ParamMeta>>,
-	);
+/** Resolves translated tooltip text at use time, after i18n has initialized. */
+export function getParamTooltip(key: string): string | undefined {
+	const alias = PARAM_TOOLTIP_LINE_ALIASES[key];
+	if (alias) {
+		const sharedTooltip = translateTooltip(`params.line.${alias.key}.tooltip`, {
+			line: alias.line,
+		});
+		if (sharedTooltip) return sharedTooltip;
+	}
+
+	const lineMatch = /^line([12])(.+)$/.exec(key);
+	if (lineMatch) {
+		const sharedKey = lineMatch[2].replace(/^./, (character) =>
+			character.toLowerCase(),
+		);
+		const sharedTooltip = translateTooltip(`params.line.${sharedKey}.tooltip`, {
+			line: Number(lineMatch[1]),
+		});
+		if (sharedTooltip) return sharedTooltip;
+	}
+
+	return translateTooltip(`params.${key}.tooltip`);
+}
 
 const ENGINE_PARAM_DEFAULTS_BY_KEY = new Map<string, number>(
 	ENGINE_PARAM_UI_META_V1.flatMap((meta) =>
@@ -88,28 +111,28 @@ export function requireEngineParamDefault(key: string): number {
 	throw new Error(`Missing engine numeric default for parameter: ${key}`);
 }
 
-/** Frontend-owned enum value keys for controls. */
-const ENUM_VALUE_KEYS: Partial<Record<string, readonly string[]>> = {
-	lineSelect: ["L1", "L1+L2", "L2", "L1+L1'", "L1+L2'"],
-	modMode: ["normal", "ring", "noise"],
-	filterType: ["lp", "hp", "bp"],
-	portamentoMode: ["rate", "time"],
-	modEnvMode: ["adsr", "adr"],
-	modEnvRetrigMode: ["poly", "mono", "legato"],
-};
+/** Resolves translated enum-value tooltip text at use time. */
+export function getEnumTooltip(key: string, value: string): string | undefined {
+	if (key === "lineSelect" && (value === "L1" || value === "L2")) {
+		const lineOnlyTooltip = translateTooltip(`enumTooltips.${key}.lineOnly`, {
+			line: value.slice(1),
+		});
+		if (lineOnlyTooltip) return lineOnlyTooltip;
+	}
 
-function buildEnumTooltipMap(key: string): Partial<Record<string, string>> {
-	const values = ENUM_VALUE_KEYS[key] ?? [];
-	return values.reduce(
-		(acc, value) => {
-			acc[value] =
-				i18n.t(`enumTooltips.${key}.${value}`, {
-					defaultValue: value,
-				}) || value;
-			return acc;
-		},
-		{} as Partial<Record<string, string>>,
-	);
+	const tooltip = translateTooltip(`enumTooltips.${key}.${value}`);
+	if (tooltip) {
+		return tooltip;
+	}
+
+	const engineMeta = ENGINE_PARAM_UI_META_V1.find((meta) => meta.key === key);
+	if (engineMeta?.readoutFormat.kind === "enumMap") {
+		return engineMeta.readoutFormat.values.find(
+			(entry) => entry.value === value,
+		)?.label;
+	}
+
+	return undefined;
 }
 
 export function getEngineParamUiMeta(
@@ -117,19 +140,3 @@ export function getEngineParamUiMeta(
 ): EngineParamUiMetaWithRangeV1 | undefined {
 	return ENGINE_PARAM_UI_META_BY_KEY[key as SynthParamKey];
 }
-
-/** Canonical tooltips for `lineSelect` enum values. */
-export const LINE_SELECT_TOOLTIPS = buildEnumTooltipMap("lineSelect");
-
-/** Canonical tooltips for `modMode` enum values. */
-export const MOD_MODE_TOOLTIPS = buildEnumTooltipMap("modMode");
-
-/** Canonical tooltips for `portamentoMode` enum values. */
-export const PORTAMENTO_MODE_TOOLTIPS = buildEnumTooltipMap("portamentoMode");
-
-/** Canonical tooltips for `modEnvMode` enum values. */
-export const MOD_ENV_MODE_TOOLTIPS = buildEnumTooltipMap("modEnvMode");
-
-/** Canonical tooltips for `modEnvRetrigMode` enum values. */
-export const MOD_ENV_RETRIG_MODE_TOOLTIPS =
-	buildEnumTooltipMap("modEnvRetrigMode");

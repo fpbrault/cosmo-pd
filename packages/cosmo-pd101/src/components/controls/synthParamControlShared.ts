@@ -19,7 +19,7 @@ import type {
 import {
 	ENGINE_PARAM_UI_META_BY_KEY,
 	getEngineParamDefault,
-	PARAM_META,
+	getParamTooltip,
 } from "@/lib/synth/paramMeta";
 import type { KnobCurve } from "./knob/knobGeometry";
 
@@ -193,9 +193,9 @@ export function useSynthParamControl({
 			? transport.tempo
 			: tempoBpm;
 	const syncMode = syncConfig ? syncModeValue === "sync" : false;
-	const boundTooltip = tooltip ?? PARAM_META[paramKey]?.tooltip;
+	const boundTooltip = tooltip ?? getParamTooltip(paramKey);
 	const syncTooltip = syncConfig?.syncTooltipParamKey
-		? PARAM_META[syncConfig.syncTooltipParamKey]?.tooltip
+		? getParamTooltip(syncConfig.syncTooltipParamKey)
 		: boundTooltip;
 
 	const setEngineValue = (nextEngineValue: number) => {

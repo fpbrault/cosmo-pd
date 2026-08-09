@@ -1,4 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
 import { drawEnvPreview, normalizeEnvelope } from "./stepEnvelopeGeometry";
 
@@ -17,6 +19,7 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 	active = false,
 	onClick,
 }: StepEnvelopePreviewProps) {
+	const { t } = useTranslation("synth");
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const normalizedEnv = useMemo(() => normalizeEnvelope(env), [env]);
 	const drawPreview = useCallback(() => {
@@ -24,6 +27,8 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 			drawEnvPreview(canvasRef.current, normalizedEnv, color, null, [], true);
 		}
 	}, [color, normalizedEnv]);
+	const tooltip = t("tooltips.phaseLine.envelope", { title });
+	const hoverHandlers = useHoverInfoHandlers(tooltip);
 
 	useEffect(() => {
 		drawPreview();
@@ -42,7 +47,10 @@ export const StepEnvelopePreview = memo(function StepEnvelopePreview({
 			type="button"
 			onClick={onClick}
 			aria-pressed={active}
-			aria-label={`Show ${title} envelope`}
+			aria-label={t("tooltips.phaseLine.envelopeAria", { title })}
+			title={tooltip}
+			data-hover-info={tooltip}
+			{...hoverHandlers}
 			className={`group min-w-0 rounded-md border bg-cz-inset/80 p-1.5 transition-colors focus:outline-none focus:ring-1 focus:ring-cz-light-blue ${
 				active
 					? "border-cz-gold/70 shadow-[0_0_0_1px_rgba(251,191,36,0.28)]"

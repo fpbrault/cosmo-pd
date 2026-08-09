@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import {
 	MAX_VOICE_LIMIT,
 	MIN_VOICE_LIMIT,
@@ -33,6 +34,10 @@ export default function GlobalVoicePanel() {
 		typeof tempoBpm === "number" && Number.isFinite(tempoBpm) ? tempoBpm : 120;
 	const voiceLimit = useGlobalSynthSettings((s) => s.voiceLimit);
 	const setVoiceLimit = useGlobalSynthSettings((s) => s.setVoiceLimit);
+	const tempoTooltip = t("tooltips.voice.tempo");
+	const voiceLimitTooltip = t("tooltips.voice.voiceLimit");
+	const tempoHoverHandlers = useHoverInfoHandlers(tempoTooltip);
+	const voiceLimitHoverHandlers = useHoverInfoHandlers(voiceLimitTooltip);
 	return (
 		<div className="grid grid-cols-2 gap-4">
 			<GlobalSection title={t("globalVoice.transportSection")}>
@@ -47,6 +52,9 @@ export default function GlobalVoicePanel() {
 						step={0.1}
 						value={tempoDisplayBpm.toFixed(1)}
 						disabled={transport.available}
+						title={tempoTooltip}
+						data-hover-info={tempoTooltip}
+						{...tempoHoverHandlers}
 						onChange={(event) => {
 							const nextValue = Number(event.target.value);
 							if (!Number.isFinite(nextValue)) {
@@ -74,6 +82,9 @@ export default function GlobalVoicePanel() {
 						aria-label={t("globalVoice.voiceLimitAria", {
 							value: voiceLimit,
 						})}
+						title={voiceLimitTooltip}
+						data-hover-info={voiceLimitTooltip}
+						{...voiceLimitHoverHandlers}
 					>
 						{Array.from(
 							{ length: MAX_VOICE_LIMIT - MIN_VOICE_LIMIT + 1 },

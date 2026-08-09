@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import CzTabButton, {
 	type CzTabButtonColor,
 	type CzTabButtonLedColor,
@@ -12,8 +13,6 @@ import { FX_UI_META } from "../panels/drawer-modules/fxSlotModuleConfig";
 
 type SidebarButton = {
 	id: string;
-	topLabel: string;
-	bottomLabel: string;
 };
 
 const FX_BUTTON_SLOT_INDEX: Record<string, number> = {
@@ -26,22 +25,23 @@ const FX_BUTTON_SLOT_INDEX: Record<string, number> = {
 };
 
 const LEFT_BUTTONS: SidebarButton[] = [
-	{ id: "global", topLabel: "Global", bottomLabel: "" },
-	{ id: "midiLearn", topLabel: "MIDI", bottomLabel: "Learn" },
-	{ id: "modTarget", topLabel: "MOD+", bottomLabel: "" },
-	{ id: "vintage", topLabel: "Vint", bottomLabel: "age" },
+	{ id: "global" },
+	{ id: "midiLearn" },
+	{ id: "modTarget" },
+	{ id: "vintage" },
 ];
 
 const FX_BUTTONS: SidebarButton[] = [
-	{ id: "fx1", topLabel: "FX1", bottomLabel: "" },
-	{ id: "fx2", topLabel: "FX2", bottomLabel: "" },
-	{ id: "fx3", topLabel: "FX3", bottomLabel: "" },
-	{ id: "fx4", topLabel: "FX4", bottomLabel: "" },
-	{ id: "fx5", topLabel: "FX5", bottomLabel: "" },
-	{ id: "fx6", topLabel: "FX6", bottomLabel: "" },
+	{ id: "fx1" },
+	{ id: "fx2" },
+	{ id: "fx3" },
+	{ id: "fx4" },
+	{ id: "fx5" },
+	{ id: "fx6" },
 ];
 
 export default memo(function SynthSidebarButtons() {
+	const { t } = useTranslation("synth");
 	const globalOpen = useSynthUiStore((s) => s.globalPanelOpen);
 	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
 	const midiLearnOpen = useSynthUiStore((s) => s.midiLearnOpen);
@@ -149,11 +149,27 @@ export default memo(function SynthSidebarButtons() {
 	const renderButton = (button: SidebarButton) => {
 		const slot = FX_BUTTON_SLOT_INDEX[button.id];
 		const slotType = slot != null ? (fxSlots[slot]?.type ?? "empty") : null;
+		const topLabel =
+			button.id === "global"
+				? t("sidebar.global")
+				: button.id === "midiLearn"
+					? t("sidebar.midi")
+					: button.id === "modTarget"
+						? t("sidebar.modTarget")
+						: button.id === "vintage"
+							? t("sidebar.vintageTop")
+							: `${t("sidebar.fxPrefix")}${button.id.slice(2)}`;
+		const defaultBottomLabel =
+			button.id === "midiLearn"
+				? t("sidebar.learn")
+				: button.id === "vintage"
+					? t("sidebar.vintageBottom")
+					: "";
 		const bottomLabel =
 			slotType == null
-				? button.bottomLabel
+				? defaultBottomLabel
 				: (FX_UI_META[slotType as FxSlotType]?.shortTitle ??
-					button.bottomLabel);
+					defaultBottomLabel);
 		const active =
 			button.id === "global"
 				? globalOpen
@@ -161,6 +177,26 @@ export default memo(function SynthSidebarButtons() {
 					? midiLearnOpen
 					: isEnabled(button.id);
 		const customColor = getCustomColor(button.id);
+		const effectName =
+			slotType && slotType !== "empty"
+				? (FX_UI_META[slotType as FxSlotType]?.title ?? bottomLabel)
+				: undefined;
+		const tooltip =
+			button.id === "global"
+				? t("tooltips.sidebar.global")
+				: button.id === "midiLearn"
+					? t("tooltips.sidebar.midiLearn")
+					: button.id === "modTarget"
+						? t("tooltips.sidebar.modTarget")
+						: button.id === "vintage"
+							? t("tooltips.sidebar.vintage")
+							: t("tooltips.sidebar.effectSlot", {
+									effect:
+										effectName ??
+										t("tooltips.sidebar.effectSlotName", {
+											slot: button.id.slice(2),
+										}),
+								});
 		return (
 			<CzTabButton
 				key={button.id}
@@ -172,8 +208,9 @@ export default memo(function SynthSidebarButtons() {
 				onLongPress={
 					slot != null ? () => handleLongPress(button.id) : undefined
 				}
-				topLabel={button.topLabel}
+				topLabel={topLabel}
 				bottomLabel={bottomLabel}
+				tooltip={tooltip}
 			/>
 		);
 	};

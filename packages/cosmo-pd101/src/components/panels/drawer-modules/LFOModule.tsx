@@ -1,17 +1,21 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import {
+	HoverInfoTrigger,
+	useHoverInfoHandlers,
+} from "@/components/layout/HoverInfo";
 import LfoDisplay from "@/components/panels/drawer-modules/LfoDisplay";
 import { LFO_RATE_TRANSFORM } from "@/components/panels/drawer-modules/lfoRateTransform";
 import { getSyncCyclesPerBeat } from "@/components/panels/drawer-modules/syncDivisions";
 import ModuleFrame from "@/components/primitives/ModuleFrame";
 import { requestApplyModulePreset } from "@/features/synth/engine/modulePresetEvents";
 import { useHostTransport } from "@/features/synth/hooks/useHostTransport";
-import type { SynthParamKey } from "@/features/synth/SynthParamController";
 import { useSynthParam } from "@/features/synth/SynthParamController";
 import { LFO_PRESET_DATA } from "@/lib/synth/bindings/synth";
 import { resolveTargetFromMetadata } from "@/lib/synth/modTargets";
-import { PARAM_META } from "@/lib/synth/paramMeta";
+import { getParamTooltip } from "@/lib/synth/paramMeta";
 
 interface LfoModuleProps {
 	id: 1 | 2;
@@ -19,6 +23,7 @@ interface LfoModuleProps {
 }
 
 export default function LfoModule({ id, color }: LfoModuleProps) {
+	const { t } = useTranslation("synth");
 	const [selectedPreset, setSelectedPreset] = useState<string>("");
 	const transport = useHostTransport();
 	const lfoWaveformKey = id === 1 ? "lfoWaveform" : "lfo2Waveform";
@@ -29,6 +34,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 	const lfoSymmetryKey = id === 1 ? "lfoSymmetry" : "lfo2Symmetry";
 	const lfoRetriggerKey = id === 1 ? "lfoRetrigger" : "lfo2Retrigger";
 	const lfoOffsetKey = id === 1 ? "lfoOffset" : "lfo2Offset";
+	const retriggerTooltip = getParamTooltip(lfoRetriggerKey);
+	const retriggerHoverHandlers = useHoverInfoHandlers(retriggerTooltip);
 	const { value: tempoBpm } = useSynthParam("tempoBpm");
 
 	const { value: lfoWaveform, setValue: setLfoWaveform } =
@@ -76,8 +83,8 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 		previewRateHz > 0;
 
 	const transportStatus = transport.available
-		? `${transport.playing ? "Host Run" : "Host Stop"} ${transport.tempo.toFixed(1)} BPM ${transport.timeSigNum}/${transport.timeSigDen}`
-		: `Manual ${tempoBpm.toFixed(1)} BPM`;
+		? `${t(transport.playing ? "lfo.transportHostRun" : "lfo.transportHostStop")} ${transport.tempo.toFixed(1)} ${t("globalVoice.bpm")} ${transport.timeSigNum}/${transport.timeSigDen}`
+		: `${t("lfo.transportManual")} ${tempoBpm.toFixed(1)} ${t("globalVoice.bpm")}`;
 
 	const handlePresetChange = (presetId: string) => {
 		setSelectedPreset(presetId);
@@ -101,7 +108,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 
 	return (
 		<ModuleFrame
-			title={`LFO ${id}`}
+			title={t("lfo.title", { id })}
 			color={color}
 			enabled
 			hideToggle={true}
@@ -127,24 +134,36 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 					{(
 						[
 							["sine", "sine"],
-							["tri", "triangle"],
-							["sq", "square"],
+							["triangle", "triangle"],
+							["square", "square"],
 							["saw", "saw"],
-							["inv", "invertedSaw"],
+							["invertedSaw", "invertedSaw"],
 						] as const
-					).map(([label, w]) => (
-						<Button
-							key={w}
-							type="button"
-							className={`join-item btn btn-xs h-7 min-h-0 flex-1 rounded-none border-0 px-1.5 ${
-								lfoWaveform === w ? "btn-secondary" : "btn-outline"
-							}`}
-							onClick={() => setLfoWaveform(w)}
-							title={`Select ${label} waveform for LFO ${id}.`}
-						>
-							{label}
-						</Button>
-					))}
+					).map(([waveformKey, w]) => {
+						const waveformLabel = t(`lfo.waveforms.${waveformKey}`);
+						const tooltip = t("tooltips.lfo.waveform", {
+							waveform: waveformLabel,
+							id,
+						});
+						return (
+							<HoverInfoTrigger key={w} message={tooltip}>
+								{(hoverHandlers) => (
+									<Button
+										type="button"
+										className={`join-item btn btn-xs h-7 min-h-0 flex-1 rounded-none border-0 px-1.5 ${
+											lfoWaveform === w ? "btn-secondary" : "btn-outline"
+										}`}
+										onClick={() => setLfoWaveform(w)}
+										title={tooltip}
+										data-hover-info={tooltip}
+										{...hoverHandlers}
+									>
+										{waveformLabel}
+									</Button>
+								)}
+							</HoverInfoTrigger>
+						);
+					})}
 				</div>
 				<Button
 					type="button"
@@ -152,21 +171,23 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 						lfoRetrigger ? "btn-secondary" : "btn-outline"
 					}`}
 					onClick={() => setLfoRetrigger(!lfoRetrigger)}
-					title={PARAM_META[lfoRetriggerKey as SynthParamKey]?.tooltip}
+					title={retriggerTooltip}
+					data-hover-info={retriggerTooltip}
+					{...retriggerHoverHandlers}
 				>
-					Retrig
+					{t("lfo.retrigger")}
 				</Button>
 			</div>
 			<SynthParamKnob
 				paramKey={lfoRateKey}
-				label="Rate"
+				label={t("lfo.rate")}
 				color="#27588f"
 				size={54}
 				modDestination={resolveTargetFromMetadata("lfo.rate", {
 					lfoIndex: id,
 				})}
 				midiTargetKey={`lfo${id}RateKnob`}
-				midiLabel={`LFO ${id} Rate`}
+				midiLabel={t("lfo.rateMidi", { id })}
 				uiTransform={LFO_RATE_TRANSFORM}
 				sync
 			/>
@@ -174,7 +195,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoDepthKey}
 				color="#27588f"
 				size={54}
-				label="Depth"
+				label={t("lfo.depth")}
 				valueFormatter={(value) => `${Math.round((value as number) * 100)}%`}
 				modDestination={resolveTargetFromMetadata("lfo.depth", {
 					lfoIndex: id,
@@ -187,7 +208,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				bipolar
 				color="#27588f"
 				size={54}
-				label="Offset"
+				label={t("lfo.offset")}
 				valueFormatter={(value) =>
 					`${(value as number) >= 0 ? "+" : ""}${(value as number).toFixed(2)}`
 				}
@@ -199,7 +220,7 @@ export default function LfoModule({ id, color }: LfoModuleProps) {
 				paramKey={lfoSymmetryKey}
 				color="#27588f"
 				size={54}
-				label="Sym."
+				label={t("lfo.symmetry")}
 				modDestination={resolveTargetFromMetadata("lfo.symmetry", {
 					lfoIndex: id,
 				})}

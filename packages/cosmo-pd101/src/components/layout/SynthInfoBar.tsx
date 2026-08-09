@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { MdPiano, MdSettings } from "react-icons/md";
 import Button from "@/components/controls/Button";
 import { KeyboardSettingsPopover } from "@/components/modals/KeyboardSettingsPopover";
+import { useHoverInfoHandlers } from "./HoverInfo";
 
 type SynthInfoBarProps = {
 	infoText: string;
@@ -24,6 +25,12 @@ export default function SynthInfoBar({
 	const { t } = useTranslation("synth");
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+	const keyboardTooltip = keyboardVisible
+		? t("tooltips.keyboard.hide")
+		: t("tooltips.keyboard.show");
+	const settingsTooltip = t("tooltips.keyboard.settings");
+	const keyboardHoverHandlers = useHoverInfoHandlers(keyboardTooltip);
+	const settingsHoverHandlers = useHoverInfoHandlers(settingsTooltip);
 
 	const handleSettingsClick = useCallback(() => {
 		setSettingsOpen((prev) => !prev);
@@ -48,6 +55,9 @@ export default function SynthInfoBar({
 						aria-label={
 							keyboardVisible ? t("infoBar.hideKeys") : t("infoBar.showKeys")
 						}
+						title={keyboardTooltip}
+						data-hover-info={keyboardTooltip}
+						{...keyboardHoverHandlers}
 						className={`btn btn-sm px-2 py-1 ${
 							keyboardVisible
 								? "border-cz-gold bg-cz-gold/10 text-cz-gold"
@@ -60,6 +70,10 @@ export default function SynthInfoBar({
 						ref={settingsBtnRef}
 						type="button"
 						onClick={handleSettingsClick}
+						aria-label={settingsTooltip}
+						title={settingsTooltip}
+						data-hover-info={settingsTooltip}
+						{...settingsHoverHandlers}
 						className="btn btn-sm border-cz-border bg-transparent px-2 py-1 text-cz-cream/70 hover:text-cz-cream"
 					>
 						<MdSettings className="h-3 w-3" />

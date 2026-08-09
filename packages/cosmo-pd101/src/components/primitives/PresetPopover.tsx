@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import Popover from "@/components/primitives/Popover";
 
 export type PresetOption = {
@@ -137,6 +138,8 @@ export default function PresetPopover({
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
+	const presetTooltip = t("tooltips.fx.preset", { title });
+	const presetHoverHandlers = useHoverInfoHandlers(presetTooltip);
 
 	const hasManageActions = onSavePreset || (onDeletePreset && builtinPresetIds);
 
@@ -204,6 +207,9 @@ export default function PresetPopover({
 				disabled
 				className="btn btn-xs flex h-5 min-h-0 min-w-20 cursor-not-allowed flex-nowrap items-center gap-1.5 rounded-sm border border-cz-border/65 px-2 font-bold font-mono text-[0.54rem] text-cz-cream/40 uppercase tracking-[0.14em] opacity-70"
 				aria-label={t("modulePreset.unavailableAria", { title })}
+				title={presetTooltip}
+				data-hover-info={presetTooltip}
+				{...presetHoverHandlers}
 			>
 				<span className="inline-block h-1 w-1 shrink-0 rounded-full bg-cz-cream/25" />
 				<span>{t("modulePreset.presets")}</span>
@@ -219,6 +225,9 @@ export default function PresetPopover({
 				type="button"
 				onClick={handleTriggerClick}
 				aria-label={t("modulePreset.presetsAria", { title })}
+				title={presetTooltip}
+				data-hover-info={presetTooltip}
+				{...presetHoverHandlers}
 				aria-haspopup="listbox"
 				aria-expanded={popoverOpen}
 				className="btn btn-xs flex h-5 min-h-0 min-w-20 flex-nowrap items-center gap-1.5 rounded-sm border px-2 font-bold font-mono text-[0.54rem] text-cz-cream-light uppercase tracking-[0.14em] shadow-[0_1px_0_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.08)] hover:brightness-125"

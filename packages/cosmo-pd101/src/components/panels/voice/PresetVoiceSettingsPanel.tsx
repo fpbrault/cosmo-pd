@@ -2,9 +2,10 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { useSynthParam } from "@/features/synth/SynthParamController";
-import { PORTAMENTO_MODE_TOOLTIPS } from "@/lib/synth/paramMeta";
+import { getEnumTooltip } from "@/lib/synth/paramMeta";
 import { applyVelocityCurve } from "@/lib/synth/velocityCurve";
 
 const PREVIEW_W = 56;
@@ -89,6 +90,10 @@ export default memo(function PresetVoiceSettingsPanel() {
 		useSynthParam("portamentoTime");
 	const isRateMode = portamentoMode === "rate";
 	const nextMode = isRateMode ? "time" : "rate";
+	const portamentoModeTooltip = getEnumTooltip("portamentoMode", nextMode);
+	const portamentoModeHoverHandlers = useHoverInfoHandlers(
+		portamentoModeTooltip,
+	);
 
 	return (
 		<SynthPanelContainer>
@@ -101,7 +106,9 @@ export default memo(function PresetVoiceSettingsPanel() {
 					<Button
 						type="button"
 						onClick={() => setPortamentoMode(nextMode)}
-						title={PORTAMENTO_MODE_TOOLTIPS[nextMode]}
+						title={portamentoModeTooltip}
+						data-hover-info={portamentoModeTooltip}
+						{...portamentoModeHoverHandlers}
 						className={`btn btn-xs h-5 min-h-0 px-2 font-mono text-[0.54rem] uppercase tracking-[0.14em] ${
 							isRateMode ? "btn-primary" : "btn-neutral"
 						}`}

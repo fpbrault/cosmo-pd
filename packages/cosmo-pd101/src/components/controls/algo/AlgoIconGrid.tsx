@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	getPdAlgoBehaviorDescription,
 	PD_ALGOS,
 } from "@/lib/synth/algoUiCatalog";
 import { useAlgoUiText } from "@/lib/synth/i18nAlgo";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
-import { HoverInfoTrigger } from "../../layout/HoverInfo";
+import { HoverInfoTrigger, useHoverInfoHandlers } from "../../layout/HoverInfo";
 
 function CzMonogramIcon({
 	size,
@@ -48,10 +49,15 @@ export default function AlgoIconGrid({
 	columns?: number;
 	color?: string;
 }) {
+	const { t } = useTranslation("synth");
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const previousLabel = useAlgoUiText("previousAlgorithm");
 	const nextLabel = useAlgoUiText("nextAlgorithm");
+	const previousTooltip = t("tooltips.algorithm.previous");
+	const nextTooltip = t("tooltips.algorithm.next");
+	const previousHoverHandlers = useHoverInfoHandlers(previousTooltip);
+	const nextHoverHandlers = useHoverInfoHandlers(nextTooltip);
 	const behaviorPrefix = useAlgoUiText("behaviorTooltip");
 	const changeAlgorithmLabel = useAlgoUiText("changeAlgorithm");
 
@@ -140,6 +146,9 @@ export default function AlgoIconGrid({
 					type="button"
 					onClick={() => navigate(-1)}
 					aria-label={previousLabel}
+					title={previousTooltip}
+					data-hover-info={previousTooltip}
+					{...previousHoverHandlers}
 					className={[
 						"@max-[780px]:border-r @max-[780px]:px-1.5 @max-[780px]:[grid-area:prev]",
 						"[@container_phase_(max-height:500px)]:border-r [@container_phase_(max-height:500px)]:px-1.5 [@container_phase_(max-height:500px)]:[grid-area:prev]",
@@ -163,6 +172,9 @@ export default function AlgoIconGrid({
 					type="button"
 					onClick={() => navigate(1)}
 					aria-label={nextLabel}
+					title={nextTooltip}
+					data-hover-info={nextTooltip}
+					{...nextHoverHandlers}
 					className={[
 						"@max-[780px]:px-1.5 @max-[780px]:[grid-area:next]",
 						"[@container_phase_(max-height:500px)]:px-1.5 [@container_phase_(max-height:500px)]:[grid-area:next]",
