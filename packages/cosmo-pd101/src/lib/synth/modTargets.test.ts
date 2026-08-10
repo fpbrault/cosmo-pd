@@ -72,6 +72,21 @@ describe("modTargets", () => {
 			expect(
 				line2Group?.destinations.some((d) => d.value === "line2DetuneOctave"),
 			).toBe(true);
+			expect(groups.map((group) => group.label)).toEqual([
+				"Global",
+				"FX",
+				"Line 1",
+				"Line 2",
+				"Modulation",
+				"Envelopes",
+			]);
+			expect(
+				groups
+					.find((group) => group.label === "FX")
+					?.destinations.some(
+						(destination) => destination.value === "intPmRatio",
+					),
+			).toBe(true);
 		});
 	});
 

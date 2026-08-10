@@ -157,7 +157,11 @@ function normalizeModLayout(value: unknown, routes: ModRoute[]) {
 		return normalizeModMatrixLayout(undefined, routes);
 	}
 
-	const pages = [value.page1, value.page2].map((page) => {
+	const pageValues = [value.page1, value.page2];
+	if (value.page3 !== undefined) {
+		pageValues.push(value.page3);
+	}
+	const pages = pageValues.map((page) => {
 		if (!isRecord(page)) {
 			return null;
 		}
@@ -168,6 +172,13 @@ function normalizeModLayout(value: unknown, routes: ModRoute[]) {
 			destinations: Array.isArray(page.destinations)
 				? page.destinations.map((entry) => (entry === "none" ? null : entry))
 				: page.destinations,
+			cells: Array.isArray(page.cells)
+				? page.cells.map((row) =>
+						Array.isArray(row)
+							? row.map((entry) => (entry === "none" ? null : entry))
+							: row,
+					)
+				: page.cells,
 		};
 	});
 
@@ -381,6 +392,7 @@ function encodeParams(params: SynthParams): Record<string, unknown> {
 			? {
 					page1: layout.pages?.[0],
 					page2: layout.pages?.[1],
+					page3: layout.pages?.[2],
 				}
 			: undefined,
 	};
@@ -479,7 +491,7 @@ function writeModLayout(layout: unknown): string[] {
 	}
 
 	const lines: string[] = [];
-	for (const [index, key] of ["page1", "page2"].entries()) {
+	for (const [index, key] of ["page1", "page2", "page3"].entries()) {
 		const page = layout[key];
 		if (!isRecord(page)) {
 			continue;
@@ -491,6 +503,11 @@ function writeModLayout(layout: unknown): string[] {
 		const destinations = Array.isArray(page.destinations)
 			? page.destinations.map((entry) => entry ?? "none")
 			: [];
+		const cells = Array.isArray(page.cells)
+			? page.cells.map((row) =>
+					Array.isArray(row) ? row.map((cell) => cell ?? "none") : row,
+				)
+			: [];
 		if (sources.length !== 8 || destinations.length !== 8) {
 			continue;
 		}
@@ -499,6 +516,7 @@ function writeModLayout(layout: unknown): string[] {
 			`[params.mod.layout.page${index + 1}]`,
 			`sources = ${toTomlValue(sources)}`,
 			`destinations = ${toTomlValue(destinations)}`,
+			...(cells.length === 8 ? [`cells = ${toTomlValue(cells)}`] : []),
 			"",
 		);
 	}

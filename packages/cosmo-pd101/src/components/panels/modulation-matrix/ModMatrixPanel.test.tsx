@@ -13,6 +13,13 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 	useOptionalSynthController: () => null,
 }));
 
+function emptyPage(): NonNullable<ModMatrix["layout"]>["pages"][number] {
+	return {
+		sources: [null, null, null, null, null, null, null, null],
+		destinations: [null, null, null, null, null, null, null, null],
+	};
+}
+
 function layoutWithSlots(): NonNullable<ModMatrix["layout"]> {
 	return {
 		pages: [
@@ -24,6 +31,7 @@ function layoutWithSlots(): NonNullable<ModMatrix["layout"]> {
 				sources: ["modWheel", null, null, null, null, null, null, null],
 				destinations: ["pitch", null, null, null, null, null, null, null],
 			},
+			emptyPage(),
 		],
 	};
 }
@@ -39,7 +47,7 @@ describe("ModMatrixPanel", () => {
 		useModMatrixMock.mockReset();
 	});
 
-	it("renders a fixed 8 by 8 page with explicit empty slots", () => {
+	it("renders a fixed 8 by 8 page with three page tabs", () => {
 		renderPanel();
 
 		expect(screen.getByText("Mod Matrix")).toBeInTheDocument();
@@ -51,6 +59,9 @@ describe("ModMatrixPanel", () => {
 		).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: "Open modulation matrix page 2" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Open modulation matrix page 3" }),
 		).toBeInTheDocument();
 	});
 
@@ -75,14 +86,73 @@ describe("ModMatrixPanel", () => {
 		);
 	});
 
-	it("creates a zero-depth route when an assigned empty cell is clicked", () => {
+	it("allows an active source to be selected for another row", () => {
 		const { setModMatrix } = renderPanel({
 			routes: [],
 			layout: layoutWithSlots(),
 		});
 
 		fireEvent.click(
+			screen.getByRole("button", { name: "Choose source for row 2" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "LFO 1" }));
+
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				layout: expect.objectContaining({
+					pages: expect.arrayContaining([
+						expect.objectContaining({
+							sources: ["lfo1", "lfo1", null, null, null, null, null, null],
+						}),
+					]),
+				}),
+			}),
+		);
+	});
+
+	it("allows an active destination to be selected for another column", () => {
+		const { setModMatrix } = renderPanel({
+			routes: [],
+			layout: layoutWithSlots(),
+		});
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Choose destination for column 2" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: /^Global/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Volume" }));
+
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				layout: expect.objectContaining({
+					pages: expect.arrayContaining([
+						expect.objectContaining({
+							destinations: [
+								"volume",
+								"volume",
+								null,
+								null,
+								null,
+								null,
+								null,
+								null,
+							],
+						}),
+					]),
+				}),
+			}),
+		);
+	});
+
+	it("creates a zero-depth route when an assigned empty cell is activated", () => {
+		const { setModMatrix } = renderPanel({
+			routes: [],
+			layout: layoutWithSlots(),
+		});
+
+		fireEvent.pointerDown(
 			screen.getByRole("button", { name: "LFO 1 to Volume modulation cell" }),
+			{ pointerId: 1, pointerType: "mouse", button: 0, clientY: 100 },
 		);
 
 		expect(setModMatrix).toHaveBeenCalledWith(
@@ -99,27 +169,123 @@ describe("ModMatrixPanel", () => {
 		);
 	});
 
-	it("opens the inspector for an existing route and exposes depth editing", () => {
-		renderPanel({
+	it("adjusts route depth with a vertical pointer drag", () => {
+		const { setModMatrix } = renderPanel({
 			routes: [
-				{
-					source: "lfo1",
-					destination: "volume",
-					amount: 0.35,
-					enabled: true,
-				},
+				{ source: "lfo1", destination: "volume", amount: 0, enabled: true },
+			],
+			layout: layoutWithSlots(),
+		});
+		const cell = screen.getByRole("button", {
+			name: "LFO 1 to Volume modulation cell",
+		});
+
+		fireEvent.pointerDown(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			button: 0,
+			clientY: 100,
+		});
+		fireEvent.pointerMove(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientY: 58,
+		});
+		fireEvent.pointerUp(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientY: 58,
+		});
+
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				routes: [expect.objectContaining({ amount: expect.closeTo(0.5, 1) })],
+			}),
+		);
+	});
+
+	it("clears a route with a double click instead of opening an inspector", () => {
+		const { setModMatrix } = renderPanel({
+			routes: [
+				{ source: "lfo1", destination: "volume", amount: 0.35, enabled: true },
+			],
+			layout: layoutWithSlots(),
+		});
+		const cell = screen.getByRole("button", {
+			name: "LFO 1 to Volume modulation cell",
+		});
+
+		fireEvent.doubleClick(cell);
+
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({ routes: [] }),
+		);
+		expect(screen.queryByText("Route inspector")).not.toBeInTheDocument();
+	});
+
+	it("keeps cell values when a row source is cleared and restored", () => {
+		const { setModMatrix } = renderPanel({
+			routes: [
+				{ source: "lfo1", destination: "volume", amount: 0.35, enabled: true },
 			],
 			layout: layoutWithSlots(),
 		});
 
 		fireEvent.click(
-			screen.getByRole("button", { name: "LFO 1 to Volume modulation cell" }),
+			screen.getByRole("button", { name: "Choose source for row 1" }),
 		);
+		fireEvent.click(screen.getByRole("button", { name: /^None$/ }));
 
-		expect(screen.getByText("Route inspector")).toBeInTheDocument();
-		expect(
-			screen.getByRole("spinbutton", { name: "Modulation depth percent" }),
-		).toHaveValue(35);
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({ routes: [] }),
+		);
+		const clearedLayout = setModMatrix.mock.lastCall?.[0].layout;
+		expect(clearedLayout.pages[0].sources[0]).toBe(null);
+		expect(clearedLayout.pages[0].cells[0][0]).toEqual({
+			amount: 0.35,
+			enabled: true,
+		});
+	});
+
+	it("allows editing a cell before assigning its source or destination", () => {
+		const { setModMatrix } = renderPanel();
+		const cell = screen.getAllByRole("button", {
+			name: "None to None modulation cell",
+		})[0];
+
+		fireEvent.pointerDown(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			button: 0,
+			clientY: 100,
+		});
+		fireEvent.pointerMove(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientY: 58,
+		});
+		fireEvent.pointerUp(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientY: 58,
+		});
+
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				routes: [],
+				layout: expect.objectContaining({
+					pages: expect.arrayContaining([
+						expect.objectContaining({
+							cells: expect.arrayContaining([
+								expect.arrayContaining([
+									expect.objectContaining({ amount: expect.closeTo(0.5, 1) }),
+								]),
+							]),
+						}),
+					]),
+				}),
+			}),
+		);
 	});
 
 	it("switches to the second persisted page", () => {

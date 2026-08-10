@@ -1,5 +1,8 @@
 use num_enum::TryFromPrimitive;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize, Serialize,
+    de::{self, Deserializer},
+};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
@@ -344,7 +347,9 @@ mod tests {
                         None,
                         None,
                     ],
+                    cells: None,
                 },
+                ModMatrixPage::default(),
                 ModMatrixPage::default(),
             ],
         };
@@ -361,6 +366,22 @@ mod tests {
         let json = serde_json::to_string(&matrix).unwrap();
         let decoded = serde_json::from_str::<ModMatrix>(&json).unwrap();
         assert_eq!(decoded.layout, Some(layout));
+
+        let legacy_layout = r#"{
+            "pages": [
+                {
+                    "sources": ["lfo1", null, null, null, null, null, null, null],
+                    "destinations": ["volume", null, null, null, null, null, null, null]
+                },
+                {
+                    "sources": [null, null, null, null, null, null, null, null],
+                    "destinations": [null, null, null, null, null, null, null, null]
+                }
+            ]
+        }"#;
+        let decoded_legacy = serde_json::from_str::<ModMatrixLayout>(legacy_layout).unwrap();
+        assert_eq!(decoded_legacy.pages[0].sources[0], Some(ModSource::Lfo1));
+        assert_eq!(decoded_legacy.pages[2], ModMatrixPage::default());
     }
 }
 
@@ -379,7 +400,7 @@ impl Default for ModRoute {
 ///
 /// These assignments are editor layout metadata. The audio engine continues to
 /// evaluate the shared `ModMatrix::routes` collection independently of pages.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct ModMatrixPage {
@@ -387,15 +408,64 @@ pub struct ModMatrixPage {
     pub sources: [Option<ModSource>; 8],
     #[serde(default)]
     pub destinations: [Option<ModDestination>; 8],
+    /// Per-cell values are optional for backwards-compatible layouts that only
+    /// persisted source and destination labels.
+    #[serde(default)]
+    pub cells: Option<[[Option<ModMatrixCell>; 8]; 8]>,
 }
 
-/// Persisted editor layout for the two modulation matrix pages.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+/// A persisted modulation-matrix cell value, independent of its row and column
+/// labels. A cell can retain its value while either label is temporarily empty.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ModMatrixCell {
+    pub amount: f32,
+    pub enabled: bool,
+}
+
+/// Persisted editor layout for the three modulation matrix pages.
+#[derive(Debug, Clone, PartialEq, Serialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct ModMatrixLayout {
-    #[serde(default)]
-    pub pages: [ModMatrixPage; 2],
+    pub pages: [ModMatrixPage; 3],
+}
+
+impl<'de> Deserialize<'de> for ModMatrixLayout {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct ModMatrixLayoutWire {
+            #[serde(default)]
+            pages: Vec<ModMatrixPage>,
+        }
+
+        let mut pages = ModMatrixLayoutWire::deserialize(deserializer)?.pages;
+        if pages.is_empty() {
+            return Ok(Self::default());
+        }
+        if pages.len() == 2 {
+            pages.push(ModMatrixPage::default());
+        }
+        if pages.len() != 3 {
+            return Err(de::Error::custom(
+                "modulation matrix layout must contain two or three pages",
+            ));
+        }
+
+        let mut pages = pages.into_iter();
+        Ok(Self {
+            pages: [
+                pages.next().expect("validated page count"),
+                pages.next().expect("validated page count"),
+                pages.next().expect("validated page count"),
+            ],
+        })
+    }
 }
 
 /// Collection of modulation routes.

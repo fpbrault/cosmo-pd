@@ -21,6 +21,7 @@ import type {
 	ModEnvRetrigMode,
 	ModMatrix,
 	ModMode,
+	ModRoute,
 	PolyMode,
 	PortamentoMode,
 	StepEnvData,
@@ -39,7 +40,11 @@ import {
 	sanitizeFxSlots,
 } from "@/lib/synth/fxSlotSanitizer";
 import { normalizeAlgoSlotKey } from "@/lib/synth/modDestination";
-import { normalizeModMatrixLayout } from "@/lib/synth/modMatrixModel";
+import {
+	normalizeModMatrixLayout,
+	syncModMatrixRoutes,
+	updateChangedModMatrixCells,
+} from "@/lib/synth/modMatrixModel";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 
 // ---------------------------------------------------------------------------
@@ -98,15 +103,46 @@ function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
 	return modMode;
 }
 
-function normalizeModMatrix(matrix: ModMatrix): ModMatrix {
+function routesAdded(previous: ModRoute[], next: ModRoute[]): ModRoute[] {
+	const remaining = [...previous];
+	return next.filter((route) => {
+		const index = remaining.findIndex(
+			(candidate) =>
+				candidate.source === route.source &&
+				candidate.destination === route.destination,
+		);
+		if (index < 0) {
+			return true;
+		}
+		remaining.splice(index, 1);
+		return false;
+	});
+}
+
+function normalizeModMatrix(
+	matrix: ModMatrix,
+	previousMatrix?: ModMatrix,
+): ModMatrix {
 	const routes = (matrix.routes ?? []).map((route) => ({
 		...route,
 		destination: normalizeAlgoSlotKey(route.destination) as ModDestination,
 	}));
+	let layout = normalizeModMatrixLayout(matrix.layout, routes, {
+		autoPlaceRoutes: previousMatrix
+			? routesAdded(previousMatrix.routes ?? [], routes)
+			: routes,
+	});
+	if (previousMatrix) {
+		layout = updateChangedModMatrixCells(
+			previousMatrix.routes ?? [],
+			routes,
+			layout,
+		);
+	}
 	return {
 		...matrix,
-		routes,
-		layout: normalizeModMatrixLayout(matrix.layout, routes),
+		routes: syncModMatrixRoutes(layout, routes),
+		layout,
 	};
 }
 
@@ -620,7 +656,10 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 
 		setPitchBendRange: (v) => setEditedState({ pitchBendRange: v }),
 		setOctave: (v) => setEditedState({ octave: toIntegerInRange(v, -2, 2) }),
-		setModMatrix: (v) => setEditedState({ modMatrix: v }),
+		setModMatrix: (v) =>
+			setEditedState((state) => ({
+				modMatrix: normalizeModMatrix(v, state.modMatrix),
+			})),
 		setFxSlotType: (slot, type) => {
 			if (slot < 0 || slot > 5) return;
 			setEditedState((s) => {

@@ -119,6 +119,10 @@ describe("presetTomlExchange", () => {
 						null,
 					],
 				},
+				{
+					sources: ["random", null, null, null, null, null, null, null],
+					destinations: ["volume", null, null, null, null, null, null, null],
+				},
 			],
 		};
 		const toml = exportPresetToToml({
@@ -145,14 +149,21 @@ describe("presetTomlExchange", () => {
 		expect(toml).toContain("[params.mod.layout.page1]");
 		expect(toml).toContain('sources = ["modWheel", "none"');
 		expect(toml).toContain("[params.mod.layout.page2]");
+		expect(toml).toContain("[params.mod.layout.page3]");
 
 		const parsed = parsePresetToml(toml);
 		expect(parsed?.data.params.modMatrix?.layout?.pages?.[0]).toEqual(
-			layout.pages?.[0],
+			expect.objectContaining(layout.pages?.[0]),
 		);
 		expect(parsed?.data.params.modMatrix?.layout?.pages?.[1]).toEqual(
-			layout.pages?.[1],
+			expect.objectContaining(layout.pages?.[1]),
 		);
+		expect(parsed?.data.params.modMatrix?.layout?.pages?.[2]).toEqual(
+			expect.objectContaining(layout.pages?.[2]),
+		);
+		expect(
+			parsed?.data.params.modMatrix?.layout?.pages?.[0]?.cells?.[0]?.[0],
+		).toEqual({ amount: 0.5, enabled: true });
 	});
 
 	it("imports omitted no-op structures as empty FX slots and no modulation routes", () => {

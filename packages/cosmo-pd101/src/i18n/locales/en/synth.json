@@ -1191,6 +1191,7 @@
 		"searchPlaceholder": "Search sources and destinations",
 		"none": "None",
 		"closePicker": "Close selection",
+		"cellClearHint": "Double-click or double-tap to clear",
 		"inspectorTitle": "Route inspector",
 		"inspectorEmpty": "Select a matrix cell to edit its route.",
 		"closeInspector": "Close route inspector",

@@ -396,9 +396,18 @@ export type ModMatrix = {
 	layout?: ModMatrixLayout | null,
 };
 
-/**  Persisted editor layout for the two modulation matrix pages. */
+/**
+ *  A persisted modulation-matrix cell value, independent of its row and column
+ *  labels. A cell can retain its value while either label is temporarily empty.
+ */
+export type ModMatrixCell = {
+	amount: number | null,
+	enabled: boolean,
+};
+
+/**  Persisted editor layout for the three modulation matrix pages. */
 export type ModMatrixLayout = {
-	pages?: [ModMatrixPage, ModMatrixPage],
+	pages: [ModMatrixPage, ModMatrixPage, ModMatrixPage],
 };
 
 /**
@@ -410,6 +419,11 @@ export type ModMatrixLayout = {
 export type ModMatrixPage = {
 	sources?: [(ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null)],
 	destinations?: [(ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null)],
+	/**
+	 *  Per-cell values are optional for backwards-compatible layouts that only
+	 *  persisted source and destination labels.
+	 */
+	cells?: [([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)]), ([(ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null), (ModMatrixCell | null)])] | null,
 };
 
 /**  Modulation mode */
