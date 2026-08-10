@@ -25,7 +25,6 @@ export default function ModMatrixAmountCell({
 	source,
 	destination,
 	selected,
-	activity,
 	ariaLabel,
 	clearHint,
 	onActivate,
@@ -37,7 +36,6 @@ export default function ModMatrixAmountCell({
 	source: ModSource | null;
 	destination: ModDestination | null;
 	selected: boolean;
-	activity: number;
 	ariaLabel: string;
 	clearHint: string;
 	onActivate: () => void;
@@ -63,6 +61,7 @@ export default function ModMatrixAmountCell({
 	});
 
 	const amount = cell?.amount ?? route?.amount ?? 0;
+	const routeFillOpacity = 0.05 + Math.abs(amount) * 0.43;
 	const hasValue = Boolean(cell || route);
 	const isEnabled = cell?.enabled ?? route?.enabled ?? false;
 	const hasAssignedPair = Boolean(source && destination);
@@ -76,13 +75,6 @@ export default function ModMatrixAmountCell({
 	const hasDestinationFill = Boolean(
 		hasValue && destinationStyle && (isActiveRoute || !hasAssignedPair),
 	);
-	const liveActivityClass =
-		activity > 0.66
-			? "bg-cyan-200/50"
-			: activity > 0.2
-				? "bg-cyan-300/25"
-				: "bg-cyan-400/10";
-
 	const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
 		if (event.pointerType === "mouse" && event.button !== 0) {
 			return;
@@ -188,12 +180,7 @@ export default function ModMatrixAmountCell({
 				<span
 					className={`mod-matrix-route-fill pointer-events-none absolute inset-0 ${destinationStyle?.fillColorClass ?? ""}`}
 					data-mod-depth={Math.abs(amount)}
-					aria-hidden="true"
-				/>
-			) : null}
-			{isActiveRoute && activity > 0 ? (
-				<span
-					className={`pointer-events-none absolute inset-0 ${liveActivityClass}`}
+					style={{ opacity: routeFillOpacity }}
 					aria-hidden="true"
 				/>
 			) : null}

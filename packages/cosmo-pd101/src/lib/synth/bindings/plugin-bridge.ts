@@ -296,7 +296,7 @@ export type ModMatrixLayout = {
 
 /**
  *  One fixed 8×8 page in the modulation matrix editor.
- *
+ * 
  *  These assignments are editor layout metadata. The audio engine continues to
  *  evaluate the shared `ModMatrix::routes` collection independently of pages.
  */
@@ -354,7 +354,7 @@ export type PhaserParams = {
 
 /**
  *  Tagged IPC request envelope deserialized from `{ method, payload }`.
- *
+ * 
  *  Wire format (adjacently tagged by serde):
  *  - Unit variant: `{ "method": "getParams" }`
  *  - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`

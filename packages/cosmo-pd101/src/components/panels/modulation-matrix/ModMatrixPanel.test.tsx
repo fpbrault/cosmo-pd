@@ -204,6 +204,23 @@ describe("ModMatrixPanel", () => {
 		);
 	});
 
+	it("uses continuous route depth opacity independently of source activity steps", () => {
+		renderPanel({
+			routes: [
+				{ source: "lfo1", destination: "volume", amount: 0.35, enabled: true },
+			],
+			layout: layoutWithSlots(),
+		});
+
+		const cell = screen.getByRole("button", {
+			name: "LFO 1 to Volume modulation cell",
+		});
+		const fill = cell.querySelector(".mod-matrix-route-fill");
+
+		expect(fill).toHaveStyle({ opacity: "0.2005" });
+		expect(fill).toHaveAttribute("data-mod-depth", "0.35");
+	});
+
 	it("clears a route with a double click instead of opening an inspector", () => {
 		const { setModMatrix } = renderPanel({
 			routes: [

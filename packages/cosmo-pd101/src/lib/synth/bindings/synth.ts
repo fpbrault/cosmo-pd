@@ -412,7 +412,7 @@ export type ModMatrixLayout = {
 
 /**
  *  One fixed 8×8 page in the modulation matrix editor.
- *
+ * 
  *  These assignments are editor layout metadata. The audio engine continues to
  *  evaluate the shared `ModMatrix::routes` collection independently of pages.
  */
@@ -6022,3 +6022,4 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "Movement"
   ]
 };
+

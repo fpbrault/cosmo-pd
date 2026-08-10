@@ -584,9 +584,6 @@ export default function ModMatrixPanel() {
 											selection?.pageIndex === activePage &&
 											selection.rowIndex === rowIndex &&
 											selection.columnIndex === columnIndex;
-										const activity = route?.enabled
-											? Math.min(1, Math.abs(route.amount ?? 0) * liveValue)
-											: 0;
 										return (
 											<ModMatrixAmountCell
 												key={`cell-${rowSlotKey}-${columnSlotKey}`}
@@ -595,7 +592,6 @@ export default function ModMatrixPanel() {
 												source={source}
 												destination={destination}
 												selected={isSelected}
-												activity={activity}
 												clearHint={t("modMatrix.cellClearHint")}
 												ariaLabel={t("modMatrix.cellAria", {
 													source: sourceLabel(source),
