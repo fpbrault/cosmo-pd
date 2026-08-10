@@ -25,16 +25,16 @@ syn = { version = "2", features = [
 ] }
 quote = "1"
 proc-macro2 = "1"
-truce = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959", default-features = false }
-truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-clap = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-vst3 = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-standalone = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-gui = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-build = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-test = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
+truce = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0", default-features = false }
+truce-core = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-params = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-clap = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-vst3 = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-au = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-standalone = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-gui = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-build = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
+truce-test = { git = "https://github.com/fpbrault/truce.git", branch = "cosmo/truce-v6.3.0" }
 wry = "0.55.0"
 raw-window-handle = "0.6"
 
