@@ -76,6 +76,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Verify workspace lockfile layout
+        run: |
+          if [[ -e packages/cosmo-synth-engine/Cargo.lock ]]; then
+            echo "::error::Workspace member has a nested Cargo.lock; use the root Cargo.lock instead."
+            exit 1
+          fi
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       
