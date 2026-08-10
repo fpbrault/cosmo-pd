@@ -22,13 +22,13 @@ use cosmo_synth_engine::params::engine_param_default_v1;
 use cosmo_synth_engine::params::{
     Algo, AlgoControlValueV1, BaseWaveform, BitcrusherParams, ChorusParams, CompressorParams,
     CzAlgo, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
-    GrainDelayParams, JunoChorusParams, LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform,
-    LineParams, LineSelect, LoFiParams, ModDestination, ModEnvMode, ModEnvParams, ModEnvRetrigMode,
-    ModMatrix, ModMatrixLayout, ModMatrixPage, ModMode, ModRoute, ModSource, PhaseModParams,
-    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
-    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, SynthesisMethod, TremoloParams,
-    VibratoParams, WavefolderParams, WindowType, default_synth_params_v1, engine_param_ranges_v1,
-    engine_param_ui_meta_v1, midi_mapping_param_ranges_v1,
+    GrainDelayParams, JunoChorusParams, KarpunkParams, LfoParams, LfoRateMode, LfoSyncDivision,
+    LfoWaveform, LineParams, LineSelect, LoFiParams, ModDestination, ModEnvMode, ModEnvParams,
+    ModEnvRetrigMode, ModMatrix, ModMatrixLayout, ModMatrixPage, ModMode, ModRoute, ModSource,
+    PhaseModParams, PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams,
+    ReverbParams, RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, SynthesisMethod,
+    TremoloParams, VibratoParams, WavefolderParams, WindowType, default_synth_params_v1,
+    engine_param_ranges_v1, engine_param_ui_meta_v1, midi_mapping_param_ranges_v1,
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
@@ -84,6 +84,7 @@ fn main() {
     types.register_mut::<WindowType>();
     types.register_mut::<LineSelect>();
     types.register_mut::<SynthesisMethod>();
+    types.register_mut::<KarpunkParams>();
     types.register_mut::<ModMode>();
     types.register_mut::<PolyMode>();
     types.register_mut::<LfoWaveform>();

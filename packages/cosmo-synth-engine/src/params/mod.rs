@@ -41,7 +41,7 @@ pub use synth_params::{
     DEFAULT_VOICE_LIMIT, MAX_VOICE_LIMIT, MAX_VOICES, MIN_VOICE_LIMIT, ModEnvMode, ModEnvParams,
     ModEnvRetrigMode, NUM_OPERATORS, RandomParams, SynthParams, default_synth_params_v1,
 };
-pub use synthesis::SynthesisMethod;
+pub use synthesis::{KarpunkParams, SynthesisMethod};
 pub use ui_meta::{
     EngineEnumValueLabelV1, EngineParamRangeV1, EngineParamReadoutFormatV1, EngineParamUiMetaV1,
     engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
@@ -151,6 +151,52 @@ mod tests {
         assert_eq!(restored.line1.synthesis_method, SynthesisMethod::Pd);
         assert_eq!(restored.line2.synthesis_method, SynthesisMethod::Pd);
         assert_eq!(crate::preset_wire::SYNTH_SCHEMA_VERSION_V1, 1);
+    }
+
+    #[test]
+    fn legacy_primary_karpunk_migrates_to_engine_params() {
+        let mut value = serde_json::to_value(LineParams::default()).expect("serialize line");
+        let line = value.as_object_mut().expect("line object");
+        line.remove("synthesisMethod");
+        line.remove("karpunk");
+        line.insert("algo".into(), serde_json::json!("karpunk"));
+        line.insert(
+            "algoControlsA".into(),
+            serde_json::json!([
+                { "id": "karpunkDamp", "value": 0.2 },
+                { "id": "karpunkBright", "value": 0.3 },
+                { "id": "karpunkDecay", "value": 0.8 },
+                { "id": "karpunkExcite", "value": 0.4 }
+            ]),
+        );
+
+        let restored: LineParams = serde_json::from_value(value).expect("deserialize line");
+        assert_eq!(restored.synthesis_method, SynthesisMethod::Karpunk);
+        assert_eq!(restored.algo, Algo::Saw);
+        assert_eq!(restored.algo2, None);
+        assert_eq!(restored.karpunk.damping, 0.2);
+        assert_eq!(restored.karpunk.brightness, 0.3);
+        assert_eq!(restored.karpunk.decay, 0.8);
+        assert_eq!(restored.karpunk.excitation, 0.4);
+    }
+
+    #[test]
+    fn legacy_blended_karpunk_preserves_the_pd_algorithm() {
+        let mut value = serde_json::to_value(LineParams::default()).expect("serialize line");
+        let line = value.as_object_mut().expect("line object");
+        line.insert("synthesisMethod".into(), serde_json::json!("pd"));
+        line.remove("karpunk");
+        line.insert("algo".into(), serde_json::json!("karpunk"));
+        line.insert("algo2".into(), serde_json::json!("fold"));
+        line.insert("algoBlend".into(), serde_json::json!(0.6));
+
+        let restored: LineParams = serde_json::from_value(value).expect("deserialize line");
+        let serialized = serde_json::to_value(restored).expect("serialize migrated line");
+        assert_eq!(restored.synthesis_method, SynthesisMethod::Karpunk);
+        assert_eq!(restored.algo, Algo::Fold);
+        assert_eq!(restored.algo2, None);
+        assert_eq!(serialized["algo"], "fold");
+        assert_eq!(serialized["algo2"], serde_json::Value::Null);
     }
 
     #[test]

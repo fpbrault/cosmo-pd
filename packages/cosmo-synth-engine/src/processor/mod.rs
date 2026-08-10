@@ -365,6 +365,7 @@ impl CosmoProcessor {
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
         self.render_voice_limit = self.voice_limit;
+        self.reconcile_synthesis_methods();
         self.rebuild_compiled_params();
     }
 
@@ -528,7 +529,7 @@ mod tests {
     use crate::params::{
         Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,
         ModDestination, ModEnvMode, ModEnvRetrigMode, ModRoute, ModSource, PolyMode,
-        ShimmerVerbParams, StepEnvData, VibratoParams,
+        ShimmerVerbParams, StepEnvData, SynthesisMethod, VibratoParams,
     };
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
@@ -722,6 +723,43 @@ mod tests {
 
         assert!(out.iter().all(|sample| sample.is_finite()));
         assert!(out.iter().any(|sample| sample.abs() > 1e-6));
+    }
+
+    #[test]
+    fn karpunk_processing_is_allocation_free_finite_and_nonzero() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.params_mut().line_select = LineSelect::L1PlusL2Prime;
+        proc.params_mut().line1.synthesis_method = SynthesisMethod::Karpunk;
+        proc.params_mut().line2.synthesis_method = SynthesisMethod::Karpunk;
+        proc.params_mut().line1.karpunk.excitation = 0.6;
+        proc.params_mut().line2.karpunk.excitation = 0.6;
+        proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+
+        let mut out = [0.0_f32; 256];
+        proc.process(&mut out);
+
+        assert!(out.iter().all(|sample| sample.is_finite()));
+        assert!(out.iter().any(|sample| sample.abs() > 1e-6));
+    }
+
+    #[test]
+    fn held_note_switches_to_karpunk_at_the_next_process_boundary() {
+        let mut proc = CosmoProcessor::new(48_000.0);
+        proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
+        let mut pd = [0.0_f32; 128];
+        proc.process(&mut pd);
+
+        proc.params_mut().line1.synthesis_method = SynthesisMethod::Karpunk;
+        proc.params_mut().line1.karpunk.excitation = 0.5;
+        let mut karpunk = [0.0_f32; 256];
+        proc.process(&mut karpunk);
+
+        assert_eq!(
+            proc.voices[0].line1_synthesis.method(),
+            SynthesisMethod::Karpunk
+        );
+        assert!(karpunk.iter().all(|sample| sample.is_finite()));
+        assert!(karpunk.iter().any(|sample| sample.abs() > 1e-6));
     }
 
     #[test]

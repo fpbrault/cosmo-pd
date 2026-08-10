@@ -19,6 +19,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -189,6 +195,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "pinch",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -559,6 +571,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cheby",
 					algoBlend: 0.0,
@@ -725,6 +743,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -1064,6 +1088,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "pinch",
 					algo2: "clip",
 					algoBlend: 0.0,
@@ -1234,6 +1264,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -1524,6 +1560,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -1677,6 +1719,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -1981,6 +2029,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2117,6 +2171,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "twist",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -2397,6 +2457,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2550,6 +2616,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2823,6 +2895,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2976,6 +3054,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -3250,6 +3334,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "fold",
 					algo2: "bend",
 					algoBlend: 0.0,
@@ -3416,6 +3506,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -3725,6 +3821,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -3878,6 +3980,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -4152,6 +4260,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -4322,6 +4436,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -4579,6 +4699,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "sync",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -4732,6 +4858,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5000,6 +5132,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5170,6 +5308,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5444,6 +5588,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5614,6 +5764,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5888,6 +6044,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -6058,6 +6220,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -6315,6 +6483,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -6485,6 +6659,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -6742,6 +6922,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -6912,6 +7098,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -7169,6 +7361,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -7339,6 +7537,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -7613,6 +7817,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -7766,6 +7976,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -8023,6 +8239,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -8193,6 +8415,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -8467,6 +8695,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -8637,6 +8871,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -8894,6 +9134,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9047,6 +9293,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9304,6 +9556,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -9474,6 +9732,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9731,6 +9995,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9884,6 +10154,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -10141,6 +10417,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -10294,6 +10576,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -10568,6 +10856,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -10738,6 +11032,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11012,6 +11312,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11182,6 +11488,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11456,6 +11768,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11626,6 +11944,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11900,6 +12224,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -12070,6 +12400,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -12344,6 +12680,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -12514,6 +12856,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -12771,6 +13119,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -12924,6 +13278,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -13198,6 +13558,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -13351,6 +13717,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -13608,6 +13980,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -13778,6 +14156,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -14035,6 +14419,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -14205,6 +14595,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -14479,6 +14875,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -14649,6 +15051,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -14906,6 +15314,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -15059,6 +15473,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -15333,6 +15753,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -15503,6 +15929,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -15777,6 +16209,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -15930,6 +16368,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -16187,6 +16631,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -16357,6 +16807,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -16631,6 +17087,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -16801,6 +17263,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -17058,6 +17526,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -17228,6 +17702,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -17485,6 +17965,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -17655,6 +18141,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -17912,6 +18404,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -18065,6 +18563,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -18339,6 +18843,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -18492,6 +19002,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -18749,6 +19265,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -18919,6 +19441,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -19193,6 +19721,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -19346,6 +19880,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -19603,6 +20143,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -19773,6 +20319,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -20047,6 +20599,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "twist",
 					algo2: "bend",
 					algoBlend: 0.48,
@@ -20213,6 +20771,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "fold",
 					algo2: "skew",
 					algoBlend: 0.55,
@@ -20573,6 +21137,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -20743,6 +21313,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21000,6 +21576,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21153,6 +21735,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21410,6 +21998,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21563,6 +22157,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21820,6 +22420,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21973,6 +22579,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -22247,6 +22859,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22400,6 +23018,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22657,6 +23281,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22810,6 +23440,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -23067,6 +23703,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -23220,6 +23862,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -23477,6 +24125,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "pinch",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -23647,6 +24301,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "pinch",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -23966,6 +24626,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -24119,6 +24785,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -24393,6 +25065,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -24546,6 +25224,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -24803,6 +25487,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -24973,6 +25663,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -25247,6 +25943,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -25417,6 +26119,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -25674,6 +26382,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -25827,6 +26541,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -26084,6 +26804,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -26254,6 +26980,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -26528,6 +27260,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -26681,6 +27419,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -26955,6 +27699,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -27108,6 +27858,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -27365,6 +28121,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -27535,6 +28297,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -27792,6 +28560,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -27962,6 +28736,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -28236,6 +29016,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -28406,6 +29192,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -28663,6 +29455,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -28816,6 +29614,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -29090,6 +29894,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -29243,6 +30053,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -29517,6 +30333,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -29687,6 +30509,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -29944,6 +30772,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30114,6 +30948,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30388,6 +31228,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30558,6 +31404,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -30815,6 +31667,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30985,6 +31843,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31259,6 +32123,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31429,6 +32299,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31703,6 +32579,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31873,6 +32755,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32130,6 +33018,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32283,6 +33177,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32540,6 +33440,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32693,6 +33599,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32950,6 +33862,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33103,6 +34021,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33360,6 +34284,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33513,6 +34443,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33770,6 +34706,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33923,6 +34865,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -34180,6 +35128,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -34350,6 +35304,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -34624,6 +35584,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -34794,6 +35760,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35051,6 +36023,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35204,6 +36182,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -35478,6 +36462,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35631,6 +36621,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35888,6 +36884,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -36058,6 +37060,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -36315,6 +37323,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -36485,6 +37499,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -36759,6 +37779,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -36912,6 +37938,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -37169,6 +38201,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -37322,6 +38360,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -37579,6 +38623,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -37749,6 +38799,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -38006,6 +39062,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -38176,6 +39238,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -38450,6 +39518,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -38603,6 +39677,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -38860,6 +39940,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -39030,6 +40116,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -39304,6 +40396,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -39457,6 +40555,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -39714,6 +40818,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -39884,6 +40994,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40158,6 +41274,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40328,6 +41450,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40602,6 +41730,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40772,6 +41906,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41046,6 +42186,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41216,6 +42362,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41490,6 +42642,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -41643,6 +42801,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41917,6 +43081,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42087,6 +43257,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42361,6 +43537,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42531,6 +43713,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42805,6 +43993,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -42958,6 +44152,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43232,6 +44432,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43402,6 +44608,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43676,6 +44888,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -43829,6 +45047,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44103,6 +45327,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -44256,6 +45486,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44530,6 +45766,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44700,6 +45942,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44974,6 +46222,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -45144,6 +46398,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -45418,6 +46678,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -45571,6 +46837,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -45828,6 +47100,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -45981,6 +47259,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46269,6 +47553,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46422,6 +47712,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46679,6 +47975,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -46849,6 +48151,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -47106,6 +48414,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -47259,6 +48573,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -47516,6 +48836,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "fold",
 					algo2: "clip",
 					algoBlend: 0.0,
@@ -47686,6 +49012,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -48003,6 +49335,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -48173,6 +49511,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -48430,6 +49774,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -48600,6 +49950,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -48857,6 +50213,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "fold",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49010,6 +50372,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49281,6 +50649,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49434,6 +50808,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49691,6 +51071,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49844,6 +51230,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -50101,6 +51493,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -50271,6 +51669,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -50528,6 +51932,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "bend",
 					algo2: null,
 					algoBlend: 0.0,
@@ -50677,6 +52087,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "pinch",
 					algo2: "fold",
 					algoBlend: 0.5,
@@ -50982,6 +52398,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "bend",
 					algo2: null,
 					algoBlend: 0.0,
@@ -51131,6 +52553,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -51440,6 +52868,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "skew",
 					algoBlend: 0.0,
@@ -51610,6 +53044,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -51897,6 +53337,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52067,6 +53513,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52354,6 +53806,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52524,6 +53982,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52824,6 +54288,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52994,6 +54464,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -53268,6 +54744,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				octave: 0.0,
 				line1: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -53438,6 +54920,12 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				},
 				line2: {
 					synthesisMethod: "pd",
+					karpunk: {
+						damping: 0.5,
+						brightness: 0.5,
+						decay: 0.5,
+						excitation: 0.0,
+					},
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,

@@ -1,5 +1,6 @@
 use crate::params::{LineParams, SynthesisMethod};
 
+use super::karpunk::{KarpunkEngine, KarpunkEngineParams, KarpunkRenderInput};
 use super::pd::{PdEngine, PdEngineParams, PdRenderInput};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,8 +25,6 @@ pub(crate) trait LineEngine {
     type Params<'a>: Copy;
     type RenderInput<'a>;
 
-    fn method(&self) -> SynthesisMethod;
-    fn role(&self) -> LineRole;
     fn reset(&mut self, sample_rate: f32, voice_identity: u64);
     fn note_on(&mut self, note: u8, velocity: f32, params: Self::Params<'_>);
     fn note_off(&mut self, params: Self::Params<'_>);
@@ -45,27 +44,23 @@ pub(crate) trait LineEngine {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum LineSynthesisRuntime {
-    Pd(PdEngine),
+pub(crate) struct LineSynthesisRuntime {
+    method: SynthesisMethod,
+    pd: PdEngine,
+    karpunk: KarpunkEngine,
 }
 
 impl LineSynthesisRuntime {
     pub fn new(method: SynthesisMethod, role: LineRole) -> Self {
-        match method {
-            SynthesisMethod::Pd => Self::Pd(PdEngine::new(role)),
+        Self {
+            method,
+            pd: PdEngine::new(role),
+            karpunk: KarpunkEngine::new(role),
         }
     }
 
     pub fn method(&self) -> SynthesisMethod {
-        match self {
-            Self::Pd(engine) => engine.method(),
-        }
-    }
-
-    pub fn role(&self) -> LineRole {
-        match self {
-            Self::Pd(engine) => engine.role(),
-        }
+        self.method
     }
 
     pub fn reconcile_method(
@@ -80,8 +75,7 @@ impl LineSynthesisRuntime {
             return;
         }
 
-        let role = self.role();
-        *self = Self::new(method, role);
+        self.method = method;
         self.reset(sample_rate, voice_identity);
         if let Some((note, velocity)) = active_note {
             self.note_on(params, note, velocity);
@@ -89,20 +83,28 @@ impl LineSynthesisRuntime {
     }
 
     pub fn reset(&mut self, sample_rate: f32, voice_identity: u64) {
-        match self {
-            Self::Pd(engine) => engine.reset(sample_rate, voice_identity),
+        match self.method {
+            SynthesisMethod::Pd => self.pd.reset(sample_rate, voice_identity),
+            SynthesisMethod::Karpunk => self.karpunk.reset(sample_rate, voice_identity),
         }
     }
 
     pub fn note_on(&mut self, line: &LineParams, note: u8, velocity: f32) {
-        match self {
-            Self::Pd(engine) => engine.note_on(note, velocity, PdEngineParams::new(line)),
+        match self.method {
+            SynthesisMethod::Pd => {
+                self.pd.note_on(note, velocity, PdEngineParams::new(line));
+            }
+            SynthesisMethod::Karpunk => {
+                self.karpunk
+                    .note_on(note, velocity, KarpunkEngineParams::new(line));
+            }
         }
     }
 
     pub fn note_off(&mut self, line: &LineParams) {
-        match self {
-            Self::Pd(engine) => engine.note_off(PdEngineParams::new(line)),
+        match self.method {
+            SynthesisMethod::Pd => self.pd.note_off(PdEngineParams::new(line)),
+            SynthesisMethod::Karpunk => self.karpunk.note_off(KarpunkEngineParams::new(line)),
         }
     }
 
@@ -113,8 +115,19 @@ impl LineSynthesisRuntime {
         context: LineEngineContext,
         input: PdRenderInput<'_>,
     ) -> LineEngineOutput {
-        match self {
-            Self::Pd(engine) => engine.render_primary(context, &input, PdEngineParams::new(line)),
+        match self.method {
+            SynthesisMethod::Pd => {
+                self.pd
+                    .render_primary(context, &input, PdEngineParams::new(line))
+            }
+            SynthesisMethod::Karpunk => self.karpunk.render_primary(
+                context,
+                &KarpunkRenderInput {
+                    dcw_envelope: input.dcw_envelope,
+                    dca_envelope: input.dca_envelope,
+                },
+                KarpunkEngineParams::new(line),
+            ),
         }
     }
 
@@ -126,10 +139,20 @@ impl LineSynthesisRuntime {
         input: PdRenderInput<'_>,
         primary: LineEngineOutput,
     ) -> LineEngineOutput {
-        match self {
-            Self::Pd(engine) => {
-                engine.render_prime(context, &input, PdEngineParams::new(line), primary)
+        match self.method {
+            SynthesisMethod::Pd => {
+                self.pd
+                    .render_prime(context, &input, PdEngineParams::new(line), primary)
             }
+            SynthesisMethod::Karpunk => self.karpunk.render_prime(
+                context,
+                &KarpunkRenderInput {
+                    dcw_envelope: input.dcw_envelope,
+                    dca_envelope: input.dca_envelope,
+                },
+                KarpunkEngineParams::new(line),
+                primary,
+            ),
         }
     }
 }

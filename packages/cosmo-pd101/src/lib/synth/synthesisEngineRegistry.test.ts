@@ -6,15 +6,23 @@ import {
 import { SYNTHESIS_ENGINE_UI_DEFINITIONS } from "./synthesisEngineRegistry";
 
 describe("synthesis engine registry", () => {
-	it("exposes the stable PD method and matches generated defaults", () => {
+	it("exposes the stable engine methods and matches generated defaults", () => {
 		expect(SYNTHESIS_ENGINE_DEFINITIONS_V1).toEqual([
 			expect.objectContaining({
 				method: "pd",
+			}),
+			expect.objectContaining({
+				method: "karpunk",
 			}),
 		]);
 		expect(SYNTHESIS_ENGINE_UI_DEFINITIONS.pd).toEqual({
 			name: "PD / Warp",
 			primaryPageLabel: "WAVE FORM",
+			secondaryPageLabel: "ENV",
+		});
+		expect(SYNTHESIS_ENGINE_UI_DEFINITIONS.karpunk).toEqual({
+			name: "Karpunk",
+			primaryPageLabel: "STRING",
 			secondaryPageLabel: "ENV",
 		});
 		expect(DEFAULT_SYNTH_PARAMS_V1.line1.synthesisMethod).toBe("pd");

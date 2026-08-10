@@ -12,6 +12,7 @@ import type {
 	BaseWaveform,
 	FxSlotConfig,
 	FxSlotType,
+	KarpunkParams,
 	LfoRateMode,
 	LfoSyncDivision,
 	LfoWaveform,
@@ -56,6 +57,70 @@ function resolveAlgoDefaultBaseWaveform(algo: Algo): BaseWaveform {
 	const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 	const definition = definitions.find((entry) => entry.id === algo);
 	return definition?.defaultBaseWaveform ?? "sine";
+}
+
+const DEFAULT_KARPUNK_PARAMS: KarpunkParams = {
+	damping: 0.5,
+	brightness: 0.5,
+	decay: 0.5,
+	excitation: 0,
+};
+
+function legacyKarpunkControl(
+	controls: AlgoControlValueV1[] | undefined,
+	id: string,
+	fallback: number,
+): number {
+	return controls?.find((control) => control.id === id)?.value ?? fallback;
+}
+
+function normalizeLegacyKarpunkLine(
+	line: SynthPresetV1["params"]["line1"],
+): SynthPresetV1["params"]["line1"] {
+	const primaryKarpunk = line.algo === "karpunk";
+	const secondaryKarpunk = line.algo2 === "karpunk";
+	if (!primaryKarpunk && !secondaryKarpunk) {
+		return {
+			...line,
+			synthesisMethod: line.synthesisMethod ?? "pd",
+			karpunk: line.karpunk ?? DEFAULT_KARPUNK_PARAMS,
+		};
+	}
+
+	const controls = primaryKarpunk ? line.algoControlsA : line.algoControlsB;
+	const preservedAlgo =
+		primaryKarpunk && line.algo2 && line.algo2 !== "karpunk"
+			? line.algo2
+			: primaryKarpunk
+				? DEFAULT_ALGO_REF
+				: line.algo;
+
+	return {
+		...line,
+		synthesisMethod: "karpunk",
+		karpunk:
+			line.karpunk ??
+			({
+				damping: legacyKarpunkControl(controls, "karpunkDamp", 0.5),
+				brightness: legacyKarpunkControl(controls, "karpunkBright", 0.5),
+				decay: legacyKarpunkControl(controls, "karpunkDecay", 0.5),
+				excitation: legacyKarpunkControl(controls, "karpunkExcite", 0),
+			} satisfies KarpunkParams),
+		algo: preservedAlgo,
+		algo2: null,
+		algoBlend: 0,
+		baseWaveformA:
+			primaryKarpunk && line.algo2 && line.algo2 !== "karpunk"
+				? line.baseWaveformB
+				: line.baseWaveformA,
+		algoControlsA:
+			primaryKarpunk && line.algo2 && line.algo2 !== "karpunk"
+				? line.algoControlsB
+				: primaryKarpunk
+					? buildDefaultAlgoControls(DEFAULT_ALGO_REF)
+					: line.algoControlsA,
+		algoControlsB: [],
+	};
 }
 
 function normalizeAlgoControls(
@@ -195,6 +260,7 @@ type SynthState = {
 
 	line1Level: number;
 	line1SynthesisMethod: SynthesisMethod;
+	line1Karpunk: KarpunkParams;
 	/** Shared OCT knob — sets octave for both lines. */
 	lineOctave: number;
 	line2DetuneOctave: number;
@@ -212,6 +278,7 @@ type SynthState = {
 
 	line2Level: number;
 	line2SynthesisMethod: SynthesisMethod;
+	line2Karpunk: KarpunkParams;
 	line2DcwKeyFollow: number;
 	line2DcaKeyFollow: number;
 	line2DcoEnv: StepEnvData;
@@ -296,6 +363,8 @@ type SynthActions = {
 	setCzDacEnabled: (v: boolean) => void;
 
 	setLine1Level: (v: number) => void;
+	setLine1SynthesisMethod: (v: SynthesisMethod) => void;
+	setLine1Karpunk: (v: KarpunkParams) => void;
 	setLineOctave: (v: number) => void;
 	setLine2DetuneOctave: (v: number) => void;
 	setLine2DetuneNote: (v: number) => void;
@@ -311,6 +380,8 @@ type SynthActions = {
 	setLine1BaseWaveformB: (v: BaseWaveform) => void;
 
 	setLine2Level: (v: number) => void;
+	setLine2SynthesisMethod: (v: SynthesisMethod) => void;
+	setLine2Karpunk: (v: KarpunkParams) => void;
 	setLine2DcwKeyFollow: (v: number) => void;
 	setLine2DcaKeyFollow: (v: number) => void;
 	setLine2DcoEnv: (v: StepEnvData) => void;
@@ -421,6 +492,7 @@ const DEFAULT_STATE: SynthState = {
 
 	line1Level: requireEngineParamDefault("line1Level"),
 	line1SynthesisMethod: "pd",
+	line1Karpunk: DEFAULT_KARPUNK_PARAMS,
 	lineOctave: 0,
 	line2DetuneOctave: 0,
 	line2DetuneNote: 0,
@@ -437,6 +509,7 @@ const DEFAULT_STATE: SynthState = {
 
 	line2Level: requireEngineParamDefault("line2Level"),
 	line2SynthesisMethod: "pd",
+	line2Karpunk: DEFAULT_KARPUNK_PARAMS,
 	line2DcwKeyFollow: 0,
 	line2DcaKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
@@ -538,6 +611,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setCzDacEnabled: (v) => setEditedState({ czDacEnabled: v }),
 
 		setLine1Level: (v) => setEditedState({ line1Level: v }),
+		setLine1SynthesisMethod: (v) => setEditedState({ line1SynthesisMethod: v }),
+		setLine1Karpunk: (v) => setEditedState({ line1Karpunk: v }),
 		setLineOctave: (v) =>
 			setEditedState({ lineOctave: toIntegerInRange(v, -2, 2) }),
 		setLine2DetuneOctave: (v) =>
@@ -561,6 +636,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setLine1BaseWaveformB: (v) => setEditedState({ line1BaseWaveformB: v }),
 
 		setLine2Level: (v) => setEditedState({ line2Level: v }),
+		setLine2SynthesisMethod: (v) => setEditedState({ line2SynthesisMethod: v }),
+		setLine2Karpunk: (v) => setEditedState({ line2Karpunk: v }),
 		setLine2DcwKeyFollow: (v) =>
 			setEditedState({ line2DcwKeyFollow: toIntegerInRange(v, 0, 9) }),
 		setLine2DcaKeyFollow: (v) =>
@@ -734,19 +811,25 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		// --- gatherState ---
 		gatherState(): SynthPresetV1 {
 			const s = get();
+			const line1PrimaryAlgo =
+				s.warpAAlgo === "karpunk" ? DEFAULT_ALGO_REF : s.warpAAlgo;
+			const line1SecondaryAlgo = s.algo2A === "karpunk" ? null : s.algo2A;
+			const line2PrimaryAlgo =
+				s.warpBAlgo === "karpunk" ? DEFAULT_ALGO_REF : s.warpBAlgo;
+			const line2SecondaryAlgo = s.algo2B === "karpunk" ? null : s.algo2B;
 			const line1NormalizedAlgoControlsA = normalizeAlgoControls(
-				s.warpAAlgo,
+				line1PrimaryAlgo,
 				s.line1AlgoControlsA,
 			);
-			const line1NormalizedAlgoControlsB = s.algo2A
-				? normalizeAlgoControls(s.algo2A, s.line1AlgoControlsB)
+			const line1NormalizedAlgoControlsB = line1SecondaryAlgo
+				? normalizeAlgoControls(line1SecondaryAlgo, s.line1AlgoControlsB)
 				: [];
 			const line2NormalizedAlgoControlsA = normalizeAlgoControls(
-				s.warpBAlgo,
+				line2PrimaryAlgo,
 				s.line2AlgoControlsA,
 			);
-			const line2NormalizedAlgoControlsB = s.algo2B
-				? normalizeAlgoControls(s.algo2B, s.line2AlgoControlsB)
+			const line2NormalizedAlgoControlsB = line2SecondaryAlgo
+				? normalizeAlgoControls(line2SecondaryAlgo, s.line2AlgoControlsB)
 				: [];
 			const line2DetuneEnabled = s.lineSelect !== "L1" && s.lineSelect !== "L2";
 
@@ -756,8 +839,9 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				octave: s.octave,
 				line1: {
 					synthesisMethod: s.line1SynthesisMethod,
-					algo: s.warpAAlgo,
-					algo2: s.algo2A,
+					karpunk: s.line1Karpunk,
+					algo: line1PrimaryAlgo,
+					algo2: line1SecondaryAlgo,
 					algoBlend: s.algoBlendA,
 					baseWaveformA: s.line1BaseWaveformA,
 					baseWaveformB: s.line1BaseWaveformB,
@@ -778,8 +862,9 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				},
 				line2: {
 					synthesisMethod: s.line2SynthesisMethod,
-					algo: s.warpBAlgo,
-					algo2: s.algo2B,
+					karpunk: s.line2Karpunk,
+					algo: line2PrimaryAlgo,
+					algo2: line2SecondaryAlgo,
 					algoBlend: s.algoBlendB,
 					baseWaveformA: s.line2BaseWaveformA,
 					baseWaveformB: s.line2BaseWaveformB,
@@ -989,7 +1074,11 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 			) {
 				return;
 			}
-			const p = preset.params;
+			const p = {
+				...preset.params,
+				line1: normalizeLegacyKarpunkLine(preset.params.line1),
+				line2: normalizeLegacyKarpunkLine(preset.params.line2),
+			};
 			const currentCzDacEnabled = get().czDacEnabled;
 			const safe = (v: unknown, fallback: number) =>
 				typeof v === "number" && !Number.isNaN(v) ? v : fallback;
@@ -1016,6 +1105,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					(p.line1?.synthesisMethod as SynthesisMethod | undefined) ?? "pd",
 				line2SynthesisMethod:
 					(p.line2?.synthesisMethod as SynthesisMethod | undefined) ?? "pd",
+				line1Karpunk: p.line1?.karpunk ?? DEFAULT_KARPUNK_PARAMS,
+				line2Karpunk: p.line2?.karpunk ?? DEFAULT_KARPUNK_PARAMS,
 				warpAAmount: safe(p.line1?.dcwBase, 0),
 				warpBAmount: safe(p.line2?.dcwBase, 0),
 				warpAAlgo: line1PrimaryAlgo,

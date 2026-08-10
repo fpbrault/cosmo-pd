@@ -373,6 +373,77 @@ describe("useSynthStore", () => {
 		expect(state.gatherState().params.line2.synthesisMethod).toBe("pd");
 	});
 
+	it("roundtrips independent Karpunk engines and controls", () => {
+		const {
+			setLine1SynthesisMethod,
+			setLine2SynthesisMethod,
+			setLine1Karpunk,
+			setLine2Karpunk,
+			gatherState,
+			applyPreset,
+		} = useSynthStore.getState();
+
+		act(() => {
+			setLine1SynthesisMethod("karpunk");
+			setLine2SynthesisMethod("pd");
+			setLine1Karpunk({
+				damping: 0.2,
+				brightness: 0.3,
+				decay: 0.8,
+				excitation: 0.4,
+			});
+			setLine2Karpunk({
+				damping: 0.7,
+				brightness: 0.6,
+				decay: 0.5,
+				excitation: 0.1,
+			});
+		});
+
+		const preset = gatherState();
+		act(() => applyPreset(preset));
+
+		const state = useSynthStore.getState();
+		expect(state.line1SynthesisMethod).toBe("karpunk");
+		expect(state.line2SynthesisMethod).toBe("pd");
+		expect(state.line1Karpunk).toEqual({
+			damping: 0.2,
+			brightness: 0.3,
+			decay: 0.8,
+			excitation: 0.4,
+		});
+		expect(state.line2Karpunk.decay).toBe(0.5);
+	});
+
+	it("migrates legacy Karpunk algorithms out of the PD catalog", () => {
+		const preset = useSynthStore.getState().gatherState();
+		delete (preset.params.line1 as unknown as Record<string, unknown>)
+			.synthesisMethod;
+		delete (preset.params.line1 as unknown as Record<string, unknown>).karpunk;
+		preset.params.line1.algo = "karpunk";
+		preset.params.line1.algo2 = "fold";
+		preset.params.line1.algoControlsA = [
+			{ id: "karpunkDamp", value: 0.25 },
+			{ id: "karpunkBright", value: 0.75 },
+			{ id: "karpunkDecay", value: 0.9 },
+			{ id: "karpunkExcite", value: 0.35 },
+		];
+
+		act(() => useSynthStore.getState().applyPreset(preset));
+
+		const state = useSynthStore.getState();
+		expect(state.line1SynthesisMethod).toBe("karpunk");
+		expect(state.warpAAlgo).toBe("fold");
+		expect(state.algo2A).toBeNull();
+		expect(state.line1Karpunk).toEqual({
+			damping: 0.25,
+			brightness: 0.75,
+			decay: 0.9,
+			excitation: 0.35,
+		});
+		expect(state.gatherState().params.line1.algo).not.toBe("karpunk");
+	});
+
 	it("handles invalid presets gracefully in applyPreset", () => {
 		const { applyPreset } = useSynthStore.getState();
 		const prevState = { ...useSynthStore.getState() };

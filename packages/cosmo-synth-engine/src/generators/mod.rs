@@ -177,42 +177,8 @@ impl LineRenderConfig {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AlgoRuntimeState {
-    karpunk: karpunk::KarpunkState,
-}
-
-impl AlgoRuntimeState {
-    pub fn new(prng_seed: u32) -> Self {
-        Self {
-            karpunk: karpunk::KarpunkState::new(prng_seed),
-        }
-    }
-
-    pub fn note_on(&mut self, note: u8) {
-        self.karpunk.reseed_for_note(note)
-    }
-
-    pub fn render(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
-            karpunk::render_line(&mut self.karpunk, config)
-        } else {
-            render_line_stateless(config)
-        }
-    }
-}
-
-impl Default for AlgoRuntimeState {
-    fn default() -> Self {
-        Self::new(karpunk::DEFAULT_PRNG_SEED)
-    }
-}
-
 #[inline(always)]
-pub(crate) fn render_sample_from_config(
-    config: &LineRenderConfig,
-    karpunk_raw_sample: Option<f32>,
-) -> f32 {
+pub(crate) fn render_sample_from_config(config: &LineRenderConfig) -> f32 {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
         if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
             render_algo_sample(
@@ -222,7 +188,6 @@ pub(crate) fn render_sample_from_config(
                 config.primary_base_waveform,
                 &config.primary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.primary_window_gain
         } else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
@@ -233,7 +198,6 @@ pub(crate) fn render_sample_from_config(
                 config.secondary_base_waveform,
                 &config.secondary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.secondary_window_gain
         } else {
@@ -246,7 +210,6 @@ pub(crate) fn render_sample_from_config(
                 config.primary_base_waveform,
                 &config.primary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.primary_window_gain;
             let secondary = render_algo_sample(
@@ -256,10 +219,9 @@ pub(crate) fn render_sample_from_config(
                 config.secondary_base_waveform,
                 &config.secondary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.secondary_window_gain;
-            blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+            blend_line_samples(primary, secondary, config.blend)
         }
     } else {
         render_algo_sample(
@@ -269,16 +231,10 @@ pub(crate) fn render_sample_from_config(
             config.primary_base_waveform,
             &config.primary_control_values,
             config.algo_param_mods,
-            karpunk_raw_sample,
             config.pm_post_mod,
         ) * config.primary_window_gain
     };
     sample * config.final_dca * PER_LINE_HEADROOM
-}
-
-#[inline(always)]
-fn render_line_stateless(config: LineRenderConfig) -> (f32, Option<f32>) {
-    (render_sample_from_config(&config, None), None)
 }
 
 #[inline(always)]
@@ -304,17 +260,8 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
 }
 
 #[inline(always)]
-pub(crate) fn blend_line_samples(
-    primary_algo: Algo,
-    primary: f32,
-    secondary: f32,
-    blend: f32,
-) -> f32 {
-    if primary_algo == Algo::Karpunk {
-        primary + (primary * secondary * 2.0 - primary) * blend
-    } else {
-        primary + (secondary - primary) * blend
-    }
+pub(crate) fn blend_line_samples(primary: f32, secondary: f32, blend: f32) -> f32 {
+    primary + (secondary - primary) * blend
 }
 
 #[inline]
@@ -442,9 +389,6 @@ pub fn warp_phase(
     }
 }
 
-/// Unified algorithm sample renderer used by voice and utility paths.
-///
-/// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
 #[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
     algo: Algo,
@@ -453,12 +397,8 @@ pub fn render_algo_sample(
     base_waveform: BaseWaveform,
     control_values: &[f32; 8],
     algo_param_mods: [f32; 8],
-    runtime_sample: Option<f32>,
     pm_post_mod: f32,
 ) -> f32 {
-    if algo == Algo::Karpunk {
-        return runtime_sample.unwrap_or(0.0);
-    }
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
 }
@@ -466,7 +406,7 @@ pub fn render_algo_sample(
 #[cfg(test)]
 mod tests {
     use super::LineRenderConfig;
-    use super::render_line_stateless;
+    use super::render_sample_from_config;
     use crate::params::{Algo, BaseWaveform};
 
     #[test]
@@ -495,8 +435,8 @@ mod tests {
             ..base
         };
 
-        let (base_sample, _) = render_line_stateless(base);
-        let (modded_sample, _) = render_line_stateless(modded);
+        let base_sample = render_sample_from_config(&base);
+        let modded_sample = render_sample_from_config(&modded);
         assert_ne!(base_sample, modded_sample);
     }
 }

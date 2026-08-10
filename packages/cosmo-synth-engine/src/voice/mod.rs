@@ -149,8 +149,10 @@ impl Default for Voice {
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::ModSources;
-    use super::{Voice, render::*};
-    use crate::params::{LineParams, LineSelect, ModMatrixCache, ModMode, SynthParams};
+    use super::{LineRole, LineSynthesisRuntime, Voice, render::*};
+    use crate::params::{
+        LineParams, LineSelect, ModMatrixCache, ModMode, SynthParams, SynthesisMethod,
+    };
     use crate::processor::utils;
     use crate::render_cache::CompiledSynthParams;
 
@@ -163,6 +165,18 @@ mod tests {
         voice.env_note = note;
         voice.is_silent = false;
         voice.velocity = 1.0;
+        voice.line1_synthesis =
+            LineSynthesisRuntime::new(params.line1.synthesis_method, LineRole::Line1);
+        voice.line2_synthesis =
+            LineSynthesisRuntime::new(params.line2.synthesis_method, LineRole::Line2);
+        voice.line1_synthesis.reset(48_000.0, 0);
+        voice.line2_synthesis.reset(48_000.0, 1);
+        voice
+            .line1_synthesis
+            .note_on(&params.line1, note, voice.velocity);
+        voice
+            .line2_synthesis
+            .note_on(&params.line2, note, voice.velocity);
 
         let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
         let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -498,5 +512,47 @@ mod tests {
         assert!(ring_samples.iter().all(|sample| sample.is_finite()));
         assert!(sum_abs(&ring_samples) > 1e-4);
         assert_ne!(normal_samples, ring_samples);
+    }
+
+    #[test]
+    fn karpunk_supports_both_prime_modes() {
+        let mut line1_prime = SynthParams::default();
+        line1_prime.line_select = LineSelect::L1PlusL1Prime;
+        line1_prime.line1.synthesis_method = SynthesisMethod::Karpunk;
+        line1_prime.line1.karpunk.excitation = 0.4;
+
+        let mut line2_prime = line1_prime.clone();
+        line2_prime.line_select = LineSelect::L1PlusL2Prime;
+        line2_prime.line2.synthesis_method = SynthesisMethod::Karpunk;
+        line2_prime.line2.karpunk.excitation = 0.4;
+
+        let first = render_sequence(line1_prime, 60, 128);
+        let second = render_sequence(line2_prime, 60, 128);
+        assert!(sum_abs(&first) > 1e-4);
+        assert!(sum_abs(&second) > 1e-4);
+        assert_ne!(first, second);
+    }
+
+    #[test]
+    fn heterogeneous_pd_and_karpunk_lines_support_ring_and_noise() {
+        let mut normal = SynthParams::default();
+        normal.line_select = LineSelect::L1PlusL2Prime;
+        normal.line1.algo = crate::params::Algo::Saw;
+        normal.line2.synthesis_method = SynthesisMethod::Karpunk;
+        normal.line2.karpunk.excitation = 0.5;
+
+        let mut ring = normal.clone();
+        ring.mod_mode = ModMode::Ring;
+        let mut noise = normal.clone();
+        noise.mod_mode = ModMode::Noise;
+
+        let normal_samples = render_sequence(normal, 60, 128);
+        let ring_samples = render_sequence(ring, 60, 128);
+        let noise_samples = render_sequence(noise, 60, 128);
+        assert!(sum_abs(&normal_samples) > 1e-4);
+        assert!(sum_abs(&ring_samples) > 1e-4);
+        assert!(sum_abs(&noise_samples) > 1e-4);
+        assert_ne!(normal_samples, ring_samples);
+        assert_ne!(normal_samples, noise_samples);
     }
 }

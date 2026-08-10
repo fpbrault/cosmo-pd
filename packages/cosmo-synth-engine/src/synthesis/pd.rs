@@ -1,5 +1,5 @@
-use crate::generators::{self, AlgoRuntimeState, LineRenderConfig};
-use crate::params::{LineParams, SynthesisMethod};
+use crate::generators::{self, LineRenderConfig};
+use crate::params::LineParams;
 use crate::render_cache::CompiledLinePlan;
 
 use super::engine::{LineEngine, LineEngineContext, LineEngineOutput, LineRole};
@@ -28,33 +28,11 @@ pub(crate) struct PdRenderInput<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct PdEngine {
-    role: LineRole,
-    state: AlgoRuntimeState,
-}
+pub(crate) struct PdEngine;
 
 impl PdEngine {
-    pub fn new(role: LineRole) -> Self {
-        Self {
-            role,
-            state: AlgoRuntimeState::new(Self::seed(role)),
-        }
-    }
-
-    fn seed(role: LineRole) -> u32 {
-        match role {
-            LineRole::Line1 => generators::karpunk::DEFAULT_PRNG_SEED,
-            LineRole::Line2 => {
-                generators::karpunk::DEFAULT_PRNG_SEED ^ generators::karpunk::SECONDARY_PRNG_SALT
-            }
-        }
-    }
-
-    fn note(role: LineRole, note: u8) -> u8 {
-        match role {
-            LineRole::Line1 => note,
-            LineRole::Line2 => note.wrapping_add(1),
-        }
+    pub fn new(_role: LineRole) -> Self {
+        Self
     }
 
     #[inline(always)]
@@ -83,19 +61,9 @@ impl LineEngine for PdEngine {
     type Params<'a> = PdEngineParams<'a>;
     type RenderInput<'a> = PdRenderInput<'a>;
 
-    fn method(&self) -> SynthesisMethod {
-        SynthesisMethod::Pd
-    }
-
-    fn role(&self) -> LineRole {
-        self.role
-    }
-
     fn reset(&mut self, _sample_rate: f32, _voice_identity: u64) {}
 
-    fn note_on(&mut self, note: u8, _velocity: f32, _params: PdEngineParams<'_>) {
-        self.state.note_on(Self::note(self.role, note));
-    }
+    fn note_on(&mut self, _note: u8, _velocity: f32, _params: PdEngineParams<'_>) {}
 
     fn note_off(&mut self, _params: PdEngineParams<'_>) {}
 
@@ -107,10 +75,9 @@ impl LineEngine for PdEngine {
         params: PdEngineParams<'_>,
     ) -> LineEngineOutput {
         let config = Self::config(context, input, params);
-        let (sample, prime_source) = self.state.render(config);
         LineEngineOutput {
-            sample,
-            prime_source,
+            sample: generators::render_sample_from_config(&config),
+            prime_source: None,
         }
     }
 
@@ -120,12 +87,12 @@ impl LineEngine for PdEngine {
         context: LineEngineContext,
         input: &PdRenderInput<'_>,
         params: PdEngineParams<'_>,
-        primary: LineEngineOutput,
+        _primary: LineEngineOutput,
     ) -> LineEngineOutput {
         let config = Self::config(context, input, params);
         LineEngineOutput {
-            sample: generators::render_sample_from_config(&config, primary.prime_source),
-            prime_source: primary.prime_source,
+            sample: generators::render_sample_from_config(&config),
+            prime_source: None,
         }
     }
 }
@@ -150,9 +117,7 @@ mod tests {
             LineRole::Line2 => &compiled.line2,
         };
         let mut adapter = PdEngine::new(role);
-        let mut legacy = AlgoRuntimeState::new(PdEngine::seed(role));
         adapter.note_on(note, 0.75, PdEngineParams::new(&line));
-        legacy.note_on(PdEngine::note(role, note));
 
         for sample_index in 0..sample_count {
             let phase = sample_index as f32 * 0.007_31;
@@ -171,14 +136,11 @@ mod tests {
                 phase_modulation: 0.0,
             };
             let config = PdEngine::config(context, &input, PdEngineParams::new(&line));
-            let expected = legacy.render(config);
+            let expected = generators::render_sample_from_config(&config);
             let actual = adapter.render_primary(context, &input, PdEngineParams::new(&line));
 
-            assert_eq!(actual.sample.to_bits(), expected.0.to_bits());
-            assert_eq!(
-                actual.prime_source.map(f32::to_bits),
-                expected.1.map(f32::to_bits)
-            );
+            assert_eq!(actual.sample.to_bits(), expected.to_bits());
+            assert_eq!(actual.prime_source, None);
         }
     }
 
@@ -189,62 +151,12 @@ mod tests {
     }
 
     #[test]
-    fn pd_adapter_is_bit_identical_for_stateful_lines() {
-        assert_primary_bits_match(LineRole::Line1, Algo::Karpunk, 43, 512);
-        assert_primary_bits_match(LineRole::Line2, Algo::Karpunk, 43, 512);
-    }
-
-    #[test]
-    fn pd_adapter_preserves_stateful_retrigger_sequence() {
+    fn pd_prime_render_uses_the_selected_line_configuration() {
         let mut params = SynthParams::default();
-        params.line1.algo = Algo::Karpunk;
+        params.line1.algo = Algo::Saw;
         let line = params.line1;
         let compiled = CompiledSynthParams::from_params(&params);
         let mut adapter = PdEngine::new(LineRole::Line1);
-        let mut legacy = AlgoRuntimeState::new(PdEngine::seed(LineRole::Line1));
-
-        for note in [43, 55, 43] {
-            adapter.reset(48_000.0, 0);
-            adapter.note_on(note, 0.75, PdEngineParams::new(&line));
-            legacy.note_on(note);
-
-            for sample_index in 0..128 {
-                let phase = sample_index as f32 * 0.007_31;
-                let context = LineEngineContext {
-                    frequency: 220.0,
-                    sample_rate: 48_000.0,
-                };
-                let input = PdRenderInput {
-                    compiled_line: &compiled.line1,
-                    cycle_count: sample_index as u32 / 37,
-                    oscillator_phase: phase,
-                    shaped_phase: phase,
-                    dcw_envelope: 0.72,
-                    dca_envelope: 0.81,
-                    modulation_values: [0.0; 8],
-                    phase_modulation: 0.0,
-                };
-                let config = PdEngine::config(context, &input, PdEngineParams::new(&line));
-                let expected = legacy.render(config);
-                let actual = adapter.render_primary(context, &input, PdEngineParams::new(&line));
-
-                assert_eq!(actual.sample.to_bits(), expected.0.to_bits());
-                assert_eq!(
-                    actual.prime_source.map(f32::to_bits),
-                    expected.1.map(f32::to_bits)
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn pd_prime_render_uses_the_primary_state_source_without_advancing_it() {
-        let mut params = SynthParams::default();
-        params.line1.algo = Algo::Karpunk;
-        let line = params.line1;
-        let compiled = CompiledSynthParams::from_params(&params);
-        let mut adapter = PdEngine::new(LineRole::Line1);
-        adapter.note_on(60, 1.0, PdEngineParams::new(&line));
         let primary_input = PdRenderInput {
             compiled_line: &compiled.line1,
             cycle_count: 9,
@@ -271,7 +183,7 @@ mod tests {
             sample_rate: 1.0,
         };
         let config = PdEngine::config(prime_context, &prime_input, PdEngineParams::new(&line));
-        let expected = generators::render_sample_from_config(&config, primary.prime_source);
+        let expected = generators::render_sample_from_config(&config);
         let actual = adapter.render_prime(
             prime_context,
             &prime_input,
@@ -280,6 +192,6 @@ mod tests {
         );
 
         assert_eq!(actual.sample.to_bits(), expected.to_bits());
-        assert_eq!(actual.prime_source, primary.prime_source);
+        assert_eq!(actual.prime_source, None);
     }
 }

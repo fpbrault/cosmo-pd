@@ -1,4 +1,5 @@
 mod engine;
+mod karpunk;
 mod pd;
 pub mod registry;
 

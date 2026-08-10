@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use specta::Type;
 
 use super::envelopes::StepEnvData;
-use super::synthesis::SynthesisMethod;
+use super::synthesis::{KarpunkParams, SynthesisMethod};
 use super::waveforms::{Algo, BaseWaveform, WindowType};
 use crate::default_envelopes::{default_dca_env, default_dco_env, default_dcw_env};
 
@@ -340,12 +340,14 @@ fn deserialize_algo_controls<'de, D: Deserializer<'de>>(
 }
 
 /// Per-line parameters
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct LineParams {
     #[serde(default)]
     pub synthesis_method: SynthesisMethod,
+    #[serde(default)]
+    pub karpunk: KarpunkParams,
     pub algo: Algo,
     pub algo2: Option<Algo>,
     pub algo_blend: f32,
@@ -383,10 +385,132 @@ pub struct LineParams {
     pub algo_controls_b: AlgoControlSlots,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LineParamsWire {
+    #[serde(default)]
+    synthesis_method: Option<SynthesisMethod>,
+    #[serde(default)]
+    karpunk: Option<KarpunkParams>,
+    algo: Algo,
+    algo2: Option<Algo>,
+    algo_blend: f32,
+    #[serde(default)]
+    base_waveform_a: BaseWaveform,
+    #[serde(default)]
+    base_waveform_b: BaseWaveform,
+    window: WindowType,
+    dca_base: f32,
+    dcw_base: f32,
+    modulation: f32,
+    #[serde(default)]
+    detune_note: f32,
+    #[serde(default)]
+    detune_fine: f32,
+    octave: f32,
+    dco_env: StepEnvData,
+    dcw_env: StepEnvData,
+    dca_env: StepEnvData,
+    dcw_key_follow: f32,
+    dca_key_follow: f32,
+    #[serde(
+        default = "default_algo_controls",
+        deserialize_with = "deserialize_algo_controls"
+    )]
+    algo_controls_a: AlgoControlSlots,
+    #[serde(
+        default = "default_algo_controls",
+        deserialize_with = "deserialize_algo_controls"
+    )]
+    algo_controls_b: AlgoControlSlots,
+}
+
+impl<'de> Deserialize<'de> for LineParams {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let wire = LineParamsWire::deserialize(deserializer)?;
+        Ok(Self::from_wire(wire))
+    }
+}
+
+impl LineParams {
+    fn from_wire(mut wire: LineParamsWire) -> Self {
+        let primary_karpunk = wire.algo == Algo::Karpunk;
+        let secondary_karpunk = wire.algo2 == Some(Algo::Karpunk);
+        let mut synthesis_method = wire.synthesis_method.unwrap_or_default();
+        let mut karpunk = wire.karpunk.unwrap_or_default();
+
+        if primary_karpunk || secondary_karpunk {
+            synthesis_method = SynthesisMethod::Karpunk;
+            if wire.karpunk.is_none() {
+                let controls = if primary_karpunk {
+                    &wire.algo_controls_a
+                } else {
+                    &wire.algo_controls_b
+                };
+                karpunk = KarpunkParams {
+                    damping: algo_control_value(controls, AlgoControlId::KarpunkDamp, 0.5),
+                    brightness: algo_control_value(controls, AlgoControlId::KarpunkBright, 0.5),
+                    decay: algo_control_value(controls, AlgoControlId::KarpunkDecay, 0.5),
+                    excitation: algo_control_value(controls, AlgoControlId::KarpunkExcite, 0.0),
+                };
+            }
+
+            if primary_karpunk {
+                if let Some(algo) = wire.algo2.filter(|algo| *algo != Algo::Karpunk) {
+                    wire.algo = algo;
+                    wire.base_waveform_a = wire.base_waveform_b;
+                    wire.algo_controls_a = wire.algo_controls_b;
+                } else {
+                    wire.algo = Algo::Saw;
+                    wire.base_waveform_a = BaseWaveform::default();
+                    wire.algo_controls_a = default_algo_controls();
+                }
+            }
+
+            wire.algo2 = None;
+            wire.algo_blend = 0.0;
+            wire.algo_controls_b = default_algo_controls();
+        }
+
+        Self {
+            synthesis_method,
+            karpunk,
+            algo: wire.algo,
+            algo2: wire.algo2,
+            algo_blend: wire.algo_blend,
+            base_waveform_a: wire.base_waveform_a,
+            base_waveform_b: wire.base_waveform_b,
+            window: wire.window,
+            dca_base: wire.dca_base,
+            dcw_base: wire.dcw_base,
+            modulation: wire.modulation,
+            detune_note: wire.detune_note,
+            detune_fine: wire.detune_fine,
+            octave: wire.octave,
+            dco_env: wire.dco_env,
+            dcw_env: wire.dcw_env,
+            dca_env: wire.dca_env,
+            dcw_key_follow: wire.dcw_key_follow,
+            dca_key_follow: wire.dca_key_follow,
+            algo_controls_a: wire.algo_controls_a,
+            algo_controls_b: wire.algo_controls_b,
+        }
+    }
+}
+
+fn algo_control_value(controls: &AlgoControlSlots, id: AlgoControlId, fallback: f32) -> f32 {
+    controls
+        .iter()
+        .flatten()
+        .find(|control| control.id == id)
+        .map_or(fallback, |control| control.value)
+}
+
 impl Default for LineParams {
     fn default() -> Self {
         Self {
             synthesis_method: SynthesisMethod::default(),
+            karpunk: KarpunkParams::default(),
             algo: Algo::Saw,
             algo2: None,
             algo_blend: 0.0,

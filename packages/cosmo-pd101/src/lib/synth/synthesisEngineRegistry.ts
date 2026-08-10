@@ -12,4 +12,9 @@ export const SYNTHESIS_ENGINE_UI_DEFINITIONS = {
 		primaryPageLabel: "WAVE FORM",
 		secondaryPageLabel: "ENV",
 	},
+	karpunk: {
+		name: "Karpunk",
+		primaryPageLabel: "STRING",
+		secondaryPageLabel: "ENV",
+	},
 } satisfies Record<SynthesisMethod, SynthesisEngineUiDefinition>;

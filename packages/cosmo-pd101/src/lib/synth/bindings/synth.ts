@@ -300,6 +300,13 @@ export type JunoChorusPresetV1 = {
 	params: JunoChorusParams,
 };
 
+export type KarpunkParams = {
+	damping: number | null,
+	brightness: number | null,
+	decay: number | null,
+	excitation: number | null,
+};
+
 /**  LFO parameters */
 export type LfoParams = {
 	waveform: LfoWaveform,
@@ -330,6 +337,7 @@ export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
 /**  Per-line parameters */
 export type LineParams = {
 	synthesisMethod?: SynthesisMethod,
+	karpunk?: KarpunkParams,
 	algo: Algo,
 	algo2: Algo | null,
 	algoBlend: number | null,
@@ -615,7 +623,7 @@ export type SynthPresetV1 = {
 	params: SynthParams,
 };
 
-export type SynthesisMethod = "pd";
+export type SynthesisMethod = "pd" | "karpunk";
 
 /**  Tremolo parameters */
 export type TremoloParams = {
@@ -737,7 +745,7 @@ export const ALGO_UI_CATALOG_V1: AlgoUiEntryV1[] = [
     "id": "karpunk",
     "label": "Karpunk",
     "iconPath": "M4,16 C8,2 12,22 16,8 L20,12",
-    "visible": true
+    "visible": false
   },
   {
     "id": "fof",
@@ -1704,7 +1712,7 @@ export const ALGO_DEFINITIONS_V1 = [
     "id": "karpunk",
     "name": "Karpunk",
     "iconPath": "M4,16 C8,2 12,22 16,8 L20,12",
-    "visible": true,
+    "visible": false,
     "defaultBaseWaveform": "sine",
     "controls": [
       {
@@ -2035,6 +2043,15 @@ export const ALGO_DEFINITIONS_V1 = [
 export const SYNTHESIS_ENGINE_DEFINITIONS_V1: EngineDefinitionV1[] = [
   {
     "method": "pd",
+    "capabilities": {
+      "oscillatorCount": 1,
+      "envelopeCount": 3,
+      "hasVoiceFilter": false,
+      "hasInternalTail": false
+    }
+  },
+  {
+    "method": "karpunk",
     "capabilities": {
       "oscillatorCount": 1,
       "envelopeCount": 3,
@@ -5684,6 +5701,12 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
   "octave": 0.0,
   "line1": {
     "synthesisMethod": "pd",
+    "karpunk": {
+      "damping": 0.5,
+      "brightness": 0.5,
+      "decay": 0.5,
+      "excitation": 0.0
+    },
     "algo": "saw",
     "algo2": null,
     "algoBlend": 0.0,
@@ -5820,6 +5843,12 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
   },
   "line2": {
     "synthesisMethod": "pd",
+    "karpunk": {
+      "damping": 0.5,
+      "brightness": 0.5,
+      "decay": 0.5,
+      "excitation": 0.0
+    },
     "algo": "saw",
     "algo2": null,
     "algoBlend": 0.0,

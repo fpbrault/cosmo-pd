@@ -6,11 +6,13 @@ import type { PhaseLineParametersModel } from "./phaseLineTypes";
 interface PerLineParametersCardProps {
 	parameters: PhaseLineParametersModel;
 	lineIndex: 1 | 2;
+	warpLabel?: string;
 }
 
 function PerLineParametersCardInner({
 	parameters,
 	lineIndex,
+	warpLabel = "DCW Amt",
 }: PerLineParametersCardProps) {
 	return (
 		<Card
@@ -23,7 +25,7 @@ function PerLineParametersCardInner({
 			<div className="grid min-h-0 flex-1 grid-cols-3 place-items-center content-center gap-3 [@container_phase_(max-height:620px)]:gap-1">
 				<SynthParamKnob
 					paramKey={lineIndex === 1 ? "warpAAmount" : "warpBAmount"}
-					label="DCW Amt"
+					label={warpLabel}
 					value={parameters.warpAmount}
 					size={64}
 					variant="accent"

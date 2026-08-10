@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthStore } from "@/features/synth/synthStore";
 import PhaseLinesSection from "./PhaseLinesSection";
 
 const setPhaseLinePanelTab = vi.fn();
@@ -54,6 +55,10 @@ vi.mock("@/components/primitives/CzTabButton", () => ({
 }));
 
 describe("PhaseLinesSection", () => {
+	beforeEach(() => {
+		useSynthStore.setState(useSynthStore.getInitialState());
+	});
+
 	it("shows inactive line overlay and tab click updates store", () => {
 		render(<PhaseLinesSection />);
 		expect(
@@ -61,5 +66,16 @@ describe("PhaseLinesSection", () => {
 		).toBeInTheDocument();
 		fireEvent.click(screen.getAllByRole("button", { name: "ENV" })[0]);
 		expect(setPhaseLinePanelTab).toHaveBeenCalled();
+	});
+
+	it("selects synthesis independently for each line", () => {
+		render(<PhaseLinesSection />);
+		const selectors = screen.getAllByRole("combobox", {
+			name: "Synthesis method",
+		});
+		fireEvent.change(selectors[0], { target: { value: "karpunk" } });
+		expect(useSynthStore.getState().line1SynthesisMethod).toBe("karpunk");
+		expect(useSynthStore.getState().line2SynthesisMethod).toBe("pd");
+		expect(screen.getByRole("button", { name: "STRING" })).toBeInTheDocument();
 	});
 });

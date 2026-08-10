@@ -167,6 +167,13 @@ export type JunoChorusParams = {
 	mix?: number | null,
 };
 
+export type KarpunkParams = {
+	damping: number | null,
+	brightness: number | null,
+	decay: number | null,
+	excitation: number | null,
+};
+
 /**  LFO parameters */
 export type LfoParams = {
 	waveform: LfoWaveform,
@@ -191,6 +198,7 @@ export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
 /**  Per-line parameters */
 export type LineParams = {
 	synthesisMethod?: SynthesisMethod,
+	karpunk?: KarpunkParams,
 	algo: Algo,
 	algo2: Algo | null,
 	algoBlend: number | null,
@@ -671,7 +679,7 @@ export type SynthParams = {
 	macroLabels?: [string, string, string, string],
 };
 
-export type SynthesisMethod = "pd";
+export type SynthesisMethod = "pd" | "karpunk";
 
 /**  Transport info snapshot sent from Rust to the webview. */
 export type TransportInfoResponse = {

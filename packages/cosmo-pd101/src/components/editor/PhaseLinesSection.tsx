@@ -3,9 +3,12 @@ import { useTranslation } from "react-i18next";
 import Card, { joinClasses } from "@/components/primitives/Card";
 import CzTabButton from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import type { PhaseLinePanelTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import type { SynthesisMethod } from "@/lib/synth/bindings/synth";
 import { ActivePhaseLinePanel } from "./ActivePhaseLinePanel";
+import { SynthesisMethodSelector } from "./SynthesisMethodSelector";
 
 export type PhaseLinesSectionProps = {
 	onActiveTabChange?: (v: "line1" | "line2") => void;
@@ -20,6 +23,18 @@ export default function PhaseLinesSection({
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
 	const setActiveTab = useSynthUiStore((s) => s.setPhaseLinePanelTab);
 	const { value: lineSelect } = useSynthParam("lineSelect");
+	const line1SynthesisMethod = useSynthStore(
+		(state) => state.line1SynthesisMethod,
+	);
+	const line2SynthesisMethod = useSynthStore(
+		(state) => state.line2SynthesisMethod,
+	);
+	const setLine1SynthesisMethod = useSynthStore(
+		(state) => state.setLine1SynthesisMethod,
+	);
+	const setLine2SynthesisMethod = useSynthStore(
+		(state) => state.setLine2SynthesisMethod,
+	);
 
 	const activeLine: "line1" | "line2" = activeTab.startsWith("line1")
 		? "line1"
@@ -48,6 +63,8 @@ export default function PhaseLinesSection({
 		line: 1 | 2;
 		label: string;
 		color: "red" | "blue";
+		method: SynthesisMethod;
+		setMethod: (value: SynthesisMethod) => void;
 		tabs: Array<{
 			id: PhaseLinePanelTab;
 			bottomLabel: string;
@@ -58,10 +75,15 @@ export default function PhaseLinesSection({
 			line: 1,
 			label: t("editor.line1Short"),
 			color: "blue",
+			method: line1SynthesisMethod,
+			setMethod: setLine1SynthesisMethod,
 			tabs: [
 				{
 					id: "line1-algos",
-					bottomLabel: t("editor.waveForm"),
+					bottomLabel:
+						line1SynthesisMethod === "karpunk"
+							? "STRING"
+							: t("editor.waveForm"),
 					tooltip: t("tooltips.phaseLine.algos", { line: 1 }),
 				},
 				{
@@ -75,10 +97,15 @@ export default function PhaseLinesSection({
 			line: 2,
 			label: t("editor.line2Short"),
 			color: "red",
+			method: line2SynthesisMethod,
+			setMethod: setLine2SynthesisMethod,
 			tabs: [
 				{
 					id: "line2-algos",
-					bottomLabel: t("editor.waveForm"),
+					bottomLabel:
+						line2SynthesisMethod === "karpunk"
+							? "STRING"
+							: t("editor.waveForm"),
 					tooltip: t("tooltips.phaseLine.algos", { line: 2 }),
 				},
 				{
@@ -97,16 +124,21 @@ export default function PhaseLinesSection({
 			</div>
 			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-cz-panel p-2 [@container_phase_(max-height:620px)]:p-1">
 				<div className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2 [@container_phase_(max-height:620px)]:gap-1">
-					<div className="flex w-16 shrink-0 flex-col justify-evenly gap-5 self-stretch [@container_phase_(max-height:620px)]:w-14 [@container_phase_(max-height:620px)]:gap-2">
+					<div className="flex w-24 shrink-0 flex-col justify-evenly gap-5 self-stretch [@container_phase_(max-height:620px)]:w-20 [@container_phase_(max-height:620px)]:gap-2">
 						{leftTabGroups.map((group) => {
 							return (
 								<div
 									key={group.line}
-									className="flex h-full flex-col justify-center gap-4 rounded-lg bg-cz-inset/80 p-1.5 py-3 @min-[780px]:pb-10 [@container_phase_(max-height:620px)]:gap-2 [@container_phase_(max-height:620px)]:py-1 [@container_phase_(max-height:620px)]:pb-1"
+									className="flex h-full flex-col justify-center gap-3 rounded-lg bg-cz-inset/80 p-1.5 py-3 [@container_phase_(max-height:620px)]:gap-1 [@container_phase_(max-height:620px)]:py-1"
 								>
 									<div className="text-center font-bold text-[0.6rem] text-cz-cream tracking-[0.12em]">
 										{group.label}
 									</div>
+									<SynthesisMethodSelector
+										value={group.method}
+										onChange={group.setMethod}
+										color={group.color}
+									/>
 									{group.tabs.map((tab) => (
 										<CzTabButton
 											key={tab.id}

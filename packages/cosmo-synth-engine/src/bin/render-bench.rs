@@ -8,7 +8,7 @@ use std::time::Instant;
 use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::{
     Algo, AlgoControlId, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination,
-    ModMatrix, ModRoute, ModSource, PolyMode, SynthParams,
+    ModMatrix, ModRoute, ModSource, PolyMode, SynthParams, SynthesisMethod,
 };
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 
@@ -98,6 +98,28 @@ fn build_algo_bench_params(algo: Algo) -> SynthParams {
     p.line2.algo = algo;
     p.line2.algo2 = None;
     p.line2.algo_blend = 0.0;
+    p.line2.dcw_base = 0.85;
+    p.line2.dca_base = 0.85;
+    p.mod_matrix = ModMatrix::default();
+    p.fx_slots = [
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+        FxSlotConfig::Empty,
+    ];
+    p
+}
+
+fn build_karpunk_bench_params() -> SynthParams {
+    let mut p = SynthParams::default();
+    p.poly_mode = PolyMode::Poly8;
+    p.line_select = LineSelect::L1PlusL2Prime;
+    p.line1.synthesis_method = SynthesisMethod::Karpunk;
+    p.line2.synthesis_method = SynthesisMethod::Karpunk;
+    p.line1.dcw_base = 0.85;
+    p.line1.dca_base = 0.85;
     p.line2.dcw_base = 0.85;
     p.line2.dca_base = 0.85;
     p.mod_matrix = ModMatrix::default();
@@ -256,12 +278,12 @@ fn scenarios() -> Vec<Scenario> {
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
                 p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Karpunk);
+                p.line1.algo2 = Some(Algo::Terrain);
                 p.line1.algo_blend = 0.65;
                 p.line1.dcw_base = 0.95;
                 p.line1.dca_base = 0.85;
-                p.line2.algo = Algo::Karpunk;
-                p.line2.algo2 = Some(Algo::Ripple);
+                p.line2.algo = Algo::Ripple;
+                p.line2.algo2 = Some(Algo::Fof);
                 p.line2.algo_blend = 0.65;
                 p.line2.dcw_base = 0.95;
                 p.line2.dca_base = 0.85;
@@ -408,9 +430,9 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Karpunk;
-                p.line1.algo2 = Some(Algo::Fold);
-                p.line1.algo_blend = 0.6;
+                p.line1.synthesis_method = SynthesisMethod::Karpunk;
+                p.line1.karpunk.excitation = 0.7;
+                p.line1.karpunk.brightness = 0.75;
                 p.line2.algo = Algo::Twist;
                 p.line2.algo2 = Some(Algo::Clip);
                 p.line2.algo_blend = 0.5;
@@ -474,12 +496,12 @@ fn scenarios() -> Vec<Scenario> {
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
                 p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Karpunk);
+                p.line1.algo2 = Some(Algo::Terrain);
                 p.line1.algo_blend = 0.65;
                 p.line1.dcw_base = 0.95;
-                p.line2.algo = Algo::Karpunk;
-                p.line2.algo2 = Some(Algo::Ripple);
-                p.line2.algo_blend = 0.65;
+                p.line2.synthesis_method = SynthesisMethod::Karpunk;
+                p.line2.karpunk.decay = 0.9;
+                p.line2.karpunk.excitation = 0.75;
                 p.line2.dcw_base = 0.95;
                 p.mod_matrix = heavy_mod_matrix();
                 p.lfo.rate = 9.0;
@@ -730,9 +752,8 @@ fn scenarios() -> Vec<Scenario> {
                 p.line1.algo = Algo::Fof;
                 p.line1.algo2 = Some(Algo::MultiSine);
                 p.line1.algo_blend = 0.55;
-                p.line2.algo = Algo::Karpunk;
-                p.line2.algo2 = Some(Algo::Saw);
-                p.line2.algo_blend = 0.45;
+                p.line2.synthesis_method = SynthesisMethod::Karpunk;
+                p.line2.karpunk.excitation = 0.6;
                 p.lfo.rate = 7.5;
                 p.lfo2.rate = 5.5;
                 p.random.rate = 12.0;
@@ -904,9 +925,9 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "algo-karpunk",
-            description: "Per-algo benchmark: Karpunk",
-            build_params: || build_algo_bench_params(Algo::Karpunk),
+            name: "engine-karpunk",
+            description: "Per-engine benchmark: Karpunk",
+            build_params: build_karpunk_bench_params,
             note_churn_blocks: None,
             param_swap_blocks: None,
             build_param_variants: None,
@@ -1091,7 +1112,7 @@ fn algo_matrix() -> Vec<&'static str> {
         "algo-ripple",
         "algo-mirror",
         "algo-fof",
-        "algo-karpunk",
+        "engine-karpunk",
         "algo-terrain",
         "algo-stutter",
         "algo-cheby",

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { ActivePhaseLinePanel } from "./ActivePhaseLinePanel";
 
 vi.mock("./usePhaseLineModel", () => ({
@@ -29,7 +30,17 @@ vi.mock("./PhaseLineEnvelopePanel", () => ({
 	),
 }));
 
+vi.mock("./KarpunkLinePanel", () => ({
+	KarpunkLinePanel: ({ lineIndex }: { lineIndex: 1 | 2 }) => (
+		<div data-testid="karpunk-panel">Karpunk {lineIndex}</div>
+	),
+}));
+
 describe("ActivePhaseLinePanel", () => {
+	beforeEach(() => {
+		useSynthStore.setState(useSynthStore.getInitialState());
+	});
+
 	it("routes to the algo panel", () => {
 		render(<ActivePhaseLinePanel lineIndex={1} section="algos" />);
 		expect(screen.getByTestId("algo-panel")).toHaveTextContent("Algo 1");
@@ -40,5 +51,11 @@ describe("ActivePhaseLinePanel", () => {
 		expect(screen.getByTestId("envelope-panel")).toHaveTextContent(
 			"Envelope 2",
 		);
+	});
+
+	it("routes each selected line to the Karpunk panel", () => {
+		useSynthStore.getState().setLine2SynthesisMethod("karpunk");
+		render(<ActivePhaseLinePanel lineIndex={2} section="algos" />);
+		expect(screen.getByTestId("karpunk-panel")).toHaveTextContent("Karpunk 2");
 	});
 });

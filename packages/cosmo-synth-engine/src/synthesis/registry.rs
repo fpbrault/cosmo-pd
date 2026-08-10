@@ -22,15 +22,26 @@ pub struct EngineDefinitionV1 {
     pub capabilities: EngineCapabilitiesV1,
 }
 
-pub const ENGINE_DEFINITIONS_V1: [EngineDefinitionV1; 1] = [EngineDefinitionV1 {
-    method: SynthesisMethod::Pd,
-    capabilities: EngineCapabilitiesV1 {
-        oscillator_count: 1,
-        envelope_count: 3,
-        has_voice_filter: false,
-        has_internal_tail: true,
+pub const ENGINE_DEFINITIONS_V1: [EngineDefinitionV1; 2] = [
+    EngineDefinitionV1 {
+        method: SynthesisMethod::Pd,
+        capabilities: EngineCapabilitiesV1 {
+            oscillator_count: 1,
+            envelope_count: 3,
+            has_voice_filter: false,
+            has_internal_tail: false,
+        },
     },
-}];
+    EngineDefinitionV1 {
+        method: SynthesisMethod::Karpunk,
+        capabilities: EngineCapabilitiesV1 {
+            oscillator_count: 1,
+            envelope_count: 3,
+            has_voice_filter: false,
+            has_internal_tail: true,
+        },
+    },
+];
 
 pub fn engine_definitions_v1() -> &'static [EngineDefinitionV1] {
     &ENGINE_DEFINITIONS_V1
@@ -43,6 +54,7 @@ mod tests {
     #[test]
     fn registry_has_unique_methods() {
         assert_eq!(ENGINE_DEFINITIONS_V1[0].method, SynthesisMethod::Pd);
+        assert_eq!(ENGINE_DEFINITIONS_V1[1].method, SynthesisMethod::Karpunk);
 
         for (index, definition) in ENGINE_DEFINITIONS_V1.iter().enumerate() {
             for other in ENGINE_DEFINITIONS_V1.iter().skip(index + 1) {

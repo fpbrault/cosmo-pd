@@ -241,22 +241,30 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         modulation_values: line2_algo_param_mods,
         phase_modulation: phase.pm_post_mod,
     };
-    let line1_output = voice.line1_synthesis.render_primary(
-        line1_modded,
-        LineEngineContext {
-            frequency: signal.effective_freq1,
-            sample_rate: sr,
-        },
-        line1_input,
-    );
-    let line2_output = voice.line2_synthesis.render_primary(
-        line2_modded,
-        LineEngineContext {
-            frequency: signal.effective_freq2,
-            sample_rate: sr,
-        },
-        line2_input,
-    );
+    let line1_output = if p.line_select == LineSelect::L2 {
+        LineEngineOutput::default()
+    } else {
+        voice.line1_synthesis.render_primary(
+            line1_modded,
+            LineEngineContext {
+                frequency: signal.effective_freq1,
+                sample_rate: sr,
+            },
+            line1_input,
+        )
+    };
+    let line2_output = if matches!(p.line_select, LineSelect::L2 | LineSelect::L1PlusL2Prime) {
+        voice.line2_synthesis.render_primary(
+            line2_modded,
+            LineEngineContext {
+                frequency: signal.effective_freq2,
+                sample_rate: sr,
+            },
+            line2_input,
+        )
+    } else {
+        LineEngineOutput::default()
+    };
     let mod_mode = effective_mod_mode(p);
     let noise_step = if mod_mode == ModMode::Noise {
         let step = voice.noise_step;

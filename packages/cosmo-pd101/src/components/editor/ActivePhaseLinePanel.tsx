@@ -1,4 +1,6 @@
 import type { LineIndex } from "@/components/controls/algo/algoControlTypes";
+import { useSynthStore } from "@/features/synth/synthStore";
+import { KarpunkLinePanel } from "./KarpunkLinePanel";
 import { PhaseLineAlgoPanel } from "./PhaseLineAlgoPanel";
 import { PhaseLineEnvelopePanel } from "./PhaseLineEnvelopePanel";
 import type { PhaseLineSection } from "./phaseLineTypes";
@@ -14,6 +16,9 @@ export function ActivePhaseLinePanel({
 	section,
 }: ActivePhaseLinePanelProps) {
 	const model = usePhaseLineModel(lineIndex);
+	const synthesisMethod = useSynthStore((state) =>
+		lineIndex === 1 ? state.line1SynthesisMethod : state.line2SynthesisMethod,
+	);
 
 	if (section === "envelopes") {
 		return (
@@ -21,6 +26,16 @@ export function ActivePhaseLinePanel({
 				envelopes={model.envelopes}
 				lineIndex={model.meta.lineIndex}
 				lineColor={model.meta.color}
+			/>
+		);
+	}
+
+	if (synthesisMethod === "karpunk") {
+		return (
+			<KarpunkLinePanel
+				lineIndex={model.meta.lineIndex}
+				color={model.meta.color}
+				parameters={model.parameters}
 			/>
 		);
 	}
