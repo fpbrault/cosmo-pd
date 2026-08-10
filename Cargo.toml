@@ -29,7 +29,7 @@ truce = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f7016
 truce-core = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
 truce-params = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
 truce-clap = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
-truce-vst3 = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
+truce-vst3 = { git = "https://github.com/fpbrault/truce.git", rev = "466e8bf8439b30e12a50358624c89be8e7807eea" }
 truce-au = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
 truce-standalone = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
 truce-gui = { git = "https://github.com/fpbrault/truce.git", rev = "86633b266b9f70166ed32a262259eb7b19d5f959" }
