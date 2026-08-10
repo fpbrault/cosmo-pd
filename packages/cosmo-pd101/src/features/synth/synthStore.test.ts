@@ -19,6 +19,8 @@ describe("useSynthStore", () => {
 		expect(state.warpAAlgo).toBe(DEFAULT_ALGO_REF);
 		expect(state.volume).toBe(1);
 		expect(state.czDacEnabled).toBe(false);
+		expect(state.line1SynthesisMethod).toBe("pd");
+		expect(state.line2SynthesisMethod).toBe("pd");
 	});
 
 	it("updates state via setters", () => {
@@ -220,6 +222,8 @@ describe("useSynthStore", () => {
 
 		const preset = gatherState();
 		expect(preset.params.line1.dcwBase).toBe(0.75);
+		expect(preset.params.line1.synthesisMethod).toBe("pd");
+		expect(preset.params.line2.synthesisMethod).toBe("pd");
 		expect(preset.params.tempoBpm).toBe(132);
 		expect(preset.params.lfo.rateMode).toBe("sync");
 		expect(preset.params.lfo.syncDivision).toBe("eighth");
@@ -349,6 +353,10 @@ describe("useSynthStore", () => {
 		delete (legacyPreset.params as Record<string, unknown>).portamento;
 		delete (legacyPreset.params as Record<string, unknown>).pitchBendRange;
 		delete (legacyPreset.params as Record<string, unknown>).velocityCurve;
+		delete (legacyPreset.params.line1 as unknown as Record<string, unknown>)
+			.synthesisMethod;
+		delete (legacyPreset.params.line2 as unknown as Record<string, unknown>)
+			.synthesisMethod;
 
 		act(() => applyPreset(legacyPreset));
 
@@ -359,6 +367,10 @@ describe("useSynthStore", () => {
 		expect(state.portamentoTime).toBe(0.10000000149011612);
 		expect(state.pitchBendRange).toBe(2);
 		expect(state.velocityCurve).toBe(0);
+		expect(state.line1SynthesisMethod).toBe("pd");
+		expect(state.line2SynthesisMethod).toBe("pd");
+		expect(state.gatherState().params.line1.synthesisMethod).toBe("pd");
+		expect(state.gatherState().params.line2.synthesisMethod).toBe("pd");
 	});
 
 	it("handles invalid presets gracefully in applyPreset", () => {

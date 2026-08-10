@@ -158,6 +158,22 @@ export type DistortionPresetV1 = {
 	params: DistortionParams,
 };
 
+export type EngineCapabilitiesV1 = {
+	oscillatorCount: number,
+	envelopeCount: number,
+	hasVoiceFilter: boolean,
+	hasInternalTail: boolean,
+};
+
+export type EngineDefinitionV1 = {
+	id: string,
+	name: string,
+	method: SynthesisMethod,
+	primaryPageLabel: string,
+	secondaryPageLabel: string,
+	capabilities: EngineCapabilitiesV1,
+};
+
 /**  Readout label for one string enum value. */
 export type EngineEnumValueLabelV1 = {
 	value: string,
@@ -317,6 +333,7 @@ export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
 
 /**  Per-line parameters */
 export type LineParams = {
+	synthesisMethod?: SynthesisMethod,
 	algo: Algo,
 	algo2: Algo | null,
 	algoBlend: number | null,
@@ -601,6 +618,8 @@ export type SynthPresetV1 = {
 	schemaVersion: number,
 	params: SynthParams,
 };
+
+export type SynthesisMethod = "pd";
 
 /**  Tremolo parameters */
 export type TremoloParams = {
@@ -2014,6 +2033,22 @@ export const ALGO_DEFINITIONS_V1 = [
         }
       }
     ]
+  }
+];
+
+export const SYNTHESIS_ENGINE_DEFINITIONS_V1: EngineDefinitionV1[] = [
+  {
+    "id": "pd",
+    "name": "PD / Warp",
+    "method": "pd",
+    "primaryPageLabel": "WAVE FORM",
+    "secondaryPageLabel": "ENV",
+    "capabilities": {
+      "oscillatorCount": 1,
+      "envelopeCount": 3,
+      "hasVoiceFilter": false,
+      "hasInternalTail": true
+    }
   }
 ];
 
@@ -5656,6 +5691,7 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
   "ringGain": 4.0,
   "octave": 0.0,
   "line1": {
+    "synthesisMethod": "pd",
     "algo": "saw",
     "algo2": null,
     "algoBlend": 0.0,
@@ -5791,6 +5827,7 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "algoControlsB": []
   },
   "line2": {
+    "synthesisMethod": "pd",
     "algo": "saw",
     "algo2": null,
     "algoBlend": 0.0,

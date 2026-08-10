@@ -3,6 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use specta::Type;
 
 use super::envelopes::StepEnvData;
+use super::synthesis::SynthesisMethod;
 use super::waveforms::{Algo, BaseWaveform, WindowType};
 use crate::default_envelopes::{default_dca_env, default_dco_env, default_dcw_env};
 
@@ -343,6 +344,8 @@ fn deserialize_algo_controls<'de, D: Deserializer<'de>>(
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
 pub struct LineParams {
+    #[serde(default)]
+    pub synthesis_method: SynthesisMethod,
     pub algo: Algo,
     pub algo2: Option<Algo>,
     pub algo_blend: f32,
@@ -383,6 +386,7 @@ pub struct LineParams {
 impl Default for LineParams {
     fn default() -> Self {
         Self {
+            synthesis_method: SynthesisMethod::default(),
             algo: Algo::Saw,
             algo2: None,
             algo_blend: 0.0,

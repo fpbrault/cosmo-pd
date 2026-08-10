@@ -18,6 +18,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -187,6 +188,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "pinch",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -556,6 +558,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cheby",
 					algoBlend: 0.0,
@@ -721,6 +724,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -1059,6 +1063,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "pinch",
 					algo2: "clip",
 					algoBlend: 0.0,
@@ -1228,6 +1233,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -1517,6 +1523,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -1669,6 +1676,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -1972,6 +1980,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2107,6 +2116,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "twist",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -2386,6 +2396,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2538,6 +2549,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2810,6 +2822,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -2962,6 +2975,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -3235,6 +3249,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "fold",
 					algo2: "bend",
 					algoBlend: 0.0,
@@ -3400,6 +3415,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -3708,6 +3724,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -3860,6 +3877,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -4133,6 +4151,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -4302,6 +4321,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -4558,6 +4578,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "sync",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -4710,6 +4731,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -4977,6 +4999,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5146,6 +5169,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5419,6 +5443,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5588,6 +5613,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -5861,6 +5887,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -6030,6 +6057,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -6286,6 +6314,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -6455,6 +6484,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -6711,6 +6741,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -6880,6 +6911,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -7136,6 +7168,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -7305,6 +7338,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -7578,6 +7612,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -7730,6 +7765,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -7986,6 +8022,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -8155,6 +8192,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -8428,6 +8466,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -8597,6 +8636,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -8853,6 +8893,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9005,6 +9046,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9261,6 +9303,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -9430,6 +9473,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9686,6 +9730,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -9838,6 +9883,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -10094,6 +10140,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -10246,6 +10293,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -10519,6 +10567,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -10688,6 +10737,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -10961,6 +11011,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11130,6 +11181,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11403,6 +11455,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11572,6 +11625,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -11845,6 +11899,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -12014,6 +12069,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -12287,6 +12343,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -12456,6 +12513,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -12712,6 +12770,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -12864,6 +12923,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -13137,6 +13197,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -13289,6 +13350,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -13545,6 +13607,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -13714,6 +13777,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -13970,6 +14034,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -14139,6 +14204,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -14412,6 +14478,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -14581,6 +14648,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -14837,6 +14905,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -14989,6 +15058,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -15262,6 +15332,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -15431,6 +15502,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -15704,6 +15776,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -15856,6 +15929,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -16112,6 +16186,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -16281,6 +16356,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -16554,6 +16630,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -16723,6 +16800,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -16979,6 +17057,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -17148,6 +17227,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -17404,6 +17484,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -17573,6 +17654,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -17829,6 +17911,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -17981,6 +18064,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -18254,6 +18338,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -18406,6 +18491,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -18662,6 +18748,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -18831,6 +18918,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -19104,6 +19192,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -19256,6 +19345,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -19512,6 +19602,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -19681,6 +19772,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -19954,6 +20046,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "twist",
 					algo2: "bend",
 					algoBlend: 0.48,
@@ -20119,6 +20212,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "fold",
 					algo2: "skew",
 					algoBlend: 0.55,
@@ -20478,6 +20572,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -20647,6 +20742,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -20903,6 +20999,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21055,6 +21152,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21311,6 +21409,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21463,6 +21562,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21719,6 +21819,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -21871,6 +21972,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -22144,6 +22246,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22296,6 +22399,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22552,6 +22656,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22704,6 +22809,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -22960,6 +23066,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -23112,6 +23219,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -23368,6 +23476,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "pinch",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -23537,6 +23646,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "pinch",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -23855,6 +23965,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -24007,6 +24118,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -24280,6 +24392,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -24432,6 +24545,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -24688,6 +24802,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -24857,6 +24972,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -25130,6 +25246,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -25299,6 +25416,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -25555,6 +25673,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -25707,6 +25826,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -25963,6 +26083,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -26132,6 +26253,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -26405,6 +26527,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -26557,6 +26680,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -26830,6 +26954,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -26982,6 +27107,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -27238,6 +27364,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -27407,6 +27534,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -27663,6 +27791,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -27832,6 +27961,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -28105,6 +28235,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -28274,6 +28405,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -28530,6 +28662,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -28682,6 +28815,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -28955,6 +29089,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -29107,6 +29242,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -29380,6 +29516,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -29549,6 +29686,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -29805,6 +29943,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -29974,6 +30113,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30247,6 +30387,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30416,6 +30557,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -30672,6 +30814,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -30841,6 +30984,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31114,6 +31258,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31283,6 +31428,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31556,6 +31702,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -31725,6 +31872,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -31981,6 +32129,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32133,6 +32282,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32389,6 +32539,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32541,6 +32692,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32797,6 +32949,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -32949,6 +33102,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33205,6 +33359,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33357,6 +33512,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33613,6 +33769,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -33765,6 +33922,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -34021,6 +34179,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -34190,6 +34349,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -34463,6 +34623,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -34632,6 +34793,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -34888,6 +35050,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35040,6 +35203,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -35313,6 +35477,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35465,6 +35630,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -35721,6 +35887,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -35890,6 +36057,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -36146,6 +36314,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -36315,6 +36484,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -36588,6 +36758,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -36740,6 +36911,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -36996,6 +37168,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -37148,6 +37321,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -37404,6 +37578,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -37573,6 +37748,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -37829,6 +38005,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -37998,6 +38175,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -38271,6 +38449,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -38423,6 +38602,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -38679,6 +38859,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -38848,6 +39029,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -39121,6 +39303,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -39273,6 +39456,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -39529,6 +39713,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -39698,6 +39883,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -39971,6 +40157,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40140,6 +40327,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40413,6 +40601,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40582,6 +40771,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -40855,6 +41045,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41024,6 +41215,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41297,6 +41489,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -41449,6 +41642,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41722,6 +41916,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -41891,6 +42086,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42164,6 +42360,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42333,6 +42530,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -42606,6 +42804,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -42758,6 +42957,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43031,6 +43231,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43200,6 +43401,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43473,6 +43675,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -43625,6 +43828,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -43898,6 +44102,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -44050,6 +44255,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44323,6 +44529,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44492,6 +44699,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44765,6 +44973,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -44934,6 +45143,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -45207,6 +45417,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -45359,6 +45570,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -45615,6 +45827,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -45767,6 +45980,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46054,6 +46268,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46206,6 +46421,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46462,6 +46678,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -46631,6 +46848,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -46887,6 +47105,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -47039,6 +47258,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -47295,6 +47515,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "fold",
 					algo2: "clip",
 					algoBlend: 0.0,
@@ -47464,6 +47685,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -47780,6 +48002,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -47949,6 +48172,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -48205,6 +48429,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -48374,6 +48599,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -48630,6 +48856,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "fold",
 					algo2: null,
 					algoBlend: 0.0,
@@ -48782,6 +49009,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49052,6 +49280,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49204,6 +49433,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49460,6 +49690,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49612,6 +49843,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -49868,6 +50100,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -50037,6 +50270,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -50293,6 +50527,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "bend",
 					algo2: null,
 					algoBlend: 0.0,
@@ -50441,6 +50676,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "pinch",
 					algo2: "fold",
 					algoBlend: 0.5,
@@ -50745,6 +50981,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "bend",
 					algo2: null,
 					algoBlend: 0.0,
@@ -50893,6 +51130,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					algoControlsB: [],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
@@ -51201,6 +51439,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "skew",
 					algoBlend: 0.0,
@@ -51370,6 +51609,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -51656,6 +51896,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -51825,6 +52066,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52111,6 +52353,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52280,6 +52523,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52579,6 +52823,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -52748,6 +52993,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -53021,6 +53267,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: "cz101",
 					algoBlend: 0.0,
@@ -53190,6 +53437,7 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 					],
 				},
 				line2: {
+					synthesisMethod: "pd",
 					algo: "cz101",
 					algo2: null,
 					algoBlend: 0.0,
