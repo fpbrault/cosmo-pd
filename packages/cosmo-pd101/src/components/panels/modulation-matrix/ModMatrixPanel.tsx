@@ -421,10 +421,14 @@ export default function ModMatrixPanel() {
 		const normalizedLayout = normalizeModMatrixLayout(nextLayout, [], {
 			autoPlaceRoutes: [],
 		});
+		const representedRoutes = syncModMatrixRoutes(normalizedLayout);
 		const unassignedRoutes = getUnassignedRoutes(routes, layout);
 		setModMatrix({
 			...modMatrix,
-			routes: syncModMatrixRoutes(normalizedLayout, unassignedRoutes),
+			routes: syncModMatrixRoutes(normalizedLayout, [
+				...representedRoutes,
+				...unassignedRoutes,
+			]),
 			layout: normalizedLayout,
 		});
 	};

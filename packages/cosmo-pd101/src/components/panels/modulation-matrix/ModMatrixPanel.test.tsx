@@ -170,21 +170,42 @@ describe("ModMatrixPanel", () => {
 	});
 
 	it("preserves routes that are not represented in the visible grid", () => {
+		const representedRoute = {
+			source: "lfo1" as const,
+			destination: "volume" as const,
+			amount: 0.2,
+			enabled: true,
+		};
 		const unassignedRoute = {
-			source: "aftertouch" as const,
-			destination: "delayFeedback" as const,
+			source: "lfo1" as const,
+			destination: "volume" as const,
 			amount: 0.4,
 			enabled: true,
 		};
 		const { setModMatrix } = renderPanel({
-			routes: [unassignedRoute],
+			routes: [representedRoute, unassignedRoute],
 			layout: layoutWithSlots(),
 		});
 
-		fireEvent.pointerDown(
-			screen.getByRole("button", { name: "LFO 1 to Volume modulation cell" }),
-			{ pointerId: 1, pointerType: "mouse", button: 0, clientY: 100 },
-		);
+		const cell = screen.getByRole("button", {
+			name: "LFO 1 to Volume modulation cell",
+		});
+		fireEvent.pointerDown(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			button: 0,
+			clientY: 100,
+		});
+		fireEvent.pointerMove(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientY: 58,
+		});
+		fireEvent.pointerUp(cell, {
+			pointerId: 1,
+			pointerType: "mouse",
+			clientY: 58,
+		});
 
 		expect(setModMatrix).toHaveBeenLastCalledWith(
 			expect.objectContaining({
