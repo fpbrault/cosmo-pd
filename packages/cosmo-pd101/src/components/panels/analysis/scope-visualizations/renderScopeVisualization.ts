@@ -33,6 +33,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		sampleRate,
 		cycles,
 		triggerLevel,
+		scopeWindow,
 		zoom,
 		palette,
 		frequencyBins,
@@ -70,6 +71,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				triggerLevel,
 				zoom,
 				palette,
+				scopeWindow,
 			);
 			return;
 
@@ -92,6 +94,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				triggerLevel,
 				zoom,
 				palette,
+				scopeWindow,
 			);
 			return;
 		case "asteroids":
@@ -119,6 +122,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				triggerLevel,
 				zoom,
 				palette,
+				scopeWindow,
 			);
 	}
 }

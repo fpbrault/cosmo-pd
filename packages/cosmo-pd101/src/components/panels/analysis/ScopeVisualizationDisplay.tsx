@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import { AutoScopePhaseLock } from "./scope-visualizations/autoScopePhaseLock";
 import { drawScopeBackdrop } from "./scope-visualizations/canvas";
 import { isEditableKeyboardTarget } from "./scope-visualizations/keyboard";
 import { getScopeThemePalette } from "./scope-visualizations/palette";
@@ -36,7 +37,8 @@ export function ScopeVisualizationDisplay({
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rafIdRef = useRef(0);
 	const unsubscribeRef = useRef<(() => void) | null>(null);
-	const smoothedTriggerRef = useRef<number | null>(null);
+	const scopePhaseLockRef = useRef(new AutoScopePhaseLock());
+	const scopePhaseLockModeRef = useRef<ScopeVisualizationMode | null>(null);
 	const pressedKeysRef = useRef<Set<string>>(new Set());
 	const lastConstrainedSpectrogramDrawRef = useRef(0);
 	const drawPerformanceRef = useRef({
@@ -48,7 +50,6 @@ export function ScopeVisualizationDisplay({
 
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
 	const scopeVerticalZoom = useSynthUiStore((s) => s.scopeVerticalZoom);
-	const scopeTriggerLevel = useSynthUiStore((s) => s.scopeTriggerLevel);
 	const scopeVisualizationMode = useSynthUiStore(
 		(s) => s.scopeVisualizationMode,
 	);
@@ -73,14 +74,12 @@ export function ScopeVisualizationDisplay({
 	const settingsRef = useRef({
 		scopeCycles,
 		scopeVerticalZoom,
-		scopeTriggerLevel,
 		scopeVisualizationMode,
 		scopeColorTheme,
 	});
 	settingsRef.current = {
 		scopeCycles,
 		scopeVerticalZoom,
-		scopeTriggerLevel,
 		scopeVisualizationMode,
 		scopeColorTheme,
 	};
@@ -145,27 +144,35 @@ export function ScopeVisualizationDisplay({
 		frequencyBins?: Uint8Array<ArrayBufferLike>,
 	) => {
 		const drawStartedAt = import.meta.env.DEV ? performance.now() : 0;
-		const mean = calculateFrameMean(samples);
-		if (smoothedTriggerRef.current == null) {
-			smoothedTriggerRef.current = mean;
-		} else {
-			smoothedTriggerRef.current += 0.18 * (mean - smoothedTriggerRef.current);
+		const mode = settingsRef.current.scopeVisualizationMode;
+		if (scopePhaseLockModeRef.current !== mode) {
+			scopePhaseLockRef.current.reset();
+			scopePhaseLockModeRef.current = mode;
 		}
-		const bias = settingsRef.current.scopeTriggerLevel - 128;
-		const triggerLevel = Math.max(
-			0,
-			Math.min(255, smoothedTriggerRef.current + bias),
-		);
+		const usesPhaseLock =
+			mode === "waveform" || mode === "orbital" || mode === "transferCurves";
+		const lockResult = usesPhaseLock
+			? scopePhaseLockRef.current.resolve(
+					samples,
+					hz,
+					sampleRate,
+					settingsRef.current.scopeCycles,
+				)
+			: undefined;
+		const scopeWindow = lockResult?.window;
+		const renderSamples = lockResult?.heldSamples ?? samples;
+		const triggerLevel = calculateFrameMean(samples);
 
 		renderScopeVisualization({
-			mode: settingsRef.current.scopeVisualizationMode,
+			mode,
 			canvas,
-			samples,
+			samples: renderSamples,
 			hz,
 			sampleRate,
 			frequencyBins,
 			cycles: settingsRef.current.scopeCycles,
 			triggerLevel,
+			scopeWindow,
 			zoom: settingsRef.current.scopeVerticalZoom,
 			palette: getScopeThemePalette(settingsRef.current.scopeColorTheme),
 			spectrogramStateRef,

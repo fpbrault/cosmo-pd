@@ -29,6 +29,7 @@ type SynthUiState = {
 	libraryModeOpen: boolean;
 	scopeCycles: number;
 	scopeVerticalZoom: number;
+	/** @deprecated Retained only so older DAW sessions can round-trip this value. */
 	scopeTriggerLevel: number;
 	scopeVisualizationMode: ScopeVisualizationMode;
 	scopeColorTheme: ScopeColorTheme;
@@ -52,6 +53,7 @@ type SynthUiActions = {
 	setLibraryModeOpen: (open: boolean) => void;
 	setScopeCycles: (cycles: number) => void;
 	setScopeVerticalZoom: (zoom: number) => void;
+	/** @deprecated Manual triggering is retired; retained for legacy session state. */
 	setScopeTriggerLevel: (level: number) => void;
 	setScopeVisualizationMode: (mode: ScopeVisualizationMode) => void;
 	setScopeColorTheme: (theme: ScopeColorTheme) => void;

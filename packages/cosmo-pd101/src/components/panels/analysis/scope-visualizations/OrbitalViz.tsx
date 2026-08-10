@@ -1,6 +1,6 @@
 import { drawScopeGrid, setupScopeCanvas } from "./canvas";
 import { normalizeWindowedSamples, resolveScopeWindow } from "./processing";
-import type { ScopeThemePalette } from "./types";
+import type { ScopeThemePalette, ScopeWindow } from "./types";
 
 export function drawOrbitalScope(
 	canvas: HTMLCanvasElement,
@@ -11,19 +11,16 @@ export function drawOrbitalScope(
 	triggerLevel: number,
 	zoom: number,
 	palette: ScopeThemePalette,
+	scopeWindow?: ScopeWindow,
 ) {
 	const setup = setupScopeCanvas(canvas);
 	if (!setup) return;
 	const { ctx, width, height } = setup;
 	drawScopeGrid(ctx, width, height, palette);
 
-	const window = resolveScopeWindow(
-		samples,
-		hz,
-		sampleRate,
-		cycles,
-		triggerLevel,
-	);
+	const window =
+		scopeWindow ??
+		resolveScopeWindow(samples, hz, sampleRate, cycles, triggerLevel);
 	if (window.count < 8 || !window.samplesPerCycle) return;
 	const normalized = normalizeWindowedSamples(
 		samples,

@@ -3,6 +3,12 @@ import type { ScopeVisualizationMode } from "./renderScopeVisualization";
 
 export type { ScopeColorTheme };
 
+export type ScopeWindow = {
+	start: number;
+	count: number;
+	samplesPerCycle: number;
+};
+
 export type ScopeThemePalette = {
 	theme: ScopeColorTheme;
 	background: string;
@@ -63,6 +69,7 @@ export type ScopeRendererParams = {
 	sampleRate: number;
 	cycles: number;
 	triggerLevel: number;
+	scopeWindow?: ScopeWindow;
 	zoom: number;
 	palette: ScopeThemePalette;
 	frequencyBins?: Uint8Array<ArrayBufferLike>;
