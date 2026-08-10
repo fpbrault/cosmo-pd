@@ -169,6 +169,36 @@ describe("ModMatrixPanel", () => {
 		);
 	});
 
+	it("preserves routes that are not represented in the visible grid", () => {
+		const unassignedRoute = {
+			source: "aftertouch" as const,
+			destination: "delayFeedback" as const,
+			amount: 0.4,
+			enabled: true,
+		};
+		const { setModMatrix } = renderPanel({
+			routes: [unassignedRoute],
+			layout: layoutWithSlots(),
+		});
+
+		fireEvent.pointerDown(
+			screen.getByRole("button", { name: "LFO 1 to Volume modulation cell" }),
+			{ pointerId: 1, pointerType: "mouse", button: 0, clientY: 100 },
+		);
+
+		expect(setModMatrix).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				routes: [
+					expect.objectContaining({
+						source: "lfo1",
+						destination: "volume",
+					}),
+					unassignedRoute,
+				],
+			}),
+		);
+	});
+
 	it("adjusts route depth with a vertical pointer drag", () => {
 		const { setModMatrix } = renderPanel({
 			routes: [

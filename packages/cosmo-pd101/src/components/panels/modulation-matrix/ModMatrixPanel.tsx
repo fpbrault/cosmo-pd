@@ -19,6 +19,7 @@ import { useModMatrix } from "@/context/ModMatrixContext";
 import { useOptionalSynthController } from "@/features/synth/SynthParamController";
 import type { ModDestination, ModSource } from "@/lib/synth/bindings/synth";
 import {
+	getUnassignedRoutes,
 	MOD_MATRIX_PAGE_COUNT,
 	MOD_MATRIX_SLOT_COUNT,
 	type ModMatrixLayoutState,
@@ -420,9 +421,10 @@ export default function ModMatrixPanel() {
 		const normalizedLayout = normalizeModMatrixLayout(nextLayout, [], {
 			autoPlaceRoutes: [],
 		});
+		const unassignedRoutes = getUnassignedRoutes(routes, layout);
 		setModMatrix({
 			...modMatrix,
-			routes: syncModMatrixRoutes(normalizedLayout),
+			routes: syncModMatrixRoutes(normalizedLayout, unassignedRoutes),
 			layout: normalizedLayout,
 		});
 	};

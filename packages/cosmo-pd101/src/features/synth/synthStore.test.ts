@@ -5,6 +5,7 @@ import type {
 	ModDestination,
 	SynthPresetV1,
 } from "@/lib/synth/bindings/synth";
+import { createDefaultModMatrixLayout } from "@/lib/synth/modMatrixModel";
 import { useSynthStore } from "./synthStore";
 
 describe("useSynthStore", () => {
@@ -148,6 +149,40 @@ describe("useSynthStore", () => {
 			useSynthStore.getState().gatherState().params.modMatrix?.routes?.[0]
 				?.destination,
 		).toBe("line1AlgoControl1");
+	});
+
+	it("clears a matrix cell when an external route is removed", () => {
+		const route = {
+			source: "lfo1" as const,
+			destination: "volume" as const,
+			amount: 0.5,
+			enabled: true,
+		};
+		const layout = createDefaultModMatrixLayout([route]);
+
+		act(() => {
+			useSynthStore.getState().setModMatrix({
+				routes: [route],
+				layout,
+			});
+		});
+
+		const populated = useSynthStore.getState().modMatrix;
+		expect(populated.layout?.pages[0]?.cells?.[0]?.[0]).toEqual({
+			amount: 0.5,
+			enabled: true,
+		});
+
+		act(() => {
+			useSynthStore.getState().setModMatrix({
+				...populated,
+				routes: [],
+			});
+		});
+
+		const next = useSynthStore.getState().modMatrix;
+		expect(next.routes).toEqual([]);
+		expect(next.layout?.pages[0]?.cells?.[0]?.[0]).toBeNull();
 	});
 
 	it("gathers state into a preset structure", () => {

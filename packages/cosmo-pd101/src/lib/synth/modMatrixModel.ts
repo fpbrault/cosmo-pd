@@ -112,6 +112,41 @@ function clonePage(page: ModMatrixPageState): ModMatrixPageState {
 	};
 }
 
+type ModMatrixCellPosition = {
+	pageIndex: number;
+	rowIndex: number;
+	columnIndex: number;
+};
+
+function getRouteCellPositions(
+	route: ModRoute,
+	layout: ModMatrixLayoutState,
+): ModMatrixCellPosition[] {
+	const positions: ModMatrixCellPosition[] = [];
+
+	for (const [pageIndex, page] of layout.pages.entries()) {
+		for (let rowIndex = 0; rowIndex < MOD_MATRIX_SLOT_COUNT; rowIndex += 1) {
+			if (page.sources[rowIndex] !== route.source) {
+				continue;
+			}
+			for (
+				let columnIndex = 0;
+				columnIndex < MOD_MATRIX_SLOT_COUNT;
+				columnIndex += 1
+			) {
+				if (
+					page.destinations[columnIndex] === route.destination &&
+					page.cells[rowIndex][columnIndex] !== null
+				) {
+					positions.push({ pageIndex, rowIndex, columnIndex });
+				}
+			}
+		}
+	}
+
+	return positions;
+}
+
 function isModSource(value: unknown): value is ModSource {
 	return typeof value === "string" && SOURCE_VALUES.has(value as ModSource);
 }
@@ -366,44 +401,61 @@ export function updateChangedModMatrixCells(
 	layout: ModMatrixLayoutState,
 ): ModMatrixLayoutState {
 	const pages = layout.pages.map(clonePage) as ModMatrixPagesState;
-	const remaining = [...previousRoutes];
+	const positionsByPair = new Map<string, ModMatrixCellPosition[]>();
+	const previousRoutesByPair = new Map<string, ModRoute[]>();
+	const nextRouteOccurrences = new Map<string, number>();
+
+	for (const route of previousRoutes) {
+		const key = routeKey(route.source, route.destination);
+		const pairRoutes = previousRoutesByPair.get(key) ?? [];
+		pairRoutes.push(route);
+		previousRoutesByPair.set(key, pairRoutes);
+	}
+
+	for (const route of previousRoutes) {
+		const key = routeKey(route.source, route.destination);
+		if (!positionsByPair.has(key)) {
+			positionsByPair.set(key, getRouteCellPositions(route, { pages }));
+		}
+	}
 
 	for (const route of nextRoutes) {
-		const previousIndex = remaining.findIndex(
-			(candidate) =>
-				candidate.source === route.source &&
-				candidate.destination === route.destination,
-		);
-		if (previousIndex < 0) {
+		const key = routeKey(route.source, route.destination);
+		const occurrence = nextRouteOccurrences.get(key) ?? 0;
+		nextRouteOccurrences.set(key, occurrence + 1);
+		const previous = previousRoutesByPair.get(key)?.[occurrence];
+		const position = positionsByPair.get(key)?.[occurrence];
+		if (!previous || !position) {
 			continue;
 		}
-		const previous = remaining.splice(previousIndex, 1)[0];
 		if (
 			previous.amount === route.amount &&
 			previous.enabled === route.enabled
 		) {
 			continue;
 		}
-		for (const page of pages) {
-			for (let rowIndex = 0; rowIndex < MOD_MATRIX_SLOT_COUNT; rowIndex += 1) {
-				if (page.sources[rowIndex] !== route.source) {
-					continue;
-				}
-				for (
-					let columnIndex = 0;
-					columnIndex < MOD_MATRIX_SLOT_COUNT;
-					columnIndex += 1
-				) {
-					if (
-						page.destinations[columnIndex] === route.destination &&
-						page.cells[rowIndex][columnIndex]
-					) {
-						page.cells[rowIndex][columnIndex] = {
-							amount: Math.max(-1, Math.min(1, route.amount ?? 0)),
-							enabled: route.enabled,
-						};
-					}
-				}
+		pages[position.pageIndex].cells[position.rowIndex][position.columnIndex] = {
+			amount: Math.max(-1, Math.min(1, route.amount ?? 0)),
+			enabled: route.enabled,
+		};
+	}
+
+	for (const [key, previousPairRoutes] of previousRoutesByPair) {
+		const nextCount = nextRouteOccurrences.get(key) ?? 0;
+		if (nextCount >= previousPairRoutes.length) {
+			continue;
+		}
+		const positions = positionsByPair.get(key) ?? [];
+		for (
+			let occurrence = nextCount;
+			occurrence < previousPairRoutes.length;
+			occurrence += 1
+		) {
+			const position = positions[occurrence];
+			if (position) {
+				pages[position.pageIndex].cells[position.rowIndex][
+					position.columnIndex
+				] = null;
 			}
 		}
 	}
@@ -642,16 +694,18 @@ export function isRoutePlaced(
 	route: ModRoute,
 	layout: ModMatrixLayoutState,
 ): boolean {
-	return layout.pages.some(
-		(page) =>
-			page.sources.includes(route.source) &&
-			page.destinations.includes(route.destination),
-	);
+	return getRouteCellPositions(route, layout).length > 0;
 }
 
 export function getUnassignedRoutes(
 	routes: ModRoute[],
 	layout: ModMatrixLayoutState,
 ): ModRoute[] {
-	return routes.filter((route) => !isRoutePlaced(route, layout));
+	const occurrences = new Map<string, number>();
+	return routes.filter((route) => {
+		const key = routeKey(route.source, route.destination);
+		const occurrence = occurrences.get(key) ?? 0;
+		occurrences.set(key, occurrence + 1);
+		return occurrence >= getRouteCellPositions(route, layout).length;
+	});
 }

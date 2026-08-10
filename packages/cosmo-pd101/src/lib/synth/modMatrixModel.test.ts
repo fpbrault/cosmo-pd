@@ -13,6 +13,7 @@ import {
 	rebindSourceSlot,
 	removeRoute,
 	syncModMatrixRoutes,
+	updateChangedModMatrixCells,
 	updateRoute,
 	upsertRoute,
 } from "./modMatrixModel";
@@ -200,5 +201,61 @@ describe("modMatrixModel", () => {
 			route("lfo1", "volume", 0.1),
 			route("lfo1", "volume", 0.8),
 		]);
+	});
+
+	it("updates only the changed occurrence of duplicate routes", () => {
+		const layout = createDefaultModMatrixLayout();
+		layout.pages[0].sources[0] = "lfo1";
+		layout.pages[0].sources[1] = "lfo1";
+		layout.pages[0].destinations[0] = "volume";
+		layout.pages[0].destinations[1] = "volume";
+		layout.pages[0].cells[0][0] = { amount: 0.1, enabled: true };
+		layout.pages[0].cells[1][1] = { amount: 0.8, enabled: true };
+
+		const updated = updateChangedModMatrixCells(
+			[route("lfo1", "volume", 0.1), route("lfo1", "volume", 0.8)],
+			[route("lfo1", "volume", 0.1), route("lfo1", "volume", 0.9)],
+			layout,
+		);
+
+		expect(updated.pages[0].cells[0][0]).toEqual({
+			amount: 0.1,
+			enabled: true,
+		});
+		expect(updated.pages[0].cells[1][1]).toEqual({
+			amount: 0.9,
+			enabled: true,
+		});
+		expect(syncModMatrixRoutes(updated)).toEqual([
+			route("lfo1", "volume", 0.1),
+			route("lfo1", "volume", 0.9),
+		]);
+	});
+
+	it("clears a represented cell when its route is removed externally", () => {
+		const routeToRemove = route("lfo1", "volume", 0.5);
+		const layout = createDefaultModMatrixLayout([routeToRemove]);
+
+		const updated = updateChangedModMatrixCells([routeToRemove], [], layout);
+
+		expect(updated.pages[0].cells[0][0]).toBeNull();
+		expect(syncModMatrixRoutes(updated)).toEqual([]);
+	});
+
+	it("treats duplicate cells as assigned occurrences", () => {
+		const routes = [
+			route("lfo1", "volume", 0.1),
+			route("lfo1", "volume", 0.8),
+			route("lfo1", "volume", 0.9),
+		];
+		const layout = createDefaultModMatrixLayout();
+		layout.pages[0].sources[0] = "lfo1";
+		layout.pages[0].sources[1] = "lfo1";
+		layout.pages[0].destinations[0] = "volume";
+		layout.pages[0].destinations[1] = "volume";
+		layout.pages[0].cells[0][0] = { amount: 0.1, enabled: true };
+		layout.pages[0].cells[1][1] = { amount: 0.8, enabled: true };
+
+		expect(getUnassignedRoutes(routes, layout)).toEqual([routes[2]]);
 	});
 });
