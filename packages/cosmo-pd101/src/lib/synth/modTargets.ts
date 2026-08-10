@@ -95,7 +95,6 @@ const CORE_TARGETS: ModTargetMeta[] = [
 	{ id: "filterCutoff", label: "Filter Cutoff", group: "Global" },
 	{ id: "filterResonance", label: "Filter Resonance", group: "Global" },
 	{ id: "filterEnvAmount", label: "Filter Env Amount", group: "Global" },
-	{ id: "intPmRatio", label: "Internal PM Ratio", group: "FX" },
 	{ id: "line1DcwBase", label: "L1 DCW", group: "Line 1" },
 	{ id: "line1DcaBase", label: "L1 DCA", group: "Line 1" },
 	{ id: "line1AlgoBlend", label: "Blend", group: "Line 1" },
@@ -196,17 +195,35 @@ const ENVELOPE_TARGETS: ModTargetMeta[] = [1, 2].flatMap((lineIndex) =>
 const FX_TARGETS: ModTargetMeta[] = FX_DEFINITIONS_V1.flatMap((def) =>
 	def.controls
 		.filter((ctrl) => ctrl.modDestinationKey != null)
-		.map((ctrl) => ({
-			id: ctrl.modDestinationKey as ModDestination,
-			label: `${def.name} ${ctrl.label}`,
-			group: "FX" as ModTargetGroup,
-		})),
+		.map((ctrl) => {
+			const id = ctrl.modDestinationKey as ModDestination;
+			return {
+				id,
+				label:
+					id === "intPmRatio"
+						? "Internal PM Ratio"
+						: `${def.name} ${ctrl.label}`,
+				group: "FX" as ModTargetGroup,
+			};
+		}),
 );
 
-const MOD_TARGET_REGISTRY: ModTargetMeta[] = [
-	...CORE_TARGETS,
-	...FX_TARGETS,
-	...ENVELOPE_TARGETS,
+const MOD_TARGET_REGISTRY: ModTargetMeta[] = Array.from(
+	new Map(
+		[...CORE_TARGETS, ...FX_TARGETS, ...ENVELOPE_TARGETS].map((entry) => [
+			entry.id,
+			entry,
+		]),
+	).values(),
+);
+
+const MOD_TARGET_GROUP_ORDER: ModTargetGroup[] = [
+	"Global",
+	"FX",
+	"Line 1",
+	"Line 2",
+	"Modulation",
+	"Envelopes",
 ];
 
 const DESTINATION_META = new Map<ModDestination, ModTargetMeta>(
@@ -246,10 +263,10 @@ export function getModDestinationGroups(): {
 		buckets.set(entry.group, group);
 	}
 
-	return Array.from(buckets.entries()).map(([label, destinations]) => ({
-		label,
-		destinations,
-	}));
+	return MOD_TARGET_GROUP_ORDER.flatMap((label) => {
+		const destinations = buckets.get(label);
+		return destinations ? [{ label, destinations }] : [];
+	});
 }
 
 export function resolveTargetFromMetadata(
