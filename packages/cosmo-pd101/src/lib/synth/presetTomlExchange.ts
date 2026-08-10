@@ -9,6 +9,7 @@ import {
 	normalizePresetTags,
 	type PresetTagOptions,
 } from "@/lib/synth/presetTags";
+import { normalizeModMatrixLayout } from "./modMatrixModel";
 import type { PresetSource } from "./presetSources";
 
 export const COSMO_PRESET_TOML_FORMAT = "cosmo-preset";
@@ -151,6 +152,28 @@ function normalizeModRoutes(value: unknown): ModRoute[] {
 		.map((route) => cloneJson(route) as ModRoute);
 }
 
+function normalizeModLayout(value: unknown, routes: ModRoute[]) {
+	if (!isRecord(value)) {
+		return normalizeModMatrixLayout(undefined, routes);
+	}
+
+	const pages = [value.page1, value.page2].map((page) => {
+		if (!isRecord(page)) {
+			return null;
+		}
+		return {
+			sources: Array.isArray(page.sources)
+				? page.sources.map((entry) => (entry === "none" ? null : entry))
+				: page.sources,
+			destinations: Array.isArray(page.destinations)
+				? page.destinations.map((entry) => (entry === "none" ? null : entry))
+				: page.destinations,
+		};
+	});
+
+	return normalizeModMatrixLayout({ pages }, routes);
+}
+
 function normalizeParsedParams(value: unknown): SynthParams | null {
 	if (!isRecord(value)) {
 		return null;
@@ -166,7 +189,11 @@ function normalizeParsedParams(value: unknown): SynthParams | null {
 	delete params.fx;
 	delete params.mod;
 	params.fxSlots = normalizeFxSlots(fx);
-	params.modMatrix = { routes: normalizeModRoutes(mod) };
+	const routes = normalizeModRoutes(mod);
+	params.modMatrix = {
+		routes,
+		layout: normalizeModLayout(isRecord(mod) ? mod.layout : undefined, routes),
+	};
 
 	for (const lineKey of ["line1", "line2"]) {
 		const line = params[lineKey];
@@ -340,6 +367,7 @@ function encodeParams(params: SynthParams): Record<string, unknown> {
 
 	const fxSlots = params.fxSlots;
 	const routes = params.modMatrix?.routes ?? [];
+	const layout = params.modMatrix?.layout;
 	delete encoded.fxSlots;
 	delete encoded.modMatrix;
 
@@ -347,7 +375,15 @@ function encodeParams(params: SynthParams): Record<string, unknown> {
 	if (Object.keys(fx).length > 0) {
 		encoded.fx = fx;
 	}
-	encoded.mod = { routes: routes.map((route) => encodeEnvelopeSteps(route)) };
+	encoded.mod = {
+		routes: routes.map((route) => encodeEnvelopeSteps(route)),
+		layout: layout
+			? {
+					page1: layout.pages?.[0],
+					page2: layout.pages?.[1],
+				}
+			: undefined,
+	};
 
 	return encoded;
 }
@@ -437,6 +473,41 @@ function writeModRoutes(routes: unknown): string[] {
 	return lines;
 }
 
+function writeModLayout(layout: unknown): string[] {
+	if (!isRecord(layout)) {
+		return [];
+	}
+
+	const lines: string[] = [];
+	for (const [index, key] of ["page1", "page2"].entries()) {
+		const page = layout[key];
+		if (!isRecord(page)) {
+			continue;
+		}
+
+		const sources = Array.isArray(page.sources)
+			? page.sources.map((entry) => entry ?? "none")
+			: [];
+		const destinations = Array.isArray(page.destinations)
+			? page.destinations.map((entry) => entry ?? "none")
+			: [];
+		if (sources.length !== 8 || destinations.length !== 8) {
+			continue;
+		}
+
+		lines.push(
+			`[params.mod.layout.page${index + 1}]`,
+			`sources = ${toTomlValue(sources)}`,
+			`destinations = ${toTomlValue(destinations)}`,
+			"",
+		);
+	}
+	if (lines.at(-1) === "") {
+		lines.pop();
+	}
+	return lines;
+}
+
 export function exportPresetToToml(input: PresetTomlExportInput): string {
 	const lines = [`format = ${escapeTomlString(COSMO_PRESET_TOML_FORMAT)}`];
 	if (input.id) {
@@ -459,8 +530,10 @@ export function exportPresetToToml(input: PresetTomlExportInput): string {
 
 	const params = encodeParams(input.data.params);
 	const modRoutes = isRecord(params.mod) ? params.mod.routes : undefined;
+	const modLayout = isRecord(params.mod) ? params.mod.layout : undefined;
 	if (isRecord(params.mod)) {
 		delete params.mod.routes;
+		delete params.mod.layout;
 		if (Object.keys(params.mod).length === 0) {
 			delete params.mod;
 		}
@@ -470,6 +543,11 @@ export function exportPresetToToml(input: PresetTomlExportInput): string {
 	collectSections("params", params, sections);
 	for (const section of sections.sort(compareSections)) {
 		lines.push("", ...writeSection(section));
+	}
+
+	const layoutLines = writeModLayout(modLayout);
+	if (layoutLines.length > 0) {
+		lines.push("", ...layoutLines);
 	}
 
 	const routeLines = writeModRoutes(modRoutes);

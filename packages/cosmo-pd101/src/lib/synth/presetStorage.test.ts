@@ -160,10 +160,17 @@ describe("presetStorage", () => {
 				starred: false,
 				favorite: true,
 				tags: ["synth", "lead"],
-				data: {
-					...DEFAULT_PRESET,
-					params: { ...DEFAULT_PRESET.params, volume: 0.42 },
-				},
+				data: expect.objectContaining({
+					params: expect.objectContaining({
+						volume: 0.42,
+						modMatrix: expect.objectContaining({
+							routes: [],
+							layout: expect.objectContaining({
+								pages: expect.any(Array),
+							}),
+						}),
+					}),
+				}),
 			}),
 		);
 	});

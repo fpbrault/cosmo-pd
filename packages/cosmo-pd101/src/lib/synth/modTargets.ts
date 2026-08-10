@@ -46,6 +46,10 @@ type ModTargetMeta = {
 const CORE_TARGETS: ModTargetMeta[] = [
 	{ id: "volume", label: "Volume", group: "Global" },
 	{ id: "pitch", label: "Pitch", group: "Global" },
+	{ id: "filterCutoff", label: "Filter Cutoff", group: "Global" },
+	{ id: "filterResonance", label: "Filter Resonance", group: "Global" },
+	{ id: "filterEnvAmount", label: "Filter Env Amount", group: "Global" },
+	{ id: "intPmRatio", label: "Internal PM Ratio", group: "Global" },
 	{ id: "line1DcwBase", label: "L1 DCW", group: "Line 1" },
 	{ id: "line1DcaBase", label: "L1 DCA", group: "Line 1" },
 	{ id: "line1AlgoBlend", label: "Blend", group: "Line 1" },

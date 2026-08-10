@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ModMatrix } from "@/lib/synth/bindings/synth";
 import { DEFAULT_PRESET } from "./presetStorage";
 import { exportPresetToToml, parsePresetToml } from "./presetTomlExchange";
 
@@ -90,6 +91,68 @@ describe("presetTomlExchange", () => {
 				enabled: true,
 			},
 		]);
+		expect(
+			parsed?.data.params.modMatrix?.layout?.pages?.[0]?.sources?.[0],
+		).toBe("lfo1");
+		expect(
+			parsed?.data.params.modMatrix?.layout?.pages?.[0]?.destinations?.[0],
+		).toBe("filterCutoff");
+	});
+
+	it("round-trips explicit matrix page layout alongside routes", () => {
+		const layout: NonNullable<ModMatrix["layout"]> = {
+			pages: [
+				{
+					sources: ["modWheel", null, null, null, null, null, null, null],
+					destinations: ["pitch", null, null, null, null, null, null, null],
+				},
+				{
+					sources: ["lfo2", null, null, null, null, null, null, null],
+					destinations: [
+						"filterCutoff",
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+					],
+				},
+			],
+		};
+		const toml = exportPresetToToml({
+			name: "Matrix Layout",
+			data: {
+				...DEFAULT_PRESET,
+				params: {
+					...DEFAULT_PRESET.params,
+					modMatrix: {
+						routes: [
+							{
+								source: "modWheel",
+								destination: "pitch",
+								amount: 0.5,
+								enabled: true,
+							},
+						],
+						layout,
+					},
+				},
+			},
+		});
+
+		expect(toml).toContain("[params.mod.layout.page1]");
+		expect(toml).toContain('sources = ["modWheel", "none"');
+		expect(toml).toContain("[params.mod.layout.page2]");
+
+		const parsed = parsePresetToml(toml);
+		expect(parsed?.data.params.modMatrix?.layout?.pages?.[0]).toEqual(
+			layout.pages?.[0],
+		);
+		expect(parsed?.data.params.modMatrix?.layout?.pages?.[1]).toEqual(
+			layout.pages?.[1],
+		);
 	});
 
 	it("imports omitted no-op structures as empty FX slots and no modulation routes", () => {

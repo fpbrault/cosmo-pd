@@ -66,10 +66,10 @@ const ModulatableControl = memo(function ModulatableControl({
 				amount: 0.5,
 				enabled: true,
 			};
-			setModMatrix({ routes: [...routes, newRoute] });
+			setModMatrix({ ...modMatrix, routes: [...routes, newRoute] });
 			setHighlightedSource(source);
 		},
-		[routes, destinationId, setModMatrix],
+		[routes, destinationId, modMatrix, setModMatrix],
 	);
 
 	const handleRemoveRoute = useCallback(
@@ -85,10 +85,10 @@ const ModulatableControl = memo(function ModulatableControl({
 			if (globalIndex < 0) return;
 			const next = [...routes];
 			next.splice(globalIndex, 1);
-			setModMatrix({ routes: next });
+			setModMatrix({ ...modMatrix, routes: next });
 			setHighlightedSource(null);
 		},
-		[routes, destinationId, setModMatrix],
+		[routes, destinationId, modMatrix, setModMatrix],
 	);
 
 	const handleAmountChange = useCallback(
@@ -101,9 +101,9 @@ const ModulatableControl = memo(function ModulatableControl({
 				}
 				return r;
 			});
-			setModMatrix({ routes: next });
+			setModMatrix({ ...modMatrix, routes: next });
 		},
-		[routes, destinationId, setModMatrix],
+		[routes, destinationId, modMatrix, setModMatrix],
 	);
 
 	const handleToggleEnabled = useCallback(
@@ -116,9 +116,9 @@ const ModulatableControl = memo(function ModulatableControl({
 				}
 				return r;
 			});
-			setModMatrix({ routes: next });
+			setModMatrix({ ...modMatrix, routes: next });
 		},
-		[routes, destinationId, setModMatrix],
+		[routes, destinationId, modMatrix, setModMatrix],
 	);
 
 	const hasActiveRoutes = activeRoutes.length > 0;

@@ -39,6 +39,7 @@ import {
 	sanitizeFxSlots,
 } from "@/lib/synth/fxSlotSanitizer";
 import { normalizeAlgoSlotKey } from "@/lib/synth/modDestination";
+import { normalizeModMatrixLayout } from "@/lib/synth/modMatrixModel";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
 
 // ---------------------------------------------------------------------------
@@ -98,12 +99,14 @@ function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
 }
 
 function normalizeModMatrix(matrix: ModMatrix): ModMatrix {
+	const routes = (matrix.routes ?? []).map((route) => ({
+		...route,
+		destination: normalizeAlgoSlotKey(route.destination) as ModDestination,
+	}));
 	return {
 		...matrix,
-		routes: (matrix.routes ?? []).map((route) => ({
-			...route,
-			destination: normalizeAlgoSlotKey(route.destination) as ModDestination,
-		})),
+		routes,
+		layout: normalizeModMatrixLayout(matrix.layout, routes),
 	};
 }
 
@@ -797,7 +800,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					retrigMode: s.modEnvRetrigMode,
 				},
 				pitchBendRange: s.pitchBendRange,
-				modMatrix: s.modMatrix,
+				modMatrix: normalizeModMatrix(s.modMatrix),
 				fxSlots: sanitizeFxSlots(s.fxSlots),
 				macro1: s.macro1,
 				macro2: s.macro2,

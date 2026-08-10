@@ -32,8 +32,8 @@ pub use mapping::{
     midi_mapping_param_ranges_v1, parameter_range_for_key, set_parameter_value_by_key,
 };
 pub use modulation::{
-    ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, ModDestination, ModMatrix, ModRoute, ModSource,
-    NUM_MOD_DESTINATIONS,
+    ENV_STEP_DEST_FIRST, ENV_STEP_DEST_LAST, ModDestination, ModMatrix, ModMatrixLayout,
+    ModMatrixPage, ModRoute, ModSource, NUM_MOD_DESTINATIONS,
 };
 pub use portamento::{PortamentoMode, PortamentoParams};
 pub use synth_params::{

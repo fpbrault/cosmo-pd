@@ -1649,6 +1649,7 @@ mod tests {
                 amount: 1.0,
                 enabled: true,
             }],
+            layout: None,
         };
         let json = CString::new(serde_json::to_string(&params).unwrap()).unwrap();
         let status = unsafe { cosmo_pd101_ffi_set_params_json(engine, json.as_ptr()) };

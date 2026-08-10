@@ -393,6 +393,23 @@ export type ModEnvRetrigMode = "poly" | "mono" | "legato";
 /**  Collection of modulation routes. */
 export type ModMatrix = {
 	routes?: ModRoute[],
+	layout?: ModMatrixLayout | null,
+};
+
+/**  Persisted editor layout for the two modulation matrix pages. */
+export type ModMatrixLayout = {
+	pages?: [ModMatrixPage, ModMatrixPage],
+};
+
+/**
+ *  One fixed 8×8 page in the modulation matrix editor.
+ *
+ *  These assignments are editor layout metadata. The audio engine continues to
+ *  evaluate the shared `ModMatrix::routes` collection independently of pages.
+ */
+export type ModMatrixPage = {
+	sources?: [(ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null), (ModSource | null)],
+	destinations?: [(ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null), (ModDestination | null)],
 };
 
 /**  Modulation mode */
@@ -5929,7 +5946,8 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
   "velocityCurve": 0.0,
   "pitchBendRange": 2.0,
   "modMatrix": {
-    "routes": []
+    "routes": [],
+    "layout": null
   },
   "random": {
     "rate": 2.0,
@@ -5990,4 +6008,3 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "Movement"
   ]
 };
-

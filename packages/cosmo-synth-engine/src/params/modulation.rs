@@ -315,6 +315,53 @@ mod tests {
             assert_eq!(deserialized, destination);
         }
     }
+
+    #[test]
+    fn mod_matrix_layout_is_optional_for_legacy_json_and_round_trips() {
+        let legacy = serde_json::from_str::<ModMatrix>(r#"{"routes":[]}"#).unwrap();
+        assert!(legacy.layout.is_none());
+
+        let layout = ModMatrixLayout {
+            pages: [
+                ModMatrixPage {
+                    sources: [
+                        Some(ModSource::Lfo1),
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                    ],
+                    destinations: [
+                        Some(ModDestination::Volume),
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                    ],
+                },
+                ModMatrixPage::default(),
+            ],
+        };
+        let matrix = ModMatrix {
+            routes: vec![ModRoute {
+                source: ModSource::Lfo1,
+                destination: ModDestination::Volume,
+                amount: 0.5,
+                enabled: true,
+            }],
+            layout: Some(layout.clone()),
+        };
+
+        let json = serde_json::to_string(&matrix).unwrap();
+        let decoded = serde_json::from_str::<ModMatrix>(&json).unwrap();
+        assert_eq!(decoded.layout, Some(layout));
+    }
 }
 
 impl Default for ModRoute {
@@ -328,6 +375,29 @@ impl Default for ModRoute {
     }
 }
 
+/// One fixed 8×8 page in the modulation matrix editor.
+///
+/// These assignments are editor layout metadata. The audio engine continues to
+/// evaluate the shared `ModMatrix::routes` collection independently of pages.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ModMatrixPage {
+    #[serde(default)]
+    pub sources: [Option<ModSource>; 8],
+    #[serde(default)]
+    pub destinations: [Option<ModDestination>; 8],
+}
+
+/// Persisted editor layout for the two modulation matrix pages.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct ModMatrixLayout {
+    #[serde(default)]
+    pub pages: [ModMatrixPage; 2],
+}
+
 /// Collection of modulation routes.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
@@ -335,4 +405,6 @@ impl Default for ModRoute {
 pub struct ModMatrix {
     #[serde(default)]
     pub routes: Vec<ModRoute>,
+    #[serde(default)]
+    pub layout: Option<ModMatrixLayout>,
 }
