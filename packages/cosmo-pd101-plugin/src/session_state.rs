@@ -160,6 +160,37 @@ mod tests {
     }
 
     #[test]
+    fn legacy_session_lines_default_synthesis_method_to_pd() {
+        let mut value = serde_json::to_value(PluginSessionState {
+            synth_params: SynthParams::default(),
+            preset_session: PresetSession::default(),
+            editor_state: None,
+        })
+        .unwrap();
+        let synth_params = value
+            .get_mut("synthParams")
+            .and_then(serde_json::Value::as_object_mut)
+            .unwrap();
+        for line_key in ["line1", "line2"] {
+            synth_params
+                .get_mut(line_key)
+                .and_then(serde_json::Value::as_object_mut)
+                .unwrap()
+                .remove("synthesisMethod");
+        }
+
+        let result = deserialize_state(&serde_json::to_vec(&value).unwrap()).unwrap();
+        assert_eq!(
+            result.synth_params.line1.synthesis_method,
+            cosmo_synth_engine::params::SynthesisMethod::Pd
+        );
+        assert_eq!(
+            result.synth_params.line2.synthesis_method,
+            cosmo_synth_engine::params::SynthesisMethod::Pd
+        );
+    }
+
+    #[test]
     fn midi_learn_state_roundtrip() {
         let state = MidiLearnState {
             learn_mode: true,

@@ -9,6 +9,7 @@ mod mapping;
 mod modulation;
 mod portamento;
 mod synth_params;
+mod synthesis;
 mod ui_meta;
 mod waveforms;
 
@@ -40,6 +41,7 @@ pub use synth_params::{
     DEFAULT_VOICE_LIMIT, MAX_VOICE_LIMIT, MAX_VOICES, MIN_VOICE_LIMIT, ModEnvMode, ModEnvParams,
     ModEnvRetrigMode, NUM_OPERATORS, RandomParams, SynthParams, default_synth_params_v1,
 };
+pub use synthesis::SynthesisMethod;
 pub use ui_meta::{
     EngineEnumValueLabelV1, EngineParamRangeV1, EngineParamReadoutFormatV1, EngineParamUiMetaV1,
     engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
@@ -114,6 +116,41 @@ mod tests {
         for key in ["chorus", "delay", "reverb", "phaser"] {
             params.remove(key);
         }
+    }
+
+    #[test]
+    fn legacy_lines_without_synthesis_method_default_to_pd() {
+        let mut value = serde_json::to_value(SynthParams::default())
+            .expect("default synth params should serialize");
+        let root = value
+            .as_object_mut()
+            .expect("synth params should serialize as an object");
+
+        for line_key in ["line1", "line2"] {
+            root.get_mut(line_key)
+                .and_then(serde_json::Value::as_object_mut)
+                .expect("line params should serialize as an object")
+                .remove("synthesisMethod");
+        }
+
+        let restored: SynthParams =
+            serde_json::from_value(value).expect("legacy synth params should deserialize");
+        assert_eq!(restored.line1.synthesis_method, SynthesisMethod::Pd);
+        assert_eq!(restored.line2.synthesis_method, SynthesisMethod::Pd);
+    }
+
+    #[test]
+    fn synthesis_method_roundtrips_without_schema_change() {
+        let params = SynthParams::default();
+        let serialized = serde_json::to_value(params).expect("synth params should serialize");
+        assert_eq!(serialized["line1"]["synthesisMethod"], "pd");
+        assert_eq!(serialized["line2"]["synthesisMethod"], "pd");
+
+        let restored: SynthParams =
+            serde_json::from_value(serialized).expect("synth params should deserialize");
+        assert_eq!(restored.line1.synthesis_method, SynthesisMethod::Pd);
+        assert_eq!(restored.line2.synthesis_method, SynthesisMethod::Pd);
+        assert_eq!(crate::preset_wire::SYNTH_SCHEMA_VERSION_V1, 1);
     }
 
     #[test]

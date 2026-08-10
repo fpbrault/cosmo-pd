@@ -26,12 +26,15 @@ use cosmo_synth_engine::params::{
     LineParams, LineSelect, LoFiParams, ModDestination, ModEnvMode, ModEnvParams, ModEnvRetrigMode,
     ModMatrix, ModMatrixLayout, ModMatrixPage, ModMode, ModRoute, ModSource, PhaseModParams,
     PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
-    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
-    WavefolderParams, WindowType, default_synth_params_v1, engine_param_ranges_v1,
+    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, SynthesisMethod, TremoloParams,
+    VibratoParams, WavefolderParams, WindowType, default_synth_params_v1, engine_param_ranges_v1,
     engine_param_ui_meta_v1, midi_mapping_param_ranges_v1,
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
+};
+use cosmo_synth_engine::synthesis::{
+    EngineCapabilitiesV1, EngineDefinitionV1, engine_definitions_v1,
 };
 use specta::Types;
 use specta_typescript::Typescript;
@@ -80,6 +83,7 @@ fn main() {
     types.register_mut::<Algo>();
     types.register_mut::<WindowType>();
     types.register_mut::<LineSelect>();
+    types.register_mut::<SynthesisMethod>();
     types.register_mut::<ModMode>();
     types.register_mut::<PolyMode>();
     types.register_mut::<LfoWaveform>();
@@ -107,6 +111,8 @@ fn main() {
     types.register_mut::<AlgoControlV1>();
     types.register_mut::<AlgoDefinitionV1>();
     types.register_mut::<AlgoUiEntryV1>();
+    types.register_mut::<EngineCapabilitiesV1>();
+    types.register_mut::<EngineDefinitionV1>();
     types.register_mut::<ModSource>();
     types.register_mut::<ModDestination>();
     types.register_mut::<ModRoute>();
@@ -178,33 +184,39 @@ fn main() {
     out.push_str("export const ALGO_UI_CATALOG_V1: AlgoUiEntryV1[] = ");
     out.push_str(&catalog_json);
     out.push_str(";\n");
-    out.push_str("\n");
+    out.push('\n');
     out.push_str("/** Rust-owned algorithm definitions and control defaults. */\n");
     out.push_str("export const ALGO_DEFINITIONS_V1 = ");
     out.push_str(&definitions_json);
     out.push_str(";\n");
-    out.push_str("\n");
+    out.push('\n');
+    let engine_definitions_json = serde_json::to_string_pretty(engine_definitions_v1())
+        .expect("Failed to serialize SYNTHESIS_ENGINE_DEFINITIONS_V1");
+    out.push_str("export const SYNTHESIS_ENGINE_DEFINITIONS_V1: EngineDefinitionV1[] = ");
+    out.push_str(&engine_definitions_json);
+    out.push_str(";\n");
+    out.push('\n');
     let cz_presets_json =
         serde_json::to_string_pretty(cz_presets()).expect("Failed to serialize CZ_PRESETS");
     out.push_str("/** Rust-owned CZ waveform combination presets. */\n");
     out.push_str("export const CZ_PRESETS: CzPresetV1[] = ");
     out.push_str(&cz_presets_json);
     out.push_str(";\n");
-    out.push_str("\n");
+    out.push('\n');
     let fx_definitions_json = serde_json::to_string_pretty(fx_definitions_v1())
         .expect("Failed to serialize FX_DEFINITIONS_V1");
     out.push_str("/** Rust-owned FX module definitions and control defaults. */\n");
     out.push_str("export const FX_DEFINITIONS_V1: FxDefinitionV1[] = ");
     out.push_str(&fx_definitions_json);
     out.push_str(";\n");
-    out.push_str("\n");
+    out.push('\n');
     let module_preset_catalog_json = serde_json::to_string_pretty(module_preset_catalog_v1())
         .expect("Failed to serialize MODULE_PRESET_CATALOG_V1");
     out.push_str("/** Rust-owned module preset labels and ordering. */\n");
     out.push_str("export const MODULE_PRESET_CATALOG_V1: ModulePresetGroupV1[] = ");
     out.push_str(&module_preset_catalog_json);
     out.push_str(";\n");
-    out.push_str("\n");
+    out.push('\n');
 
     // Per-module typed preset data exports
     macro_rules! export_preset_const {

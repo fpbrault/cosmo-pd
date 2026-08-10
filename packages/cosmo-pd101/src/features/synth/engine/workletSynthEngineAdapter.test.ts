@@ -15,6 +15,7 @@ function createSnapshot(overrides?: Partial<SynthParams>): SynthEngineSnapshot {
 			modMode: "normal",
 			octave: 3,
 			line1: {
+				synthesisMethod: "pd",
 				algo: "saw",
 				algo2: null,
 				algoBlend: 0,
@@ -47,6 +48,7 @@ function createSnapshot(overrides?: Partial<SynthParams>): SynthEngineSnapshot {
 				algoControlsB: [],
 			},
 			line2: {
+				synthesisMethod: "pd",
 				algo: "square",
 				algo2: null,
 				algoBlend: 0,
@@ -136,6 +138,8 @@ describe("createWorkletSynthEngineAdapter", () => {
 		expect(paramsRef.current).toBeDefined();
 		expect(paramsRef.current.line1.algo).toBe("saw");
 		expect(paramsRef.current.line2.algo).toBe("square");
+		expect(paramsRef.current.line1.synthesisMethod).toBe("pd");
+		expect(paramsRef.current.line2.synthesisMethod).toBe("pd");
 	});
 
 	it("sync does NOT postMessage if workletNodeRef.current is null", () => {
@@ -159,8 +163,14 @@ describe("createWorkletSynthEngineAdapter", () => {
 		expect(postMessage).toHaveBeenCalledWith({
 			type: "setParams",
 			params: expect.objectContaining({
-				line1: expect.objectContaining({ algo: "saw" }),
-				line2: expect.objectContaining({ algo: "square" }),
+				line1: expect.objectContaining({
+					algo: "saw",
+					synthesisMethod: "pd",
+				}),
+				line2: expect.objectContaining({
+					algo: "square",
+					synthesisMethod: "pd",
+				}),
 			}),
 		});
 	});

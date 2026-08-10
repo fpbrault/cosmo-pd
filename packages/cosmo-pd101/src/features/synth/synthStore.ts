@@ -25,6 +25,7 @@ import type {
 	PolyMode,
 	PortamentoMode,
 	StepEnvData,
+	SynthesisMethod,
 	SynthPresetV1,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
@@ -193,6 +194,7 @@ type SynthState = {
 	czDacEnabled: boolean;
 
 	line1Level: number;
+	line1SynthesisMethod: SynthesisMethod;
 	/** Shared OCT knob — sets octave for both lines. */
 	lineOctave: number;
 	line2DetuneOctave: number;
@@ -209,6 +211,7 @@ type SynthState = {
 	line1BaseWaveformB: BaseWaveform;
 
 	line2Level: number;
+	line2SynthesisMethod: SynthesisMethod;
 	line2DcwKeyFollow: number;
 	line2DcaKeyFollow: number;
 	line2DcoEnv: StepEnvData;
@@ -417,6 +420,7 @@ const DEFAULT_STATE: SynthState = {
 	czDacEnabled: false,
 
 	line1Level: requireEngineParamDefault("line1Level"),
+	line1SynthesisMethod: "pd",
 	lineOctave: 0,
 	line2DetuneOctave: 0,
 	line2DetuneNote: 0,
@@ -432,6 +436,7 @@ const DEFAULT_STATE: SynthState = {
 	line1BaseWaveformB: "cosine",
 
 	line2Level: requireEngineParamDefault("line2Level"),
+	line2SynthesisMethod: "pd",
 	line2DcwKeyFollow: 0,
 	line2DcaKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
@@ -750,6 +755,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				modMode: s.modMode,
 				octave: s.octave,
 				line1: {
+					synthesisMethod: s.line1SynthesisMethod,
 					algo: s.warpAAlgo,
 					algo2: s.algo2A,
 					algoBlend: s.algoBlendA,
@@ -771,6 +777,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					algoControlsB: line1NormalizedAlgoControlsB,
 				},
 				line2: {
+					synthesisMethod: s.line2SynthesisMethod,
 					algo: s.warpBAlgo,
 					algo2: s.algo2B,
 					algoBlend: s.algoBlendB,
@@ -1005,6 +1012,10 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					: toAlgoRefV1(p.line2.algo2, DEFAULT_ALGO_REF);
 
 			set({
+				line1SynthesisMethod:
+					(p.line1?.synthesisMethod as SynthesisMethod | undefined) ?? "pd",
+				line2SynthesisMethod:
+					(p.line2?.synthesisMethod as SynthesisMethod | undefined) ?? "pd",
 				warpAAmount: safe(p.line1?.dcwBase, 0),
 				warpBAmount: safe(p.line2?.dcwBase, 0),
 				warpAAlgo: line1PrimaryAlgo,

@@ -11,7 +11,7 @@ pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
 use crate::envelope::EnvGen;
-use crate::generators::AlgoRuntimeState;
+use crate::synthesis::{LineSynthesisRuntime, PdChannel, PdState};
 
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
 
@@ -78,7 +78,10 @@ pub struct Voice {
     pub last_output_sample: f32,
     pub release_tail_level: f32,
     pub aftertouch: f32,
-    pub algo_runtime: AlgoRuntimeState,
+    pub(crate) line1_synthesis: LineSynthesisRuntime,
+    pub(crate) line2_synthesis: LineSynthesisRuntime,
+    pub(crate) prime_synthesis: LineSynthesisRuntime,
+    pub(crate) pd_state: PdState,
 }
 
 impl Voice {
@@ -121,7 +124,10 @@ impl Voice {
             last_output_sample: 0.0,
             release_tail_level: 0.0,
             aftertouch: 0.0,
-            algo_runtime: AlgoRuntimeState::default(),
+            line1_synthesis: LineSynthesisRuntime::new(PdChannel::Line1),
+            line2_synthesis: LineSynthesisRuntime::new(PdChannel::Line2),
+            prime_synthesis: LineSynthesisRuntime::new(PdChannel::Prime),
+            pd_state: PdState::default(),
         }
     }
 
@@ -458,5 +464,42 @@ mod tests {
             render_sequence(ring, 60, 16),
             render_sequence(ring_normal, 60, 16)
         );
+    }
+
+    #[test]
+    fn both_prime_modes_render_their_selected_pd_sources() {
+        let mut l1_prime = SynthParams::default();
+        l1_prime.line_select = LineSelect::L1PlusL1Prime;
+        l1_prime.mod_mode = ModMode::Normal;
+        l1_prime.line1.algo = crate::params::Algo::Saw;
+        l1_prime.line2.algo = crate::params::Algo::Square;
+        l1_prime.line2.dca_base = 0.0;
+
+        let mut l2_prime = l1_prime.clone();
+        l2_prime.line_select = LineSelect::L1PlusL2Prime;
+
+        let l1_prime_samples = render_sequence(l1_prime, 60, 64);
+        let l2_prime_samples = render_sequence(l2_prime, 60, 64);
+        assert!(sum_abs(&l1_prime_samples) > 1e-4);
+        assert!(sum_abs(&l2_prime_samples) > 1e-4);
+        assert_ne!(l1_prime_samples, l2_prime_samples);
+    }
+
+    #[test]
+    fn dual_line_ring_uses_both_completed_pd_sources() {
+        let mut normal = SynthParams::default();
+        normal.line_select = LineSelect::L1PlusL2Prime;
+        normal.mod_mode = ModMode::Normal;
+        normal.line1.algo = crate::params::Algo::Saw;
+        normal.line2.algo = crate::params::Algo::Square;
+
+        let mut ring = normal.clone();
+        ring.mod_mode = ModMode::Ring;
+
+        let normal_samples = render_sequence(normal, 60, 64);
+        let ring_samples = render_sequence(ring, 60, 64);
+        assert!(ring_samples.iter().all(|sample| sample.is_finite()));
+        assert!(sum_abs(&ring_samples) > 1e-4);
+        assert_ne!(normal_samples, ring_samples);
     }
 }

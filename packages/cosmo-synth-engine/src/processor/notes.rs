@@ -27,6 +27,14 @@ impl CosmoProcessor {
         voice.line2_env.dco.start_release(&p.line2.dco_env);
         voice.line2_env.dcw.start_release(&p.line2.dcw_env);
         voice.line2_env.dca.start_release(&p.line2.dca_env);
+        voice.line1_synthesis.note_off(&p.line1);
+        voice.line2_synthesis.note_off(&p.line2);
+        let prime_params = if p.line_select == crate::params::LineSelect::L1PlusL1Prime {
+            &p.line1
+        } else {
+            &p.line2
+        };
+        voice.prime_synthesis.note_off(prime_params);
     }
 
     pub(crate) fn start_mod_env_release_for_voice(&mut self, voice_idx: usize) {
@@ -94,6 +102,14 @@ impl CosmoProcessor {
         voice.aftertouch = 0.0;
         voice.smoothed_dcw1 = if was_active { prev_smoothed_dcw1 } else { 0.0 };
         voice.smoothed_dcw2 = if was_active { prev_smoothed_dcw2 } else { 0.0 };
+        let identity_base = (voice_idx as u64) * 3;
+        voice.line1_synthesis.reset(self.sample_rate, identity_base);
+        voice
+            .line2_synthesis
+            .reset(self.sample_rate, identity_base + 1);
+        voice
+            .prime_synthesis
+            .reset(self.sample_rate, identity_base + 2);
 
         if let Some(vib) = self.params.vibrato_params()
             && vib.enabled
@@ -144,7 +160,21 @@ impl CosmoProcessor {
 
     pub(crate) fn reset_generator_runtime_for_note(&mut self, voice_idx: usize, note: u8) {
         let voice = &mut self.voices[voice_idx];
-        voice.algo_runtime.note_on(note);
+        voice.pd_state.note_on(note);
+        voice
+            .line1_synthesis
+            .note_on(&self.params.line1, note, voice.velocity);
+        voice
+            .line2_synthesis
+            .note_on(&self.params.line2, note, voice.velocity);
+        let prime_params = if self.params.line_select == crate::params::LineSelect::L1PlusL1Prime {
+            &self.params.line1
+        } else {
+            &self.params.line2
+        };
+        voice
+            .prime_synthesis
+            .note_on(prime_params, note, voice.velocity);
     }
 
     pub(crate) fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {

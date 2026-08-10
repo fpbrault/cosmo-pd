@@ -190,6 +190,7 @@ export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
 
 /**  Per-line parameters */
 export type LineParams = {
+	synthesisMethod?: SynthesisMethod,
 	algo: Algo,
 	algo2: Algo | null,
 	algoBlend: number | null,
@@ -669,6 +670,8 @@ export type SynthParams = {
 	macro4?: number | null,
 	macroLabels?: [string, string, string, string],
 };
+
+export type SynthesisMethod = "pd";
 
 /**  Transport info snapshot sent from Rust to the webview. */
 export type TransportInfoResponse = {

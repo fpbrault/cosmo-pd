@@ -201,38 +201,36 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let (s1, karpunk_raw_sample1) =
-        voice
-            .algo_runtime
-            .render_line1(LineRenderConfig::from_compiled_line(
-                line1_plan,
-                line1_modded,
-                voice.cycle_count1,
-                phase.phi1,
-                phase.phase_a_post,
-                signal.final_dcw1,
-                signal.final_dca1,
-                signal.effective_freq1,
-                sr,
-                line1_algo_param_mods,
-                phase.pm_post_mod,
-            ));
-    let (s2, karpunk_raw_sample2) =
-        voice
-            .algo_runtime
-            .render_line2(LineRenderConfig::from_compiled_line(
-                line2_plan,
-                line2_modded,
-                voice.cycle_count2,
-                phase.phi2,
-                phase.phase_b_post,
-                signal.final_dcw2,
-                signal.final_dca2,
-                signal.effective_freq2,
-                sr,
-                line2_algo_param_mods,
-                phase.pm_post_mod,
-            ));
+    let (s1, prime_source1) = voice
+        .pd_state
+        .render_line1(LineRenderConfig::from_compiled_line(
+            line1_plan,
+            line1_modded,
+            voice.cycle_count1,
+            phase.phi1,
+            phase.phase_a_post,
+            signal.final_dcw1,
+            signal.final_dca1,
+            signal.effective_freq1,
+            sr,
+            line1_algo_param_mods,
+            phase.pm_post_mod,
+        ));
+    let (s2, prime_source2) = voice
+        .pd_state
+        .render_line2(LineRenderConfig::from_compiled_line(
+            line2_plan,
+            line2_modded,
+            voice.cycle_count2,
+            phase.phi2,
+            phase.phase_b_post,
+            signal.final_dcw2,
+            signal.final_dca2,
+            signal.effective_freq2,
+            sr,
+            line2_algo_param_mods,
+            phase.pm_post_mod,
+        ));
     let mod_mode = effective_mod_mode(p);
     let noise_step = if mod_mode == ModMode::Noise {
         let step = voice.noise_step;
@@ -254,8 +252,8 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         line2_modded,
         voice.cycle_count1,
         voice.cycle_count2,
-        karpunk_raw_sample1,
-        karpunk_raw_sample2,
+        prime_source1,
+        prime_source2,
         signal.final_dcw1,
         signal.final_dcw2,
         signal.final_dca1,
@@ -988,8 +986,8 @@ fn select_noise_line_sources(
     }
 }
 
-fn render_prime_line_sample(cfg: LineRenderConfig, karpunk_raw_sample: Option<f32>) -> f32 {
-    generators::render_sample_from_config(&cfg, karpunk_raw_sample)
+fn render_prime_line_sample(config: LineRenderConfig, prime_source: Option<f32>) -> f32 {
+    generators::render_sample_from_config(&config, prime_source)
 }
 
 fn render_noise_line_sample(final_dcw: f32, final_dca: f32, noise_step: u32) -> f32 {
