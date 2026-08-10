@@ -24,11 +24,11 @@ use cosmo_synth_engine::params::{
     CzAlgo, CzWaveform, DelayParams, DistortionParams, EnvStep, EqParams, FxSlotConfig, FxSlotType,
     GrainDelayParams, JunoChorusParams, LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform,
     LineParams, LineSelect, LoFiParams, ModDestination, ModEnvMode, ModEnvParams, ModEnvRetrigMode,
-    ModMatrix, ModMode, ModRoute, ModSource, PhaseModParams, PhaserParams, PolyMode,
-    PortamentoMode, PortamentoParams, RandomParams, ReverbParams, RingModParams, ShimmerVerbParams,
-    StepEnvData, SynthParams, TremoloParams, VibratoParams, WavefolderParams, WindowType,
-    default_synth_params_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
-    midi_mapping_param_ranges_v1,
+    ModMatrix, ModMatrixLayout, ModMatrixPage, ModMode, ModRoute, ModSource, PhaseModParams,
+    PhaserParams, PolyMode, PortamentoMode, PortamentoParams, RandomParams, ReverbParams,
+    RingModParams, ShimmerVerbParams, StepEnvData, SynthParams, TremoloParams, VibratoParams,
+    WavefolderParams, WindowType, default_synth_params_v1, engine_param_ranges_v1,
+    engine_param_ui_meta_v1, midi_mapping_param_ranges_v1,
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
@@ -110,6 +110,8 @@ fn main() {
     types.register_mut::<ModSource>();
     types.register_mut::<ModDestination>();
     types.register_mut::<ModRoute>();
+    types.register_mut::<ModMatrixPage>();
+    types.register_mut::<ModMatrixLayout>();
     types.register_mut::<ModMatrix>();
     types.register_mut::<FxSlotType>();
     types.register_mut::<CompressorParams>();

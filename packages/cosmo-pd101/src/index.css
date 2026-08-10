@@ -133,6 +133,12 @@
 }
 
 @layer components {
+	/* Route depth is continuous; the source activity marker may use discrete steps,
+	   but the destination tint must respond smoothly to every amount in the cell. */
+	.mod-matrix-route-fill {
+		transition: opacity 120ms ease-out;
+	}
+
 	/* ── Knob variants ─────────────────────────────────────────────────────── */
 	.knob-variant-default {
 		--knob-track-color: rgba(255, 255, 255, 0.15);

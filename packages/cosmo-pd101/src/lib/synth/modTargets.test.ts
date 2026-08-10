@@ -53,6 +53,7 @@ describe("modTargets", () => {
 	describe("getModDestinationGroups", () => {
 		it("returns groups with destinations", () => {
 			const groups = getModDestinationGroups();
+			const destinations = groups.flatMap((group) => group.destinations);
 			expect(groups.length).toBeGreaterThan(0);
 			const globalGroup = groups.find((g) => g.label === "Global");
 			expect(globalGroup).toBeDefined();
@@ -72,6 +73,33 @@ describe("modTargets", () => {
 			expect(
 				line2Group?.destinations.some((d) => d.value === "line2DetuneOctave"),
 			).toBe(true);
+			expect(groups.map((group) => group.label)).toEqual([
+				"Global",
+				"FX",
+				"Line 1",
+				"Line 2",
+				"Modulation",
+				"Envelopes",
+			]);
+			expect(
+				groups
+					.find((group) => group.label === "FX")
+					?.destinations.some(
+						(destination) => destination.value === "intPmRatio",
+					),
+			).toBe(true);
+			expect(
+				destinations.filter(
+					(destination) => destination.value === "intPmRatio",
+				),
+			).toEqual([{ value: "intPmRatio", label: "Internal PM Ratio" }]);
+			expect(
+				groups
+					.find((group) => group.label === "Global")
+					?.destinations.some(
+						(destination) => destination.value === "intPmRatio",
+					),
+			).toBe(false);
 		});
 	});
 

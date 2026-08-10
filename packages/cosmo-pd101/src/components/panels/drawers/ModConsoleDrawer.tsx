@@ -5,17 +5,15 @@ import ModMatrixPanel from "../modulation-matrix/ModMatrixPanel";
 
 export default function ModConsoleDrawer() {
 	return (
-		<div className="flex h-full min-h-0 gap-3">
-			{/* Left: 2×3 module grid filling full height — row 1: Vibrato + Phase Mod, row 2: LFO 1 + LFO 2, row 3: Random + Mod Env */}
-			<div className="grid min-h-0 min-w-0 flex-2 grid-cols-2 grid-rows-2 gap-2">
+		<div className="grid h-full min-h-0 min-w-0 touch-pan-x grid-cols-[minmax(18rem,2fr)_minmax(12rem,1fr)] gap-3 overflow-x-auto">
+			<div className="order-1 grid min-h-0 min-w-[18rem] grid-cols-2 grid-rows-2 gap-2">
 				<LfoModule id={1} color="#27588f" />
 				<LfoModule id={2} color="#d7ac3d" />
 				<RandomModule />
 				<ModEnveloppeModule />
 			</div>
 
-			{/* Right: Mod Matrix panel */}
-			<div className="min-h-0 min-w-0 flex-1">
+			<div className="order-2 min-h-0 min-w-[12rem]">
 				<ModMatrixPanel />
 			</div>
 		</div>

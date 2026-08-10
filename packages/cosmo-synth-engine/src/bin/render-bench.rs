@@ -676,6 +676,7 @@ fn scenarios() -> Vec<Scenario> {
                             enabled: true,
                         },
                     ],
+                    layout: None,
                 };
                 p.fx_slots = [
                     FxSlotConfig::Empty,
@@ -1019,7 +1020,10 @@ fn heavy_mod_matrix() -> ModMatrix {
         },
     ];
 
-    ModMatrix { routes }
+    ModMatrix {
+        routes,
+        layout: None,
+    }
 }
 
 fn find_scenario(name: &str) -> Option<Scenario> {
