@@ -119,6 +119,9 @@ fn handle_ipc_invoke(
         telemetry: crate::runtime_state::RuntimeTelemetry {
             runtime_mod_sources: runtime_mod_sources.clone(),
             runtime_voice_states: runtime_voice_states.clone(),
+            runtime_sequencer_state: Arc::new(ArcSwap::from_pointee(
+                cosmo_synth_engine::processor::SequencerRuntimeState::default(),
+            )),
             transport_snapshot: transport_snapshot.clone(),
             scope_buffer: scope_buffer.clone(),
             exchange: Arc::new(crate::runtime_state::RuntimeTelemetryExchange::default()),

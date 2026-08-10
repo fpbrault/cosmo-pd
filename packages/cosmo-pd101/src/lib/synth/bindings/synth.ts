@@ -510,6 +510,35 @@ export type RingModPresetV1 = {
 	params: RingModParams,
 };
 
+export type SequencerDirection = "up" | "down" | "upDown" | "random" | "asPlayed" | "forward" | "reverse" | "pingPong";
+
+export type SequencerHoldMode = "hold" | "latch";
+
+export type SequencerMode = "arpeggiator" | "step";
+
+export type SequencerParams = {
+	enabled?: boolean,
+	mode?: SequencerMode,
+	rate?: LfoSyncDivision,
+	direction?: SequencerDirection,
+	octaveRange?: number,
+	repeat?: number,
+	gate?: number | null,
+	swing?: number | null,
+	holdMode?: SequencerHoldMode,
+	patternLength?: number,
+	resetOnTransport?: boolean,
+	steps?: [SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep, SequencerStep],
+};
+
+export type SequencerStep = {
+	enabled?: boolean,
+	pitch?: number,
+	velocity?: number | null,
+	gate?: number | null,
+	probability?: number | null,
+};
+
 /**  Shimmer verb parameters */
 export type ShimmerVerbParams = {
 	enabled?: boolean,
@@ -563,6 +592,7 @@ export type SynthParams = {
 	macro3?: number | null,
 	macro4?: number | null,
 	macroLabels?: [string, string, string, string],
+	sequencer?: SequencerParams,
 };
 
 /**  Canonical, versioned synth preset wire contract. */
@@ -5988,6 +6018,133 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
     "Timbre",
     "Time",
     "Movement"
-  ]
+  ],
+  "sequencer": {
+    "enabled": false,
+    "mode": "arpeggiator",
+    "rate": "eighth",
+    "direction": "up",
+    "octaveRange": 1,
+    "repeat": 1,
+    "gate": 0.75,
+    "swing": 0.0,
+    "holdMode": "hold",
+    "patternLength": 8,
+    "resetOnTransport": true,
+    "steps": [
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      },
+      {
+        "enabled": true,
+        "pitch": 0,
+        "velocity": 1.0,
+        "gate": 1.0,
+        "probability": 1.0
+      }
+    ]
+  }
 };
 

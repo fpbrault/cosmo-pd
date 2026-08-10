@@ -296,6 +296,7 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			case "requestRuntimeTelemetry":
 				this._emitRuntimeModSources();
 				this._emitRuntimeVoiceStates();
+				this._emitRuntimeSequencerState();
 				break;
 		}
 	}
@@ -492,6 +493,25 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		} catch (err) {
 			console.error(
 				"[czSynthWorklet] Failed to read runtime voice states:",
+				err,
+			);
+		}
+	}
+
+	_emitRuntimeSequencerState() {
+		if (
+			!this._synth ||
+			typeof this._synth.getRuntimeSequencerState !== "function"
+		) {
+			return;
+		}
+
+		try {
+			const state = JSON.parse(this._synth.getRuntimeSequencerState());
+			this.port.postMessage({ type: "runtimeSequencerState", state });
+		} catch (err) {
+			console.error(
+				"[czSynthWorklet] Failed to read runtime sequencer state:",
 				err,
 			);
 		}

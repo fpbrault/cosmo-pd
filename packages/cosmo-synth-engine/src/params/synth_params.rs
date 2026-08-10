@@ -7,6 +7,7 @@ use super::lfo::{LfoParams, LfoRateMode, LfoSyncDivision};
 use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
+use super::sequencer::SequencerParams;
 
 pub const MIN_VOICE_LIMIT: usize = 1;
 pub const DEFAULT_VOICE_LIMIT: usize = 8;
@@ -163,6 +164,8 @@ pub struct SynthParams {
     pub macro4: f32,
     #[serde(default = "default_macro_labels")]
     pub macro_labels: [String; 4],
+    #[serde(default)]
+    pub sequencer: SequencerParams,
 }
 
 impl SynthParams {
@@ -216,6 +219,7 @@ impl Default for SynthParams {
             macro3: 0.0,
             macro4: 0.0,
             macro_labels: default_macro_labels(),
+            sequencer: SequencerParams::default(),
         }
     }
 }

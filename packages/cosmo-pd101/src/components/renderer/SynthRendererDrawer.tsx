@@ -3,6 +3,7 @@ import { memo } from "react";
 import { ScopeDrawerDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
+import SequencerDrawer from "@/components/panels/drawers/SequencerDrawer";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import type { DrawerPanel } from "./drawerHelpers";
 import {
@@ -16,6 +17,7 @@ const DRAWER_CONTENT: Record<DrawerPanel, React.ReactNode> = {
 	fx: <FxConsoleDrawer />,
 	mod: <ModConsoleDrawer />,
 	display: <ScopeDrawerDisplay />,
+	sequencer: <SequencerDrawer />,
 };
 
 export default memo(function SynthRendererDrawer() {

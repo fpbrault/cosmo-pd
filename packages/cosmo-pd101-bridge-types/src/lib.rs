@@ -21,6 +21,7 @@ mod runtime;
 mod session;
 
 pub use cosmo_synth_engine::params::SynthParams;
+pub use cosmo_synth_engine::processor::SequencerRuntimeState;
 pub use cosmo_synth_engine::processor::state::{
     RuntimeModEnvState, RuntimeModSources, RuntimeVoiceDebugState, RuntimeVoiceEnvState,
     RuntimeVoiceLineState,

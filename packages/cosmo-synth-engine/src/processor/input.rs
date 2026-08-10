@@ -29,19 +29,42 @@ pub struct CosmoTimedInputEvent {
 }
 
 pub fn apply_input_event(processor: &mut CosmoProcessor, event: CosmoInputEvent) {
+    let sequencer_enabled = processor.params.sequencer.enabled;
     match event {
         CosmoInputEvent::NoteOn { note, velocity } => {
             if velocity <= 0.0 {
-                processor.note_off(note);
+                if sequencer_enabled {
+                    let params = processor.params.clone();
+                    processor.sequencer.note_off(&params.sequencer, note);
+                } else {
+                    processor.note_off(note);
+                }
             } else {
-                processor.note_on(note, midi_note_to_freq(note), velocity);
+                if sequencer_enabled {
+                    let params = processor.params.clone();
+                    processor
+                        .sequencer
+                        .note_on(&params.sequencer, note, velocity);
+                } else {
+                    processor.note_on(note, midi_note_to_freq(note), velocity);
+                }
             }
         }
-        CosmoInputEvent::NoteOff { note } => processor.note_off(note),
+        CosmoInputEvent::NoteOff { note } => {
+            if sequencer_enabled {
+                let params = processor.params.clone();
+                processor.sequencer.note_off(&params.sequencer, note);
+            } else {
+                processor.note_off(note);
+            }
+        }
         CosmoInputEvent::ControlChange { cc, value, .. } => match cc {
             1 => processor.set_mod_wheel(f32::from(value) / 127.0),
             64 => processor.set_sustain(value >= 64),
-            120 | 123 => processor.all_notes_off(),
+            120 | 123 => {
+                processor.sequencer.panic();
+                processor.all_notes_off();
+            }
             _ => {}
         },
         CosmoInputEvent::ParameterChange { param_key, value } => {
@@ -56,7 +79,10 @@ pub fn apply_input_event(processor: &mut CosmoProcessor, event: CosmoInputEvent)
             processor.set_poly_aftertouch(note, value);
         }
         CosmoInputEvent::Macro { index, value } => processor.set_macro(index, value),
-        CosmoInputEvent::Panic => processor.all_notes_off(),
+        CosmoInputEvent::Panic => {
+            processor.sequencer.panic();
+            processor.all_notes_off();
+        }
     }
 }
 

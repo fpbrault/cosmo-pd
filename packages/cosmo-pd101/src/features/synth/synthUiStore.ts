@@ -6,7 +6,7 @@ import {
 } from "@/components/panels/analysis/scope-visualizations/renderScopeVisualization";
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
-export type MainPanelMode = "phase" | "fx" | "mod" | "display";
+export type MainPanelMode = "phase" | "fx" | "mod" | "display" | "sequencer";
 export type ScopeColorTheme = "vintage" | "amber" | "plasma";
 export type PhaseLinePanelTab =
 	| "line1-algos"
@@ -69,6 +69,7 @@ const MAIN_PANEL_MODES = new Set<MainPanelMode>([
 	"fx",
 	"mod",
 	"display",
+	"sequencer",
 ]);
 const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 	"line1-algos",

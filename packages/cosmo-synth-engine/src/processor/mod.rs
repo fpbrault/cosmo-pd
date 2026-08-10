@@ -6,6 +6,7 @@ mod cz_dac;
 mod input;
 mod notes;
 mod process;
+mod sequencer;
 pub mod state;
 pub mod utils;
 
@@ -31,6 +32,7 @@ use crate::simd::{SimdBackend, detect_simd_backend};
 use crate::voice::{AdsrEnv, Voice};
 
 use self::cz_dac::CzDacColor;
+pub use self::sequencer::SequencerRuntimeState;
 pub use self::state::{
     MonoStackEntry, NoteEntry, RuntimeModEnvState, RuntimeModSources, RuntimeVoiceDebugState,
     RuntimeVoiceEnvState, RuntimeVoiceLineState,
@@ -85,6 +87,7 @@ pub struct CosmoProcessor {
     voice_limit: usize,
     render_voice_limit: usize,
     pub shared_mod_env: AdsrEnv,
+    pub sequencer: sequencer::SequencerPlayer,
 }
 
 impl CosmoProcessor {
@@ -129,6 +132,7 @@ impl CosmoProcessor {
             voice_limit: DEFAULT_VOICE_LIMIT,
             render_voice_limit: DEFAULT_VOICE_LIMIT,
             shared_mod_env: AdsrEnv::default(),
+            sequencer: sequencer::SequencerPlayer::default(),
         };
         proc.update_fx();
         proc
@@ -272,6 +276,7 @@ impl CosmoProcessor {
 
     /// Swap in a pre-normalized shared parameter snapshot without cloning.
     pub fn set_shared_params(&mut self, params: Arc<SynthParams>) {
+        let sequencer_enabled_changed = self.params.sequencer.enabled != params.sequencer.enabled;
         self.macro1 = params.macro1;
         self.macro2 = params.macro2;
         self.macro3 = params.macro3;
@@ -279,6 +284,10 @@ impl CosmoProcessor {
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
+        if sequencer_enabled_changed {
+            self.sequencer.panic();
+            self.all_notes_off();
+        }
         self.rebuild_compiled_params();
         self.update_fx();
     }
@@ -327,6 +336,7 @@ impl CosmoProcessor {
         self.host_transport_tempo_bpm = None;
         self.host_transport_playing = false;
         self.host_transport_position_beats = 0.0;
+        self.sequencer.reset();
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
         self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
@@ -398,12 +408,16 @@ impl CosmoProcessor {
         if position_beats.is_finite() {
             self.host_transport_position_beats = position_beats;
         }
+        self.sequencer
+            .sync_host_transport(&self.params.sequencer, playing, position_beats);
     }
 
     /// Clear any active host transport override and fall back to manual tempo.
     pub fn clear_host_transport(&mut self) {
         self.host_transport_tempo_bpm = None;
         self.host_transport_playing = false;
+        self.sequencer
+            .sync_host_transport(&self.params.sequencer, false, 0.0);
     }
 
     /// Maximum number of voices available for note allocation.
@@ -471,6 +485,28 @@ impl CosmoProcessor {
 
     pub fn apply_input_event(&mut self, event: CosmoInputEvent) {
         input::apply_input_event(self, event);
+    }
+
+    pub(crate) fn advance_sequencer(&mut self, tempo_bpm: f32) {
+        let host_available = self.host_transport_tempo_bpm.is_some();
+        let params = Arc::clone(&self.params);
+        let action = self.sequencer.advance(
+            &params.sequencer,
+            self.sample_rate,
+            tempo_bpm,
+            host_available,
+        );
+        if let Some(note) = action.note_off {
+            self.note_off(note);
+        }
+        if let Some((note, velocity)) = action.note_on {
+            self.note_on(note, midi_note_to_freq(note), velocity);
+        }
+    }
+
+    pub fn sequencer_runtime_state(&self) -> SequencerRuntimeState {
+        self.sequencer
+            .runtime_state(self.host_transport_tempo_bpm.is_some())
     }
 
     pub fn apply_transport_state(&mut self, transport: CosmoTransportState) {

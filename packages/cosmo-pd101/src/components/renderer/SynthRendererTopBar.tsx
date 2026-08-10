@@ -74,6 +74,17 @@ export default memo(function SynthRendererTopBar({
 						color="grey"
 						tooltip={t("topBar.displayTooltip")}
 					/>
+					<CzTabButton
+						active={mainPanelMode === "sequencer"}
+						onClick={() => {
+							setMainPanelMode(getNextDrawerMode(mainPanelMode, "sequencer"));
+						}}
+						topLabel={t("topBar.sequencer")}
+						bottomLabel=""
+						width={48}
+						color="cyan"
+						tooltip={t("topBar.sequencerTooltip")}
+					/>
 				</div>
 			</div>
 

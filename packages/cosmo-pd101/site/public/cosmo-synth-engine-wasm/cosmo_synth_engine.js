@@ -78,6 +78,26 @@ let wasm_bindgen = (function(exports) {
             }
         }
         /**
+         * Return the current arpeggiator/sequencer playhead state for UI telemetry.
+         * @returns {string}
+         */
+        getRuntimeSequencerState() {
+            let deferred1_0;
+            let deferred1_1;
+            try {
+                const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+                wasm.czsynthprocessor_getRuntimeSequencerState(retptr, this.__wbg_ptr);
+                var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+                var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+                deferred1_0 = r0;
+                deferred1_1 = r1;
+                return getStringFromWasm0(r0, r1);
+            } finally {
+                wasm.__wbindgen_add_to_stack_pointer(16);
+                wasm.__wbindgen_export3(deferred1_0, deferred1_1, 1);
+            }
+        }
+        /**
          * Return the latest per-voice envelope state as JSON for UI telemetry.
          * @returns {string}
          */
@@ -121,11 +141,11 @@ let wasm_bindgen = (function(exports) {
          * * `frequency` — Hz; pass `0.0` to auto-compute from the MIDI note number
          * * `velocity`  — normalised 0.0-1.0
          * @param {number} note
-         * @param {number} frequency
+         * @param {number} _frequency
          * @param {number} velocity
          */
-        noteOn(note, frequency, velocity) {
-            wasm.czsynthprocessor_noteOn(this.__wbg_ptr, note, frequency, velocity);
+        noteOn(note, _frequency, velocity) {
+            wasm.czsynthprocessor_noteOn(this.__wbg_ptr, note, _frequency, velocity);
         }
         /**
          * Fill `output` with mono samples rendered by the DSP engine.

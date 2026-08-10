@@ -592,6 +592,7 @@ impl CzPluginDspState {
             .push_block(mono_output, proc.sample_rate, hz);
         if let Some(mut telemetry) = self.shared_state.telemetry.exchange.acquire_frame() {
             telemetry.mod_sources = proc.runtime_mod_sources();
+            telemetry.sequencer_state = proc.sequencer_runtime_state();
             telemetry.voice_count =
                 proc.write_runtime_voice_debug_state_slice(&mut telemetry.voice_states);
             self.audio

@@ -111,6 +111,7 @@ impl CosmoProcessor {
         let mut prev_random = self.last_runtime_mod_sources.random;
 
         for sample_out in output.iter_mut() {
+            self.advance_sequencer(effective_tempo_bpm);
             let is_shared_retrig = p.mod_env.retrig_mode != ModEnvRetrigMode::Poly;
             if is_shared_retrig {
                 self.shared_mod_env.advance(&p.mod_env, sr);

@@ -1275,7 +1275,9 @@
 		"mod": "MOD",
 		"modTooltip": "Toggle modulation console drawer.",
 		"display": "DISPLAY",
-		"displayTooltip": "Toggle full-size scope drawer."
+		"displayTooltip": "Toggle full-size scope drawer.",
+		"sequencer": "SEQ",
+		"sequencerTooltip": "Open the arpeggiator and step sequencer."
 	},
 	"update": {
 		"newVersion": "New Version Available!"
@@ -1284,6 +1286,9 @@
 		"title": "Random",
 		"displayTitle": "Random sample-and-hold preview",
 		"rate": "Rate"
+	},
+	"sequencer": {
+		"title": "Arpeggiator / Sequencer"
 	},
 	"modEnv": {
 		"title": "Mod Env",

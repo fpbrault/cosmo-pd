@@ -26,6 +26,10 @@ declare namespace wasm_bindgen {
          */
         getRuntimeModSources(): string;
         /**
+         * Return the current arpeggiator/sequencer playhead state for UI telemetry.
+         */
+        getRuntimeSequencerState(): string;
+        /**
          * Return the latest per-voice envelope state as JSON for UI telemetry.
          */
         getRuntimeVoiceStates(): string;
@@ -44,7 +48,7 @@ declare namespace wasm_bindgen {
          * * `frequency` — Hz; pass `0.0` to auto-compute from the MIDI note number
          * * `velocity`  — normalised 0.0-1.0
          */
-        noteOn(note: number, frequency: number, velocity: number): void;
+        noteOn(note: number, _frequency: number, velocity: number): void;
         /**
          * Fill `output` with mono samples rendered by the DSP engine.
          *
@@ -120,6 +124,7 @@ declare interface InitOutput {
     readonly czsynthprocessor_applyModulePreset: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly czsynthprocessor_getFxSlotTypes: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeModSources: (a: number, b: number) => void;
+    readonly czsynthprocessor_getRuntimeSequencerState: (a: number, b: number) => void;
     readonly czsynthprocessor_getRuntimeVoiceStates: (a: number, b: number) => void;
     readonly czsynthprocessor_new: (a: number) => number;
     readonly czsynthprocessor_noteOff: (a: number, b: number) => void;
