@@ -176,6 +176,13 @@ export function useNoteHandling({
 	}, [dispatchEngineEvent]);
 
 	useEffect(() => {
+		const onSequencerPanic = () => panic();
+		window.addEventListener("cz-sequencer-panic", onSequencerPanic);
+		return () =>
+			window.removeEventListener("cz-sequencer-panic", onSequencerPanic);
+	}, [panic]);
+
+	useEffect(() => {
 		const onRuntimeModSources = (event: Event) => {
 			const detail = (
 				event as CustomEvent<{ pitchBend?: number; modWheel?: number }>

@@ -600,6 +600,59 @@ function installRuntimeVoiceStatesPolling() {
 	});
 }
 
+function installRuntimeSequencerStatePolling() {
+	const eventName = "cz-runtime-sequencer-state";
+	const INTERVAL_MS = 33;
+	let rafId = 0;
+	let lastScheduled = 0;
+	let pollInFlight = false;
+	let destroyed = false;
+
+	const scheduleNextFrame = () => {
+		if (destroyed || rafId !== 0 || !hasDemand(eventName)) return;
+		rafId = requestAnimationFrame(tick);
+	};
+
+	const stopPolling = () => {
+		if (rafId !== 0) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+	};
+
+	const tick = async (now: number) => {
+		rafId = 0;
+		if (destroyed || !hasDemand(eventName)) return;
+		if (now - lastScheduled < INTERVAL_MS || pollInFlight) {
+			scheduleNextFrame();
+			return;
+		}
+		lastScheduled = now;
+		pollInFlight = true;
+		try {
+			const result = await invoke("getRuntimeSequencerState");
+			if (result) {
+				window.dispatchEvent(new CustomEvent(eventName, { detail: result }));
+			}
+		} catch {
+			// Sequencer telemetry is opportunistic while the audio thread is idle.
+		} finally {
+			pollInFlight = false;
+			scheduleNextFrame();
+		}
+	};
+
+	const unwatchDemand = watchDemand(eventName, () => {
+		if (hasDemand(eventName)) scheduleNextFrame();
+		else stopPolling();
+	});
+	window.addEventListener("pagehide", () => {
+		destroyed = true;
+		stopPolling();
+		unwatchDemand();
+	});
+}
+
 function installTransportPolling() {
 	const eventName = "cz-host-transport";
 	const INTERVAL_MS = 250;
@@ -712,6 +765,7 @@ export function ensureIPCBridge(): boolean {
 	installScopePolling();
 	installRuntimeModSourcesPolling();
 	installRuntimeVoiceStatesPolling();
+	installRuntimeSequencerStatePolling();
 	installTransportPolling();
 
 	// Fallback: if host prevented method patching, route via a getter/setter

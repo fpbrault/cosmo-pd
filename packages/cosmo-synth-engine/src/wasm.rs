@@ -10,7 +10,7 @@
 use wasm_bindgen::prelude::*;
 
 use crate::params::{FxSlotType, SynthParams};
-use crate::processor::{CosmoProcessor, RuntimeModSources};
+use crate::processor::{CosmoInputEvent, CosmoProcessor, RuntimeModSources};
 
 /// WebAssembly wrapper around [`CosmoProcessor`].
 ///
@@ -61,25 +61,27 @@ impl CzSynthProcessor {
     /// * `frequency` — Hz; pass `0.0` to auto-compute from the MIDI note number
     /// * `velocity`  — normalised 0.0-1.0
     #[wasm_bindgen(js_name = noteOn)]
-    pub fn note_on(&mut self, note: u8, frequency: f32, velocity: f32) {
-        let freq = if frequency > 0.0 {
-            frequency
-        } else {
-            midi_note_to_freq(note)
-        };
-        self.inner.note_on(note, freq, velocity);
+    pub fn note_on(&mut self, note: u8, _frequency: f32, velocity: f32) {
+        self.inner
+            .apply_input_event(CosmoInputEvent::NoteOn { note, velocity });
     }
 
     /// Trigger a note-off event.
     #[wasm_bindgen(js_name = noteOff)]
     pub fn note_off(&mut self, note: u8) {
-        self.inner.note_off(note);
+        self.inner
+            .apply_input_event(CosmoInputEvent::NoteOff { note });
     }
 
     /// Set the sustain (damper) pedal state.
     #[wasm_bindgen(js_name = setSustain)]
     pub fn set_sustain(&mut self, on: bool) {
-        self.inner.set_sustain(on);
+        self.inner
+            .apply_input_event(CosmoInputEvent::ControlChange {
+                channel: 0,
+                cc: 64,
+                value: if on { 127 } else { 0 },
+            });
     }
 
     /// Set the global voice limit (1–16). Voices above this limit are
@@ -187,6 +189,21 @@ impl CzSynthProcessor {
         }
     }
 
+    /// Return the current arpeggiator/sequencer playhead state for UI telemetry.
+    #[wasm_bindgen(js_name = getRuntimeSequencerState)]
+    pub fn get_runtime_sequencer_state(&self) -> String {
+        match serde_json::to_string(&self.inner.sequencer_runtime_state()) {
+            Ok(json) => json,
+            Err(e) => {
+                web_sys::console::error_1(
+                    &format!("[cosmo-synth-engine] getRuntimeSequencerState serialize error: {e}")
+                        .into(),
+                );
+                String::from("{}")
+            }
+        }
+    }
+
     /// Fill `output` with mono samples rendered by the DSP engine.
     ///
     /// The caller passes a `Float32Array` slice backed by WASM linear memory.
@@ -211,12 +228,4 @@ pub fn engine_build_profile() -> String {
     } else {
         "release".to_string()
     }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-fn midi_note_to_freq(note: u8) -> f32 {
-    440.0 * (2.0_f32).powf((note as f32 - 69.0) / 12.0)
 }

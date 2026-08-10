@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use arc_swap::{ArcSwap, ArcSwapOption};
 use cosmo_synth_engine::params::{AlgoControlId, MAX_VOICES, SynthParams};
 use cosmo_synth_engine::processor::CosmoInputEvent;
+use cosmo_synth_engine::processor::SequencerRuntimeState;
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use crossbeam_queue::ArrayQueue;
 use truce_core::events::TransportInfo;
@@ -51,6 +52,7 @@ pub type SharedSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRtSynthParams = Arc<ArcSwap<SynthParams>>;
 pub type SharedRuntimeModSources = Arc<ArcSwap<RuntimeModSources>>;
 pub type SharedRuntimeVoiceStates = Arc<ArcSwap<Vec<RuntimeVoiceDebugState>>>;
+pub type SharedRuntimeSequencerState = Arc<ArcSwap<SequencerRuntimeState>>;
 pub type SharedTransportSnapshot = Arc<TransportSnapshot>;
 pub type SynthParamsVersion = Arc<AtomicU64>;
 pub type SharedPresetSession = Arc<ArcSwap<PresetSession>>;
@@ -60,6 +62,7 @@ pub type SharedStateSnapshot = Arc<ArcSwap<Vec<u8>>>;
 
 pub struct RuntimeTelemetryFrame {
     pub mod_sources: RuntimeModSources,
+    pub sequencer_state: SequencerRuntimeState,
     pub voice_states: [RuntimeVoiceDebugState; MAX_VOICES],
     pub voice_count: usize,
     pub scope_samples: [f32; SCOPE_CAPACITY],
@@ -71,6 +74,7 @@ impl Default for RuntimeTelemetryFrame {
     fn default() -> Self {
         Self {
             mod_sources: RuntimeModSources::default(),
+            sequencer_state: SequencerRuntimeState::default(),
             voice_states: [RuntimeVoiceDebugState::default(); MAX_VOICES],
             voice_count: 0,
             scope_samples: [0.0; SCOPE_CAPACITY],
@@ -376,6 +380,7 @@ pub struct SynthParamState {
 pub struct RuntimeTelemetry {
     pub runtime_mod_sources: SharedRuntimeModSources,
     pub runtime_voice_states: SharedRuntimeVoiceStates,
+    pub runtime_sequencer_state: SharedRuntimeSequencerState,
     pub transport_snapshot: SharedTransportSnapshot,
     pub scope_buffer: ScopeBuffer,
     pub exchange: Arc<RuntimeTelemetryExchange>,
@@ -389,6 +394,8 @@ impl RuntimeTelemetry {
         self.runtime_mod_sources.store(Arc::new(frame.mod_sources));
         self.runtime_voice_states
             .store(Arc::new(frame.voice_states[..frame.voice_count].to_vec()));
+        self.runtime_sequencer_state
+            .store(Arc::new(frame.sequencer_state));
         if let Ok(mut scope) = self.scope_buffer.lock() {
             scope.replace_linear(
                 &frame.scope_samples,
@@ -459,6 +466,9 @@ impl PluginSharedState {
             telemetry: RuntimeTelemetry {
                 runtime_mod_sources: Arc::new(ArcSwap::new(Arc::new(RuntimeModSources::default()))),
                 runtime_voice_states: Arc::new(ArcSwap::from_pointee(Vec::new())),
+                runtime_sequencer_state: Arc::new(ArcSwap::from_pointee(
+                    SequencerRuntimeState::default(),
+                )),
                 transport_snapshot: Arc::new(TransportSnapshot::default()),
                 scope_buffer: Arc::new(Mutex::new(ScopeFrame::default())),
                 exchange: Arc::new(RuntimeTelemetryExchange::default()),

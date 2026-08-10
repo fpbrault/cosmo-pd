@@ -109,7 +109,9 @@ function normalizeEnvelopeSteps(value: unknown): unknown {
 	if (
 		Array.isArray(next.steps) &&
 		typeof next.stepCount !== "number" &&
-		next.steps.every((step) => isRecord(step))
+		next.steps.every(
+			(step) => isRecord(step) && ("level" in step || "rate" in step),
+		)
 	) {
 		next.stepCount = next.steps.length;
 	}

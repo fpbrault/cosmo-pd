@@ -23,6 +23,7 @@ import type {
 	ModMode,
 	PolyMode,
 	PortamentoMode,
+	SequencerParams,
 	StepEnvData,
 	SynthPresetV1,
 	WindowType,
@@ -40,6 +41,10 @@ import {
 } from "@/lib/synth/fxSlotSanitizer";
 import { normalizeAlgoSlotKey } from "@/lib/synth/modDestination";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
+import {
+	DEFAULT_SEQUENCER_PARAMS,
+	normalizeSequencerParams,
+} from "./sequencer";
 
 // ---------------------------------------------------------------------------
 // Helpers (identical to the ones that were in useSynthState)
@@ -232,6 +237,7 @@ type SynthState = {
 	macro3: number;
 	macro4: number;
 	macroLabels: [string, string, string, string];
+	sequencer: SequencerParams;
 };
 
 // ---------------------------------------------------------------------------
@@ -345,6 +351,8 @@ type SynthActions = {
 	setMacro3: (v: number) => void;
 	setMacro4: (v: number) => void;
 	setMacroLabel: (index: number, label: string) => void;
+	setSequencer: (v: SequencerParams) => void;
+	updateSequencer: (patch: Partial<SequencerParams>) => void;
 
 	gatherState: () => SynthPresetV1;
 	gatherPresetState: () => SynthPresetV1;
@@ -454,6 +462,7 @@ const DEFAULT_STATE: SynthState = {
 	macro3: 0,
 	macro4: 0,
 	macroLabels: ["Brightness", "Timbre", "Time", "Movement"],
+	sequencer: DEFAULT_SEQUENCER_PARAMS,
 };
 
 // ---------------------------------------------------------------------------
@@ -683,6 +692,12 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				labels[index] = label;
 				return { macroLabels: labels };
 			}),
+		setSequencer: (v) =>
+			setEditedState({ sequencer: normalizeSequencerParams(v) }),
+		updateSequencer: (patch) =>
+			setEditedState((state) => ({
+				sequencer: normalizeSequencerParams({ ...state.sequencer, ...patch }),
+			})),
 
 		// --- gatherState ---
 		gatherState(): SynthPresetV1 {
@@ -804,6 +819,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				macro3: s.macro3,
 				macro4: s.macro4,
 				macroLabels: s.macroLabels,
+				sequencer: normalizeSequencerParams(s.sequencer),
 			} as SynthPresetV1["params"];
 
 			return {
@@ -1134,6 +1150,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					string,
 					string,
 				]) ?? ["Brightness", "Timbre", "Time", "Movement"],
+				sequencer: normalizeSequencerParams(p.sequencer),
 			});
 		},
 	};

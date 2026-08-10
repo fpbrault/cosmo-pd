@@ -8,6 +8,7 @@ mod line;
 mod mapping;
 mod modulation;
 mod portamento;
+mod sequencer;
 mod synth_params;
 mod ui_meta;
 mod waveforms;
@@ -36,6 +37,10 @@ pub use modulation::{
     NUM_MOD_DESTINATIONS,
 };
 pub use portamento::{PortamentoMode, PortamentoParams};
+pub use sequencer::{
+    SEQUENCER_STEP_COUNT, SequencerDirection, SequencerHoldMode, SequencerMode, SequencerParams,
+    SequencerStep,
+};
 pub use synth_params::{
     DEFAULT_VOICE_LIMIT, MAX_VOICE_LIMIT, MAX_VOICES, MIN_VOICE_LIMIT, ModEnvMode, ModEnvParams,
     ModEnvRetrigMode, NUM_OPERATORS, RandomParams, SynthParams, default_synth_params_v1,

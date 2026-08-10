@@ -71,6 +71,7 @@ impl IpcContext {
             | PluginIpcRequest::GetPendingParamChanges
             | PluginIpcRequest::GetRuntimeModSources
             | PluginIpcRequest::GetRuntimeVoiceStates
+            | PluginIpcRequest::GetRuntimeSequencerState
             | PluginIpcRequest::GetTransportInfo
             | PluginIpcRequest::GetScopeData
             | PluginIpcRequest::ClientLog { .. } => synth::handle(self, req),

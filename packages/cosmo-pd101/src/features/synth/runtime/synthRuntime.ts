@@ -1,5 +1,12 @@
 import type { RefObject } from "react";
 
+export type SequencerRuntimeState = {
+	playing: boolean;
+	currentStep: number;
+	sourceNoteCount: number;
+	latched: boolean;
+};
+
 export type SynthScopeFrameSubscription = (
 	onFrame: (frame: {
 		samples: Float32Array;

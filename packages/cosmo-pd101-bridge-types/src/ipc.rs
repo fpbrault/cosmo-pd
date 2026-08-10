@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::SequencerRuntimeState;
 use crate::editor::EditorState;
 use crate::midi::{MidiLearnBinding, MidiLearnState};
 use crate::preset::{
@@ -89,6 +90,8 @@ pub enum PluginIpcRequest {
     GetRuntimeModSources,
     #[serde(rename = "getRuntimeVoiceStates")]
     GetRuntimeVoiceStates,
+    #[serde(rename = "getRuntimeSequencerState")]
+    GetRuntimeSequencerState,
     #[serde(rename = "getTransportInfo")]
     GetTransportInfo,
     #[serde(rename = "getScopeData")]
@@ -210,6 +213,8 @@ pub enum PluginIpcResponse {
     GetRuntimeModSources(RuntimeModSources),
     #[serde(rename = "getRuntimeVoiceStates")]
     GetRuntimeVoiceStates(Vec<RuntimeVoiceDebugState>),
+    #[serde(rename = "getRuntimeSequencerState")]
+    GetRuntimeSequencerState(SequencerRuntimeState),
     #[serde(rename = "getTransportInfo")]
     GetTransportInfo(TransportInfoResponse),
     #[serde(rename = "getScopeData")]
@@ -421,6 +426,7 @@ impl PluginIpcRequest {
             "getParamsVersion" => Self::GetParamsVersion,
             "getRuntimeModSources" => Self::GetRuntimeModSources,
             "getRuntimeVoiceStates" => Self::GetRuntimeVoiceStates,
+            "getRuntimeSequencerState" => Self::GetRuntimeSequencerState,
             "getTransportInfo" => Self::GetTransportInfo,
             "getScopeData" => Self::GetScopeData,
             "clientLog" => Self::ClientLog {

@@ -12,15 +12,21 @@ export const LIBRARY_SLIDE_TRANSITION = {
 	mass: 1,
 } as const;
 
-export type DrawerPanel = "fx" | "mod" | "display";
+export type DrawerPanel = "fx" | "mod" | "display" | "sequencer";
 
 export const DRAWER_PANEL_ORDER: Record<DrawerPanel, number> = {
 	fx: 0,
 	mod: 1,
 	display: 2,
+	sequencer: 3,
 };
 
-export const DRAWER_PANELS: DrawerPanel[] = ["fx", "mod", "display"];
+export const DRAWER_PANELS: DrawerPanel[] = [
+	"fx",
+	"mod",
+	"display",
+	"sequencer",
+];
 
 export function isDrawerPanel(mode: string): mode is DrawerPanel {
 	return DRAWER_PANELS.includes(mode as DrawerPanel);

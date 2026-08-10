@@ -13,6 +13,7 @@ pub(super) fn handle(
     let rt_synth_params = &context.shared_state.synth.rt_synth_params;
     let runtime_mod_sources = &context.shared_state.telemetry.runtime_mod_sources;
     let runtime_voice_states = &context.shared_state.telemetry.runtime_voice_states;
+    let runtime_sequencer_state = &context.shared_state.telemetry.runtime_sequencer_state;
     let transport_snapshot = &context.shared_state.telemetry.transport_snapshot;
     let synth_params_version = &context.shared_state.synth.synth_params_version;
     let scope_buffer = &context.shared_state.telemetry.scope_buffer;
@@ -48,6 +49,9 @@ pub(super) fn handle(
                 states.as_ref().clone(),
             ))
         }
+        PluginIpcRequest::GetRuntimeSequencerState => Ok(
+            PluginIpcResponse::GetRuntimeSequencerState(**runtime_sequencer_state.load()),
+        ),
         PluginIpcRequest::GetTransportInfo => {
             let response = transport_snapshot.to_response();
             Ok(PluginIpcResponse::GetTransportInfo(response))

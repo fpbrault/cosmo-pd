@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { SequencerRuntimeState } from "@/features/synth/runtime/synthRuntime";
 import type { ModSource, SynthParams } from "@/lib/synth/bindings/synth";
 import { DEFAULT_PRESET } from "@/lib/synth/presetStorage";
 
@@ -96,6 +97,23 @@ export const EMPTY_RUNTIME_MOD_SOURCES: RuntimeModSources =
 	buildRuntimeModSources(() => 0);
 
 export const EMPTY_RUNTIME_VOICE_STATES: RuntimeVoiceDebugState[] = [];
+
+function normalizeRuntimeSequencerState(
+	value: unknown,
+): SequencerRuntimeState | null {
+	if (!value || typeof value !== "object") return null;
+	const detail = value as Record<string, unknown>;
+	const readCount = (key: string) =>
+		typeof detail[key] === "number" && Number.isFinite(detail[key])
+			? Math.max(0, Math.round(detail[key] as number))
+			: 0;
+	return {
+		playing: detail.playing === true,
+		currentStep: readCount("currentStep"),
+		sourceNoteCount: readCount("sourceNoteCount"),
+		latched: detail.latched === true,
+	};
+}
 
 export type UseAudioSynthParams = {
 	synthWasmUrl: string;
@@ -375,6 +393,16 @@ export function useAudioEngine({
 							new CustomEvent<RuntimeVoiceDebugState[]>(
 								"cz-runtime-voice-states",
 								{ detail: voices },
+							),
+						);
+					}
+				} else if (e.data?.type === "runtimeSequencerState") {
+					const state = normalizeRuntimeSequencerState(e.data.state);
+					if (state) {
+						window.dispatchEvent(
+							new CustomEvent<SequencerRuntimeState>(
+								"cz-runtime-sequencer-state",
+								{ detail: state },
 							),
 						);
 					}
