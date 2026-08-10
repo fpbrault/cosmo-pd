@@ -30,6 +30,13 @@
 			"groupSlug": "cargo-non-major"
 		},
 		{
+			"description": "Group all Cargo digest updates into a single PR",
+			"matchManagers": ["cargo"],
+			"matchUpdateTypes": ["digest"],
+			"groupName": "cargo dependency digests",
+			"groupSlug": "cargo-digests"
+		},
+		{
 			"description": "Separate major updates for individual review",
 			"matchUpdateTypes": ["major"],
 			"automerge": false,
