@@ -24,8 +24,8 @@ pub use fx_params::{
 };
 pub use lfo::{LfoParams, LfoRateMode, LfoSyncDivision, LfoWaveform};
 pub use line::{
-    AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineParams, LineSelect, MAX_ALGO_CONTROLS,
-    ModMode, PolyMode,
+    AlgoControlId, AlgoControlSlots, AlgoControlValueV1, LineEngineParams, LineParams, LineSelect,
+    MAX_ALGO_CONTROLS, ModMode, PolyMode,
 };
 pub use mapping::{
     AppliedMidiAlgoControlSection, AppliedMidiParamChange, AppliedMidiParamTarget,
@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_lines_without_synthesis_method_default_to_pd() {
+    fn lines_without_envelopes_use_canonical_pd_defaults() {
         let mut value = serde_json::to_value(SynthParams::default())
             .expect("default synth params should serialize");
         let root = value
@@ -129,26 +129,28 @@ mod tests {
             root.get_mut(line_key)
                 .and_then(serde_json::Value::as_object_mut)
                 .expect("line params should serialize as an object")
-                .remove("synthesisMethod");
+                .remove("envelopes");
         }
 
         let restored: SynthParams =
-            serde_json::from_value(value).expect("legacy synth params should deserialize");
-        assert_eq!(restored.line1.synthesis_method, SynthesisMethod::Pd);
-        assert_eq!(restored.line2.synthesis_method, SynthesisMethod::Pd);
+            serde_json::from_value(value).expect("synth params should deserialize");
+        assert_eq!(
+            serde_json::to_value(restored.line1.envelopes).unwrap(),
+            serde_json::to_value(SynthParams::default().line1.envelopes).unwrap()
+        );
     }
 
     #[test]
-    fn synthesis_method_roundtrips_without_schema_change() {
+    fn engine_tag_roundtrips_without_redundant_method_field() {
         let params = SynthParams::default();
         let serialized = serde_json::to_value(params).expect("synth params should serialize");
-        assert_eq!(serialized["line1"]["synthesisMethod"], "pd");
-        assert_eq!(serialized["line2"]["synthesisMethod"], "pd");
+        assert_eq!(serialized["line1"]["engine"]["type"], "pd");
+        assert!(serialized["line1"]["engine"]["params"]["algo"].is_string());
 
         let restored: SynthParams =
             serde_json::from_value(serialized).expect("synth params should deserialize");
-        assert_eq!(restored.line1.synthesis_method, SynthesisMethod::Pd);
-        assert_eq!(restored.line2.synthesis_method, SynthesisMethod::Pd);
+        assert_eq!(restored.line1.engine.method(), SynthesisMethod::Pd);
+        assert_eq!(restored.line2.engine.method(), SynthesisMethod::Pd);
         assert_eq!(crate::preset_wire::SYNTH_SCHEMA_VERSION_V1, 1);
     }
 

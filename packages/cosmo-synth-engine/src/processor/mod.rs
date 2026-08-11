@@ -257,8 +257,8 @@ impl CosmoProcessor {
     }
 
     pub(crate) fn reconcile_synthesis_methods(&mut self) {
-        let line1_method = self.params.line1.synthesis_method;
-        let line2_method = self.params.line2.synthesis_method;
+        let line1_method = self.params.line1.engine.method();
+        let line2_method = self.params.line2.engine.method();
         let line1_method_changed = self.voices[0].line1_synthesis.method() != line1_method;
         let line2_method_changed = self.voices[0].line2_synthesis.method() != line2_method;
         if !line1_method_changed && !line2_method_changed {
@@ -559,9 +559,9 @@ mod tests {
         proc.set_voice_limit(1);
         proc.params_mut().poly_mode = PolyMode::Poly8;
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.pd.dca_base = 1.0;
-        proc.params_mut().line1.pd.dcw_base = 1.0;
-        proc.params_mut().line1.pd.algo = Algo::Saw;
+        proc.params_mut().line1.engine.pd_mut().dca_base = 1.0;
+        proc.params_mut().line1.engine.pd_mut().dcw_base = 1.0;
+        proc.params_mut().line1.engine.pd_mut().algo = Algo::Saw;
         proc.params_mut().line1.envelopes.amplitude = EnvelopeProgramV1::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),
@@ -754,12 +754,12 @@ mod tests {
     fn set_shared_params_rebuilds_compiled_cz_controls() {
         let mut proc = CosmoProcessor::new(48_000.0);
         let mut params = SynthParams::default();
-        params.line1.pd.algo = Algo::Cz101;
-        params.line1.pd.algo_controls_a[0] = Some(AlgoControlValueV1 {
+        params.line1.engine.pd_mut().algo = Algo::Cz101;
+        params.line1.engine.pd_mut().algo_controls_a[0] = Some(AlgoControlValueV1 {
             id: AlgoControlId::Waveform1,
             value: 1.0,
         });
-        params.line1.pd.algo_controls_a[1] = Some(AlgoControlValueV1 {
+        params.line1.engine.pd_mut().algo_controls_a[1] = Some(AlgoControlValueV1 {
             id: AlgoControlId::Waveform2,
             value: 2.0,
         });
@@ -767,11 +767,15 @@ mod tests {
         proc.set_shared_params(Arc::new(params));
 
         assert_eq!(
-            proc.compiled_params.line1.primary.algo_for_cycle(0),
+            match proc.compiled_params.line1 {
+                crate::synthesis::CompiledLinePlan::Pd(plan) => plan.primary.algo_for_cycle(0),
+            },
             Algo::Square
         );
         assert_eq!(
-            proc.compiled_params.line1.primary.algo_for_cycle(1),
+            match proc.compiled_params.line1 {
+                crate::synthesis::CompiledLinePlan::Pd(plan) => plan.primary.algo_for_cycle(1),
+            },
             Algo::Pulse
         );
     }
@@ -781,11 +785,11 @@ mod tests {
         fn render_sum(mut params: SynthParams) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             params.line_select = LineSelect::L1;
-            params.line1.pd.algo = Algo::Skew;
-            params.line1.pd.algo2 = Some(Algo::Saw);
-            params.line1.pd.algo_blend = 0.0;
-            params.line1.pd.dca_base = 0.9;
-            params.line1.pd.dcw_base = 0.7;
+            params.line1.engine.pd_mut().algo = Algo::Skew;
+            params.line1.engine.pd_mut().algo2 = Some(Algo::Saw);
+            params.line1.engine.pd_mut().algo_blend = 0.0;
+            params.line1.engine.pd_mut().dca_base = 0.9;
+            params.line1.engine.pd_mut().dcw_base = 0.7;
             proc.set_params(params);
             proc.set_mod_wheel(1.0);
             proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
@@ -856,9 +860,9 @@ mod tests {
         fn render_sum(with_route: bool) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             proc.params_mut().line_select = LineSelect::L1;
-            proc.params_mut().line1.pd.dca_base = 1.0;
-            proc.params_mut().line1.pd.dcw_base = 0.8;
-            proc.params_mut().line1.pd.algo = Algo::Skew;
+            proc.params_mut().line1.engine.pd_mut().dca_base = 1.0;
+            proc.params_mut().line1.engine.pd_mut().dcw_base = 0.8;
+            proc.params_mut().line1.engine.pd_mut().algo = Algo::Skew;
             proc.params_mut().fx_slots[0] = FxSlotConfig::Delay(DelayParams {
                 enabled: true,
                 time: 0.1,
@@ -898,9 +902,9 @@ mod tests {
         fn render_sum(with_route: bool) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             proc.params_mut().line_select = LineSelect::L1;
-            proc.params_mut().line1.pd.dca_base = 1.0;
-            proc.params_mut().line1.pd.dcw_base = 0.8;
-            proc.params_mut().line1.pd.algo = Algo::Skew;
+            proc.params_mut().line1.engine.pd_mut().dca_base = 1.0;
+            proc.params_mut().line1.engine.pd_mut().dcw_base = 0.8;
+            proc.params_mut().line1.engine.pd_mut().algo = Algo::Skew;
             proc.params_mut().fx_slots[0] = FxSlotConfig::Reverb(crate::params::ReverbParams {
                 enabled: true,
                 mix: 0.0,
@@ -1016,7 +1020,7 @@ mod tests {
         proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
         let previous_sample = render_until_voice_sample_exceeds(&mut proc, 0.05);
 
-        proc.params_mut().line1.pd.dca_base = 0.0;
+        proc.params_mut().line1.engine.pd_mut().dca_base = 0.0;
         proc.note_on(72, utils::midi_note_to_freq(72), 1.0);
 
         let mut block = [0.0_f32; 1];
@@ -1063,9 +1067,9 @@ mod tests {
     fn retriggering_bright_voice_preserves_dcw_smoothing_state() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.pd.dcw_base = 1.0;
-        proc.params_mut().line1.pd.dca_base = 1.0;
-        proc.params_mut().line1.pd.algo = Algo::Saw;
+        proc.params_mut().line1.engine.pd_mut().dcw_base = 1.0;
+        proc.params_mut().line1.engine.pd_mut().dca_base = 1.0;
+        proc.params_mut().line1.engine.pd_mut().algo = Algo::Saw;
 
         let note = 60_u8;
         proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
@@ -1305,8 +1309,8 @@ mod tests {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().poly_mode = PolyMode::Mono;
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.pd.dca_base = 1.0;
-        proc.params_mut().line1.pd.algo = Algo::Saw;
+        proc.params_mut().line1.engine.pd_mut().dca_base = 1.0;
+        proc.params_mut().line1.engine.pd_mut().algo = Algo::Saw;
         let note = 60_u8;
 
         proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
@@ -1460,8 +1464,8 @@ mod tests {
 
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L2;
-        proc.params_mut().line2.pd.dcw_key_follow = 2.0;
-        proc.params_mut().line2.pd.dca_key_follow = 2.0;
+        proc.params_mut().line2.engine.pd_mut().dcw_key_follow = 2.0;
+        proc.params_mut().line2.engine.pd_mut().dca_key_follow = 2.0;
         proc.params_mut().line2.envelopes.amplitude = EnvelopeProgramV1::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),

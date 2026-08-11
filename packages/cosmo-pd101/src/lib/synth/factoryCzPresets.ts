@@ -18,7 +18,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -148,60 +147,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.8111987,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.8111987,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -331,53 +332,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "pinch",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.7401758,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "pinchFocus",
-								value: 0.5,
-							},
-							{
-								id: "pinchAsym",
-								value: 0.0,
-							},
-							{
-								id: "pinchCurve",
-								value: 0.5,
-							},
-							{
-								id: "pinchDrive",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "pinch",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.7401758,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "pinchFocus",
+									value: 0.5,
+								},
+								{
+									id: "pinchAsym",
+									value: 0.0,
+								},
+								{
+									id: "pinchCurve",
+									value: 0.5,
+								},
+								{
+									id: "pinchDrive",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -584,7 +588,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -714,56 +717,58 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cheby",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.6140782,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "chebyOrder",
-								value: 0.68992954,
-							},
-							{
-								id: "chebyTilt",
-								value: 0.0,
-							},
-							{
-								id: "chebyWarp",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cheby",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.6140782,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "chebyOrder",
+									value: 0.68992954,
+								},
+								{
+									id: "chebyTilt",
+									value: 0.0,
+								},
+								{
+									id: "chebyWarp",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -893,53 +898,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 5.0,
-						dcaKeyFollow: 5.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 5.0,
+							dcaKeyFollow: 5.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 6.0,
@@ -1115,7 +1123,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -1245,60 +1252,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "pinch",
-						algo2: "clip",
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.72,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "pinchFocus",
-								value: 0.1,
-							},
-							{
-								id: "pinchAsym",
-								value: 0.0,
-							},
-							{
-								id: "pinchCurve",
-								value: 0.5,
-							},
-							{
-								id: "pinchDrive",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "clipDrive",
-								value: 0.5,
-							},
-							{
-								id: "clipShape",
-								value: 0.5,
-							},
-							{
-								id: "clipBias",
-								value: 0.0,
-							},
-							{
-								id: "clipSoft",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "pinch",
+							algo2: "clip",
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.72,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "pinchFocus",
+									value: 0.1,
+								},
+								{
+									id: "pinchAsym",
+									value: 0.0,
+								},
+								{
+									id: "pinchCurve",
+									value: 0.5,
+								},
+								{
+									id: "pinchDrive",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "clipDrive",
+									value: 0.5,
+								},
+								{
+									id: "clipShape",
+									value: 0.5,
+								},
+								{
+									id: "clipBias",
+									value: 0.0,
+								},
+								{
+									id: "clipSoft",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -1428,19 +1437,22 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -1601,7 +1613,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -1731,43 +1742,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -1897,53 +1910,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -2084,7 +2100,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -2214,26 +2229,28 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.71,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.71,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -2363,36 +2380,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "twist",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "twistHarmonics",
-								value: 0.5,
-							},
-							{
-								id: "twistDepth",
-								value: 0.5,
-							},
-							{
-								id: "twistPhase",
-								value: 0.0,
-							},
-							{
-								id: "twistShape",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "twist",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "twistHarmonics",
+									value: 0.5,
+								},
+								{
+									id: "twistDepth",
+									value: 0.5,
+								},
+								{
+									id: "twistPhase",
+									value: 0.0,
+								},
+								{
+									id: "twistShape",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -2526,7 +2546,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -2656,43 +2675,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -2822,36 +2843,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -2978,7 +3002,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -3108,43 +3131,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -3274,53 +3299,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -3431,7 +3459,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -3561,56 +3588,58 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "fold",
-						algo2: "bend",
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.4246266,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "foldStages",
-								value: 0.580386,
-							},
-							{
-								id: "foldTilt",
-								value: 0.0,
-							},
-							{
-								id: "foldSymmetry",
-								value: 0.0,
-							},
-							{
-								id: "foldSoftness",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "bendCurve",
-								value: 0.77660155,
-							},
-							{
-								id: "bendBias",
-								value: 0.0,
-							},
-							{
-								id: "bendKnee",
-								value: 0.5,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "fold",
+							algo2: "bend",
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.4246266,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "foldStages",
+									value: 0.580386,
+								},
+								{
+									id: "foldTilt",
+									value: 0.0,
+								},
+								{
+									id: "foldSymmetry",
+									value: 0.0,
+								},
+								{
+									id: "foldSoftness",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "bendCurve",
+									value: 0.77660155,
+								},
+								{
+									id: "bendBias",
+									value: 0.0,
+								},
+								{
+									id: "bendKnee",
+									value: 0.5,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -2.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -3740,36 +3769,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.46,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.46,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -3932,7 +3964,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -4062,43 +4093,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -4228,36 +4261,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: -5.0,
 					detuneFine: 0.0,
@@ -4385,7 +4421,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -4515,60 +4550,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -4698,36 +4735,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 5.0,
@@ -4838,7 +4878,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -4968,43 +5007,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "sync",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.89,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "syncRatio",
-								value: 0.5,
-							},
-							{
-								id: "syncPhase",
-								value: 0.0,
-							},
-							{
-								id: "syncCurve",
-								value: 0.5,
-							},
-							{
-								id: "syncWindow",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "sync",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.89,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "syncRatio",
+									value: 0.5,
+								},
+								{
+									id: "syncPhase",
+									value: 0.0,
+								},
+								{
+									id: "syncCurve",
+									value: 0.5,
+								},
+								{
+									id: "syncWindow",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 2.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -5134,19 +5175,22 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 0.78,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 0.78,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -5285,7 +5329,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -5415,60 +5458,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -5598,53 +5643,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -5755,7 +5803,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -5885,60 +5932,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 3.0,
-						dcaKeyFollow: 3.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 3.0,
+							dcaKeyFollow: 3.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -6068,53 +6117,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 5.0,
@@ -6225,7 +6277,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -6355,60 +6406,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -6538,36 +6591,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -6678,7 +6734,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -6808,60 +6863,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -6991,36 +7048,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 6.0,
@@ -7131,7 +7191,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -7261,60 +7320,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -7444,36 +7505,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -7584,7 +7648,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -7714,60 +7777,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -7897,53 +7962,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 10.0,
@@ -8054,7 +8122,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -8184,43 +8251,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -8350,36 +8419,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -1.0,
@@ -8490,7 +8562,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -8620,60 +8691,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -8803,53 +8876,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -8960,7 +9036,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -9090,60 +9165,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -9273,36 +9350,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 6.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 2.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 6.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 2.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 1.0,
@@ -9413,7 +9493,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -9543,43 +9622,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -9709,36 +9790,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 9.0,
 					detuneFine: 55.0,
@@ -9849,7 +9933,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -9979,60 +10062,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -10162,36 +10247,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -10302,7 +10390,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -10432,43 +10519,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -10598,36 +10687,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 1.0,
 					detuneFine: 39.0,
@@ -10738,7 +10830,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -10868,43 +10959,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -11034,53 +11127,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -11191,7 +11287,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -11321,60 +11416,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -11504,53 +11601,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -11661,7 +11761,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -11791,60 +11890,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -11974,53 +12075,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -12131,7 +12235,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -12261,60 +12364,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -12444,53 +12549,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -12601,7 +12709,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -12731,60 +12838,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -12914,53 +13023,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -13071,7 +13183,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -13201,60 +13312,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -13384,36 +13497,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -13524,7 +13640,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -13654,43 +13769,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -13820,53 +13937,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 5.0,
-						dcaKeyFollow: 5.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 5.0,
+							dcaKeyFollow: 5.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 6.0,
@@ -13977,7 +14097,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -14107,43 +14226,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -14273,36 +14394,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -14413,7 +14537,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -14543,60 +14666,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -14726,36 +14851,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -14866,7 +14994,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -14996,60 +15123,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -15179,53 +15308,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 10.0,
 					detuneFine: 26.0,
@@ -15336,7 +15468,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -15466,60 +15597,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -15649,36 +15782,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 10.0,
@@ -15789,7 +15925,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -15919,43 +16054,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -16085,53 +16222,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -16242,7 +16382,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -16372,60 +16511,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -16555,53 +16696,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -16712,7 +16856,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -16842,43 +16985,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -17008,36 +17153,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 11.0,
 					detuneFine: 0.0,
@@ -17148,7 +17296,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -17278,60 +17425,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -17461,53 +17610,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 3.0,
@@ -17618,7 +17770,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -17748,60 +17899,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -17931,36 +18084,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -18071,7 +18227,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -18201,60 +18356,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -18384,36 +18541,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 6.0,
@@ -18524,7 +18684,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -18654,60 +18813,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -18837,36 +18998,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -18977,7 +19141,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -19107,43 +19270,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -19273,53 +19438,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 60.0,
@@ -19430,7 +19598,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -19560,43 +19727,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -19726,36 +19895,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 8.0,
@@ -19866,7 +20038,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -19996,60 +20167,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -20179,53 +20352,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -1.0,
@@ -20336,7 +20512,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -20466,43 +20641,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -20632,36 +20809,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -20772,7 +20952,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -20902,60 +21081,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -21085,53 +21266,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -21242,7 +21426,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -21372,56 +21555,58 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "twist",
-						algo2: "bend",
-						algoBlend: 0.48,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.513468,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "twistHarmonics",
-								value: 0.6020153,
-							},
-							{
-								id: "twistDepth",
-								value: 0.47965,
-							},
-							{
-								id: "twistPhase",
-								value: 0.0,
-							},
-							{
-								id: "twistShape",
-								value: 0.53207046,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "bendCurve",
-								value: 0.5,
-							},
-							{
-								id: "bendBias",
-								value: 0.0,
-							},
-							{
-								id: "bendKnee",
-								value: 0.5,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "twist",
+							algo2: "bend",
+							algoBlend: 0.48,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.513468,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "twistHarmonics",
+									value: 0.6020153,
+								},
+								{
+									id: "twistDepth",
+									value: 0.47965,
+								},
+								{
+									id: "twistPhase",
+									value: 0.0,
+								},
+								{
+									id: "twistShape",
+									value: 0.53207046,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "bendCurve",
+									value: 0.5,
+								},
+								{
+									id: "bendBias",
+									value: 0.0,
+								},
+								{
+									id: "bendKnee",
+									value: 0.5,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -21551,53 +21736,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "fold",
-						algo2: "skew",
-						algoBlend: 0.55,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.49362853,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "foldStages",
-								value: 0.5,
-							},
-							{
-								id: "foldTilt",
-								value: 0.0,
-							},
-							{
-								id: "foldSymmetry",
-								value: 0.0,
-							},
-							{
-								id: "foldSoftness",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "skewBias",
-								value: 0.2,
-							},
-							{
-								id: "skewCurve",
-								value: 0.5,
-							},
-							{
-								id: "skewSpread",
-								value: 0.0,
-							},
-							{
-								id: "skewTilt",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "fold",
+							algo2: "skew",
+							algoBlend: 0.55,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.49362853,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "foldStages",
+									value: 0.5,
+								},
+								{
+									id: "foldTilt",
+									value: 0.0,
+								},
+								{
+									id: "foldSymmetry",
+									value: 0.0,
+								},
+								{
+									id: "foldSoftness",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "skewBias",
+									value: 0.2,
+								},
+								{
+									id: "skewCurve",
+									value: 0.5,
+								},
+								{
+									id: "skewSpread",
+									value: 0.0,
+								},
+								{
+									id: "skewTilt",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 3.0,
@@ -21794,7 +21982,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -21924,60 +22111,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -22107,36 +22296,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -22247,7 +22439,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -22377,43 +22568,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -22543,36 +22736,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 6.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 2.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 6.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 2.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -22683,7 +22879,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -22813,43 +23008,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -22979,36 +23176,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -23119,7 +23319,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -23249,43 +23448,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 5.0,
-						dcaKeyFollow: 5.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 5.0,
+							dcaKeyFollow: 5.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -23415,53 +23616,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 8.0,
@@ -23572,7 +23776,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -23702,43 +23905,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -23868,36 +24073,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -24008,7 +24216,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -24138,43 +24345,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -24304,36 +24513,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -24444,7 +24656,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -24574,43 +24785,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -24740,36 +24953,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 11.0,
 					detuneFine: 60.0,
@@ -24880,7 +25096,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -25010,60 +25225,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "pinch",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "triangle",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.96,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "pinchFocus",
-								value: 0.20136642,
-							},
-							{
-								id: "pinchAsym",
-								value: -0.067734376,
-							},
-							{
-								id: "pinchCurve",
-								value: 0.40523437,
-							},
-							{
-								id: "pinchDrive",
-								value: 0.58357424,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "pinch",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "triangle",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.96,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "pinchFocus",
+									value: 0.20136642,
+								},
+								{
+									id: "pinchAsym",
+									value: -0.067734376,
+								},
+								{
+									id: "pinchCurve",
+									value: 0.40523437,
+								},
+								{
+									id: "pinchDrive",
+									value: 0.58357424,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -25193,53 +25410,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "pinch",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "pinchFocus",
-								value: 0.5,
-							},
-							{
-								id: "pinchAsym",
-								value: 0.0,
-							},
-							{
-								id: "pinchCurve",
-								value: 0.5,
-							},
-							{
-								id: "pinchDrive",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "pinch",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "pinchFocus",
+									value: 0.5,
+								},
+								{
+									id: "pinchAsym",
+									value: 0.0,
+								},
+								{
+									id: "pinchCurve",
+									value: 0.5,
+								},
+								{
+									id: "pinchDrive",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -25395,7 +25615,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -25525,43 +25744,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -25691,53 +25912,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 5.0,
@@ -25848,7 +26072,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -25978,43 +26201,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 3.0,
-						dcaKeyFollow: 3.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 3.0,
+							dcaKeyFollow: 3.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -26144,36 +26369,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 1.0,
@@ -26284,7 +26512,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -26414,60 +26641,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -26597,53 +26826,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 11.0,
 					detuneFine: 1.0,
@@ -26754,7 +26986,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -26884,60 +27115,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -27067,36 +27300,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 4.0,
@@ -27207,7 +27443,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -27337,43 +27572,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -27503,36 +27740,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 0.0,
@@ -27643,7 +27883,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -27773,60 +28012,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -27956,53 +28197,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -28113,7 +28357,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -28243,43 +28486,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -28409,53 +28654,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -28566,7 +28814,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -28696,43 +28943,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -28862,36 +29111,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 0.0,
@@ -29002,7 +29254,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -29132,60 +29383,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -29315,36 +29568,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 3.0,
@@ -29455,7 +29711,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -29585,60 +29840,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -29768,53 +30025,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 2.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 6.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 2.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 2.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 6.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 2.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -29925,7 +30185,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -30055,60 +30314,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -30238,36 +30499,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -30378,7 +30642,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -30508,43 +30771,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -30674,53 +30939,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -30831,7 +31099,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -30961,43 +31228,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 3.0,
-						dcaKeyFollow: 3.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 3.0,
+							dcaKeyFollow: 3.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -31127,53 +31396,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -31284,7 +31556,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -31414,60 +31685,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -31597,36 +31870,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 11.0,
 					detuneFine: 60.0,
@@ -31737,7 +32013,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -31867,60 +32142,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -32050,53 +32327,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+						},
 					},
 					detuneNote: -4.0,
 					detuneFine: -8.0,
@@ -32207,7 +32487,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -32337,60 +32616,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -32520,36 +32801,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -2.0,
@@ -32660,7 +32944,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -32790,60 +33073,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -32973,53 +33258,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+						},
 					},
 					detuneNote: -4.0,
 					detuneFine: -8.0,
@@ -33130,7 +33418,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -33260,60 +33547,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -33443,53 +33732,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -12.0,
@@ -33600,7 +33892,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -33730,60 +34021,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -33913,36 +34206,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 8.0,
@@ -34053,7 +34349,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -34183,43 +34478,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -34349,36 +34646,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 5.0,
 					detuneFine: 0.0,
@@ -34489,7 +34789,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -34619,43 +34918,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -34785,36 +35086,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -34925,7 +35229,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -35055,43 +35358,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -35221,36 +35526,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -35361,7 +35669,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -35491,43 +35798,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -35657,36 +35966,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 10.0,
@@ -35797,7 +36109,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -35927,43 +36238,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -36093,36 +36406,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -10.0,
@@ -36233,7 +36549,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -36363,60 +36678,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -36546,53 +36863,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 2.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 6.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 2.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 2.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 6.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 2.0,
+								},
+							],
+						},
 					},
 					detuneNote: -7.0,
 					detuneFine: -8.0,
@@ -36703,7 +37023,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -36833,60 +37152,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -37016,36 +37337,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 3.0,
@@ -37156,7 +37480,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -37286,43 +37609,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -37452,53 +37777,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 5.0,
-						dcaKeyFollow: 5.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 5.0,
+							dcaKeyFollow: 5.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 6.0,
@@ -37609,7 +37937,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -37739,43 +38066,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -37905,36 +38234,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 0.0,
@@ -38045,7 +38377,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -38175,60 +38506,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -38358,36 +38691,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -38498,7 +38834,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -38628,60 +38963,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -38811,53 +39148,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 4.0,
-						dcaKeyFollow: 4.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 4.0,
+							dcaKeyFollow: 4.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 18.0,
@@ -38968,7 +39308,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -39098,43 +39437,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -39264,36 +39605,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 8.0,
@@ -39404,7 +39748,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -39534,43 +39877,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 3.0,
-						dcaKeyFollow: 3.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 3.0,
+							dcaKeyFollow: 3.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -39700,36 +40045,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 1.0,
@@ -39840,7 +40188,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -39970,60 +40317,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -40153,36 +40502,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -40293,7 +40645,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -40423,60 +40774,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -40606,53 +40959,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 6.0,
@@ -40763,7 +41119,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -40893,43 +41248,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -41059,36 +41416,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -41199,7 +41559,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -41329,60 +41688,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -41512,53 +41873,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -7.0,
@@ -41669,7 +42033,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -41799,43 +42162,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 5.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 5.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -41965,36 +42330,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 5.0,
-						dcaKeyFollow: 5.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 5.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 5.0,
+							dcaKeyFollow: 5.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 5.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -42105,7 +42473,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -42235,60 +42602,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -42418,53 +42787,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 4.0,
@@ -42575,7 +42947,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -42705,60 +43076,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -42888,53 +43261,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -43045,7 +43421,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -43175,60 +43550,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -43358,53 +43735,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -10.0,
@@ -43515,7 +43895,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -43645,60 +44024,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -43828,53 +44209,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -43985,7 +44369,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -44115,43 +44498,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -44281,53 +44666,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -44438,7 +44826,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -44568,60 +44955,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -44751,53 +45140,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -44908,7 +45300,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -45038,60 +45429,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -45221,53 +45614,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -45378,7 +45774,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -45508,43 +45903,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -45674,53 +46071,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -45831,7 +46231,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -45961,60 +46360,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -46144,53 +46545,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -11.0,
@@ -46301,7 +46705,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -46431,43 +46834,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 5.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 5.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -46597,53 +47002,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -7.0,
@@ -46754,7 +47162,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -46884,43 +47291,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 7.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 6.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 7.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 6.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -47050,53 +47459,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -47207,7 +47619,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -47337,60 +47748,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 6.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 6.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -47520,53 +47933,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -47677,7 +48093,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -47807,60 +48222,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -47990,53 +48407,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -48147,7 +48567,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -48277,43 +48696,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -48443,36 +48864,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 2.0,
-						dcaKeyFollow: 2.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 2.0,
+							dcaKeyFollow: 2.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 21.0,
@@ -48583,7 +49007,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -48713,43 +49136,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -48879,36 +49304,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 1.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 1.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -49050,7 +49478,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -49180,43 +49607,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -49346,36 +49775,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 10.0,
@@ -49486,7 +49918,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -49616,60 +50047,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -49799,36 +50232,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -49939,7 +50375,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -50069,43 +50504,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -50235,36 +50672,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 6.0,
-						dcaKeyFollow: 6.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 6.0,
+							dcaKeyFollow: 6.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -50375,7 +50815,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -50505,60 +50944,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "fold",
-						algo2: "clip",
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "foldStages",
-								value: 0.27640626,
-							},
-							{
-								id: "foldTilt",
-								value: 0.0,
-							},
-							{
-								id: "foldSymmetry",
-								value: 0.0,
-							},
-							{
-								id: "foldSoftness",
-								value: 0.88347656,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "clipDrive",
-								value: 0.5,
-							},
-							{
-								id: "clipShape",
-								value: 0.5,
-							},
-							{
-								id: "clipBias",
-								value: 0.0,
-							},
-							{
-								id: "clipSoft",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "fold",
+							algo2: "clip",
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "foldStages",
+									value: 0.27640626,
+								},
+								{
+									id: "foldTilt",
+									value: 0.0,
+								},
+								{
+									id: "foldSymmetry",
+									value: 0.0,
+								},
+								{
+									id: "foldSoftness",
+									value: 0.88347656,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "clipDrive",
+									value: 0.5,
+								},
+								{
+									id: "clipShape",
+									value: 0.5,
+								},
+								{
+									id: "clipBias",
+									value: 0.0,
+								},
+								{
+									id: "clipSoft",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -50688,53 +51129,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 7.0,
@@ -50888,7 +51332,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -51018,60 +51461,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 1.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 1.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -51201,36 +51646,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 7.0,
 					detuneFine: 3.0,
@@ -51341,7 +51789,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -51471,60 +51918,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -51654,36 +52103,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 10.0,
@@ -51794,7 +52246,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -51924,43 +52375,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "fold",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.75,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "foldStages",
-								value: 0.10796875,
-							},
-							{
-								id: "foldTilt",
-								value: -0.04144531,
-							},
-							{
-								id: "foldSymmetry",
-								value: 0.0,
-							},
-							{
-								id: "foldSoftness",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "fold",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.75,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "foldStages",
+									value: 0.10796875,
+								},
+								{
+									id: "foldTilt",
+									value: -0.04144531,
+								},
+								{
+									id: "foldSymmetry",
+									value: 0.0,
+								},
+								{
+									id: "foldSoftness",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -52090,19 +52543,22 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -52244,7 +52700,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -52374,43 +52829,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -52540,36 +52997,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 2.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 2.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 3.0,
 					detuneFine: 38.0,
@@ -52680,7 +53140,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -52810,43 +53269,45 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -52976,36 +53437,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 9.0,
-						dcaKeyFollow: 9.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 9.0,
+							dcaKeyFollow: 9.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: -5.0,
@@ -53116,7 +53580,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -53246,60 +53709,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 1.0,
-						dcaKeyFollow: 1.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 1.0,
+							dcaKeyFollow: 1.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -53429,36 +53894,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -53569,7 +54037,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -53699,39 +54166,41 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "bend",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "bendCurve",
-								value: 0.5,
-							},
-							{
-								id: "bendBias",
-								value: 0.0,
-							},
-							{
-								id: "bendKnee",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "bend",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "bendCurve",
+									value: 0.5,
+								},
+								{
+									id: "bendBias",
+									value: 0.0,
+								},
+								{
+									id: "bendKnee",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -53861,53 +54330,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "pinch",
-						algo2: "fold",
-						algoBlend: 0.5,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "pinchFocus",
-								value: 0.30029297,
-							},
-							{
-								id: "pinchAsym",
-								value: 0.32300782,
-							},
-							{
-								id: "pinchCurve",
-								value: 0.63693357,
-							},
-							{
-								id: "pinchDrive",
-								value: 0.68103516,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "foldStages",
-								value: 0.5,
-							},
-							{
-								id: "foldTilt",
-								value: 0.0,
-							},
-							{
-								id: "foldSymmetry",
-								value: -0.07039063,
-							},
-							{
-								id: "foldSoftness",
-								value: 0.30445313,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "pinch",
+							algo2: "fold",
+							algoBlend: 0.5,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "pinchFocus",
+									value: 0.30029297,
+								},
+								{
+									id: "pinchAsym",
+									value: 0.32300782,
+								},
+								{
+									id: "pinchCurve",
+									value: 0.63693357,
+								},
+								{
+									id: "pinchDrive",
+									value: 0.68103516,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "foldStages",
+									value: 0.5,
+								},
+								{
+									id: "foldTilt",
+									value: 0.0,
+								},
+								{
+									id: "foldSymmetry",
+									value: -0.07039063,
+								},
+								{
+									id: "foldSoftness",
+									value: 0.30445313,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -54049,7 +54521,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -54179,39 +54650,41 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "bend",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "sine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "bendCurve",
-								value: 0.5,
-							},
-							{
-								id: "bendBias",
-								value: 0.0,
-							},
-							{
-								id: "bendKnee",
-								value: 0.5,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "bend",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "sine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "bendCurve",
+									value: 0.5,
+								},
+								{
+									id: "bendBias",
+									value: 0.0,
+								},
+								{
+									id: "bendKnee",
+									value: 0.5,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -1.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -54341,36 +54814,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 0.69,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 0.69,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -54533,7 +55009,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -54663,60 +55138,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "skew",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "sine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 8.0,
-						dcaKeyFollow: 8.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 3.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "skewBias",
-								value: 0.37171876,
-							},
-							{
-								id: "skewCurve",
-								value: 0.5,
-							},
-							{
-								id: "skewSpread",
-								value: 0.0,
-							},
-							{
-								id: "skewTilt",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "skew",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "sine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 8.0,
+							dcaKeyFollow: 8.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 3.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "skewBias",
+									value: 0.37171876,
+								},
+								{
+									id: "skewCurve",
+									value: 0.5,
+								},
+								{
+									id: "skewSpread",
+									value: 0.0,
+								},
+								{
+									id: "skewTilt",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -54846,53 +55323,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -55016,7 +55496,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -55146,60 +55625,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 3.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 3.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -55329,53 +55810,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 4.0,
-							},
-							{
-								id: "waveform2",
-								value: 4.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 1.0,
-							},
-							{
-								id: "windowFunction",
-								value: 3.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 4.0,
+								},
+								{
+									id: "waveform2",
+									value: 4.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 1.0,
+								},
+								{
+									id: "windowFunction",
+									value: 3.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 10.0,
@@ -55499,7 +55983,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -55629,60 +56112,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -2.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -55812,53 +56297,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -55995,7 +56483,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -56125,60 +56612,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "saw",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "saw",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: -2.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -56308,53 +56797,56 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 7.0,
-						dcaKeyFollow: 7.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 1.0,
-							},
-							{
-								id: "waveform2",
-								value: 2.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 7.0,
+							dcaKeyFollow: 7.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 1.0,
+								},
+								{
+									id: "waveform2",
+									value: 2.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
@@ -56465,7 +56957,6 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 				ringGain: 4.0,
 				octave: 0.0,
 				line1: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -56595,60 +57086,62 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: "cz101",
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 2.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [
-							{
-								id: "preset",
-								value: 4.0,
-							},
-							{
-								id: "waveform1",
-								value: 5.0,
-							},
-							{
-								id: "waveform2",
-								value: 5.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: "cz101",
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 2.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [
+								{
+									id: "preset",
+									value: 4.0,
+								},
+								{
+									id: "waveform1",
+									value: 5.0,
+								},
+								{
+									id: "waveform2",
+									value: 5.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,
 					octave: 0.0,
 				},
 				line2: {
-					synthesisMethod: "pd",
 					envelopes: {
 						pitch: {
 							type: "step",
@@ -56778,36 +57271,39 @@ export const FACTORY_PRESETS: LibraryPreset[] = [
 						},
 					},
 					engine: {
-						algo: "cz101",
-						algo2: null,
-						algoBlend: 0.0,
-						baseWaveformA: "cosine",
-						baseWaveformB: "cosine",
-						window: "off",
-						dcaBase: 1.0,
-						dcwBase: 1.0,
-						modulation: 0.0,
-						dcwKeyFollow: 0.0,
-						dcaKeyFollow: 0.0,
-						algoControlsA: [
-							{
-								id: "preset",
-								value: 0.0,
-							},
-							{
-								id: "waveform1",
-								value: 0.0,
-							},
-							{
-								id: "waveform2",
-								value: 0.0,
-							},
-							{
-								id: "windowFunction",
-								value: 0.0,
-							},
-						],
-						algoControlsB: [],
+						type: "pd",
+						params: {
+							algo: "cz101",
+							algo2: null,
+							algoBlend: 0.0,
+							baseWaveformA: "cosine",
+							baseWaveformB: "cosine",
+							window: "off",
+							dcaBase: 1.0,
+							dcwBase: 1.0,
+							modulation: 0.0,
+							dcwKeyFollow: 0.0,
+							dcaKeyFollow: 0.0,
+							algoControlsA: [
+								{
+									id: "preset",
+									value: 0.0,
+								},
+								{
+									id: "waveform1",
+									value: 0.0,
+								},
+								{
+									id: "waveform2",
+									value: 0.0,
+								},
+								{
+									id: "windowFunction",
+									value: 0.0,
+								},
+							],
+							algoControlsB: [],
+						},
 					},
 					detuneNote: 0.0,
 					detuneFine: 0.0,

@@ -676,12 +676,12 @@ fn write_c_char_array<const N: usize>(dest: &mut [c_char; N], value: &str) {
 fn parameter_value(params: &SynthParams, key: &str) -> Option<f32> {
     match key {
         "volume" => Some(params.volume),
-        "warpAAmount" => Some(params.line1.pd.dcw_base),
-        "warpBAmount" => Some(params.line2.pd.dcw_base),
-        "algoBlendA" => Some(params.line1.pd.algo_blend),
-        "algoBlendB" => Some(params.line2.pd.algo_blend),
-        "line1Level" => Some(params.line1.pd.dca_base),
-        "line2Level" => Some(params.line2.pd.dca_base),
+        "warpAAmount" => Some(params.line1.engine.pd().dcw_base),
+        "warpBAmount" => Some(params.line2.engine.pd().dcw_base),
+        "algoBlendA" => Some(params.line1.engine.pd().algo_blend),
+        "algoBlendB" => Some(params.line2.engine.pd().algo_blend),
+        "line1Level" => Some(params.line1.engine.pd().dca_base),
+        "line2Level" => Some(params.line2.engine.pd().dca_base),
         "line1Octave" => Some(params.line1.octave),
         "line2Octave" => Some(params.line2.octave),
         "line2DetuneNote" => Some(params.line2.detune_note),

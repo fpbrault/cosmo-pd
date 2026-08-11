@@ -84,13 +84,13 @@ pub(crate) fn apply_line_mods(
     *output = *base;
 
     if line_index == 1 {
-        output.pd.algo_blend = (base.pd.algo_blend
+        output.engine.pd_mut().algo_blend = (base.engine.pd().algo_blend
             + mod_values[ModDestination::Line1AlgoBlend as usize])
             .clamp(0.0, 1.0);
         output.octave =
             (base.octave + mod_values[ModDestination::Line1Octave as usize] * 4.0).clamp(-2.0, 2.0);
     } else {
-        output.pd.algo_blend = (base.pd.algo_blend
+        output.engine.pd_mut().algo_blend = (base.engine.pd().algo_blend
             + mod_values[ModDestination::Line2AlgoBlend as usize])
             .clamp(0.0, 1.0);
         output.octave = (base.octave

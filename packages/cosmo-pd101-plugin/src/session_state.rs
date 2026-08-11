@@ -96,7 +96,7 @@ pub fn deserialize_state(data: &[u8]) -> Result<PluginSessionState, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmo_synth_engine::params::SynthParams;
+    use cosmo_synth_engine::params::{LineEngineParams, SynthParams};
 
     #[test]
     fn deserialize_tier1_plugin_session_state() {
@@ -145,10 +145,12 @@ mod tests {
         let params = SynthParams {
             volume: 0.77,
             line1: cosmo_synth_engine::params::LineParams {
-                pd: cosmo_synth_engine::synthesis::pd::parameters::PdLineParams {
-                    dcw_base: 0.5,
-                    ..Default::default()
-                },
+                engine: LineEngineParams::Pd(
+                    cosmo_synth_engine::synthesis::pd::parameters::PdLineParams {
+                        dcw_base: 0.5,
+                        ..Default::default()
+                    },
+                ),
                 ..Default::default()
             },
             ..Default::default()
@@ -156,14 +158,14 @@ mod tests {
         let bytes = serde_json::to_vec(&params).unwrap();
         let result = deserialize_state(&bytes).unwrap();
         assert_eq!(result.synth_params.volume, 0.77);
-        assert_eq!(result.synth_params.line1.pd.dcw_base, 0.5);
+        assert_eq!(result.synth_params.line1.engine.pd().dcw_base, 0.5);
         assert_eq!(result.preset_session.active_preset_name_base, "");
         assert!(result.preset_session.loaded_preset_id.is_none());
         assert!(!result.preset_session.is_dirty);
     }
 
     #[test]
-    fn legacy_session_lines_default_synthesis_method_to_pd() {
+    fn session_lines_default_engine_to_pd() {
         let mut value = serde_json::to_value(PluginSessionState {
             synth_params: SynthParams::default(),
             preset_session: PresetSession::default(),
@@ -179,16 +181,16 @@ mod tests {
                 .get_mut(line_key)
                 .and_then(serde_json::Value::as_object_mut)
                 .unwrap()
-                .remove("synthesisMethod");
+                .remove("engine");
         }
 
         let result = deserialize_state(&serde_json::to_vec(&value).unwrap()).unwrap();
         assert_eq!(
-            result.synth_params.line1.synthesis_method,
+            result.synth_params.line1.engine.method(),
             cosmo_synth_engine::params::SynthesisMethod::Pd
         );
         assert_eq!(
-            result.synth_params.line2.synthesis_method,
+            result.synth_params.line2.engine.method(),
             cosmo_synth_engine::params::SynthesisMethod::Pd
         );
     }

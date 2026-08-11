@@ -109,8 +109,8 @@ fn resolve_algo_control_slot(
     let mut numeric_slot = 0;
 
     for (section, algo) in [
-        (AlgoControlSection::A, Some(line.pd.algo)),
-        (AlgoControlSection::B, line.pd.algo2),
+        (AlgoControlSection::A, Some(line.engine.pd().algo)),
+        (AlgoControlSection::B, line.engine.pd().algo2),
     ] {
         let Some(definition) = algo.and_then(algo_definition_for) else {
             continue;
@@ -178,8 +178,8 @@ fn apply_virtual_algo_control_midi_mapping(
         _ => return None,
     };
     let controls = match target.section {
-        AlgoControlSection::A => &mut line.pd.algo_controls_a,
-        AlgoControlSection::B => &mut line.pd.algo_controls_b,
+        AlgoControlSection::A => &mut line.engine.pd_mut().algo_controls_a,
+        AlgoControlSection::B => &mut line.engine.pd_mut().algo_controls_b,
     };
     if !upsert_algo_control_value(controls, target.control_id, mapped) {
         return None;
@@ -411,12 +411,12 @@ const MIDI_MAPPING_EXTRA_RANGES_V1: &[EngineParamRangeV1] = &[
 pub fn set_parameter_value_by_key(params: &mut SynthParams, key: &str, value: f32) -> bool {
     match key {
         "volume" => params.volume = value,
-        "warpAAmount" => params.line1.pd.dcw_base = value,
-        "warpBAmount" => params.line2.pd.dcw_base = value,
-        "algoBlendA" => params.line1.pd.algo_blend = value,
-        "algoBlendB" => params.line2.pd.algo_blend = value,
-        "line1Level" => params.line1.pd.dca_base = value,
-        "line2Level" => params.line2.pd.dca_base = value,
+        "warpAAmount" => params.line1.engine.pd_mut().dcw_base = value,
+        "warpBAmount" => params.line2.engine.pd_mut().dcw_base = value,
+        "algoBlendA" => params.line1.engine.pd_mut().algo_blend = value,
+        "algoBlendB" => params.line2.engine.pd_mut().algo_blend = value,
+        "line1Level" => params.line1.engine.pd_mut().dca_base = value,
+        "line2Level" => params.line2.engine.pd_mut().dca_base = value,
         "line1Octave" => params.line1.octave = value,
         "line2Octave" => params.line2.octave = value,
         "line2DetuneNote" => params.line2.detune_note = value,
@@ -805,8 +805,8 @@ mod tests {
     #[test]
     fn resolves_algo_a_then_algo_b_numeric_controls() {
         let mut params = SynthParams::default();
-        params.line1.pd.algo = super::super::Algo::Bend;
-        params.line1.pd.algo2 = Some(super::super::Algo::Fold);
+        params.line1.engine.pd_mut().algo = super::super::Algo::Bend;
+        params.line1.engine.pd_mut().algo2 = Some(super::super::Algo::Fold);
 
         let first = resolve_algo_control_slot(
             &params,
@@ -834,8 +834,8 @@ mod tests {
     #[test]
     fn non_numeric_controls_do_not_consume_algo_control_slots() {
         let mut params = SynthParams::default();
-        params.line1.pd.algo = super::super::Algo::Cz101;
-        params.line1.pd.algo2 = Some(super::super::Algo::Bend);
+        params.line1.engine.pd_mut().algo = super::super::Algo::Cz101;
+        params.line1.engine.pd_mut().algo2 = Some(super::super::Algo::Bend);
 
         let target = resolve_algo_control_slot(
             &params,
@@ -852,8 +852,8 @@ mod tests {
     #[test]
     fn resolves_at_most_eight_algo_control_slots_per_line() {
         let mut params = SynthParams::default();
-        params.line2.pd.algo = super::super::Algo::Fold;
-        params.line2.pd.algo2 = Some(super::super::Algo::Skew);
+        params.line2.engine.pd_mut().algo = super::super::Algo::Fold;
+        params.line2.engine.pd_mut().algo2 = Some(super::super::Algo::Skew);
 
         let eighth = resolve_algo_control_slot(
             &params,
@@ -870,7 +870,7 @@ mod tests {
     #[test]
     fn virtual_algo_control_mapping_uses_current_range_and_upserts() {
         let mut params = SynthParams::default();
-        params.line1.pd.algo = super::super::Algo::Bend;
+        params.line1.engine.pd_mut().algo = super::super::Algo::Bend;
 
         let min = apply_midi_mapping_binding(&mut params, "line1AlgoControl2", -1, 74, 0, 74, 0.0)
             .unwrap();
@@ -881,7 +881,14 @@ mod tests {
             .unwrap();
         assert_eq!(max.value, 1.0);
 
-        let entries: Vec<_> = params.line1.pd.algo_controls_a.iter().flatten().collect();
+        let entries: Vec<_> = params
+            .line1
+            .engine
+            .pd_mut()
+            .algo_controls_a
+            .iter()
+            .flatten()
+            .collect();
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].id, AlgoControlId::BendBias);
         assert_eq!(entries[0].value, 1.0);
@@ -890,7 +897,7 @@ mod tests {
     #[test]
     fn virtual_algo_control_mapping_tracks_dynamic_algo_changes() {
         let mut params = SynthParams::default();
-        params.line1.pd.algo = super::super::Algo::Bend;
+        params.line1.engine.pd_mut().algo = super::super::Algo::Bend;
 
         let bend_change =
             apply_midi_mapping_binding(&mut params, "line1AlgoControl1", -1, 11, 0, 11, 0.25)
@@ -899,7 +906,8 @@ mod tests {
         assert!(
             params
                 .line1
-                .pd
+                .engine
+                .pd()
                 .algo_controls_a
                 .iter()
                 .flatten()
@@ -909,7 +917,7 @@ mod tests {
                 })
         );
 
-        params.line1.pd.algo = super::super::Algo::Fold;
+        params.line1.engine.pd_mut().algo = super::super::Algo::Fold;
         let fold_change =
             apply_midi_mapping_binding(&mut params, "line1AlgoControl1", -1, 11, 0, 11, 0.75)
                 .unwrap();
@@ -917,7 +925,8 @@ mod tests {
         assert!(
             params
                 .line1
-                .pd
+                .engine
+                .pd()
                 .algo_controls_a
                 .iter()
                 .flatten()

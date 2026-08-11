@@ -108,7 +108,7 @@ export type EnvStep = {
 
 /**
  *  Engine-neutral envelope program stored in a line's envelope slots.
- * 
+ *
  *  New envelope implementations can add variants here without changing the
  *  line-engine or synthesis-method boundary.
  */
@@ -196,6 +196,14 @@ export type LfoSyncDivision = "whole" | "half" | "quarter" | "eighth" | "sixteen
 export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw";
 
 /**
+ *  Parameters owned by a concrete line synthesis engine.
+ *
+ *  The tag is part of the persisted representation so an engine's parameter
+ *  payload cannot be paired with a different synthesis method by accident.
+ */
+export type LineEngineParams = { type: "pd"; params: PdLineParams };
+
+/**
  *  The three generic modulation targets available to every line engine.
  *  Engines map these slots to their own semantic roles through engine metadata.
  */
@@ -207,16 +215,8 @@ export type LineEnvelopeParams = {
 
 /**  Method-independent line parameters plus the active engine payload. */
 export type LineParams = {
-	synthesisMethod?: SynthesisMethod,
 	envelopes: LineEnvelopeParams,
-	/**
-	 *  Parameters owned by the selected line synthesis engine.
-	 * 
-	 *  The field remains named `pd` internally while the wire format exposes
-	 *  it as `engine`, keeping the runtime boundary explicit without making
-	 *  the core line schema a flat list of PD controls.
-	 */
-	engine: PdLineParams,
+	engine: LineEngineParams,
 	detuneNote?: number | null,
 	detuneFine?: number | null,
 	octave: number | null,
@@ -307,7 +307,7 @@ export type ModMatrixLayout = {
 
 /**
  *  One fixed 8×8 page in the modulation matrix editor.
- * 
+ *
  *  These assignments are editor layout metadata. The audio engine continues to
  *  evaluate the shared `ModMatrix::routes` collection independently of pages.
  */
@@ -382,7 +382,7 @@ export type PhaserParams = {
 
 /**
  *  Tagged IPC request envelope deserialized from `{ method, payload }`.
- * 
+ *
  *  Wire format (adjacently tagged by serde):
  *  - Unit variant: `{ "method": "getParams" }`
  *  - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`
@@ -697,8 +697,6 @@ export type SynthParams = {
 	macro4?: number | null,
 	macroLabels?: [string, string, string, string],
 };
-
-export type SynthesisMethod = "pd";
 
 /**  Transport info snapshot sent from Rust to the webview. */
 export type TransportInfoResponse = {

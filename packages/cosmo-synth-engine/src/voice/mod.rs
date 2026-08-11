@@ -357,9 +357,9 @@ mod tests {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL2Prime;
         params.mod_mode = ModMode::Noise;
-        params.line1.pd.dca_base = 0.0;
-        params.line2.pd.dca_base = 1.0;
-        params.line2.pd.dcw_base = 0.85;
+        params.line1.engine.pd_mut().dca_base = 0.0;
+        params.line2.engine.pd_mut().dca_base = 1.0;
+        params.line2.engine.pd_mut().dcw_base = 0.85;
 
         let low_note = render_sequence(params.clone(), 48, 16);
         let high_note = render_sequence(params, 84, 16);
@@ -381,15 +381,15 @@ mod tests {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL1Prime;
         params.mod_mode = ModMode::Noise;
-        params.line1.pd.dca_base = 1.0;
-        params.line1.pd.dcw_base = 0.1;
-        params.line2.pd.dca_base = 0.0;
+        params.line1.engine.pd_mut().dca_base = 1.0;
+        params.line1.engine.pd_mut().dcw_base = 0.1;
+        params.line2.engine.pd_mut().dca_base = 0.0;
 
         let quiet = render_sequence(params.clone(), 60, 16);
-        params.line1.pd.dca_base = 0.0;
+        params.line1.engine.pd_mut().dca_base = 0.0;
         let silent = render_sequence(params.clone(), 60, 16);
-        params.line1.pd.dca_base = 1.0;
-        params.line1.pd.dcw_base = 0.9;
+        params.line1.engine.pd_mut().dca_base = 1.0;
+        params.line1.engine.pd_mut().dcw_base = 0.9;
         let bright = render_sequence(params, 60, 16);
 
         assert!(
@@ -408,15 +408,15 @@ mod tests {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL2Prime;
         params.mod_mode = ModMode::Noise;
-        params.line1.pd.dca_base = 0.0;
-        params.line2.pd.dca_base = 1.0;
-        params.line2.pd.dcw_base = 0.15;
+        params.line1.engine.pd_mut().dca_base = 0.0;
+        params.line2.engine.pd_mut().dca_base = 1.0;
+        params.line2.engine.pd_mut().dcw_base = 0.15;
 
         let mellow = render_sequence(params.clone(), 60, 16);
-        params.line2.pd.dca_base = 0.0;
+        params.line2.engine.pd_mut().dca_base = 0.0;
         let silent = render_sequence(params.clone(), 60, 16);
-        params.line2.pd.dca_base = 1.0;
-        params.line2.pd.dcw_base = 0.95;
+        params.line2.engine.pd_mut().dca_base = 1.0;
+        params.line2.engine.pd_mut().dcw_base = 0.95;
         let bright = render_sequence(params, 60, 16);
 
         assert!(
@@ -435,7 +435,7 @@ mod tests {
         let mut noise = SynthParams::default();
         noise.line_select = LineSelect::L1;
         noise.mod_mode = ModMode::Noise;
-        noise.line1.pd.dca_base = 1.0;
+        noise.line1.engine.pd_mut().dca_base = 1.0;
 
         let mut normal = noise.clone();
         normal.mod_mode = ModMode::Normal;
@@ -443,7 +443,7 @@ mod tests {
         let mut ring = SynthParams::default();
         ring.line_select = LineSelect::L2;
         ring.mod_mode = ModMode::Ring;
-        ring.line2.pd.dca_base = 1.0;
+        ring.line2.engine.pd_mut().dca_base = 1.0;
 
         let mut ring_normal = ring.clone();
         ring_normal.mod_mode = ModMode::Normal;
@@ -463,9 +463,9 @@ mod tests {
         let mut l1_prime = SynthParams::default();
         l1_prime.line_select = LineSelect::L1PlusL1Prime;
         l1_prime.mod_mode = ModMode::Normal;
-        l1_prime.line1.pd.algo = crate::params::Algo::Saw;
-        l1_prime.line2.pd.algo = crate::params::Algo::Square;
-        l1_prime.line2.pd.dca_base = 0.0;
+        l1_prime.line1.engine.pd_mut().algo = crate::params::Algo::Saw;
+        l1_prime.line2.engine.pd_mut().algo = crate::params::Algo::Square;
+        l1_prime.line2.engine.pd_mut().dca_base = 0.0;
 
         let mut l2_prime = l1_prime.clone();
         l2_prime.line_select = LineSelect::L1PlusL2Prime;
@@ -482,8 +482,8 @@ mod tests {
         let mut normal = SynthParams::default();
         normal.line_select = LineSelect::L1PlusL2Prime;
         normal.mod_mode = ModMode::Normal;
-        normal.line1.pd.algo = crate::params::Algo::Saw;
-        normal.line2.pd.algo = crate::params::Algo::Square;
+        normal.line1.engine.pd_mut().algo = crate::params::Algo::Saw;
+        normal.line2.engine.pd_mut().algo = crate::params::Algo::Square;
 
         let mut ring = normal.clone();
         ring.mod_mode = ModMode::Ring;

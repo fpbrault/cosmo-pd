@@ -47,20 +47,28 @@ type FullParamsBlob = {
 		[key: string]: unknown;
 		engine?: {
 			[key: string]: unknown;
-			dcwBase?: number;
-			algo?: string;
-			algoControlsA?: { id: string; value: number }[];
-			algoControlsB?: { id: string; value: number }[];
+			type?: "pd";
+			params?: {
+				[key: string]: unknown;
+				dcwBase?: number;
+				algo?: string;
+				algoControlsA?: { id: string; value: number }[];
+				algoControlsB?: { id: string; value: number }[];
+			};
 		};
 	};
 	line2?: {
 		[key: string]: unknown;
 		engine?: {
 			[key: string]: unknown;
-			dcwBase?: number;
-			algo?: string;
-			algoControlsA?: { id: string; value: number }[];
-			algoControlsB?: { id: string; value: number }[];
+			type?: "pd";
+			params?: {
+				[key: string]: unknown;
+				dcwBase?: number;
+				algo?: string;
+				algoControlsA?: { id: string; value: number }[];
+				algoControlsB?: { id: string; value: number }[];
+			};
 		};
 	};
 	modMatrix?: { routes?: unknown[] };
@@ -70,16 +78,18 @@ type FullParamsBlob = {
 function extractScalarParams(params: FullParamsBlob): Record<string, number> {
 	const out: Record<string, number> = {};
 	if (typeof params.volume === "number") out.volume = params.volume;
-	if (typeof params.line1?.engine?.dcwBase === "number")
-		out.l1_dcw_base = params.line1.engine.dcwBase;
-	if (typeof params.line1?.engine?.algo === "string") {
+	const line1EngineParams = params.line1?.engine?.params;
+	if (typeof line1EngineParams?.dcwBase === "number")
+		out.l1_dcw_base = line1EngineParams.dcwBase;
+	if (typeof line1EngineParams?.algo === "string") {
 		const idx = ALGO_ORDER.indexOf(
-			params.line1.engine.algo as (typeof ALGO_ORDER)[number],
+			line1EngineParams.algo as (typeof ALGO_ORDER)[number],
 		);
 		if (idx >= 0) out.l1_warp_algo = idx;
 	}
-	if (typeof params.line2?.engine?.dcwBase === "number")
-		out.l2_dcw_base = params.line2.engine.dcwBase;
+	const line2EngineParams = params.line2?.engine?.params;
+	if (typeof line2EngineParams?.dcwBase === "number")
+		out.l2_dcw_base = line2EngineParams.dcwBase;
 	return out;
 }
 
@@ -96,7 +106,10 @@ function applyParamToBlob(
 				...params,
 				line1: {
 					...params.line1,
-					engine: { ...params.line1?.engine, dcwBase: value },
+					engine: {
+						...params.line1?.engine,
+						params: { ...params.line1?.engine?.params, dcwBase: value },
+					},
 				},
 			};
 		case "l1_warp_algo": {
@@ -105,7 +118,10 @@ function applyParamToBlob(
 				...params,
 				line1: {
 					...params.line1,
-					engine: { ...params.line1?.engine, algo },
+					engine: {
+						...params.line1?.engine,
+						params: { ...params.line1?.engine?.params, algo },
+					},
 				},
 			};
 		}
@@ -114,7 +130,10 @@ function applyParamToBlob(
 				...params,
 				line2: {
 					...params.line2,
-					engine: { ...params.line2?.engine, dcwBase: value },
+					engine: {
+						...params.line2?.engine,
+						params: { ...params.line2?.engine?.params, dcwBase: value },
+					},
 				},
 			};
 		default:
@@ -362,7 +381,6 @@ const DEFAULT_PARAMS: PluginParamInfo[] = [
 
 function createDefaultLineParams(): NonNullable<FullParamsBlob["line1"]> {
 	return {
-		synthesisMethod: "pd",
 		envelopes: {
 			pitch: {
 				type: "step",
@@ -378,19 +396,22 @@ function createDefaultLineParams(): NonNullable<FullParamsBlob["line1"]> {
 			},
 		},
 		engine: {
-			algo: "cz101",
-			algo2: null,
-			algoBlend: 0,
-			baseWaveformA: "cosine",
-			baseWaveformB: "cosine",
-			window: "off",
-			dcaBase: 1,
-			dcwBase: 0.5,
-			modulation: 0,
-			dcwKeyFollow: 0,
-			dcaKeyFollow: 0,
-			algoControlsA: [],
-			algoControlsB: [],
+			type: "pd",
+			params: {
+				algo: "cz101",
+				algo2: null,
+				algoBlend: 0,
+				baseWaveformA: "cosine",
+				baseWaveformB: "cosine",
+				window: "off",
+				dcaBase: 1,
+				dcwBase: 0.5,
+				modulation: 0,
+				dcwKeyFollow: 0,
+				dcaKeyFollow: 0,
+				algoControlsA: [],
+				algoControlsB: [],
+			},
 		},
 		detuneNote: 0,
 		detuneFine: 0,
@@ -630,8 +651,8 @@ export function installMockPluginBridge(): void {
 					prevExtractedScalars = newScalars;
 
 					// Emit setAlgoControls for each non-empty line/slot.
-					const l1 = params.line1?.engine;
-					const l2 = params.line2?.engine;
+					const l1 = params.line1?.engine?.params;
+					const l2 = params.line2?.engine?.params;
 					if (Array.isArray(l1?.algoControlsA) && l1.algoControlsA.length > 0) {
 						recordMessage({
 							type: "invoke",

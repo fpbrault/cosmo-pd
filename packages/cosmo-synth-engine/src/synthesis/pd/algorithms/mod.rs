@@ -1,7 +1,7 @@
 use crate::dsp_utils::{TWO_PI, apply_window, lerp, wrap01};
 use crate::params::AlgoControlSlots;
-use crate::processor::render_plan::CompiledPdLinePlan;
 use crate::synthesis::pd::parameters::{Algo, BaseWaveform, PdLineParams};
+use crate::synthesis::pd::plan::CompiledPdLinePlan;
 use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.

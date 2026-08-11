@@ -130,19 +130,19 @@ export function convertDecodedPatchToSynthPreset(
 
 	const detuneSign = decoded.detuneDirection === "+" ? 1 : -1;
 
-	p.line1.engine.algo = "cz101";
-	p.line1.engine.algo2 = decoded.dco1.secondWaveform ? "cz101" : null;
+	p.line1.engine.params.algo = "cz101";
+	p.line1.engine.params.algo2 = decoded.dco1.secondWaveform ? "cz101" : null;
 	const line1Waveform1 = waveformToCzWaveform(decoded.dco1.firstWaveform);
 	const line1Waveform2 = decoded.dco1.secondWaveform
 		? waveformToCzWaveform(decoded.dco1.secondWaveform)
 		: line1Waveform1;
 	const line1WindowFunction = decoded.dco1.windowFunction ?? 0;
-	p.line1.engine.algoControlsA = makeCzControls(
+	p.line1.engine.params.algoControlsA = makeCzControls(
 		line1Waveform1,
 		line1Waveform2,
 		line1WindowFunction,
 	);
-	p.line1.engine.algoControlsB = decoded.dco1.secondWaveform
+	p.line1.engine.params.algoControlsB = decoded.dco1.secondWaveform
 		? makeCzControls(line1Waveform2, line1Waveform2, line1WindowFunction)
 		: [];
 	p.line1.octave = decoded.octave;
@@ -151,22 +151,22 @@ export function convertDecodedPatchToSynthPreset(
 	p.line1.envelopes.pitch = stepProgram(convertEnvelope(decoded.dco1Env));
 	p.line1.envelopes.timbre = stepProgram(convertEnvelope(decoded.dcw1));
 	p.line1.envelopes.amplitude = stepProgram(convertEnvelope(decoded.dca1));
-	p.line1.engine.dcwKeyFollow = decoded.dcw1KeyFollow;
-	p.line1.engine.dcaKeyFollow = decoded.dca1KeyFollow;
+	p.line1.engine.params.dcwKeyFollow = decoded.dcw1KeyFollow;
+	p.line1.engine.params.dcaKeyFollow = decoded.dca1KeyFollow;
 
-	p.line2.engine.algo = "cz101";
-	p.line2.engine.algo2 = decoded.dco2.secondWaveform ? "cz101" : null;
+	p.line2.engine.params.algo = "cz101";
+	p.line2.engine.params.algo2 = decoded.dco2.secondWaveform ? "cz101" : null;
 	const line2Waveform1 = waveformToCzWaveform(decoded.dco2.firstWaveform);
 	const line2Waveform2 = decoded.dco2.secondWaveform
 		? waveformToCzWaveform(decoded.dco2.secondWaveform)
 		: line2Waveform1;
 	const line2WindowFunction = decoded.dco2.windowFunction ?? 0;
-	p.line2.engine.algoControlsA = makeCzControls(
+	p.line2.engine.params.algoControlsA = makeCzControls(
 		line2Waveform1,
 		line2Waveform2,
 		line2WindowFunction,
 	);
-	p.line2.engine.algoControlsB = decoded.dco2.secondWaveform
+	p.line2.engine.params.algoControlsB = decoded.dco2.secondWaveform
 		? makeCzControls(line2Waveform2, line2Waveform2, line2WindowFunction)
 		: [];
 	p.line2.octave = decoded.octave + detuneSign * decoded.detuneOctave;
@@ -175,8 +175,8 @@ export function convertDecodedPatchToSynthPreset(
 	p.line2.envelopes.pitch = stepProgram(convertEnvelope(decoded.dco2Env));
 	p.line2.envelopes.timbre = stepProgram(convertEnvelope(decoded.dcw2));
 	p.line2.envelopes.amplitude = stepProgram(convertEnvelope(decoded.dca2));
-	p.line2.engine.dcwKeyFollow = decoded.dcw2KeyFollow;
-	p.line2.engine.dcaKeyFollow = decoded.dca2KeyFollow;
+	p.line2.engine.params.dcwKeyFollow = decoded.dcw2KeyFollow;
+	p.line2.engine.params.dcaKeyFollow = decoded.dca2KeyFollow;
 
 	if (decoded.dco1.modulation === "ring") p.modMode = "ring";
 	else if (decoded.dco1.modulation === "noise") p.modMode = "noise";
@@ -190,10 +190,11 @@ export function convertDecodedPatchToSynthPreset(
 		p.line2.envelopes.pitch = stepProgram(DEFAULT_DCO_ENV);
 		p.line2.envelopes.timbre = stepProgram(DEFAULT_DCW_ENV);
 		p.line2.envelopes.amplitude = stepProgram(DEFAULT_DCA_ENV);
-		p.line2.engine.dcwKeyFollow = 0;
-		p.line2.engine.dcaKeyFollow = 0;
-		p.line2.engine.algo = DEFAULT_PRESET.params.line2.engine.algo;
-		p.line2.engine.algo2 = DEFAULT_PRESET.params.line2.engine.algo2;
+		p.line2.engine.params.dcwKeyFollow = 0;
+		p.line2.engine.params.dcaKeyFollow = 0;
+		p.line2.engine.params.algo = DEFAULT_PRESET.params.line2.engine.params.algo;
+		p.line2.engine.params.algo2 =
+			DEFAULT_PRESET.params.line2.engine.params.algo2;
 	}
 
 	if (decoded.lineSelect === "L2") {
@@ -204,10 +205,11 @@ export function convertDecodedPatchToSynthPreset(
 		p.line1.envelopes.pitch = stepProgram(DEFAULT_DCO_ENV);
 		p.line1.envelopes.timbre = stepProgram(DEFAULT_DCW_ENV);
 		p.line1.envelopes.amplitude = stepProgram(DEFAULT_DCA_ENV);
-		p.line1.engine.dcwKeyFollow = 0;
-		p.line1.engine.dcaKeyFollow = 0;
-		p.line1.engine.algo = DEFAULT_PRESET.params.line1.engine.algo;
-		p.line1.engine.algo2 = DEFAULT_PRESET.params.line1.engine.algo2;
+		p.line1.engine.params.dcwKeyFollow = 0;
+		p.line1.engine.params.dcaKeyFollow = 0;
+		p.line1.engine.params.algo = DEFAULT_PRESET.params.line1.engine.params.algo;
+		p.line1.engine.params.algo2 =
+			DEFAULT_PRESET.params.line1.engine.params.algo2;
 	}
 
 	if (decoded.lineSelect === "L1+1'") {
@@ -221,15 +223,15 @@ export function convertDecodedPatchToSynthPreset(
 	p.polyMode = "poly8";
 	p.legato = false;
 
-	p.line1.engine.dcwBase = 1.0;
-	p.line2.engine.dcwBase = 1.0;
-	p.line1.engine.algoBlend = 0;
-	p.line2.engine.algoBlend = 0;
-	p.line1.engine.window = "off";
-	p.line2.engine.window = "off";
+	p.line1.engine.params.dcwBase = 1.0;
+	p.line2.engine.params.dcwBase = 1.0;
+	p.line1.engine.params.algoBlend = 0;
+	p.line2.engine.params.algoBlend = 0;
+	p.line1.engine.params.window = "off";
+	p.line2.engine.params.window = "off";
 	p.volume = 0.8;
-	p.line1.engine.dcaBase = 1;
-	p.line2.engine.dcaBase = 1;
+	p.line1.engine.params.dcaBase = 1;
+	p.line2.engine.params.dcaBase = 1;
 	p.portamento.enabled = false;
 	p.portamento.mode = "time";
 	p.portamento.rate = 0;

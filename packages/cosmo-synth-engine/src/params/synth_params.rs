@@ -7,6 +7,7 @@ use super::lfo::{LfoParams, LfoRateMode, LfoSyncDivision};
 use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
 use super::portamento::PortamentoParams;
+use super::synthesis::SynthesisMethod;
 
 pub const MIN_VOICE_LIMIT: usize = 1;
 pub const DEFAULT_VOICE_LIMIT: usize = 8;
@@ -179,18 +180,13 @@ impl SynthParams {
 
 impl Default for SynthParams {
     fn default() -> Self {
-        let mut line1 = LineParams::default();
-        let mut line2 = LineParams::default();
-        line1.envelopes = crate::synthesis::pd::default_envelopes::default_line_envelopes();
-        line2.envelopes = crate::synthesis::pd::default_envelopes::default_line_envelopes();
-
         Self {
             line_select: LineSelect::default(),
             mod_mode: ModMode::default(),
             ring_gain: default_ring_gain(),
             octave: 0.0,
-            line1,
-            line2,
+            line1: LineParams::default_for(SynthesisMethod::Pd),
+            line2: LineParams::default_for(SynthesisMethod::Pd),
             frequency: 220.0,
             tempo_bpm: default_tempo_bpm(),
             volume: 1.0,

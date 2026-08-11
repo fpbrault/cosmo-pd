@@ -26,16 +26,26 @@ export function createSynthEngineSnapshot({
 				...sanitizedParams.line1,
 				engine: {
 					...sanitizedParams.line1.engine,
-					algoControlsA: sanitizedParams.line1.engine.algoControlsA ?? [],
-					algoControlsB: sanitizedParams.line1.engine.algoControlsB ?? [],
+					params: {
+						...sanitizedParams.line1.engine.params,
+						algoControlsA:
+							sanitizedParams.line1.engine.params.algoControlsA ?? [],
+						algoControlsB:
+							sanitizedParams.line1.engine.params.algoControlsB ?? [],
+					},
 				},
 			},
 			line2: {
 				...sanitizedParams.line2,
 				engine: {
 					...sanitizedParams.line2.engine,
-					algoControlsA: sanitizedParams.line2.engine.algoControlsA ?? [],
-					algoControlsB: sanitizedParams.line2.engine.algoControlsB ?? [],
+					params: {
+						...sanitizedParams.line2.engine.params,
+						algoControlsA:
+							sanitizedParams.line2.engine.params.algoControlsA ?? [],
+						algoControlsB:
+							sanitizedParams.line2.engine.params.algoControlsB ?? [],
+					},
 				},
 			},
 			modMatrix: {

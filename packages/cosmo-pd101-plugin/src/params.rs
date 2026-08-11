@@ -117,12 +117,12 @@ impl CzPluginParams {
 
 pub fn apply_daw_params(synth: &mut SynthParams, params: &CzPluginParams) {
     synth.volume = params.volume.value();
-    synth.line1.pd.dcw_base = params.warp_a_amount.value();
-    synth.line2.pd.dcw_base = params.warp_b_amount.value();
-    synth.line1.pd.algo_blend = params.algo_blend_a.value();
-    synth.line2.pd.algo_blend = params.algo_blend_b.value();
-    synth.line1.pd.dca_base = params.line1_level.value();
-    synth.line2.pd.dca_base = params.line2_level.value();
+    synth.line1.engine.pd_mut().dcw_base = params.warp_a_amount.value();
+    synth.line2.engine.pd_mut().dcw_base = params.warp_b_amount.value();
+    synth.line1.engine.pd_mut().algo_blend = params.algo_blend_a.value();
+    synth.line2.engine.pd_mut().algo_blend = params.algo_blend_b.value();
+    synth.line1.engine.pd_mut().dca_base = params.line1_level.value();
+    synth.line2.engine.pd_mut().dca_base = params.line2_level.value();
     synth.line1.octave = params.line1_octave.value();
     synth.line2.octave = params.line2_octave.value();
     synth.line2.detune_note = params.detune_note.value();
@@ -152,12 +152,24 @@ pub fn write_daw_param_by_id(synth: &mut SynthParams, id: u32, value: f64) -> bo
     let value = value as f32;
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => synth.volume = value,
-        x if x == CzPluginParamsParamId::WarpAAmount as u32 => synth.line1.pd.dcw_base = value,
-        x if x == CzPluginParamsParamId::WarpBAmount as u32 => synth.line2.pd.dcw_base = value,
-        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => synth.line1.pd.algo_blend = value,
-        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => synth.line2.pd.algo_blend = value,
-        x if x == CzPluginParamsParamId::Line1Level as u32 => synth.line1.pd.dca_base = value,
-        x if x == CzPluginParamsParamId::Line2Level as u32 => synth.line2.pd.dca_base = value,
+        x if x == CzPluginParamsParamId::WarpAAmount as u32 => {
+            synth.line1.engine.pd_mut().dcw_base = value
+        }
+        x if x == CzPluginParamsParamId::WarpBAmount as u32 => {
+            synth.line2.engine.pd_mut().dcw_base = value
+        }
+        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => {
+            synth.line1.engine.pd_mut().algo_blend = value
+        }
+        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => {
+            synth.line2.engine.pd_mut().algo_blend = value
+        }
+        x if x == CzPluginParamsParamId::Line1Level as u32 => {
+            synth.line1.engine.pd_mut().dca_base = value
+        }
+        x if x == CzPluginParamsParamId::Line2Level as u32 => {
+            synth.line2.engine.pd_mut().dca_base = value
+        }
         x if x == CzPluginParamsParamId::Line1Octave as u32 => synth.line1.octave = value,
         x if x == CzPluginParamsParamId::Line2Octave as u32 => synth.line2.octave = value,
         x if x == CzPluginParamsParamId::DetuneNote as u32 => synth.line2.detune_note = value,
@@ -262,12 +274,24 @@ pub fn daw_param_id_by_key(key: &str) -> Option<u32> {
 pub fn read_daw_param_by_id(synth: &SynthParams, id: u32) -> Option<f32> {
     match id {
         x if x == CzPluginParamsParamId::Volume as u32 => Some(synth.volume),
-        x if x == CzPluginParamsParamId::WarpAAmount as u32 => Some(synth.line1.pd.dcw_base),
-        x if x == CzPluginParamsParamId::WarpBAmount as u32 => Some(synth.line2.pd.dcw_base),
-        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => Some(synth.line1.pd.algo_blend),
-        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => Some(synth.line2.pd.algo_blend),
-        x if x == CzPluginParamsParamId::Line1Level as u32 => Some(synth.line1.pd.dca_base),
-        x if x == CzPluginParamsParamId::Line2Level as u32 => Some(synth.line2.pd.dca_base),
+        x if x == CzPluginParamsParamId::WarpAAmount as u32 => {
+            Some(synth.line1.engine.pd().dcw_base)
+        }
+        x if x == CzPluginParamsParamId::WarpBAmount as u32 => {
+            Some(synth.line2.engine.pd().dcw_base)
+        }
+        x if x == CzPluginParamsParamId::AlgoBlendA as u32 => {
+            Some(synth.line1.engine.pd().algo_blend)
+        }
+        x if x == CzPluginParamsParamId::AlgoBlendB as u32 => {
+            Some(synth.line2.engine.pd().algo_blend)
+        }
+        x if x == CzPluginParamsParamId::Line1Level as u32 => {
+            Some(synth.line1.engine.pd().dca_base)
+        }
+        x if x == CzPluginParamsParamId::Line2Level as u32 => {
+            Some(synth.line2.engine.pd().dca_base)
+        }
         x if x == CzPluginParamsParamId::Line1Octave as u32 => Some(synth.line1.octave),
         x if x == CzPluginParamsParamId::Line2Octave as u32 => Some(synth.line2.octave),
         x if x == CzPluginParamsParamId::DetuneNote as u32 => Some(synth.line2.detune_note),
@@ -347,18 +371,22 @@ pub fn sync_all_daw_params_from_synth(params: &CzPluginParams, synth: &SynthPara
     params.volume.set_value(synth.volume as f64);
     params
         .warp_a_amount
-        .set_value(synth.line1.pd.dcw_base as f64);
+        .set_value(synth.line1.engine.pd().dcw_base as f64);
     params
         .warp_b_amount
-        .set_value(synth.line2.pd.dcw_base as f64);
+        .set_value(synth.line2.engine.pd().dcw_base as f64);
     params
         .algo_blend_a
-        .set_value(synth.line1.pd.algo_blend as f64);
+        .set_value(synth.line1.engine.pd().algo_blend as f64);
     params
         .algo_blend_b
-        .set_value(synth.line2.pd.algo_blend as f64);
-    params.line1_level.set_value(synth.line1.pd.dca_base as f64);
-    params.line2_level.set_value(synth.line2.pd.dca_base as f64);
+        .set_value(synth.line2.engine.pd().algo_blend as f64);
+    params
+        .line1_level
+        .set_value(synth.line1.engine.pd().dca_base as f64);
+    params
+        .line2_level
+        .set_value(synth.line2.engine.pd().dca_base as f64);
     params.line1_octave.set_value(synth.line1.octave as f64);
     params.line2_octave.set_value(synth.line2.octave as f64);
     params.detune_note.set_value(synth.line2.detune_note as f64);

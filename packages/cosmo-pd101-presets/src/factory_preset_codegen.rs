@@ -279,6 +279,10 @@ fn normalize_legacy_envelope_fields(mut data: Value) -> Result<Value, String> {
             .get_mut(line_name)
             .and_then(Value::as_object_mut)
             .ok_or_else(|| format!("preset data must contain params.{line_name}"))?;
+        // The authored factory files predate the tagged engine boundary. Keep
+        // that authoring format convenient, but make the generated preset
+        // wire format explicit and unambiguous.
+        line.remove("synthesisMethod");
         if !line.contains_key("envelopes") {
             let pitch = line
                 .remove("dcoEnv")
@@ -320,7 +324,15 @@ fn normalize_legacy_envelope_fields(mut data: Value) -> Result<Value, String> {
                     engine.insert(key.to_string(), value);
                 }
             }
-            line.insert("engine".to_string(), Value::Object(engine));
+            line.insert(
+                "engine".to_string(),
+                serde_json::json!({ "type": "pd", "params": engine }),
+            );
+        } else if let Some(engine) = line.get_mut("engine")
+            && engine.get("type").is_none()
+        {
+            let params = std::mem::replace(engine, Value::Null);
+            *engine = serde_json::json!({ "type": "pd", "params": params });
         }
     }
 
@@ -528,10 +540,10 @@ fn validate_authored_preset_data(data: &Value, file_name: &str) -> Result<(), St
         file_name,
     )?;
     for path in [
-        ["params", "line1", "engine", "dcwKeyFollow"],
-        ["params", "line1", "engine", "dcaKeyFollow"],
-        ["params", "line2", "engine", "dcwKeyFollow"],
-        ["params", "line2", "engine", "dcaKeyFollow"],
+        ["params", "line1", "engine", "params", "dcwKeyFollow"],
+        ["params", "line1", "engine", "params", "dcaKeyFollow"],
+        ["params", "line2", "engine", "params", "dcwKeyFollow"],
+        ["params", "line2", "engine", "params", "dcaKeyFollow"],
     ] {
         validate_numeric_range(data, &path, 0.0, 9.0, true, file_name)?;
     }
@@ -714,14 +726,14 @@ fn validate_algo_controls(data: &Value, file_name: &str) -> Result<(), String> {
         let Some(line_value) = get_value(data, &["params", line]) else {
             continue;
         };
-        let engine_value = get_value(line_value, &["engine"])
+        let engine_value = get_value(line_value, &["engine", "params"])
             .ok_or_else(|| format!("{file_name}: data.params.{line}.engine is required"))?;
         let algo_a = get_required_string(engine_value, &["algo"], file_name)?;
         validate_algo_control_entries(
             engine_value,
             &["algoControlsA"],
             algo_a,
-            &format!("data.params.{line}.engine.algoControlsA"),
+            &format!("data.params.{line}.engine.params.algoControlsA"),
             file_name,
         )?;
         if let Some(algo_b) = get_optional_string(engine_value, &["algo2"])? {
@@ -729,7 +741,7 @@ fn validate_algo_controls(data: &Value, file_name: &str) -> Result<(), String> {
                 engine_value,
                 &["algoControlsB"],
                 algo_b,
-                &format!("data.params.{line}.engine.algoControlsB"),
+                &format!("data.params.{line}.engine.params.algoControlsB"),
                 file_name,
             )?;
         } else if let Some(entries) =
@@ -737,7 +749,7 @@ fn validate_algo_controls(data: &Value, file_name: &str) -> Result<(), String> {
             && !entries.is_empty()
         {
             return Err(format!(
-                "{file_name}: data.params.{line}.engine.algoControlsB requires a non-null algo2"
+                "{file_name}: data.params.{line}.engine.params.algoControlsB requires a non-null algo2"
             ));
         }
     }

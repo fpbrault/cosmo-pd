@@ -1,13 +1,11 @@
 use crate::envelope::{EnvelopeBank, EnvelopeTimingCache};
-use crate::params::FxSlotConfig;
 use crate::params::{LineEnvelopeParams, SynthesisMethod};
-use crate::processor::render_plan::CompiledPdLinePlan;
 use crate::synthesis::pd::algorithms::PdRenderConfig;
 use crate::synthesis::pd::parameters::PdLineParams;
 
 use super::engine::{
-    LineEngine, LineEngineContext, LineEngineFrame, LineEngineOutput, LineEnvelopeFrame,
-    LinePhaseContext, LineRole, LineSignalFrame,
+    CompiledLinePlan, LineClockFrame, LineEngine, LineEngineContext, LineEngineFrame,
+    LineEngineOutput, LineEnvelopeFrame, LinePhaseContext, LineRole, LineSignalFrame,
 };
 
 pub mod algorithms;
@@ -15,6 +13,19 @@ pub(crate) mod default_envelopes;
 pub(crate) mod envelope_map;
 pub(crate) mod modulation;
 pub mod parameters;
+pub(crate) mod plan;
+
+pub(crate) use plan::CompiledPdLinePlan;
+
+/// PD-specific per-sample inputs. The algorithm-control vector belongs to the
+/// PD engine and is deliberately absent from the common engine frame.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PdEngineFrame {
+    pub clock: LineClockFrame,
+    pub envelopes: LineEnvelopeFrame,
+    pub modulation: [f32; 8],
+    pub phase_modulation: f32,
+}
 
 pub use envelope_map::{compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human};
 
@@ -43,7 +54,7 @@ impl PdEngine {
     #[inline(always)]
     fn config(
         context: LineEngineContext,
-        frame: LineEngineFrame,
+        frame: PdEngineFrame,
         compiled_line: &CompiledPdLinePlan,
         params: PdEngineParams<'_>,
     ) -> PdRenderConfig {
@@ -53,11 +64,11 @@ impl PdEngine {
             frame.clock.cycle_count,
             frame.clock.oscillator_phase,
             frame.clock.shaped_phase,
-            frame.envelopes.values[1],
-            frame.envelopes.values[2],
+            frame.envelopes.timbre,
+            frame.envelopes.amplitude,
             context.frequency,
             context.sample_rate,
-            frame.modulation.values,
+            frame.modulation,
             frame.phase_modulation,
         )
     }
@@ -91,8 +102,11 @@ impl LineEngine for PdEngine {
         timing: &EnvelopeTimingCache,
         note: u8,
     ) -> LineEnvelopeFrame {
+        let values = envelope_map::advance_envelopes(params.line, envelopes, state, timing, note);
         LineEnvelopeFrame {
-            values: envelope_map::advance_envelopes(params.line, envelopes, state, timing, note),
+            pitch: values[0],
+            timbre: values[1],
+            amplitude: values[2],
         }
     }
 
@@ -121,7 +135,7 @@ impl LineEngine for PdEngine {
         &self,
         line: &crate::params::LineParams,
         base_frequency: f32,
-        envelope_values: [f32; 3],
+        envelopes: LineEnvelopeFrame,
         note: u8,
         timbre_modulation: f32,
         amplitude_modulation: f32,
@@ -132,41 +146,34 @@ impl LineEngine for PdEngine {
                 line.octave,
                 line.detune_note,
                 line.detune_fine,
-                envelope_values[0],
+                envelopes.pitch,
             ),
             timbre: (envelope_map::dcw_base_output(
-                line.pd.dcw_base,
-                line.pd.dcw_key_follow,
-                envelope_values[1],
+                line.engine.pd().dcw_base,
+                line.engine.pd().dcw_key_follow,
+                envelopes.timbre,
                 note,
             ) + timbre_modulation)
                 .clamp(0.0, 1.0),
-            amplitude: (line.pd.dca_base * envelope_map::dca_env_gain(envelope_values[2])
+            amplitude: (line.engine.pd().dca_base
+                * envelope_map::dca_env_gain(envelopes.amplitude)
                 + amplitude_modulation)
                 .max(0.0),
         }
     }
 
     #[inline(always)]
-    fn phase_frame(&self, context: LinePhaseContext<'_>) -> super::engine::LinePhaseFrame {
-        let (enabled, amount, ratio, pm_pre) = context
-            .params
-            .fx_slots
-            .iter()
-            .find_map(|slot| match slot {
-                FxSlotConfig::PhaseMod(pm) => Some((pm.enabled, pm.amount, pm.ratio, pm.pm_pre)),
-                _ => None,
-            })
-            .unwrap_or((false, 0.0, 1.0, false));
-        let amount = if enabled {
-            amount.clamp(-1.0, 1.0)
+    fn phase_frame(&self, context: LinePhaseContext) -> super::engine::LinePhaseFrame {
+        let amount = if context.phase_modulation.enabled {
+            context.phase_modulation.amount.clamp(-1.0, 1.0)
         } else {
             0.0
         };
-        let effective_ratio = (ratio + context.ratio_modulation * 7.5).clamp(0.5, 8.0);
+        let effective_ratio =
+            (context.phase_modulation.ratio + context.ratio_modulation * 7.5).clamp(0.5, 8.0);
         let pm_delta = (context.base_frequency * effective_ratio) / context.sample_rate;
         let pm_mod = amount * 10.0 * (core::f32::consts::TAU * context.pm_phi).sin();
-        let (phase_a_post, phase_b_post, pm_post_mod) = if pm_pre {
+        let (phase_a_post, phase_b_post, pm_post_mod) = if context.phase_modulation.pm_pre {
             (
                 crate::dsp_utils::wrap01(context.phi1 + pm_mod),
                 crate::dsp_utils::wrap01(context.phi2 + pm_mod),
@@ -189,9 +196,11 @@ impl LineEngine for PdEngine {
         &mut self,
         context: LineEngineContext,
         frame: LineEngineFrame,
-        compiled_line: &CompiledPdLinePlan,
+        compiled_line: &CompiledLinePlan,
         params: PdEngineParams<'_>,
     ) -> LineEngineOutput {
+        let CompiledLinePlan::Pd(compiled_line) = compiled_line;
+        let LineEngineFrame::Pd(frame) = frame;
         let config = Self::config(context, frame, compiled_line, params);
         LineEngineOutput {
             sample: algorithms::render_sample_from_config(&config),
@@ -204,7 +213,7 @@ mod tests {
     use super::*;
     use crate::params::{Algo, SynthParams};
     use crate::processor::render_plan::CompiledSynthParams;
-    use crate::synthesis::engine::{LineClockFrame, LineEnvelopeFrame, LineModulationFrame};
+    use crate::synthesis::engine::{LineClockFrame, LineEnvelopeFrame};
 
     fn assert_primary_bits_match(role: LineRole, algo: Algo, note: u8, sample_count: usize) {
         let mut params = SynthParams::default();
@@ -212,7 +221,7 @@ mod tests {
             LineRole::Line1 => &mut params.line1,
             LineRole::Line2 => &mut params.line2,
         };
-        line.pd.algo = algo;
+        line.engine.pd_mut().algo = algo;
         let line = *line;
         let compiled = CompiledSynthParams::from_params(&params);
         let compiled_line = match role {
@@ -220,7 +229,7 @@ mod tests {
             LineRole::Line2 => &compiled.line2,
         };
         let mut adapter = PdEngine::new(role);
-        adapter.note_on(note, 0.75, PdEngineParams::new(&line.pd));
+        adapter.note_on(note, 0.75, PdEngineParams::new(line.engine.pd()));
 
         for sample_index in 0..sample_count {
             let phase = sample_index as f32 * 0.007_31;
@@ -228,26 +237,34 @@ mod tests {
                 frequency: 440.0,
                 sample_rate: 48_000.0,
             };
-            let frame = LineEngineFrame {
+            let frame = LineEngineFrame::Pd(PdEngineFrame {
                 clock: LineClockFrame {
                     cycle_count: sample_index as u32 / 137,
                     oscillator_phase: phase,
                     shaped_phase: phase,
                 },
                 envelopes: LineEnvelopeFrame {
-                    values: [0.0, 0.72, 0.81],
+                    pitch: 0.0,
+                    timbre: 0.72,
+                    amplitude: 0.81,
                 },
-                modulation: LineModulationFrame { values: [0.0; 8] },
+                modulation: [0.0; 8],
                 phase_modulation: 0.0,
-            };
-            let config =
-                PdEngine::config(context, frame, compiled_line, PdEngineParams::new(&line.pd));
+            });
+            let LineEngineFrame::Pd(pd_frame) = frame;
+            let CompiledLinePlan::Pd(pd_plan) = compiled_line;
+            let config = PdEngine::config(
+                context,
+                pd_frame,
+                pd_plan,
+                PdEngineParams::new(line.engine.pd()),
+            );
             let expected = algorithms::render_sample_from_config(&config);
             let actual = adapter.render_primary(
                 context,
                 frame,
                 compiled_line,
-                PdEngineParams::new(&line.pd),
+                PdEngineParams::new(line.engine.pd()),
             );
 
             assert_eq!(actual.sample.to_bits(), expected.to_bits());

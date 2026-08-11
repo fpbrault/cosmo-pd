@@ -46,13 +46,22 @@ describe("presetIdentity", () => {
 					volume: Number.NaN,
 					line1: {
 						...DEFAULT_PRESET.params.line1,
-						engine: { ...DEFAULT_PRESET.params.line1.engine, dcwBase: -0 },
+						engine: {
+							...DEFAULT_PRESET.params.line1.engine,
+							params: {
+								...DEFAULT_PRESET.params.line1.engine.params,
+								dcwBase: -0,
+							},
+						},
 					},
 					line2: {
 						...DEFAULT_PRESET.params.line2,
 						engine: {
 							...DEFAULT_PRESET.params.line2.engine,
-							dcwBase: Number.POSITIVE_INFINITY,
+							params: {
+								...DEFAULT_PRESET.params.line2.engine.params,
+								dcwBase: Number.POSITIVE_INFINITY,
+							},
 						},
 					},
 				},
@@ -67,11 +76,23 @@ describe("presetIdentity", () => {
 					volume: 0,
 					line1: {
 						...DEFAULT_PRESET.params.line1,
-						engine: { ...DEFAULT_PRESET.params.line1.engine, dcwBase: 0 },
+						engine: {
+							...DEFAULT_PRESET.params.line1.engine,
+							params: {
+								...DEFAULT_PRESET.params.line1.engine.params,
+								dcwBase: 0,
+							},
+						},
 					},
 					line2: {
 						...DEFAULT_PRESET.params.line2,
-						engine: { ...DEFAULT_PRESET.params.line2.engine, dcwBase: 0 },
+						engine: {
+							...DEFAULT_PRESET.params.line2.engine,
+							params: {
+								...DEFAULT_PRESET.params.line2.engine.params,
+								dcwBase: 0,
+							},
+						},
 					},
 				},
 			},

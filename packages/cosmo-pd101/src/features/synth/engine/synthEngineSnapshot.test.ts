@@ -9,48 +9,52 @@ const MINIMAL_PRESET = {
 		modMode: "normal" as const,
 		octave: 0,
 		line1: {
-			synthesisMethod: "pd" as const,
 			envelopes: {
 				pitch: { type: "step", params: {} },
 				timbre: { type: "step", params: {} },
 				amplitude: { type: "step", params: {} },
 			},
 			engine: {
-				algo: "saw" as const,
-				algo2: null,
-				algoBlend: 0,
-				window: "off" as const,
-				dcaBase: 0,
-				dcwBase: 0,
-				modulation: 0,
-				dcwKeyFollow: 0,
-				dcaKeyFollow: 0,
-				algoControlsA: [{ id: "a", value: 1 }],
-				algoControlsB: [{ id: "b", value: 2 }],
+				type: "pd" as const,
+				params: {
+					algo: "saw" as const,
+					algo2: null,
+					algoBlend: 0,
+					window: "off" as const,
+					dcaBase: 0,
+					dcwBase: 0,
+					modulation: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
+					algoControlsA: [{ id: "a", value: 1 }],
+					algoControlsB: [{ id: "b", value: 2 }],
+				},
 			},
 			detuneNote: 0,
 			detuneFine: 0,
 			octave: 0,
 		},
 		line2: {
-			synthesisMethod: "pd" as const,
 			envelopes: {
 				pitch: { type: "step", params: {} },
 				timbre: { type: "step", params: {} },
 				amplitude: { type: "step", params: {} },
 			},
 			engine: {
-				algo: "square" as const,
-				algo2: null,
-				algoBlend: 0,
-				window: "off" as const,
-				dcaBase: 0,
-				dcwBase: 0,
-				modulation: 0,
-				dcwKeyFollow: 0,
-				dcaKeyFollow: 0,
-				algoControlsA: [{ id: "c", value: 3 }],
-				algoControlsB: [{ id: "d", value: 4 }],
+				type: "pd" as const,
+				params: {
+					algo: "square" as const,
+					algo2: null,
+					algoBlend: 0,
+					window: "off" as const,
+					dcaBase: 0,
+					dcwBase: 0,
+					modulation: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
+					algoControlsA: [{ id: "c", value: 3 }],
+					algoControlsB: [{ id: "d", value: 4 }],
+				},
 			},
 			detuneNote: 0,
 			detuneFine: 0,
@@ -238,16 +242,22 @@ describe("createSynthEngineSnapshot", () => {
 					...MINIMAL_PRESET.params.line1,
 					engine: {
 						...MINIMAL_PRESET.params.line1.engine,
-						algoControlsA: null,
-						algoControlsB: undefined,
+						params: {
+							...MINIMAL_PRESET.params.line1.engine.params,
+							algoControlsA: null,
+							algoControlsB: undefined,
+						},
 					},
 				},
 				line2: {
 					...MINIMAL_PRESET.params.line2,
 					engine: {
 						...MINIMAL_PRESET.params.line2.engine,
-						algoControlsA: undefined,
-						algoControlsB: null,
+						params: {
+							...MINIMAL_PRESET.params.line2.engine.params,
+							algoControlsA: undefined,
+							algoControlsB: null,
+						},
 					},
 				},
 			},
@@ -259,10 +269,10 @@ describe("createSynthEngineSnapshot", () => {
 			effectivePitchHz: 440,
 		});
 
-		expect(result.params.line1.engine.algoControlsA).toEqual([]);
-		expect(result.params.line1.engine.algoControlsB).toEqual([]);
-		expect(result.params.line2.engine.algoControlsA).toEqual([]);
-		expect(result.params.line2.engine.algoControlsB).toEqual([]);
+		expect(result.params.line1.engine.params.algoControlsA).toEqual([]);
+		expect(result.params.line1.engine.params.algoControlsB).toEqual([]);
+		expect(result.params.line2.engine.params.algoControlsA).toEqual([]);
+		expect(result.params.line2.engine.params.algoControlsB).toEqual([]);
 	});
 
 	it("defaults null modMatrix routes to empty array", () => {

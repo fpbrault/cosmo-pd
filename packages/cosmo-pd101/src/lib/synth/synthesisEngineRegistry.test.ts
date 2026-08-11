@@ -17,8 +17,8 @@ describe("synthesis engine registry", () => {
 			primaryPageLabel: "WAVE FORM",
 			secondaryPageLabel: "ENV",
 		});
-		expect(DEFAULT_SYNTH_PARAMS_V1.line1.synthesisMethod).toBe("pd");
-		expect(DEFAULT_SYNTH_PARAMS_V1.line2.synthesisMethod).toBe("pd");
+		expect(DEFAULT_SYNTH_PARAMS_V1.line1.engine.type).toBe("pd");
+		expect(DEFAULT_SYNTH_PARAMS_V1.line2.engine.type).toBe("pd");
 	});
 
 	it("keeps registry methods unique", () => {

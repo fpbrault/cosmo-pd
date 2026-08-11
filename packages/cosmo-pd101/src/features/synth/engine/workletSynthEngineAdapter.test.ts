@@ -16,40 +16,44 @@ function createSnapshot(overrides?: Partial<SynthParams>): SynthEngineSnapshot {
 			modMode: "normal",
 			octave: 3,
 			line1: {
-				synthesisMethod: "pd",
 				envelopes: { pitch: envelope, timbre: envelope, amplitude: envelope },
 				engine: {
-					algo: "saw",
-					algo2: null,
-					algoBlend: 0,
-					window: "off",
-					dcaBase: 0.5,
-					dcwBase: 0.5,
-					modulation: 0,
-					dcwKeyFollow: 0,
-					dcaKeyFollow: 0,
-					algoControlsA: [],
-					algoControlsB: [],
+					type: "pd",
+					params: {
+						algo: "saw",
+						algo2: null,
+						algoBlend: 0,
+						window: "off",
+						dcaBase: 0.5,
+						dcwBase: 0.5,
+						modulation: 0,
+						dcwKeyFollow: 0,
+						dcaKeyFollow: 0,
+						algoControlsA: [],
+						algoControlsB: [],
+					},
 				},
 				detuneNote: 0,
 				detuneFine: 0,
 				octave: 3,
 			},
 			line2: {
-				synthesisMethod: "pd",
 				envelopes: { pitch: envelope, timbre: envelope, amplitude: envelope },
 				engine: {
-					algo: "square",
-					algo2: null,
-					algoBlend: 0,
-					window: "off",
-					dcaBase: 0.5,
-					dcwBase: 0.5,
-					modulation: 0,
-					dcwKeyFollow: 0,
-					dcaKeyFollow: 0,
-					algoControlsA: [],
-					algoControlsB: [],
+					type: "pd",
+					params: {
+						algo: "square",
+						algo2: null,
+						algoBlend: 0,
+						window: "off",
+						dcaBase: 0.5,
+						dcwBase: 0.5,
+						modulation: 0,
+						dcwKeyFollow: 0,
+						dcaKeyFollow: 0,
+						algoControlsA: [],
+						algoControlsB: [],
+					},
 				},
 				detuneNote: 0,
 				detuneFine: 0,
@@ -111,10 +115,10 @@ describe("createWorkletSynthEngineAdapter", () => {
 		const snapshot = createSnapshot();
 		adapter.sync(snapshot);
 		expect(paramsRef.current).toBeDefined();
-		expect(paramsRef.current.line1.engine.algo).toBe("saw");
-		expect(paramsRef.current.line2.engine.algo).toBe("square");
-		expect(paramsRef.current.line1.synthesisMethod).toBe("pd");
-		expect(paramsRef.current.line2.synthesisMethod).toBe("pd");
+		expect(paramsRef.current.line1.engine.params.algo).toBe("saw");
+		expect(paramsRef.current.line2.engine.params.algo).toBe("square");
+		expect(paramsRef.current.line1.engine.type).toBe("pd");
+		expect(paramsRef.current.line2.engine.type).toBe("pd");
 	});
 
 	it("sync does NOT postMessage if workletNodeRef.current is null", () => {
@@ -124,7 +128,7 @@ describe("createWorkletSynthEngineAdapter", () => {
 			paramsRef,
 		});
 		adapter.sync(createSnapshot());
-		expect(paramsRef.current.line1.engine.algo).toBe("saw");
+		expect(paramsRef.current.line1.engine.params.algo).toBe("saw");
 	});
 
 	it("sync postsMessage with correct type and params when workletNode is available", () => {
@@ -139,12 +143,16 @@ describe("createWorkletSynthEngineAdapter", () => {
 			type: "setParams",
 			params: expect.objectContaining({
 				line1: expect.objectContaining({
-					synthesisMethod: "pd",
-					engine: expect.objectContaining({ algo: "saw" }),
+					engine: expect.objectContaining({
+						type: "pd",
+						params: expect.objectContaining({ algo: "saw" }),
+					}),
 				}),
 				line2: expect.objectContaining({
-					synthesisMethod: "pd",
-					engine: expect.objectContaining({ algo: "square" }),
+					engine: expect.objectContaining({
+						type: "pd",
+						params: expect.objectContaining({ algo: "square" }),
+					}),
 				}),
 			}),
 		});
@@ -194,7 +202,7 @@ describe("createWorkletSynthEngineAdapter", () => {
 			paramsRef,
 		});
 		adapter.sync(createSnapshot());
-		expect(paramsRef.current.line1.engine.window).toBe("triangle");
-		expect(paramsRef.current.line2.engine.window).toBe("pulse");
+		expect(paramsRef.current.line1.engine.params.window).toBe("triangle");
+		expect(paramsRef.current.line2.engine.params.window).toBe("pulse");
 	});
 });

@@ -189,7 +189,7 @@ export type EnvStep = {
 
 /**
  *  Engine-neutral envelope program stored in a line's envelope slots.
- * 
+ *
  *  New envelope implementations can add variants here without changing the
  *  line-engine or synthesis-method boundary.
  */
@@ -343,6 +343,14 @@ export type LfoSyncDivision = "whole" | "half" | "quarter" | "eighth" | "sixteen
 export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw";
 
 /**
+ *  Parameters owned by a concrete line synthesis engine.
+ *
+ *  The tag is part of the persisted representation so an engine's parameter
+ *  payload cannot be paired with a different synthesis method by accident.
+ */
+export type LineEngineParams = { type: "pd"; params: PdLineParams };
+
+/**
  *  The three generic modulation targets available to every line engine.
  *  Engines map these slots to their own semantic roles through engine metadata.
  */
@@ -354,16 +362,8 @@ export type LineEnvelopeParams = {
 
 /**  Method-independent line parameters plus the active engine payload. */
 export type LineParams = {
-	synthesisMethod?: SynthesisMethod,
 	envelopes: LineEnvelopeParams,
-	/**
-	 *  Parameters owned by the selected line synthesis engine.
-	 * 
-	 *  The field remains named `pd` internally while the wire format exposes
-	 *  it as `engine`, keeping the runtime boundary explicit without making
-	 *  the core line schema a flat list of PD controls.
-	 */
-	engine: PdLineParams,
+	engine: LineEngineParams,
 	detuneNote?: number | null,
 	detuneFine?: number | null,
 	octave: number | null,
@@ -443,7 +443,7 @@ export type ModMatrixLayout = {
 
 /**
  *  One fixed 8×8 page in the modulation matrix editor.
- * 
+ *
  *  These assignments are editor layout metadata. The audio engine continues to
  *  evaluate the shared `ModMatrix::routes` collection independently of pages.
  */
@@ -5657,7 +5657,6 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
   "ringGain": 4.0,
   "octave": 0.0,
   "line1": {
-    "synthesisMethod": "pd",
     "envelopes": {
       "pitch": {
         "type": "step",
@@ -5787,26 +5786,28 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
       }
     },
     "engine": {
-      "algo": "saw",
-      "algo2": null,
-      "algoBlend": 0.0,
-      "baseWaveformA": "cosine",
-      "baseWaveformB": "cosine",
-      "window": "off",
-      "dcaBase": 1.0,
-      "dcwBase": 1.0,
-      "modulation": 0.0,
-      "dcwKeyFollow": 0.0,
-      "dcaKeyFollow": 0.0,
-      "algoControlsA": [],
-      "algoControlsB": []
+      "type": "pd",
+      "params": {
+        "algo": "saw",
+        "algo2": null,
+        "algoBlend": 0.0,
+        "baseWaveformA": "cosine",
+        "baseWaveformB": "cosine",
+        "window": "off",
+        "dcaBase": 1.0,
+        "dcwBase": 1.0,
+        "modulation": 0.0,
+        "dcwKeyFollow": 0.0,
+        "dcaKeyFollow": 0.0,
+        "algoControlsA": [],
+        "algoControlsB": []
+      }
     },
     "detuneNote": 0.0,
     "detuneFine": 0.0,
     "octave": 0.0
   },
   "line2": {
-    "synthesisMethod": "pd",
     "envelopes": {
       "pitch": {
         "type": "step",
@@ -5936,19 +5937,22 @@ export const DEFAULT_SYNTH_PARAMS_V1: SynthParams = {
       }
     },
     "engine": {
-      "algo": "saw",
-      "algo2": null,
-      "algoBlend": 0.0,
-      "baseWaveformA": "cosine",
-      "baseWaveformB": "cosine",
-      "window": "off",
-      "dcaBase": 1.0,
-      "dcwBase": 1.0,
-      "modulation": 0.0,
-      "dcwKeyFollow": 0.0,
-      "dcaKeyFollow": 0.0,
-      "algoControlsA": [],
-      "algoControlsB": []
+      "type": "pd",
+      "params": {
+        "algo": "saw",
+        "algo2": null,
+        "algoBlend": 0.0,
+        "baseWaveformA": "cosine",
+        "baseWaveformB": "cosine",
+        "window": "off",
+        "dcaBase": 1.0,
+        "dcwBase": 1.0,
+        "modulation": 0.0,
+        "dcwKeyFollow": 0.0,
+        "dcaKeyFollow": 0.0,
+        "algoControlsA": [],
+        "algoControlsB": []
+      }
     },
     "detuneNote": 0.0,
     "detuneFine": 0.0,

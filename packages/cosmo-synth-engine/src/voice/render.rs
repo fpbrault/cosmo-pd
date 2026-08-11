@@ -4,11 +4,11 @@ use crate::params::{
     LfoRateMode, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvRetrigMode,
     ModMatrixCache, ModMode, PortamentoMode, SynthParams,
 };
-use crate::processor::render_plan::CompiledPdLinePlan;
+use crate::synthesis::pd::PdEngineFrame;
 use crate::synthesis::pd::algorithms::PER_LINE_HEADROOM;
 use crate::synthesis::{
-    LineClockFrame, LineEngineContext, LineEngineFrame, LineEnvelopeFrame, LineModulationFrame,
-    LinePhaseContext, LineSynthesisRuntime,
+    CompiledLinePlan, LineClockFrame, LineEngineContext, LineEngineFrame, LineEnvelopeFrame,
+    LinePhaseContext, LinePhaseModulation, LineSynthesisRuntime,
 };
 
 use super::modulation::{ModSources, algo_control_slot_mods_for_line};
@@ -55,8 +55,8 @@ struct PhaseFrame {
 struct PrimeRenderFrame<'a> {
     line1: &'a LineParams,
     line2: &'a LineParams,
-    line1_plan: &'a CompiledPdLinePlan,
-    line2_plan: &'a CompiledPdLinePlan,
+    line1_plan: &'a CompiledLinePlan,
+    line2_plan: &'a CompiledLinePlan,
     line1_input: LineEngineFrame,
     line2_input: LineEngineFrame,
 }
@@ -87,8 +87,8 @@ pub struct VoiceRenderContext<'a> {
     pub cache: &'a ModMatrixCache,
     pub modulation_active: bool,
     pub effective_tempo_bpm: f32,
-    pub line1_plan: &'a CompiledPdLinePlan,
-    pub line2_plan: &'a CompiledPdLinePlan,
+    pub line1_plan: &'a CompiledLinePlan,
+    pub line2_plan: &'a CompiledLinePlan,
     pub shared_mod_env_val: f32,
 }
 
@@ -217,34 +217,34 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let line1_input = LineEngineFrame {
+    let line1_input = LineEngineFrame::Pd(PdEngineFrame {
         clock: LineClockFrame {
             cycle_count: voice.cycle_count1,
             oscillator_phase: phase.phi1,
             shaped_phase: phase.phase_a_post,
         },
         envelopes: LineEnvelopeFrame {
-            values: [env.pitch1, signal.final_dcw1, signal.final_dca1],
+            pitch: env.pitch1,
+            timbre: signal.final_dcw1,
+            amplitude: signal.final_dca1,
         },
-        modulation: LineModulationFrame {
-            values: line1_algo_param_mods,
-        },
+        modulation: line1_algo_param_mods,
         phase_modulation: phase.pm_post_mod,
-    };
-    let line2_input = LineEngineFrame {
+    });
+    let line2_input = LineEngineFrame::Pd(PdEngineFrame {
         clock: LineClockFrame {
             cycle_count: voice.cycle_count2,
             oscillator_phase: phase.phi2,
             shaped_phase: phase.phase_b_post,
         },
         envelopes: LineEnvelopeFrame {
-            values: [env.pitch2, signal.final_dcw2, signal.final_dca2],
+            pitch: env.pitch2,
+            timbre: signal.final_dcw2,
+            amplitude: signal.final_dca2,
         },
-        modulation: LineModulationFrame {
-            values: line2_algo_param_mods,
-        },
+        modulation: line2_algo_param_mods,
         phase_modulation: phase.pm_post_mod,
-    };
+    });
     let line1_output = voice.line1_synthesis.render_primary(
         line1_modded,
         LineEngineContext {
@@ -469,12 +469,12 @@ fn advance_envelopes(
             .advance_envelopes(line2, &mut voice.line2_envelopes, timing, note);
 
     EnvelopeSnapshot {
-        pitch1: line1_frame.values[0],
-        pitch2: line2_frame.values[0],
-        amplitude1: line1_frame.values[2],
-        amplitude2: line2_frame.values[2],
-        timbre1: line1_frame.values[1],
-        timbre2: line2_frame.values[1],
+        pitch1: line1_frame.pitch,
+        pitch2: line2_frame.pitch,
+        amplitude1: line1_frame.amplitude,
+        amplitude2: line2_frame.amplitude,
+        timbre1: line1_frame.timbre,
+        timbre2: line2_frame.timbre,
     }
 }
 
@@ -488,16 +488,38 @@ fn advance_silent_voice(
 ) {
     let freq1 = voice
         .line1_synthesis
-        .prepare_signal(line1, base_freq, [0.0; 3], voice.env_note, 0.0, 0.0)
+        .prepare_signal(
+            line1,
+            base_freq,
+            LineEnvelopeFrame {
+                pitch: 0.0,
+                timbre: 0.0,
+                amplitude: 0.0,
+            },
+            voice.env_note,
+            0.0,
+            0.0,
+        )
         .frequency;
     let freq2 = voice
         .line2_synthesis
-        .prepare_signal(line2, base_freq, [0.0; 3], voice.env_note, 0.0, 0.0)
+        .prepare_signal(
+            line2,
+            base_freq,
+            LineEnvelopeFrame {
+                pitch: 0.0,
+                timbre: 0.0,
+                amplitude: 0.0,
+            },
+            voice.env_note,
+            0.0,
+            0.0,
+        )
         .frequency;
     let pm_delta = voice
         .line1_synthesis
         .phase_frame(LinePhaseContext {
-            params: p,
+            phase_modulation: phase_modulation_from_params(p),
             phi1: wrap01(voice.phi1),
             phi2: wrap01(voice.phi2),
             pm_phi: wrap01(voice.pm_phi),
@@ -549,7 +571,11 @@ fn build_signal_state(
     let line1_signal = voice.line1_synthesis.prepare_signal(
         line1,
         base_freq,
-        [env.pitch1, env.timbre1, env.amplitude1],
+        LineEnvelopeFrame {
+            pitch: env.pitch1,
+            timbre: env.timbre1,
+            amplitude: env.amplitude1,
+        },
         voice.env_note,
         dcw1_mod,
         dca1_mod,
@@ -557,7 +583,11 @@ fn build_signal_state(
     let line2_signal = voice.line2_synthesis.prepare_signal(
         line2,
         base_freq,
-        [env.pitch2, env.timbre2, env.amplitude2],
+        LineEnvelopeFrame {
+            pitch: env.pitch2,
+            timbre: env.timbre2,
+            amplitude: env.amplitude2,
+        },
         voice.env_note,
         dcw2_mod,
         dca2_mod,
@@ -763,7 +793,7 @@ fn build_phase_frame(
     let phi2 = wrap01(voice.phi2);
     let pm_phi = wrap01(voice.pm_phi);
     let engine_frame = engine.phase_frame(LinePhaseContext {
-        params: p,
+        phase_modulation: phase_modulation_from_params(p),
         phi1,
         phi2,
         pm_phi,
@@ -780,6 +810,26 @@ fn build_phase_frame(
         phase_b_post: engine_frame.phase_b_post,
         pm_post_mod: engine_frame.pm_post_mod,
     }
+}
+
+fn phase_modulation_from_params(p: &SynthParams) -> LinePhaseModulation {
+    p.fx_slots
+        .iter()
+        .find_map(|slot| match slot {
+            crate::params::FxSlotConfig::PhaseMod(pm) => Some(LinePhaseModulation {
+                enabled: pm.enabled,
+                amount: pm.amount,
+                ratio: pm.ratio,
+                pm_pre: pm.pm_pre,
+            }),
+            _ => None,
+        })
+        .unwrap_or(LinePhaseModulation {
+            enabled: false,
+            amount: 0.0,
+            ratio: 1.0,
+            pm_pre: false,
+        })
 }
 
 #[inline(always)]
@@ -800,15 +850,7 @@ fn render_selected_prime(
     };
     match line_select {
         LineSelect::L1PlusL1Prime => {
-            let input = LineEngineFrame {
-                clock: LineClockFrame {
-                    oscillator_phase: prime_phase,
-                    shaped_phase: prime_phase,
-                    ..frame.line1_input.clock
-                },
-                phase_modulation: 0.0,
-                ..frame.line1_input
-            };
+            let input = prime_frame(frame.line1_input, prime_phase);
             Some(
                 voice
                     .line1_synthesis
@@ -817,15 +859,7 @@ fn render_selected_prime(
             )
         }
         LineSelect::L1PlusL2Prime => {
-            let input = LineEngineFrame {
-                clock: LineClockFrame {
-                    oscillator_phase: prime_phase,
-                    shaped_phase: prime_phase,
-                    ..frame.line2_input.clock
-                },
-                phase_modulation: 0.0,
-                ..frame.line2_input
-            };
+            let input = prime_frame(frame.line2_input, prime_phase);
             Some(
                 voice
                     .line2_synthesis
@@ -834,6 +868,20 @@ fn render_selected_prime(
             )
         }
         LineSelect::L1 | LineSelect::L2 => None,
+    }
+}
+
+fn prime_frame(input: LineEngineFrame, prime_phase: f32) -> LineEngineFrame {
+    match input {
+        LineEngineFrame::Pd(mut frame) => {
+            frame.clock = LineClockFrame {
+                oscillator_phase: prime_phase,
+                shaped_phase: prime_phase,
+                ..frame.clock
+            };
+            frame.phase_modulation = 0.0;
+            LineEngineFrame::Pd(frame)
+        }
     }
 }
 
