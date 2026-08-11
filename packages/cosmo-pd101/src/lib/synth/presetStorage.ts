@@ -1,5 +1,6 @@
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { DEFAULT_SYNTH_PARAMS_V1 } from "@/lib/synth/bindings/synth";
+import { migrateSynthPreset } from "@/lib/synth/presetMigration";
 import type { PresetSource } from "@/lib/synth/presetSources";
 import {
 	normalizePresetTags,
@@ -233,7 +234,7 @@ function createStoredPreset(input: StoredPresetInput): StoredPreset {
 		author: input.author?.trim() ?? "",
 		description: metadata.description,
 		starred: input.starred ?? false,
-		data: input.data,
+		data: migrateSynthPreset(input.data) ?? input.data,
 		tags: metadata.tags,
 	};
 
@@ -283,11 +284,19 @@ export async function loadStoredPreset(
 	id: string,
 ): Promise<StoredPreset | null> {
 	const preset = await getFromStore<StoredPreset>("presets", id);
-	return preset ? normalizeStoredPreset(preset) : null;
+	if (!preset) {
+		return null;
+	}
+
+	const normalized = normalizeStoredPreset(preset);
+	if (JSON.stringify(normalized) !== JSON.stringify(preset)) {
+		await putInStore("presets", normalized);
+	}
+	return normalized;
 }
 
 export async function loadPreset(id: string): Promise<SynthPresetV1 | null> {
-	const stored = await getFromStore<StoredPreset>("presets", id);
+	const stored = await loadStoredPreset(id);
 	return stored?.data ?? null;
 }
 
@@ -462,8 +471,12 @@ export async function loadCurrentState(): Promise<SynthPresetV1 | null> {
 	);
 	if (!entry) return null;
 
-	if (isSynthPresetV1(entry.value)) {
-		return entry.value;
+	const migrated = migrateSynthPreset(entry.value);
+	if (migrated) {
+		if (JSON.stringify(migrated) !== JSON.stringify(entry.value)) {
+			await putInStore("kv", { key: "currentState", value: migrated });
+		}
+		return migrated;
 	}
 
 	await deleteFromStore("kv", "currentState");

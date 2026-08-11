@@ -48,6 +48,7 @@ import {
 	updateChangedModMatrixCells,
 } from "@/lib/synth/modMatrixModel";
 import { requireEngineParamDefault } from "@/lib/synth/paramMeta";
+import { migrateSynthPreset } from "@/lib/synth/presetMigration";
 
 // ---------------------------------------------------------------------------
 // Helpers (identical to the ones that were in useSynthState)
@@ -996,20 +997,11 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 
 		// --- applyPreset ---
 		applyPreset(preset: SynthPresetV1) {
-			if (
-				typeof preset !== "object" ||
-				preset === null ||
-				preset.schemaVersion !== 1 ||
-				typeof preset.params !== "object" ||
-				preset.params === null ||
-				typeof preset.params.line1 !== "object" ||
-				preset.params.line1 === null ||
-				typeof preset.params.line2 !== "object" ||
-				preset.params.line2 === null
-			) {
+			const migratedPreset = migrateSynthPreset(preset);
+			if (!migratedPreset) {
 				return;
 			}
-			const p = preset.params;
+			const p = migratedPreset.params;
 			const currentCzDacEnabled = get().czDacEnabled;
 			const safe = (v: unknown, fallback: number) =>
 				typeof v === "number" && !Number.isNaN(v) ? v : fallback;

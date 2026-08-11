@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	DEFAULT_DCA_ENV,
+	DEFAULT_DCO_ENV,
+	DEFAULT_DCW_ENV,
+} from "./defaultEnvelopes";
+import {
 	DEFAULT_PRESET,
 	deleteDatabase,
 	deletePreset,
@@ -214,6 +219,70 @@ describe("presetStorage", () => {
 		expect(await listStoredPresets()).toEqual([
 			expect.objectContaining({ id: "legacy-row", description: "" }),
 		]);
+	});
+
+	it("migrates legacy flat PD preset rows before applying them", async () => {
+		const legacyLine = (
+			line: typeof DEFAULT_PRESET.params.line1,
+			dcoEnv: typeof DEFAULT_DCO_ENV,
+			dcwEnv: typeof DEFAULT_DCW_ENV,
+			dcaEnv: typeof DEFAULT_DCA_ENV,
+		) => ({
+			...line.engine.params,
+			synthesisMethod: "pd",
+			dcoEnv,
+			dcwEnv,
+			dcaEnv,
+			detuneNote: line.detuneNote,
+			detuneFine: line.detuneFine,
+			octave: line.octave,
+		});
+		const legacyData = {
+			...DEFAULT_PRESET,
+			params: {
+				...DEFAULT_PRESET.params,
+				line1: legacyLine(
+					DEFAULT_PRESET.params.line1,
+					DEFAULT_DCO_ENV,
+					DEFAULT_DCW_ENV,
+					DEFAULT_DCA_ENV,
+				),
+				line2: legacyLine(
+					DEFAULT_PRESET.params.line2,
+					DEFAULT_DCO_ENV,
+					DEFAULT_DCW_ENV,
+					DEFAULT_DCA_ENV,
+				),
+			},
+		};
+
+		const db = await getDb();
+		await new Promise<void>((resolve, reject) => {
+			const tx = db.transaction("presets", "readwrite");
+			tx.objectStore("presets").put({
+				id: "legacy-flat-pd",
+				name: "Legacy Flat PD",
+				source: "user",
+				author: "Me",
+				starred: false,
+				tags: [],
+				data: legacyData,
+			});
+			tx.oncomplete = () => resolve();
+			tx.onerror = () => reject(tx.error);
+		});
+
+		const migrated = await loadStoredPreset("legacy-flat-pd");
+		expect(migrated?.data.params.line1.engine).toEqual(
+			expect.objectContaining({
+				type: "pd",
+				params: expect.objectContaining({ algo: "saw" }),
+			}),
+		);
+		expect(migrated?.data.params.line1.envelopes.pitch).toEqual({
+			type: "step",
+			params: DEFAULT_DCO_ENV,
+		});
 	});
 
 	it("imports raw synth preset payloads", async () => {

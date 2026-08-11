@@ -5,6 +5,7 @@ import type {
 	SynthParams,
 	SynthPresetV1,
 } from "@/lib/synth/bindings/synth";
+import { migrateSynthParams } from "@/lib/synth/presetMigration";
 import {
 	normalizePresetTags,
 	type PresetTagOptions,
@@ -204,64 +205,7 @@ function normalizeParsedParams(value: unknown): SynthParams | null {
 		layout: normalizeModLayout(isRecord(mod) ? mod.layout : undefined, routes),
 	};
 
-	for (const lineKey of ["line1", "line2"]) {
-		const line = params[lineKey];
-		if (!isRecord(line)) {
-			continue;
-		}
-
-		if (!("envelopes" in line)) {
-			const pitch = line.dcoEnv;
-			const timbre = line.dcwEnv;
-			const amplitude = line.dcaEnv;
-			if (
-				pitch !== undefined &&
-				timbre !== undefined &&
-				amplitude !== undefined
-			) {
-				line.envelopes = {
-					pitch: { type: "step", params: pitch },
-					timbre: { type: "step", params: timbre },
-					amplitude: { type: "step", params: amplitude },
-				};
-				delete line.dcoEnv;
-				delete line.dcwEnv;
-				delete line.dcaEnv;
-			}
-		}
-
-		if (!("engine" in line)) {
-			const engine: Record<string, unknown> = {};
-			for (const key of [
-				"algo",
-				"algo2",
-				"algoBlend",
-				"baseWaveformA",
-				"baseWaveformB",
-				"window",
-				"dcaBase",
-				"dcwBase",
-				"modulation",
-				"dcwKeyFollow",
-				"dcaKeyFollow",
-				"algoControlsA",
-				"algoControlsB",
-			]) {
-				if (line[key] !== undefined) {
-					engine[key] = line[key];
-					delete line[key];
-				}
-			}
-			line.engine = engine;
-		}
-
-		const engine = line.engine;
-		if (isRecord(engine) && !("algo2" in engine)) {
-			engine.algo2 = null;
-		}
-	}
-
-	return params as SynthParams;
+	return migrateSynthParams(params);
 }
 
 function isSynthPresetV1(value: unknown): value is SynthPresetV1 {
