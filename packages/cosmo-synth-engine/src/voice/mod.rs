@@ -11,7 +11,8 @@ pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
 use crate::envelope::EnvGen;
-use crate::synthesis::{LineSynthesisRuntime, PdChannel, PdState};
+use crate::params::SynthesisMethod;
+use crate::synthesis::{LineRole, LineSynthesisRuntime};
 
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
 
@@ -80,8 +81,6 @@ pub struct Voice {
     pub aftertouch: f32,
     pub(crate) line1_synthesis: LineSynthesisRuntime,
     pub(crate) line2_synthesis: LineSynthesisRuntime,
-    pub(crate) prime_synthesis: LineSynthesisRuntime,
-    pub(crate) pd_state: PdState,
 }
 
 impl Voice {
@@ -124,10 +123,8 @@ impl Voice {
             last_output_sample: 0.0,
             release_tail_level: 0.0,
             aftertouch: 0.0,
-            line1_synthesis: LineSynthesisRuntime::new(PdChannel::Line1),
-            line2_synthesis: LineSynthesisRuntime::new(PdChannel::Line2),
-            prime_synthesis: LineSynthesisRuntime::new(PdChannel::Prime),
-            pd_state: PdState::default(),
+            line1_synthesis: LineSynthesisRuntime::new(SynthesisMethod::Pd, LineRole::Line1),
+            line2_synthesis: LineSynthesisRuntime::new(SynthesisMethod::Pd, LineRole::Line2),
         }
     }
 
