@@ -385,11 +385,7 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		withRetainedEngine { engine in
 			let required = cosmo_pd101_ffi_copy_scope_f32(engine, nil, 0, nil, nil)
 			guard required > 0 else { return ([], Float(outputBus.format.sampleRate), 0) }
-			#if os(iOS)
-			let maxScopeSamples = 512
-			#else
-			let maxScopeSamples = 1024
-			#endif
+			let maxScopeSamples = 4096
 			var samples = [Float](repeating: 0, count: required)
 			var sampleRate: Float = 0
 			var hz: Float = 0
