@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import { AutoScopePhaseLock } from "./scope-visualizations/autoScopePhaseLock";
 import { drawScopeBackdrop } from "./scope-visualizations/canvas";
 import { isEditableKeyboardTarget } from "./scope-visualizations/keyboard";
 import { getScopeThemePalette } from "./scope-visualizations/palette";
@@ -22,6 +23,12 @@ type ScopeVisualizationDisplayProps = {
 	variant: ScopeVisualizationVariant;
 };
 
+type PendingScopeFrame = {
+	samples: Float32Array;
+	sampleRate: number;
+	hz: number;
+};
+
 export function ScopeVisualizationDisplay({
 	variant,
 }: ScopeVisualizationDisplayProps) {
@@ -36,7 +43,9 @@ export function ScopeVisualizationDisplay({
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rafIdRef = useRef(0);
 	const unsubscribeRef = useRef<(() => void) | null>(null);
-	const smoothedTriggerRef = useRef<number | null>(null);
+	const pendingScopeFrameRef = useRef<PendingScopeFrame | null>(null);
+	const scopePhaseLockRef = useRef(new AutoScopePhaseLock());
+	const scopePhaseLockModeRef = useRef<ScopeVisualizationMode | null>(null);
 	const pressedKeysRef = useRef<Set<string>>(new Set());
 	const lastConstrainedSpectrogramDrawRef = useRef(0);
 	const drawPerformanceRef = useRef({
@@ -48,7 +57,6 @@ export function ScopeVisualizationDisplay({
 
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
 	const scopeVerticalZoom = useSynthUiStore((s) => s.scopeVerticalZoom);
-	const scopeTriggerLevel = useSynthUiStore((s) => s.scopeTriggerLevel);
 	const scopeVisualizationMode = useSynthUiStore(
 		(s) => s.scopeVisualizationMode,
 	);
@@ -73,14 +81,12 @@ export function ScopeVisualizationDisplay({
 	const settingsRef = useRef({
 		scopeCycles,
 		scopeVerticalZoom,
-		scopeTriggerLevel,
 		scopeVisualizationMode,
 		scopeColorTheme,
 	});
 	settingsRef.current = {
 		scopeCycles,
 		scopeVerticalZoom,
-		scopeTriggerLevel,
 		scopeVisualizationMode,
 		scopeColorTheme,
 	};
@@ -145,27 +151,35 @@ export function ScopeVisualizationDisplay({
 		frequencyBins?: Uint8Array<ArrayBufferLike>,
 	) => {
 		const drawStartedAt = import.meta.env.DEV ? performance.now() : 0;
-		const mean = calculateFrameMean(samples);
-		if (smoothedTriggerRef.current == null) {
-			smoothedTriggerRef.current = mean;
-		} else {
-			smoothedTriggerRef.current += 0.18 * (mean - smoothedTriggerRef.current);
+		const mode = settingsRef.current.scopeVisualizationMode;
+		if (scopePhaseLockModeRef.current !== mode) {
+			scopePhaseLockRef.current.reset();
+			scopePhaseLockModeRef.current = mode;
 		}
-		const bias = settingsRef.current.scopeTriggerLevel - 128;
-		const triggerLevel = Math.max(
-			0,
-			Math.min(255, smoothedTriggerRef.current + bias),
-		);
+		const usesPhaseLock =
+			mode === "waveform" || mode === "orbital" || mode === "transferCurves";
+		const lockResult = usesPhaseLock
+			? scopePhaseLockRef.current.resolve(
+					samples,
+					hz,
+					sampleRate,
+					settingsRef.current.scopeCycles,
+				)
+			: undefined;
+		const scopeWindow = lockResult?.window;
+		const renderSamples = lockResult?.heldSamples ?? samples;
+		const triggerLevel = calculateFrameMean(samples);
 
 		renderScopeVisualization({
-			mode: settingsRef.current.scopeVisualizationMode,
+			mode,
 			canvas,
-			samples,
+			samples: renderSamples,
 			hz,
 			sampleRate,
 			frequencyBins,
 			cycles: settingsRef.current.scopeCycles,
 			triggerLevel,
+			scopeWindow,
 			zoom: settingsRef.current.scopeVerticalZoom,
 			palette: getScopeThemePalette(settingsRef.current.scopeColorTheme),
 			spectrogramStateRef,
@@ -206,8 +220,6 @@ export function ScopeVisualizationDisplay({
 		unsubscribeRef.current = null;
 		if (!subscribeScopeFrames) return;
 		unsubscribeRef.current = subscribeScopeFrames((frame) => {
-			const canvas = canvasRef.current;
-			if (!canvas) return;
 			if (
 				scopePerformanceMode === "constrained" &&
 				settingsRef.current.scopeVisualizationMode === "spectrogram"
@@ -218,16 +230,19 @@ export function ScopeVisualizationDisplay({
 				}
 				lastConstrainedSpectrogramDrawRef.current = now;
 			}
-			drawFrameRef.current(
-				canvas,
-				frame.samples,
-				Math.max(1, frame.hz),
-				frame.sampleRate,
-			);
+			// The bridge can deliver frames faster than the browser can paint.
+			// Keep only the newest frame and let the display RAF consume it once
+			// per browser frame instead of drawing synchronously for every payload.
+			pendingScopeFrameRef.current = {
+				samples: frame.samples,
+				sampleRate: frame.sampleRate,
+				hz: Math.max(1, frame.hz),
+			};
 		});
 		return () => {
 			unsubscribeRef.current?.();
 			unsubscribeRef.current = null;
+			pendingScopeFrameRef.current = null;
 		};
 	}, [scopePerformanceMode, subscribeScopeFrames]);
 
@@ -238,7 +253,19 @@ export function ScopeVisualizationDisplay({
 			const canvas = canvasRef.current;
 			if (!canvas) return;
 			// External stream takes priority.
-			if (unsubscribeRef.current) return;
+			if (unsubscribeRef.current) {
+				const frame = pendingScopeFrameRef.current;
+				pendingScopeFrameRef.current = null;
+				if (frame) {
+					drawFrameRef.current(
+						canvas,
+						frame.samples,
+						frame.hz,
+						frame.sampleRate,
+					);
+				}
+				return;
+			}
 			const {
 				effectivePitchHz: hz,
 				analyserNodeRef: aRef,

@@ -1,3 +1,5 @@
+import type { ScopeWindow } from "./types";
+
 export function sampleAt(
 	samples: Uint8Array | Float32Array,
 	index: number,
@@ -15,12 +17,16 @@ export function resolveScopeWindow(
 	sampleRate: number,
 	cycles: number,
 	triggerLevel: number,
-) {
+): ScopeWindow {
 	const samplesPerCycle = Math.max(8, Math.round(sampleRate / Math.max(1, hz)));
 	const requested = Math.max(16, Math.round(samplesPerCycle * cycles));
 	const windowSamples = Math.max(8, Math.min(samples.length - 2, requested));
 	if (windowSamples <= 2) {
-		return { start: 0, count: Math.max(0, samples.length) };
+		return {
+			start: 0,
+			count: Math.max(0, samples.length),
+			samplesPerCycle,
+		};
 	}
 	let start = Math.max(1, Math.floor((samples.length - windowSamples) / 2));
 	const trigger = (triggerLevel - 128) / 128;

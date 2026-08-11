@@ -103,6 +103,14 @@ describe("ScopeMiniDisplay", () => {
 		expect(canvas.style.imageRendering).toBe("");
 	});
 
+	it("uses automatic waveform locking without a manual trigger control", () => {
+		renderWithScope(<ScopeMiniDisplay />);
+
+		expect(screen.getByText("Cycles")).toBeInTheDocument();
+		expect(screen.getByText("Zoom")).toBeInTheDocument();
+		expect(screen.queryByText("Trig")).not.toBeInTheDocument();
+	});
+
 	it("uses at least 2x backing pixels for the scope backdrop", () => {
 		const context = createMockCanvasContext();
 		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(

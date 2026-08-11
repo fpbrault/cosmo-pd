@@ -6,10 +6,8 @@ export function ScopeControls() {
 	const { t } = useTranslation("synth");
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
 	const scopeVerticalZoom = useSynthUiStore((s) => s.scopeVerticalZoom);
-	const scopeTriggerLevel = useSynthUiStore((s) => s.scopeTriggerLevel);
 	const setScopeCycles = useSynthUiStore((s) => s.setScopeCycles);
 	const setScopeVerticalZoom = useSynthUiStore((s) => s.setScopeVerticalZoom);
-	const setScopeTriggerLevel = useSynthUiStore((s) => s.setScopeTriggerLevel);
 
 	return (
 		<div className="mt-2 flex shrink-0 justify-center gap-2">
@@ -36,18 +34,6 @@ export function ScopeControls() {
 				label={t("scope.zoom")}
 				tooltip={t("scope.zoomTooltip")}
 				valueFormatter={(value) => `${value.toFixed(1)}x`}
-			/>
-			<ControlKnob
-				value={scopeTriggerLevel}
-				onChange={(value) => setScopeTriggerLevel(Math.round(value))}
-				min={0}
-				max={255}
-				size={40}
-				defaultValue={128}
-				color="#7f9de4"
-				label={t("scope.trig")}
-				tooltip={t("scope.trigTooltip")}
-				valueFormatter={(value) => `${Math.round(value)}`}
 			/>
 		</div>
 	);

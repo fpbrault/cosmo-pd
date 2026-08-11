@@ -383,24 +383,23 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 
 	public func scopeData() -> (samples: [Float], sampleRate: Float, hz: Float) {
 		withRetainedEngine { engine in
-			let required = cosmo_pd101_ffi_copy_scope_f32(engine, nil, 0, nil, nil)
-			guard required > 0 else { return ([], Float(outputBus.format.sampleRate), 0) }
-			#if os(iOS)
-			let maxScopeSamples = 512
-			#else
-			let maxScopeSamples = 1024
-			#endif
-			var samples = [Float](repeating: 0, count: required)
 			var sampleRate: Float = 0
 			var hz: Float = 0
+			let required = cosmo_pd101_ffi_copy_scope_f32(engine, nil, 0, &sampleRate, &hz)
+			guard required > 0 else { return ([], Float(outputBus.format.sampleRate), 0) }
+			// Keep a bounded window for normal notes, but grow it when the true
+			// period needs more history for phase locking. This retains the old
+			// AUv3 fast path while avoiding the low-note cutoff caused by fixed
+			// 512/1024-sample truncation.
+			let period = sampleRate / max(hz, 1)
+			let lockHistory = Int(ceil(period * 2.5))
+			let maxScopeSamples = min(required, max(512, min(4096, lockHistory)))
+			var samples = [Float](repeating: 0, count: maxScopeSamples)
 			let copied = samples.withUnsafeMutableBufferPointer { buffer in
-				cosmo_pd101_ffi_copy_scope_f32(engine, buffer.baseAddress, buffer.count, &sampleRate, &hz)
+				cosmo_pd101_ffi_copy_scope_f32_tail(engine, buffer.baseAddress, buffer.count, &sampleRate, &hz)
 			}
 			if copied < samples.count {
 				samples.removeSubrange(copied..<samples.count)
-			}
-			if samples.count > maxScopeSamples {
-				samples = Array(samples.suffix(maxScopeSamples))
 			}
 			for index in samples.indices {
 				let sample = samples[index]

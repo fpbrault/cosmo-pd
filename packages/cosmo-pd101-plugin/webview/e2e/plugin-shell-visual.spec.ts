@@ -39,6 +39,14 @@ test.describe("Plugin shell visual smoke", () => {
 		});
 	});
 
+	test("shows automatic scope controls without a manual trigger", async ({
+		page,
+	}) => {
+		await expect(page.getByText("Cycles", { exact: true })).toBeVisible();
+		await expect(page.getByText("Zoom", { exact: true })).toBeVisible();
+		await expect(page.getByText("Trig", { exact: true })).toHaveCount(0);
+	});
+
 	test("keeps scope delivery active when switching from display to fx and mod", async ({
 		page,
 	}) => {
