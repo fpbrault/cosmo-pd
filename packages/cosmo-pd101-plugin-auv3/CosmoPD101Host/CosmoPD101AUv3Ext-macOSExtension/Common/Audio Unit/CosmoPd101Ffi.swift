@@ -88,3 +88,6 @@ func cosmo_pd101_ffi_copy_scope_i8(_ engine: CosmoPd101FfiEngineRef?, _ output: 
 
 @_silgen_name("cosmo_pd101_ffi_copy_scope_f32")
 func cosmo_pd101_ffi_copy_scope_f32(_ engine: CosmoPd101FfiEngineRef?, _ output: UnsafeMutablePointer<Float>?, _ outputLen: Int, _ outSampleRate: UnsafeMutablePointer<Float>?, _ outHz: UnsafeMutablePointer<Float>?) -> Int
+
+@_silgen_name("cosmo_pd101_ffi_copy_scope_f32_tail")
+func cosmo_pd101_ffi_copy_scope_f32_tail(_ engine: CosmoPd101FfiEngineRef?, _ output: UnsafeMutablePointer<Float>?, _ outputLen: Int, _ outSampleRate: UnsafeMutablePointer<Float>?, _ outHz: UnsafeMutablePointer<Float>?) -> Int
