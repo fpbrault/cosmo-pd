@@ -23,6 +23,12 @@ type ScopeVisualizationDisplayProps = {
 	variant: ScopeVisualizationVariant;
 };
 
+type PendingScopeFrame = {
+	samples: Float32Array;
+	sampleRate: number;
+	hz: number;
+};
+
 export function ScopeVisualizationDisplay({
 	variant,
 }: ScopeVisualizationDisplayProps) {
@@ -37,6 +43,7 @@ export function ScopeVisualizationDisplay({
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rafIdRef = useRef(0);
 	const unsubscribeRef = useRef<(() => void) | null>(null);
+	const pendingScopeFrameRef = useRef<PendingScopeFrame | null>(null);
 	const scopePhaseLockRef = useRef(new AutoScopePhaseLock());
 	const scopePhaseLockModeRef = useRef<ScopeVisualizationMode | null>(null);
 	const pressedKeysRef = useRef<Set<string>>(new Set());
@@ -213,8 +220,6 @@ export function ScopeVisualizationDisplay({
 		unsubscribeRef.current = null;
 		if (!subscribeScopeFrames) return;
 		unsubscribeRef.current = subscribeScopeFrames((frame) => {
-			const canvas = canvasRef.current;
-			if (!canvas) return;
 			if (
 				scopePerformanceMode === "constrained" &&
 				settingsRef.current.scopeVisualizationMode === "spectrogram"
@@ -225,16 +230,19 @@ export function ScopeVisualizationDisplay({
 				}
 				lastConstrainedSpectrogramDrawRef.current = now;
 			}
-			drawFrameRef.current(
-				canvas,
-				frame.samples,
-				Math.max(1, frame.hz),
-				frame.sampleRate,
-			);
+			// The bridge can deliver frames faster than the browser can paint.
+			// Keep only the newest frame and let the display RAF consume it once
+			// per browser frame instead of drawing synchronously for every payload.
+			pendingScopeFrameRef.current = {
+				samples: frame.samples,
+				sampleRate: frame.sampleRate,
+				hz: Math.max(1, frame.hz),
+			};
 		});
 		return () => {
 			unsubscribeRef.current?.();
 			unsubscribeRef.current = null;
+			pendingScopeFrameRef.current = null;
 		};
 	}, [scopePerformanceMode, subscribeScopeFrames]);
 
@@ -245,7 +253,19 @@ export function ScopeVisualizationDisplay({
 			const canvas = canvasRef.current;
 			if (!canvas) return;
 			// External stream takes priority.
-			if (unsubscribeRef.current) return;
+			if (unsubscribeRef.current) {
+				const frame = pendingScopeFrameRef.current;
+				pendingScopeFrameRef.current = null;
+				if (frame) {
+					drawFrameRef.current(
+						canvas,
+						frame.samples,
+						frame.hz,
+						frame.sampleRate,
+					);
+				}
+				return;
+			}
 			const {
 				effectivePitchHz: hz,
 				analyserNodeRef: aRef,

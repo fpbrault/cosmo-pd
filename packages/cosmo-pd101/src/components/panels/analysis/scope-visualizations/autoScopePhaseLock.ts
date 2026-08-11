@@ -18,6 +18,7 @@ const MIN_SIGNAL_RANGE = 0.0001;
 const MIN_LOCK_SCORE = 0.58;
 const MIN_PERIOD_CORRELATION = 0.25;
 const HOLD_FRAMES = 3;
+const MAX_TEMPLATE_CANDIDATES = 64;
 
 type SignalStats = {
 	mean: number;
@@ -139,7 +140,7 @@ export class AutoScopePhaseLock {
 			stats.mean,
 			this.period,
 			this.template,
-			candidates,
+			limitTemplateCandidates(candidates, this.period),
 			maxTemplateStart,
 		);
 		if (match && match.score >= MIN_LOCK_SCORE) {
@@ -369,6 +370,40 @@ function findBestTemplateMatch(
 		if (!best || score > best.score) best = { start, score };
 	}
 	return best;
+}
+
+function limitTemplateCandidates(
+	candidates: number[],
+	period: number,
+): number[] {
+	if (candidates.length <= MAX_TEMPLATE_CANDIDATES) return candidates;
+
+	// Keep crossings that represent distinct phase neighborhoods before
+	// evenly sampling the remainder. This preserves lock quality while
+	// preventing dense chord spectra from multiplying template work.
+	const minimumSpacing = Math.max(1, Math.round(period / 8));
+	const spaced: number[] = [];
+	for (const candidate of candidates) {
+		if (
+			spaced.length === 0 ||
+			candidate - (spaced[spaced.length - 1] ?? candidate) >= minimumSpacing
+		) {
+			spaced.push(candidate);
+		}
+	}
+	if (spaced.length <= MAX_TEMPLATE_CANDIDATES) return spaced;
+
+	const limited: number[] = [];
+	for (let index = 0; index < MAX_TEMPLATE_CANDIDATES; index++) {
+		const sourceIndex = Math.round(
+			(index * (spaced.length - 1)) / (MAX_TEMPLATE_CANDIDATES - 1),
+		);
+		const candidate = spaced[sourceIndex];
+		if (candidate !== undefined && candidate !== limited[limited.length - 1]) {
+			limited.push(candidate);
+		}
+	}
+	return limited;
 }
 
 function createCoarseCandidateStarts(

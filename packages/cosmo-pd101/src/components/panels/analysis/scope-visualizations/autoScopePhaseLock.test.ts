@@ -143,6 +143,7 @@ describe("AutoScopePhaseLock", () => {
 	it.each([
 		["mixed C-major chord", [261.63, 329.63, 392]],
 		["detuned beating voices", [220, 224.5]],
+		["dense harmonic chord", [110, 165, 220, 275, 330, 385, 440, 495, 550]],
 	] as const)("does not freeze indefinitely on a %s", (_name, frequencies) => {
 		const lock = new AutoScopePhaseLock();
 		const states: string[] = [];
