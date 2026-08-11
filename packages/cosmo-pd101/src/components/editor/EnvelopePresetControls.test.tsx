@@ -52,9 +52,27 @@ function createModel(
 ): PhaseLineEnvelopeModel {
 	return {
 		envs: {
-			dco: { title: "Line 1 DCO", env, setEnv: vi.fn(), envColor: "#9cb937" },
-			dcw: { title: "Line 1 DCW", env, setEnv: vi.fn(), envColor: "#60a5fa" },
-			dca: { title: "Line 1 DCA", env, setEnv: vi.fn(), envColor: "#f97316" },
+			dco: {
+				title: "Line 1 DCO",
+				shortLabel: "DCO",
+				env,
+				setEnv: vi.fn(),
+				envColor: "#9cb937",
+			},
+			dcw: {
+				title: "Line 1 DCW",
+				shortLabel: "DCW",
+				env,
+				setEnv: vi.fn(),
+				envColor: "#60a5fa",
+			},
+			dca: {
+				title: "Line 1 DCA",
+				shortLabel: "DCA",
+				env,
+				setEnv: vi.fn(),
+				envColor: "#f97316",
+			},
 		},
 		targets,
 		dcwKeyFollow: 4,

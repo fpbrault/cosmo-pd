@@ -18,6 +18,7 @@ vi.mock("@/features/synth/SynthParamController", () => ({
 
 const activeEnv: PhaseLineEnvelopeEntry = {
 	title: "DCA",
+	shortLabel: "DCA",
 	env: {
 		steps: Array.from({ length: 8 }, () => ({ level: 0, rate: 0 })),
 		sustainStep: 0,

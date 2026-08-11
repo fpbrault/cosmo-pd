@@ -199,8 +199,14 @@ impl LineEngine for PdEngine {
         compiled_line: &CompiledLinePlan,
         params: PdEngineParams<'_>,
     ) -> LineEngineOutput {
-        let CompiledLinePlan::Pd(compiled_line) = compiled_line;
-        let LineEngineFrame::Pd(frame) = frame;
+        let CompiledLinePlan::Pd(compiled_line) = compiled_line else {
+            debug_assert!(false, "PdEngine received a non-PD compiled plan");
+            return LineEngineOutput::default();
+        };
+        let LineEngineFrame::Pd(frame) = frame else {
+            debug_assert!(false, "PdEngine received a non-PD render frame");
+            return LineEngineOutput::default();
+        };
         let config = Self::config(context, frame, compiled_line, params);
         LineEngineOutput {
             sample: algorithms::render_sample_from_config(&config),
@@ -251,8 +257,12 @@ mod tests {
                 modulation: [0.0; 8],
                 phase_modulation: 0.0,
             });
-            let LineEngineFrame::Pd(pd_frame) = frame;
-            let CompiledLinePlan::Pd(pd_plan) = compiled_line;
+            let LineEngineFrame::Pd(pd_frame) = frame else {
+                unreachable!()
+            };
+            let CompiledLinePlan::Pd(pd_plan) = compiled_line else {
+                unreachable!()
+            };
             let config = PdEngine::config(
                 context,
                 pd_frame,

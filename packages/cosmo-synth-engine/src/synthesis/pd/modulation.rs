@@ -7,8 +7,12 @@ use super::envelope_map::{
     EnvelopeKind, human_level_to_raw, human_rate_to_raw, raw_level_to_human, raw_rate_to_human,
 };
 
+/// One of the three engine-neutral envelope slots on a line. Named `Pd*`
+/// because the level/rate curve conversion below is PD's, but the
+/// destination indices and step storage (`LineParams.envelopes`) are shared
+/// by every engine -- see [`apply_shared_line_mods`].
 #[derive(Debug, Clone, Copy)]
-enum PdEnvelopeSlot {
+pub(crate) enum PdEnvelopeSlot {
     Pitch,
     Timbre,
     Amplitude,
@@ -40,7 +44,7 @@ fn env_destination(
     }
 }
 
-fn apply_env_step_modulation(
+pub(crate) fn apply_env_step_modulation(
     env: &crate::params::StepEnvData,
     line_index: u8,
     slot: PdEnvelopeSlot,
@@ -74,25 +78,24 @@ fn apply_env_step_modulation(
     modded
 }
 
-pub(crate) fn apply_line_mods(
+/// Apply the octave/detune and generic envelope-step modulation destinations
+/// shared by every line engine. `LineParams.octave/detune_note/detune_fine`
+/// and `LineParams.envelopes` are method-independent, so this logic does not
+/// belong to PD specifically -- it lives here because the human/raw envelope
+/// curve helpers (`EnvelopeKind::Dco/Dcw/Dca`) it depends on do too, and every
+/// engine's three generic envelope slots use those same curves (the shared
+/// envelope editor is unaware of which engine is active).
+pub(crate) fn apply_shared_line_mods(
     output: &mut LineParams,
     base: &LineParams,
     line_index: u8,
     mod_values: &[f32],
     has_env_step_routes: bool,
 ) {
-    *output = *base;
-
     if line_index == 1 {
-        output.engine.pd_mut().algo_blend = (base.engine.pd().algo_blend
-            + mod_values[ModDestination::Line1AlgoBlend as usize])
-            .clamp(0.0, 1.0);
         output.octave =
             (base.octave + mod_values[ModDestination::Line1Octave as usize] * 4.0).clamp(-2.0, 2.0);
     } else {
-        output.engine.pd_mut().algo_blend = (base.engine.pd().algo_blend
-            + mod_values[ModDestination::Line2AlgoBlend as usize])
-            .clamp(0.0, 1.0);
         output.octave = (base.octave
             + mod_values[ModDestination::Line2DetuneOctave as usize] * 6.0)
             .clamp(-5.0, 5.0);
@@ -126,6 +129,25 @@ pub(crate) fn apply_line_mods(
         PdEnvelopeSlot::Amplitude,
         mod_values,
     ));
+}
+
+pub(crate) fn apply_line_mods(
+    output: &mut LineParams,
+    base: &LineParams,
+    line_index: u8,
+    mod_values: &[f32],
+    has_env_step_routes: bool,
+) {
+    *output = *base;
+    apply_shared_line_mods(output, base, line_index, mod_values, has_env_step_routes);
+
+    let algo_blend_dest = if line_index == 1 {
+        ModDestination::Line1AlgoBlend
+    } else {
+        ModDestination::Line2AlgoBlend
+    };
+    output.engine.pd_mut().algo_blend =
+        (base.engine.pd().algo_blend + mod_values[algo_blend_dest as usize]).clamp(0.0, 1.0);
 }
 
 #[cfg(test)]

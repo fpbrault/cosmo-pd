@@ -42,7 +42,11 @@ export function EnvelopesSection({
 	const setActiveEnvTab = useSynthUiStore((s) => s.setActiveEnvTab);
 	const activeEnv = envMap[activeEnvTab];
 	const envelopes: PhaseLineEnvelopeModel = {
-		envs: envMap,
+		envs: {
+			dco: { ...envMap.dco, shortLabel: "DCO" },
+			dcw: { ...envMap.dcw, shortLabel: "DCW" },
+			dca: { ...envMap.dca, shortLabel: "DCA" },
+		},
 		targets: [],
 		dcwKeyFollow,
 		setDcwKeyFollow: onDcwKeyFollowChange,

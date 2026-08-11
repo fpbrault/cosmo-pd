@@ -509,7 +509,7 @@ pub fn warp_phase_for_waveform(waveform: CzWaveform, phi: f32, dcw: f32) -> f32 
 }
 
 #[inline(always)]
-fn warp_phase_saw(phi: f32, dcw: f32) -> f32 {
+pub(crate) fn warp_phase_saw(phi: f32, dcw: f32) -> f32 {
     let dcw = dcw.clamp(0.0, 0.999);
     let p_peak = lerp(0.5, 0.01, dcw);
 

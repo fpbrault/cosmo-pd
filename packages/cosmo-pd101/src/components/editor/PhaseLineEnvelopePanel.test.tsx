@@ -71,9 +71,27 @@ describe("PhaseLineEnvelopePanel", () => {
 			<PhaseLineEnvelopePanel
 				envelopes={{
 					envs: {
-						dco: { title: "DCO", env, setEnv: vi.fn(), envColor: "#fff" },
-						dcw: { title: "DCW", env, setEnv: vi.fn(), envColor: "#fff" },
-						dca: { title: "DCA", env, setEnv: vi.fn(), envColor: "#fff" },
+						dco: {
+							title: "DCO",
+							shortLabel: "DCO",
+							env,
+							setEnv: vi.fn(),
+							envColor: "#fff",
+						},
+						dcw: {
+							title: "DCW",
+							shortLabel: "DCW",
+							env,
+							setEnv: vi.fn(),
+							envColor: "#fff",
+						},
+						dca: {
+							title: "DCA",
+							shortLabel: "DCA",
+							env,
+							setEnv: vi.fn(),
+							envColor: "#fff",
+						},
 					},
 					targets: [],
 					dcwKeyFollow: 0,

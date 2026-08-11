@@ -2,11 +2,18 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_ALGO_REF } from "@/lib/synth/algoRef";
 import type {
 	FxSlotConfig,
+	LineParams,
 	ModDestination,
+	PdLineParams,
 	SynthPresetV1,
 } from "@/lib/synth/bindings/synth";
 import { createDefaultModMatrixLayout } from "@/lib/synth/modMatrixModel";
 import { useSynthStore } from "./synthStore";
+
+function pdParams(line: LineParams): PdLineParams {
+	if (line.engine.type !== "pd") throw new Error("expected PD line params");
+	return line.engine.params;
+}
 
 describe("useSynthStore", () => {
 	beforeEach(() => {
@@ -221,7 +228,7 @@ describe("useSynthStore", () => {
 		});
 
 		const preset = gatherState();
-		expect(preset.params.line1.engine.params.dcwBase).toBe(0.75);
+		expect(pdParams(preset.params.line1).dcwBase).toBe(0.75);
 		expect(preset.params.line1.engine.type).toBe("pd");
 		expect(preset.params.line2.engine.type).toBe("pd");
 		expect(preset.params.tempoBpm).toBe(132);

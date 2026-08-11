@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { PdLineParams } from "@/lib/synth/bindings/synth";
 import { createPresetId } from "./presetIdentity";
 import { DEFAULT_PRESET } from "./presetStorage";
 
@@ -48,8 +49,9 @@ describe("presetIdentity", () => {
 						...DEFAULT_PRESET.params.line1,
 						engine: {
 							...DEFAULT_PRESET.params.line1.engine,
+							type: "pd" as const,
 							params: {
-								...DEFAULT_PRESET.params.line1.engine.params,
+								...(DEFAULT_PRESET.params.line1.engine.params as PdLineParams),
 								dcwBase: -0,
 							},
 						},
@@ -58,8 +60,9 @@ describe("presetIdentity", () => {
 						...DEFAULT_PRESET.params.line2,
 						engine: {
 							...DEFAULT_PRESET.params.line2.engine,
+							type: "pd" as const,
 							params: {
-								...DEFAULT_PRESET.params.line2.engine.params,
+								...(DEFAULT_PRESET.params.line2.engine.params as PdLineParams),
 								dcwBase: Number.POSITIVE_INFINITY,
 							},
 						},
@@ -78,8 +81,9 @@ describe("presetIdentity", () => {
 						...DEFAULT_PRESET.params.line1,
 						engine: {
 							...DEFAULT_PRESET.params.line1.engine,
+							type: "pd" as const,
 							params: {
-								...DEFAULT_PRESET.params.line1.engine.params,
+								...(DEFAULT_PRESET.params.line1.engine.params as PdLineParams),
 								dcwBase: 0,
 							},
 						},
@@ -88,8 +92,9 @@ describe("presetIdentity", () => {
 						...DEFAULT_PRESET.params.line2,
 						engine: {
 							...DEFAULT_PRESET.params.line2.engine,
+							type: "pd" as const,
 							params: {
-								...DEFAULT_PRESET.params.line2.engine.params,
+								...(DEFAULT_PRESET.params.line2.engine.params as PdLineParams),
 								dcwBase: 0,
 							},
 						},

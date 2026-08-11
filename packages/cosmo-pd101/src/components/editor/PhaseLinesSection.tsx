@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import Card, { joinClasses } from "@/components/primitives/Card";
 import CzTabButton from "@/components/primitives/CzTabButton";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import { useSynthStore } from "@/features/synth/synthStore";
 import type { PhaseLinePanelTab } from "@/features/synth/synthUiStore";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { ActivePhaseLinePanel } from "./ActivePhaseLinePanel";
+import { SynthesisMethodSelector } from "./SynthesisMethodSelector";
 
 export type PhaseLinesSectionProps = {
 	onActiveTabChange?: (v: "line1" | "line2") => void;
@@ -20,6 +22,14 @@ export default function PhaseLinesSection({
 	const activeTab = useSynthUiStore((s) => s.phaseLinePanelTab);
 	const setActiveTab = useSynthUiStore((s) => s.setPhaseLinePanelTab);
 	const { value: lineSelect } = useSynthParam("lineSelect");
+	const line1SynthesisMethod = useSynthStore((s) => s.line1SynthesisMethod);
+	const line2SynthesisMethod = useSynthStore((s) => s.line2SynthesisMethod);
+	const setLine1SynthesisMethod = useSynthStore(
+		(s) => s.setLine1SynthesisMethod,
+	);
+	const setLine2SynthesisMethod = useSynthStore(
+		(s) => s.setLine2SynthesisMethod,
+	);
 
 	const activeLine: "line1" | "line2" = activeTab.startsWith("line1")
 		? "line1"
@@ -48,6 +58,8 @@ export default function PhaseLinesSection({
 		line: 1 | 2;
 		label: string;
 		color: "red" | "blue";
+		method: "pd" | "vz";
+		setMethod: (method: "pd" | "vz") => void;
 		tabs: Array<{
 			id: PhaseLinePanelTab;
 			bottomLabel: string;
@@ -58,6 +70,8 @@ export default function PhaseLinesSection({
 			line: 1,
 			label: t("editor.line1Short"),
 			color: "blue",
+			method: line1SynthesisMethod,
+			setMethod: setLine1SynthesisMethod,
 			tabs: [
 				{
 					id: "line1-algos",
@@ -75,6 +89,8 @@ export default function PhaseLinesSection({
 			line: 2,
 			label: t("editor.line2Short"),
 			color: "red",
+			method: line2SynthesisMethod,
+			setMethod: setLine2SynthesisMethod,
 			tabs: [
 				{
 					id: "line2-algos",
@@ -107,6 +123,11 @@ export default function PhaseLinesSection({
 									<div className="text-center font-bold text-[0.6rem] text-cz-cream tracking-[0.12em]">
 										{group.label}
 									</div>
+									<SynthesisMethodSelector
+										value={group.method}
+										onChange={group.setMethod}
+										color={group.color}
+									/>
 									{group.tabs.map((tab) => (
 										<CzTabButton
 											key={tab.id}

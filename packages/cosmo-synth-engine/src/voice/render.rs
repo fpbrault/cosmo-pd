@@ -1,11 +1,12 @@
 use crate::dsp_utils::{lfo_output, pow01, wrap01};
 use crate::envelope::EnvelopeTimingCache;
 use crate::params::{
-    LfoRateMode, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvRetrigMode,
-    ModMatrixCache, ModMode, PortamentoMode, SynthParams,
+    LfoRateMode, LfoWaveform, LineEngineParams, LineParams, LineSelect, ModDestination,
+    ModEnvRetrigMode, ModMatrixCache, ModMode, PortamentoMode, SynthParams, SynthesisMethod,
 };
 use crate::synthesis::pd::PdEngineFrame;
 use crate::synthesis::pd::algorithms::PER_LINE_HEADROOM;
+use crate::synthesis::vz::VzEngineFrame;
 use crate::synthesis::{
     CompiledLinePlan, LineClockFrame, LineEngineContext, LineEngineFrame, LineEnvelopeFrame,
     LinePhaseContext, LinePhaseModulation, LineSynthesisRuntime,
@@ -217,34 +218,22 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let line1_input = LineEngineFrame::Pd(PdEngineFrame {
-        clock: LineClockFrame {
+    let line1_input = build_line_engine_frame(
+        line1_modded,
+        LineClockFrame {
             cycle_count: voice.cycle_count1,
             oscillator_phase: phase.phi1,
             shaped_phase: phase.phase_a_post,
         },
-        envelopes: LineEnvelopeFrame {
+        LineEnvelopeFrame {
             pitch: env.pitch1,
             timbre: signal.final_dcw1,
             amplitude: signal.final_dca1,
         },
-        modulation: line1_algo_param_mods,
-        phase_modulation: phase.pm_post_mod,
-    });
-    let line2_input = LineEngineFrame::Pd(PdEngineFrame {
-        clock: LineClockFrame {
-            cycle_count: voice.cycle_count2,
-            oscillator_phase: phase.phi2,
-            shaped_phase: phase.phase_b_post,
-        },
-        envelopes: LineEnvelopeFrame {
-            pitch: env.pitch2,
-            timbre: signal.final_dcw2,
-            amplitude: signal.final_dca2,
-        },
-        modulation: line2_algo_param_mods,
-        phase_modulation: phase.pm_post_mod,
-    });
+        line1_algo_param_mods,
+        phase.pm_post_mod,
+        None,
+    );
     let line1_output = voice.line1_synthesis.render_primary(
         line1_modded,
         LineEngineContext {
@@ -253,6 +242,30 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         },
         line1_input,
         line1_plan,
+    );
+
+    let mod_mode = effective_mod_mode(p, line1_modded, line2_modded);
+    let cross_line_external_phase = if mod_mode == ModMode::Phase {
+        Some(line1_output.sample)
+    } else {
+        None
+    };
+
+    let line2_input = build_line_engine_frame(
+        line2_modded,
+        LineClockFrame {
+            cycle_count: voice.cycle_count2,
+            oscillator_phase: phase.phi2,
+            shaped_phase: phase.phase_b_post,
+        },
+        LineEnvelopeFrame {
+            pitch: env.pitch2,
+            timbre: signal.final_dcw2,
+            amplitude: signal.final_dca2,
+        },
+        line2_algo_param_mods,
+        phase.pm_post_mod,
+        cross_line_external_phase,
     );
     let line2_output = voice.line2_synthesis.render_primary(
         line2_modded,
@@ -263,7 +276,6 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         line2_input,
         line2_plan,
     );
-    let mod_mode = effective_mod_mode(p);
     let noise_step = if mod_mode == ModMode::Noise {
         let step = voice.noise_step;
         voice.noise_step = voice.noise_step.wrapping_add(1);
@@ -854,7 +866,7 @@ fn render_selected_prime(
             Some(
                 voice
                     .line1_synthesis
-                    .render_primary(frame.line1, context, input, frame.line1_plan)
+                    .render_prime(frame.line1, context, input, frame.line1_plan)
                     .sample,
             )
         }
@@ -863,11 +875,38 @@ fn render_selected_prime(
             Some(
                 voice
                     .line2_synthesis
-                    .render_primary(frame.line2, context, input, frame.line2_plan)
+                    .render_prime(frame.line2, context, input, frame.line2_plan)
                     .sample,
             )
         }
         LineSelect::L1 | LineSelect::L2 => None,
+    }
+}
+
+/// Build the engine-appropriate render frame for one line. `external_phase`
+/// is only meaningful to the VZ engine (cross-line `ModMode::Phase` cascade);
+/// other engines ignore it.
+#[inline(always)]
+#[allow(clippy::too_many_arguments)]
+fn build_line_engine_frame(
+    line: &LineParams,
+    clock: LineClockFrame,
+    envelopes: LineEnvelopeFrame,
+    modulation: [f32; 8],
+    phase_modulation: f32,
+    external_phase: Option<f32>,
+) -> LineEngineFrame {
+    match line.engine {
+        LineEngineParams::Pd(_) => LineEngineFrame::Pd(PdEngineFrame {
+            clock,
+            envelopes,
+            modulation,
+            phase_modulation,
+        }),
+        LineEngineParams::Vz(_) => LineEngineFrame::Vz(VzEngineFrame {
+            envelopes,
+            external_phase,
+        }),
     }
 }
 
@@ -881,6 +920,10 @@ fn prime_frame(input: LineEngineFrame, prime_phase: f32) -> LineEngineFrame {
             };
             frame.phase_modulation = 0.0;
             LineEngineFrame::Pd(frame)
+        }
+        LineEngineFrame::Vz(mut frame) => {
+            frame.external_phase = None;
+            LineEngineFrame::Vz(frame)
         }
     }
 }
@@ -910,6 +953,10 @@ fn mix_line_outputs(
             );
             (mix_a + mix_b) * DUAL_LINE_MIX_GAIN
         }
+        // The VZ engine already folded line 1's output into line 2's
+        // wave-shaping cascade via `external_phase`; line 2's own output is
+        // the complete cascaded result.
+        ModMode::Phase => lines.line2,
         ModMode::Normal => {
             let (mix_a, mix_b) = select_line_sources(p, lines.line1, lines.line2, lines.prime);
             match p.line_select {
@@ -921,8 +968,19 @@ fn mix_line_outputs(
     }
 }
 
+/// Resolve the effective modulation mode for this sample. `ModMode::Phase`
+/// (the VZ cross-line wave-shaping cascade) only applies when both lines are
+/// running the VZ engine; it falls back to `Normal` otherwise so existing
+/// PD/PD and PD/VZ presets are unaffected.
 #[inline]
-fn effective_mod_mode(p: &SynthParams) -> ModMode {
+fn effective_mod_mode(p: &SynthParams, line1: &LineParams, line2: &LineParams) -> ModMode {
+    if p.mod_mode == ModMode::Phase
+        && !(line1.engine.method() == SynthesisMethod::Vz
+            && line2.engine.method() == SynthesisMethod::Vz)
+    {
+        return ModMode::Normal;
+    }
+
     match p.line_select {
         LineSelect::L1 | LineSelect::L2 => ModMode::Normal,
         _ => p.mod_mode,

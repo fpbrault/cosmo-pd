@@ -1,6 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import type {
+	LineParams,
+	PdLineParams,
+	SynthPresetV1,
+} from "@/lib/synth/bindings/synth";
 import { createSynthEngineSnapshot } from "./synthEngineSnapshot";
+
+function pdParams(line: LineParams): PdLineParams {
+	if (line.engine.type !== "pd") throw new Error("expected PD line params");
+	return line.engine.params;
+}
 
 const MINIMAL_PRESET = {
 	schemaVersion: 1,
@@ -269,10 +278,10 @@ describe("createSynthEngineSnapshot", () => {
 			effectivePitchHz: 440,
 		});
 
-		expect(result.params.line1.engine.params.algoControlsA).toEqual([]);
-		expect(result.params.line1.engine.params.algoControlsB).toEqual([]);
-		expect(result.params.line2.engine.params.algoControlsA).toEqual([]);
-		expect(result.params.line2.engine.params.algoControlsB).toEqual([]);
+		expect(pdParams(result.params.line1).algoControlsA).toEqual([]);
+		expect(pdParams(result.params.line1).algoControlsB).toEqual([]);
+		expect(pdParams(result.params.line2).algoControlsA).toEqual([]);
+		expect(pdParams(result.params.line2).algoControlsB).toEqual([]);
 	});
 
 	it("defaults null modMatrix routes to empty array", () => {

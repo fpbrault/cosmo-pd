@@ -7,7 +7,11 @@ import type {
 	AlgoControlValueV1,
 	BaseWaveform,
 } from "@/lib/synth/bindings/synth";
-import { createPhaseLineEnvelopeTargets } from "./phaseLineEnvelopeTargets";
+import {
+	createPhaseLineEnvelopeTargets,
+	PD_ENVELOPE_ROLE_LABELS,
+	VZ_ENVELOPE_ROLE_LABELS,
+} from "./phaseLineEnvelopeTargets";
 import type { PhaseLineModel } from "./phaseLineTypes";
 
 const isLineAudible = (lineIndex: LineIndex, lineSelect: unknown): boolean => {
@@ -20,6 +24,12 @@ const isLineAudible = (lineIndex: LineIndex, lineSelect: unknown): boolean => {
 export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 	const updateAlgoControlValue = useSynthStore(
 		(state) => state.updateAlgoControlValue,
+	);
+	const line1SynthesisMethod = useSynthStore(
+		(state) => state.line1SynthesisMethod,
+	);
+	const line2SynthesisMethod = useSynthStore(
+		(state) => state.line2SynthesisMethod,
 	);
 	const { value: warpAAmount, setValue: setWarpAAmount } =
 		useSynthParam("warpAAmount");
@@ -92,6 +102,10 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 
 	return useMemo<PhaseLineModel>(() => {
 		const isLine1 = lineIndex === 1;
+		const roleLabels =
+			(isLine1 ? line1SynthesisMethod : line2SynthesisMethod) === "vz"
+				? VZ_ENVELOPE_ROLE_LABELS
+				: PD_ENVELOPE_ROLE_LABELS;
 		return {
 			meta: {
 				label,
@@ -156,19 +170,22 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 			envelopes: {
 				envs: {
 					dco: {
-						title: `${label} DCO`,
+						title: `${label} ${roleLabels.dco}`,
+						shortLabel: roleLabels.dco,
 						env: isLine1 ? line1DcoEnv : line2DcoEnv,
 						setEnv: isLine1 ? setLine1DcoEnv : setLine2DcoEnv,
 						envColor: "#9cb937",
 					},
 					dcw: {
-						title: `${label} DCW`,
+						title: `${label} ${roleLabels.dcw}`,
+						shortLabel: roleLabels.dcw,
 						env: isLine1 ? line1DcwEnv : line2DcwEnv,
 						setEnv: isLine1 ? setLine1DcwEnv : setLine2DcwEnv,
 						envColor: "#60a5fa",
 					},
 					dca: {
-						title: `${label} DCA`,
+						title: `${label} ${roleLabels.dca}`,
+						shortLabel: roleLabels.dca,
 						env: isLine1 ? line1DcaEnv : line2DcaEnv,
 						setEnv: isLine1 ? setLine1DcaEnv : setLine2DcaEnv,
 						envColor: "#f97316",
@@ -185,6 +202,14 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 						dcw: { env: line2DcwEnv, setEnv: setLine2DcwEnv },
 						dca: { env: line2DcaEnv, setEnv: setLine2DcaEnv },
 					},
+					line1RoleLabels:
+						line1SynthesisMethod === "vz"
+							? VZ_ENVELOPE_ROLE_LABELS
+							: PD_ENVELOPE_ROLE_LABELS,
+					line2RoleLabels:
+						line2SynthesisMethod === "vz"
+							? VZ_ENVELOPE_ROLE_LABELS
+							: PD_ENVELOPE_ROLE_LABELS,
 				}),
 				dcwKeyFollow: (isLine1
 					? line1DcwKeyFollow
@@ -203,6 +228,8 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 		lineSelectLabel,
 		detuneDisabled,
 		detuneLabelPrefix,
+		line1SynthesisMethod,
+		line2SynthesisMethod,
 		warpAAmount,
 		setWarpAAmount,
 		warpBAmount,

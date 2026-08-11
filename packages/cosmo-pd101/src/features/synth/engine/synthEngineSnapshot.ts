@@ -1,9 +1,27 @@
-import type { SynthParams, SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import type {
+	LineEngineParams,
+	SynthParams,
+	SynthPresetV1,
+} from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 
 export type SynthEngineSnapshot = {
 	params: SynthParams;
 };
+
+/** PD's optional algo control arrays need a `[]` default before the engine
+ * accepts them; other engines have no equivalent legacy-optional fields. */
+function withDefaultAlgoControls(engine: LineEngineParams): LineEngineParams {
+	if (engine.type !== "pd") return engine;
+	return {
+		...engine,
+		params: {
+			...engine.params,
+			algoControlsA: engine.params.algoControlsA ?? [],
+			algoControlsB: engine.params.algoControlsB ?? [],
+		},
+	};
+}
 
 type CreateSynthEngineSnapshotParams = {
 	gatherState: () => SynthPresetV1;
@@ -24,29 +42,11 @@ export function createSynthEngineSnapshot({
 			fxSlots: sanitizedParams.fxSlots,
 			line1: {
 				...sanitizedParams.line1,
-				engine: {
-					...sanitizedParams.line1.engine,
-					params: {
-						...sanitizedParams.line1.engine.params,
-						algoControlsA:
-							sanitizedParams.line1.engine.params.algoControlsA ?? [],
-						algoControlsB:
-							sanitizedParams.line1.engine.params.algoControlsB ?? [],
-					},
-				},
+				engine: withDefaultAlgoControls(sanitizedParams.line1.engine),
 			},
 			line2: {
 				...sanitizedParams.line2,
-				engine: {
-					...sanitizedParams.line2.engine,
-					params: {
-						...sanitizedParams.line2.engine.params,
-						algoControlsA:
-							sanitizedParams.line2.engine.params.algoControlsA ?? [],
-						algoControlsB:
-							sanitizedParams.line2.engine.params.algoControlsB ?? [],
-					},
-				},
+				engine: withDefaultAlgoControls(sanitizedParams.line2.engine),
 			},
 			modMatrix: {
 				routes: sanitizedParams.modMatrix?.routes ?? [],

@@ -4,6 +4,8 @@ import type {
 	CzWaveform,
 	EnvelopeProgramV1,
 	EnvStep,
+	LineParams,
+	PdLineParams,
 	StepEnvData,
 	SynthPresetV1,
 } from "@/lib/synth/bindings/synth";
@@ -13,6 +15,14 @@ import {
 	DEFAULT_DCW_ENV,
 } from "@/lib/synth/defaultEnvelopes";
 import { DEFAULT_PRESET } from "@/lib/synth/presetStorage";
+
+/** CZ SysEx conversion only ever deals in PD lines. */
+function pdEngine(line: LineParams): PdLineParams {
+	if (line.engine.type !== "pd") {
+		throw new Error("expected the default preset to use the PD engine");
+	}
+	return line.engine.params;
+}
 
 function convertEnvelope(env: {
 	steps: EnvelopeStep[];
@@ -127,6 +137,14 @@ export function convertDecodedPatchToSynthPreset(
 ): SynthPresetV1 {
 	const preset: SynthPresetV1 = JSON.parse(JSON.stringify(DEFAULT_PRESET));
 	const p = preset.params;
+	// CZ SysEx patches only ever describe the PD engine -- this narrows
+	// `p.line1/2.engine.params` from the union down to `PdLineParams` for
+	// the rest of this function.
+	if (p.line1.engine.type !== "pd" || p.line2.engine.type !== "pd") {
+		throw new Error(
+			"convertDecodedPatchToSynthPreset expects the default preset to use the PD engine",
+		);
+	}
 
 	const detuneSign = decoded.detuneDirection === "+" ? 1 : -1;
 
@@ -192,9 +210,8 @@ export function convertDecodedPatchToSynthPreset(
 		p.line2.envelopes.amplitude = stepProgram(DEFAULT_DCA_ENV);
 		p.line2.engine.params.dcwKeyFollow = 0;
 		p.line2.engine.params.dcaKeyFollow = 0;
-		p.line2.engine.params.algo = DEFAULT_PRESET.params.line2.engine.params.algo;
-		p.line2.engine.params.algo2 =
-			DEFAULT_PRESET.params.line2.engine.params.algo2;
+		p.line2.engine.params.algo = pdEngine(DEFAULT_PRESET.params.line2).algo;
+		p.line2.engine.params.algo2 = pdEngine(DEFAULT_PRESET.params.line2).algo2;
 	}
 
 	if (decoded.lineSelect === "L2") {
@@ -207,9 +224,8 @@ export function convertDecodedPatchToSynthPreset(
 		p.line1.envelopes.amplitude = stepProgram(DEFAULT_DCA_ENV);
 		p.line1.engine.params.dcwKeyFollow = 0;
 		p.line1.engine.params.dcaKeyFollow = 0;
-		p.line1.engine.params.algo = DEFAULT_PRESET.params.line1.engine.params.algo;
-		p.line1.engine.params.algo2 =
-			DEFAULT_PRESET.params.line1.engine.params.algo2;
+		p.line1.engine.params.algo = pdEngine(DEFAULT_PRESET.params.line1).algo;
+		p.line1.engine.params.algo2 = pdEngine(DEFAULT_PRESET.params.line1).algo2;
 	}
 
 	if (decoded.lineSelect === "L1+1'") {

@@ -2,6 +2,7 @@ use crate::envelope::{EnvelopeBank, EnvelopeTimingCache};
 use crate::params::{LineEngineParams, LineEnvelopeParams, LineParams, SynthesisMethod};
 
 use super::pd::{CompiledPdLinePlan, PdEngine, PdEngineFrame, PdEngineParams};
+use super::vz::{CompiledVzLinePlan, VzEngine, VzEngineFrame, VzEngineParams};
 
 /// Engine-neutral dispatch handle for a compiled line plan.
 ///
@@ -10,18 +11,21 @@ use super::pd::{CompiledPdLinePlan, PdEngine, PdEngineFrame, PdEngineParams};
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum CompiledLinePlan {
     Pd(CompiledPdLinePlan),
+    Vz(CompiledVzLinePlan),
 }
 
 impl CompiledLinePlan {
     pub(crate) fn from_line(line: &LineParams) -> Self {
         match line.engine {
             LineEngineParams::Pd(params) => Self::Pd(CompiledPdLinePlan::from_params(&params)),
+            LineEngineParams::Vz(params) => Self::Vz(CompiledVzLinePlan::from_params(&params)),
         }
     }
 
     pub(crate) fn headroom(self) -> f32 {
         match self {
             Self::Pd(_) => super::pd::algorithms::PER_LINE_HEADROOM,
+            Self::Vz(_) => super::pd::algorithms::PER_LINE_HEADROOM,
         }
     }
 }
@@ -55,6 +59,7 @@ pub(crate) struct LineEnvelopeFrame {
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum LineEngineFrame {
     Pd(PdEngineFrame),
+    Vz(VzEngineFrame),
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -142,29 +147,49 @@ pub(crate) trait LineEngine {
         plan: &CompiledLinePlan,
         params: Self::Params<'_>,
     ) -> LineEngineOutput;
+
+    /// Render the "prime" line source used by `LineSelect::L1PlusL1Prime` /
+    /// `L1PlusL2Prime`. Defaults to a second `render_primary` call, which is
+    /// safe for stateless engines. Stateful engines (anything with per-sample
+    /// oscillator phase or PRNG state) must override this to reuse cached
+    /// state instead of advancing it a second time per sample.
+    #[inline(always)]
+    fn render_prime(
+        &mut self,
+        context: LineEngineContext,
+        frame: LineEngineFrame,
+        plan: &CompiledLinePlan,
+        params: Self::Params<'_>,
+    ) -> LineEngineOutput {
+        self.render_primary(context, frame, plan, params)
+    }
 }
 
 #[derive(Debug, Clone)]
 pub(crate) enum LineSynthesisRuntime {
     Pd(PdEngine),
+    Vz(Box<VzEngine>),
 }
 
 impl LineSynthesisRuntime {
     pub fn new(method: SynthesisMethod, role: LineRole) -> Self {
         match method {
             SynthesisMethod::Pd => Self::Pd(PdEngine::new(role)),
+            SynthesisMethod::Vz => Self::Vz(Box::new(VzEngine::new(role))),
         }
     }
 
     pub fn method(&self) -> SynthesisMethod {
         match self {
             Self::Pd(engine) => engine.method(),
+            Self::Vz(engine) => engine.method(),
         }
     }
 
     pub fn role(&self) -> LineRole {
         match self {
             Self::Pd(engine) => engine.role(),
+            Self::Vz(engine) => engine.role(),
         }
     }
 
@@ -191,6 +216,7 @@ impl LineSynthesisRuntime {
     pub fn reset(&mut self, sample_rate: f32, voice_identity: u64) {
         match self {
             Self::Pd(engine) => engine.reset(sample_rate, voice_identity),
+            Self::Vz(engine) => engine.reset(sample_rate, voice_identity),
         }
     }
 
@@ -199,12 +225,16 @@ impl LineSynthesisRuntime {
             Self::Pd(engine) => {
                 engine.note_on(note, velocity, PdEngineParams::new(line.engine.pd()))
             }
+            Self::Vz(engine) => {
+                engine.note_on(note, velocity, VzEngineParams::new(line.engine.vz()))
+            }
         }
     }
 
     pub fn note_off(&mut self, line: &LineParams) {
         match self {
             Self::Pd(engine) => engine.note_off(PdEngineParams::new(line.engine.pd())),
+            Self::Vz(engine) => engine.note_off(VzEngineParams::new(line.engine.vz())),
         }
     }
 
@@ -224,6 +254,13 @@ impl LineSynthesisRuntime {
                 timing,
                 note,
             ),
+            Self::Vz(engine) => engine.advance_envelopes(
+                VzEngineParams::new(line.engine.vz()),
+                &line.envelopes,
+                state,
+                timing,
+                note,
+            ),
         }
     }
 
@@ -231,6 +268,11 @@ impl LineSynthesisRuntime {
         match self {
             Self::Pd(engine) => engine.start_envelope_release(
                 PdEngineParams::new(line.engine.pd()),
+                &line.envelopes,
+                state,
+            ),
+            Self::Vz(engine) => engine.start_envelope_release(
+                VzEngineParams::new(line.engine.vz()),
                 &line.envelopes,
                 state,
             ),
@@ -247,6 +289,9 @@ impl LineSynthesisRuntime {
     ) {
         match self {
             Self::Pd(engine) => {
+                engine.apply_modulation(output, base, line_index, mod_values, has_env_step_routes)
+            }
+            Self::Vz(engine) => {
                 engine.apply_modulation(output, base, line_index, mod_values, has_env_step_routes)
             }
         }
@@ -271,6 +316,14 @@ impl LineSynthesisRuntime {
                 timbre_modulation,
                 amplitude_modulation,
             ),
+            Self::Vz(engine) => engine.prepare_signal(
+                line,
+                base_frequency,
+                envelopes,
+                note,
+                timbre_modulation,
+                amplitude_modulation,
+            ),
         }
     }
 
@@ -278,6 +331,7 @@ impl LineSynthesisRuntime {
     pub fn phase_frame(&self, context: LinePhaseContext) -> LinePhaseFrame {
         match self {
             Self::Pd(engine) => engine.phase_frame(context),
+            Self::Vz(engine) => engine.phase_frame(context),
         }
     }
 
@@ -292,6 +346,27 @@ impl LineSynthesisRuntime {
         match self {
             Self::Pd(engine) => {
                 engine.render_primary(context, frame, plan, PdEngineParams::new(line.engine.pd()))
+            }
+            Self::Vz(engine) => {
+                engine.render_primary(context, frame, plan, VzEngineParams::new(line.engine.vz()))
+            }
+        }
+    }
+
+    #[inline(always)]
+    pub fn render_prime(
+        &mut self,
+        line: &LineParams,
+        context: LineEngineContext,
+        frame: LineEngineFrame,
+        plan: &CompiledLinePlan,
+    ) -> LineEngineOutput {
+        match self {
+            Self::Pd(engine) => {
+                engine.render_prime(context, frame, plan, PdEngineParams::new(line.engine.pd()))
+            }
+            Self::Vz(engine) => {
+                engine.render_prime(context, frame, plan, VzEngineParams::new(line.engine.vz()))
             }
         }
     }

@@ -769,12 +769,14 @@ mod tests {
         assert_eq!(
             match proc.compiled_params.line1 {
                 crate::synthesis::CompiledLinePlan::Pd(plan) => plan.primary.algo_for_cycle(0),
+                crate::synthesis::CompiledLinePlan::Vz(_) => unreachable!(),
             },
             Algo::Square
         );
         assert_eq!(
             match proc.compiled_params.line1 {
                 crate::synthesis::CompiledLinePlan::Pd(plan) => plan.primary.algo_for_cycle(1),
+                crate::synthesis::CompiledLinePlan::Vz(_) => unreachable!(),
             },
             Algo::Pulse
         );

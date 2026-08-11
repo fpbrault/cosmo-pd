@@ -145,6 +145,23 @@ mod tests {
 
     fn render_sequence(params: SynthParams, note: u8, sample_count: usize) -> Vec<f32> {
         let mut voice = Voice::new();
+        // `Voice::new()` always starts on the default (PD) engine; production
+        // code reconciles this via `CosmoProcessor::reconcile_synthesis_methods`
+        // before the first render. Mirror that here so tests can render VZ lines.
+        voice.line1_synthesis.reconcile_method(
+            params.line1.engine.method(),
+            48_000.0,
+            0,
+            None,
+            &params.line1,
+        );
+        voice.line2_synthesis.reconcile_method(
+            params.line2.engine.method(),
+            48_000.0,
+            1,
+            None,
+            &params.line2,
+        );
         voice.frequency = utils::midi_note_to_freq(note);
         voice.current_freq = voice.frequency;
         voice.target_freq = voice.frequency;
@@ -493,5 +510,87 @@ mod tests {
         assert!(ring_samples.iter().all(|sample| sample.is_finite()));
         assert!(sum_abs(&ring_samples) > 1e-4);
         assert_ne!(normal_samples, ring_samples);
+    }
+
+    fn vz_line() -> crate::params::LineParams {
+        let mut line = crate::params::LineParams::default_for(crate::params::SynthesisMethod::Vz);
+        let vz = line.engine.vz_mut();
+        vz.modules[0].enabled = true;
+        vz.modules[0].level = 1.0;
+        // Module 1's own DCA still gates the pair's output even in PHASE
+        // mode (it scales `W_b`, the shaper's own final amplitude), so give
+        // it a nonzero level too.
+        vz.modules[1].level = 1.0;
+        vz.pairs[0].mode = crate::synthesis::vz::parameters::VzPairMode::Mix;
+        line
+    }
+
+    #[test]
+    fn mod_mode_phase_cascades_line1_into_line2_when_both_lines_are_vz() {
+        let mut phase = SynthParams::default();
+        phase.line_select = LineSelect::L1PlusL2Prime;
+        phase.mod_mode = ModMode::Phase;
+        phase.line1 = vz_line();
+        phase.line2 = vz_line();
+        phase.line2.engine.vz_mut().pairs[0].mode =
+            crate::synthesis::vz::parameters::VzPairMode::Phase;
+
+        let mut normal = phase.clone();
+        normal.mod_mode = ModMode::Normal;
+
+        // Long enough for the default module/line envelopes to ramp up from
+        // silence so the cascade is actually audible, not just nonzero.
+        let sample_count = 4096;
+        let phase_samples = render_sequence(phase, 60, sample_count);
+        let normal_samples = render_sequence(normal, 60, sample_count);
+
+        assert!(phase_samples.iter().all(|sample| sample.is_finite()));
+        assert!(phase_samples.iter().any(|sample| sample.abs() > 1e-4));
+        assert_ne!(
+            phase_samples, normal_samples,
+            "Phase mode should cascade line 1 into line 2 rather than summing them"
+        );
+    }
+
+    #[test]
+    fn mod_mode_phase_falls_back_to_normal_unless_both_lines_are_vz() {
+        for line_select in [
+            LineSelect::L1,
+            LineSelect::L2,
+            LineSelect::L1PlusL1Prime,
+            LineSelect::L1PlusL2Prime,
+        ] {
+            let mut mixed = SynthParams::default();
+            mixed.line_select = line_select;
+            mixed.mod_mode = ModMode::Phase;
+            mixed.line1 = vz_line();
+            // line2 stays PD -- Phase should be inert here.
+
+            let mut normal = mixed.clone();
+            normal.mod_mode = ModMode::Normal;
+
+            assert_eq!(
+                render_sequence(mixed, 60, 32),
+                render_sequence(normal, 60, 32),
+                "Phase should fall back to Normal for {line_select:?} when line 2 isn't VZ"
+            );
+        }
+    }
+
+    #[test]
+    fn mod_mode_phase_is_inert_for_single_line_selects_even_with_both_lines_vz() {
+        let mut phase = SynthParams::default();
+        phase.line_select = LineSelect::L1;
+        phase.mod_mode = ModMode::Phase;
+        phase.line1 = vz_line();
+        phase.line2 = vz_line();
+
+        let mut normal = phase.clone();
+        normal.mod_mode = ModMode::Normal;
+
+        assert_eq!(
+            render_sequence(phase, 60, 32),
+            render_sequence(normal, 60, 32)
+        );
     }
 }

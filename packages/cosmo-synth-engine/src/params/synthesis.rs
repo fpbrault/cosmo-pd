@@ -8,4 +8,5 @@ use specta::Type;
 pub enum SynthesisMethod {
     #[default]
     Pd,
+    Vz,
 }

@@ -200,8 +200,14 @@ export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw"
  * 
  *  The tag is part of the persisted representation so an engine's parameter
  *  payload cannot be paired with a different synthesis method by accident.
+ * 
+ *  Deliberately not boxed despite the size difference between variants:
+ *  `LineParams` (and everything built on it, e.g. `line1_scratch` in the
+ *  mod-matrix hot path) relies on `LineEngineParams: Copy` throughout the
+ *  audio thread. The per-voice cost of the larger variant is a few hundred
+ *  bytes of stack-copied plain data, not a heap allocation.
  */
-export type LineEngineParams = { type: "pd"; params: PdLineParams };
+export type LineEngineParams = { type: "pd"; params: PdLineParams } | { type: "vz"; params: VzLineParams };
 
 /**
  *  The three generic modulation targets available to every line engine.
@@ -322,7 +328,13 @@ export type ModMatrixPage = {
 };
 
 /**  Modulation mode */
-export type ModMode = "normal" | "ring" | "noise";
+export type ModMode = "normal" | "ring" | "noise" | 
+/**
+ *  Cross-line VZ wave-shaping cascade: line 1's output feeds line 2 as
+ *  an external phase input. Only takes effect when both lines run the
+ *  VZ engine; falls back to `Normal` otherwise.
+ */
+"phase";
 
 /**  A single modulation route assignment. */
 export type ModRoute = {
@@ -739,6 +751,53 @@ export type VibratoParams = {
 	rate_mode?: LfoRateMode,
 	sync_division?: LfoSyncDivision,
 };
+
+/**  Parameters owned by the VZ engine for one line: four modules in two pairs. */
+export type VzLineParams = {
+	modules: VzModuleParams[],
+	pairs: VzPairParams[],
+};
+
+/**  Parameters for one of the four VZ modules on a line. */
+export type VzModuleParams = {
+	enabled: boolean,
+	waveform: VzWaveform,
+	octave: number | null,
+	detuneNote: number | null,
+	detuneFine: number | null,
+	level: number | null,
+	env: StepEnvData,
+};
+
+/**  How the two modules of a VZ pair combine. */
+export type VzPairMode = 
+/**  `E_a*W_a(phi_a) + E_b*W_b(phi_b)` */
+"mix" | 
+/**  `(E_b + E_a*W_a(phi_a)) * W_b(phi_b)` */
+"ring" | 
+/**
+ *  `E_b*W_b(E_a*W_a(phi_a))` -- module b receives module a's output as its
+ *  phase input instead of its own phase, so it never advances (0 Hz).
+ */
+"phase";
+
+/**  Parameters for one of the two VZ pairs (modules 0+1, or 2+3) on a line. */
+export type VzPairParams = {
+	mode: VzPairMode,
+	/**
+	 *  When set on pair 1, pair 1 receives pair 0's output as its phase input
+	 *  instead of summing with it. Pair 0 receives an external phase input
+	 *  automatically whenever the line-select topology routes one in
+	 *  (`ModMode::Phase`); this flag has no additional effect on pair 0.
+	 */
+	externalPhase: boolean,
+};
+
+/**
+ *  Fixed VZ module waveform table: one sine, five phase-distortion-derived
+ *  saw shapes of increasing depth, white noise, and a pitched noise/sine mix.
+ */
+export type VzWaveform = "sine" | "saw1" | "saw2" | "saw3" | "saw4" | "saw5" | "noise" | "noiseSine";
 
 /**  Wavefolder parameters */
 export type WavefolderParams = {

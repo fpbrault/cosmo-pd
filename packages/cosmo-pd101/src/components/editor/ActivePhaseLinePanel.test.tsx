@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthStore } from "@/features/synth/synthStore";
 import { ActivePhaseLinePanel } from "./ActivePhaseLinePanel";
 
 vi.mock("./usePhaseLineModel", () => ({
@@ -30,6 +31,10 @@ vi.mock("./PhaseLineEnvelopePanel", () => ({
 }));
 
 describe("ActivePhaseLinePanel", () => {
+	beforeEach(() => {
+		useSynthStore.setState(useSynthStore.getInitialState());
+	});
+
 	it("routes to the algo panel", () => {
 		render(<ActivePhaseLinePanel lineIndex={1} section="algos" />);
 		expect(screen.getByTestId("algo-panel")).toHaveTextContent("Algo 1");
@@ -39,6 +44,20 @@ describe("ActivePhaseLinePanel", () => {
 		render(<ActivePhaseLinePanel lineIndex={2} section="envelopes" />);
 		expect(screen.getByTestId("envelope-panel")).toHaveTextContent(
 			"Envelope 2",
+		);
+	});
+
+	it("routes to the VZ panel when the line's engine is VZ", () => {
+		useSynthStore.setState({ line1SynthesisMethod: "vz" });
+		render(<ActivePhaseLinePanel lineIndex={1} section="algos" />);
+		expect(screen.getByTestId("vz-line-panel")).toBeInTheDocument();
+	});
+
+	it("still routes to the envelope panel for a VZ line", () => {
+		useSynthStore.setState({ line1SynthesisMethod: "vz" });
+		render(<ActivePhaseLinePanel lineIndex={1} section="envelopes" />);
+		expect(screen.getByTestId("envelope-panel")).toHaveTextContent(
+			"Envelope 1",
 		);
 	});
 });

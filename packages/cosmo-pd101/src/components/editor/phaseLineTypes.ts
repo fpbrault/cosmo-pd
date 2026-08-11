@@ -61,6 +61,8 @@ export type PhaseLineParametersModel = {
 
 export type PhaseLineEnvelopeEntry = {
 	title: string;
+	/** Short engine-role label for compact previews, e.g. "DCO" or "PITCH". */
+	shortLabel: string;
 	env: StepEnvData;
 	setEnv: (env: StepEnvData) => void;
 	envColor: string;

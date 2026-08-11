@@ -62,7 +62,7 @@ export function PhaseLineEnvelopePanel({
 				{ENV_TABS.map((tab) => (
 					<StepEnvelopePreview
 						key={tab}
-						title={tab.toUpperCase()}
+						title={envelopes.envs[tab].shortLabel}
 						env={envelopes.envs[tab].env}
 						color={envelopes.envs[tab].envColor}
 						active={activeEnvTab === tab}

@@ -1,6 +1,7 @@
 mod engine;
 pub mod pd;
 pub mod registry;
+pub mod vz;
 
 pub(crate) use engine::{
     CompiledLinePlan, LineClockFrame, LineEngineContext, LineEngineFrame, LineEnvelopeFrame,

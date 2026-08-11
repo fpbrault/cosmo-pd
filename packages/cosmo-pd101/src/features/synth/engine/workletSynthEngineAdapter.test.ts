@@ -1,12 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveAlgoRef } from "@/lib/synth/algoRef";
-import type { SynthParams } from "@/lib/synth/bindings/synth";
+import type {
+	LineParams,
+	PdLineParams,
+	SynthParams,
+} from "@/lib/synth/bindings/synth";
 import type { SynthEngineSnapshot } from "./synthEngineSnapshot";
 import { createWorkletSynthEngineAdapter } from "./workletSynthEngineAdapter";
 
 vi.mock("@/lib/synth/algoRef", () => ({
 	resolveAlgoRef: vi.fn(),
 }));
+
+function pdParams(line: LineParams): PdLineParams {
+	if (line.engine.type !== "pd") throw new Error("expected PD line params");
+	return line.engine.params;
+}
 
 function createSnapshot(overrides?: Partial<SynthParams>): SynthEngineSnapshot {
 	const envelope = { type: "step", params: {} };
@@ -115,8 +124,8 @@ describe("createWorkletSynthEngineAdapter", () => {
 		const snapshot = createSnapshot();
 		adapter.sync(snapshot);
 		expect(paramsRef.current).toBeDefined();
-		expect(paramsRef.current.line1.engine.params.algo).toBe("saw");
-		expect(paramsRef.current.line2.engine.params.algo).toBe("square");
+		expect(pdParams(paramsRef.current.line1).algo).toBe("saw");
+		expect(pdParams(paramsRef.current.line2).algo).toBe("square");
 		expect(paramsRef.current.line1.engine.type).toBe("pd");
 		expect(paramsRef.current.line2.engine.type).toBe("pd");
 	});
@@ -128,7 +137,7 @@ describe("createWorkletSynthEngineAdapter", () => {
 			paramsRef,
 		});
 		adapter.sync(createSnapshot());
-		expect(paramsRef.current.line1.engine.params.algo).toBe("saw");
+		expect(pdParams(paramsRef.current.line1).algo).toBe("saw");
 	});
 
 	it("sync postsMessage with correct type and params when workletNode is available", () => {
@@ -202,7 +211,7 @@ describe("createWorkletSynthEngineAdapter", () => {
 			paramsRef,
 		});
 		adapter.sync(createSnapshot());
-		expect(paramsRef.current.line1.engine.params.window).toBe("triangle");
-		expect(paramsRef.current.line2.engine.params.window).toBe("pulse");
+		expect(pdParams(paramsRef.current.line1).window).toBe("triangle");
+		expect(pdParams(paramsRef.current.line2).window).toBe("pulse");
 	});
 });

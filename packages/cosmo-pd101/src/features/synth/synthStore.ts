@@ -16,6 +16,8 @@ import type {
 	LfoRateMode,
 	LfoSyncDivision,
 	LfoWaveform,
+	LineEngineParams,
+	LineParams,
 	LineSelect,
 	ModDestination,
 	ModEnvMode,
@@ -23,14 +25,19 @@ import type {
 	ModMatrix,
 	ModMode,
 	ModRoute,
+	PdLineParams,
 	PolyMode,
 	PortamentoMode,
 	StepEnvData,
 	SynthesisMethod,
 	SynthPresetV1,
+	VzLineParams,
 	WindowType,
 } from "@/lib/synth/bindings/synth";
-import { ALGO_DEFINITIONS_V1 } from "@/lib/synth/bindings/synth";
+import {
+	ALGO_DEFINITIONS_V1,
+	DEFAULT_SYNTH_PARAMS_V1,
+} from "@/lib/synth/bindings/synth";
 import {
 	DEFAULT_DCA_ENV,
 	DEFAULT_DCO_ENV,
@@ -53,6 +60,88 @@ import { migrateSynthPreset } from "@/lib/synth/presetMigration";
 // ---------------------------------------------------------------------------
 // Helpers (identical to the ones that were in useSynthState)
 // ---------------------------------------------------------------------------
+
+const DEFAULT_PD_LINE_PARAMS: PdLineParams = (() => {
+	const engine = DEFAULT_SYNTH_PARAMS_V1.line1.engine;
+	if (engine.type !== "pd") {
+		throw new Error("expected the default synth params to use the PD engine");
+	}
+	return engine.params;
+})();
+
+/** Read a line's PD params regardless of its active engine, falling back to
+ * PD defaults for a VZ line. Used only for hydrating the PD-specific UI
+ * fields that stay resident in the store even while VZ is selected. */
+function pdEngineParams(line: LineParams | undefined): PdLineParams {
+	if (line?.engine.type === "pd") return line.engine.params;
+	return DEFAULT_PD_LINE_PARAMS;
+}
+
+const DEFAULT_VZ_LINE_PARAMS: VzLineParams = {
+	modules: [
+		{
+			enabled: true,
+			waveform: "saw3",
+			octave: 0,
+			detuneNote: 0,
+			detuneFine: 0,
+			level: 1,
+			env: DEFAULT_DCA_ENV,
+		},
+		{
+			enabled: true,
+			waveform: "sine",
+			octave: 0,
+			detuneNote: 0,
+			detuneFine: 0,
+			level: 0,
+			env: DEFAULT_DCA_ENV,
+		},
+		{
+			enabled: true,
+			waveform: "saw3",
+			octave: 0,
+			detuneNote: 0,
+			detuneFine: 0,
+			level: 0,
+			env: DEFAULT_DCA_ENV,
+		},
+		{
+			enabled: true,
+			waveform: "sine",
+			octave: 0,
+			detuneNote: 0,
+			detuneFine: 0,
+			level: 0,
+			env: DEFAULT_DCA_ENV,
+		},
+	],
+	pairs: [
+		{ mode: "mix", externalPhase: false },
+		{ mode: "mix", externalPhase: false },
+	],
+};
+
+/** Read a line's VZ params regardless of its active engine, falling back to
+ * VZ defaults for a PD line (e.g. right after switching a line to VZ). */
+function vzEngineParams(line: LineParams | undefined): VzLineParams {
+	if (line?.engine.type === "vz") return line.engine.params;
+	return DEFAULT_VZ_LINE_PARAMS;
+}
+
+/** Build the outgoing engine payload for one line from the store's flat
+ * state: the PD fields live directly in the store, VZ's whole payload is
+ * carried as one object (`line1Vz`/`line2Vz`). */
+function engineParamsFor(
+	method: SynthesisMethod,
+	vz: VzLineParams,
+	pd: PdLineParams,
+): LineEngineParams {
+	if (method === "vz") {
+		return { type: "vz", params: vz };
+	}
+	return { type: "pd", params: pd };
+}
 
 function resolveAlgoDefaultBaseWaveform(algo: Algo): BaseWaveform {
 	const definitions = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
@@ -204,6 +293,7 @@ type SynthState = {
 
 	line1Level: number;
 	line1SynthesisMethod: SynthesisMethod;
+	line1Vz: VzLineParams;
 	/** Shared OCT knob — sets octave for both lines. */
 	lineOctave: number;
 	line2DetuneOctave: number;
@@ -221,6 +311,7 @@ type SynthState = {
 
 	line2Level: number;
 	line2SynthesisMethod: SynthesisMethod;
+	line2Vz: VzLineParams;
 	line2DcwKeyFollow: number;
 	line2DcaKeyFollow: number;
 	line2DcoEnv: StepEnvData;
@@ -305,6 +396,8 @@ type SynthActions = {
 	setCzDacEnabled: (v: boolean) => void;
 
 	setLine1Level: (v: number) => void;
+	setLine1SynthesisMethod: (v: SynthesisMethod) => void;
+	setLine1Vz: (v: VzLineParams) => void;
 	setLineOctave: (v: number) => void;
 	setLine2DetuneOctave: (v: number) => void;
 	setLine2DetuneNote: (v: number) => void;
@@ -320,6 +413,8 @@ type SynthActions = {
 	setLine1BaseWaveformB: (v: BaseWaveform) => void;
 
 	setLine2Level: (v: number) => void;
+	setLine2SynthesisMethod: (v: SynthesisMethod) => void;
+	setLine2Vz: (v: VzLineParams) => void;
 	setLine2DcwKeyFollow: (v: number) => void;
 	setLine2DcaKeyFollow: (v: number) => void;
 	setLine2DcoEnv: (v: StepEnvData) => void;
@@ -430,6 +525,7 @@ const DEFAULT_STATE: SynthState = {
 
 	line1Level: requireEngineParamDefault("line1Level"),
 	line1SynthesisMethod: "pd",
+	line1Vz: DEFAULT_VZ_LINE_PARAMS,
 	lineOctave: 0,
 	line2DetuneOctave: 0,
 	line2DetuneNote: 0,
@@ -446,6 +542,7 @@ const DEFAULT_STATE: SynthState = {
 
 	line2Level: requireEngineParamDefault("line2Level"),
 	line2SynthesisMethod: "pd",
+	line2Vz: DEFAULT_VZ_LINE_PARAMS,
 	line2DcwKeyFollow: 0,
 	line2DcaKeyFollow: 0,
 	line2DcoEnv: DEFAULT_DCO_ENV,
@@ -547,6 +644,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setCzDacEnabled: (v) => setEditedState({ czDacEnabled: v }),
 
 		setLine1Level: (v) => setEditedState({ line1Level: v }),
+		setLine1SynthesisMethod: (v) => setEditedState({ line1SynthesisMethod: v }),
+		setLine1Vz: (v) => setEditedState({ line1Vz: v }),
 		setLineOctave: (v) =>
 			setEditedState({ lineOctave: toIntegerInRange(v, -2, 2) }),
 		setLine2DetuneOctave: (v) =>
@@ -570,6 +669,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		setLine1BaseWaveformB: (v) => setEditedState({ line1BaseWaveformB: v }),
 
 		setLine2Level: (v) => setEditedState({ line2Level: v }),
+		setLine2SynthesisMethod: (v) => setEditedState({ line2SynthesisMethod: v }),
+		setLine2Vz: (v) => setEditedState({ line2Vz: v }),
 		setLine2DcwKeyFollow: (v) =>
 			setEditedState({ line2DcwKeyFollow: toIntegerInRange(v, 0, 9) }),
 		setLine2DcaKeyFollow: (v) =>
@@ -769,24 +870,21 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 						timbre: { type: "step", params: s.line1DcwEnv },
 						amplitude: { type: "step", params: s.line1DcaEnv },
 					},
-					engine: {
-						type: "pd",
-						params: {
-							algo: s.warpAAlgo,
-							algo2: s.algo2A,
-							algoBlend: s.algoBlendA,
-							baseWaveformA: s.line1BaseWaveformA,
-							baseWaveformB: s.line1BaseWaveformB,
-							window: s.windowType,
-							dcaBase: s.line1Level,
-							dcwBase: s.warpAAmount,
-							modulation: 0,
-							dcwKeyFollow: s.line1DcwKeyFollow,
-							dcaKeyFollow: s.line1DcaKeyFollow,
-							algoControlsA: line1NormalizedAlgoControlsA,
-							algoControlsB: line1NormalizedAlgoControlsB,
-						},
-					},
+					engine: engineParamsFor(s.line1SynthesisMethod, s.line1Vz, {
+						algo: s.warpAAlgo,
+						algo2: s.algo2A,
+						algoBlend: s.algoBlendA,
+						baseWaveformA: s.line1BaseWaveformA,
+						baseWaveformB: s.line1BaseWaveformB,
+						window: s.windowType,
+						dcaBase: s.line1Level,
+						dcwBase: s.warpAAmount,
+						modulation: 0,
+						dcwKeyFollow: s.line1DcwKeyFollow,
+						dcaKeyFollow: s.line1DcaKeyFollow,
+						algoControlsA: line1NormalizedAlgoControlsA,
+						algoControlsB: line1NormalizedAlgoControlsB,
+					}),
 					detuneNote: 0,
 					detuneFine: 0,
 					octave: s.lineOctave,
@@ -797,24 +895,21 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 						timbre: { type: "step", params: s.line2DcwEnv },
 						amplitude: { type: "step", params: s.line2DcaEnv },
 					},
-					engine: {
-						type: "pd",
-						params: {
-							algo: s.warpBAlgo,
-							algo2: s.algo2B,
-							algoBlend: s.algoBlendB,
-							baseWaveformA: s.line2BaseWaveformA,
-							baseWaveformB: s.line2BaseWaveformB,
-							window: s.windowType,
-							dcaBase: s.line2Level,
-							dcwBase: s.warpBAmount,
-							modulation: 0,
-							dcwKeyFollow: s.line2DcwKeyFollow,
-							dcaKeyFollow: s.line2DcaKeyFollow,
-							algoControlsA: line2NormalizedAlgoControlsA,
-							algoControlsB: line2NormalizedAlgoControlsB,
-						},
-					},
+					engine: engineParamsFor(s.line2SynthesisMethod, s.line2Vz, {
+						algo: s.warpBAlgo,
+						algo2: s.algo2B,
+						algoBlend: s.algoBlendB,
+						baseWaveformA: s.line2BaseWaveformA,
+						baseWaveformB: s.line2BaseWaveformB,
+						window: s.windowType,
+						dcaBase: s.line2Level,
+						dcwBase: s.warpBAmount,
+						modulation: 0,
+						dcwKeyFollow: s.line2DcwKeyFollow,
+						dcaKeyFollow: s.line2DcaKeyFollow,
+						algoControlsA: line2NormalizedAlgoControlsA,
+						algoControlsB: line2NormalizedAlgoControlsB,
+					}),
 					detuneNote: line2DetuneEnabled ? s.line2DetuneNote : 0,
 					detuneFine: line2DetuneEnabled ? s.line2DetuneFine : 0,
 					octave: s.lineOctave + (line2DetuneEnabled ? s.line2DetuneOctave : 0),
@@ -1007,38 +1102,40 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				typeof v === "number" && !Number.isNaN(v) ? v : fallback;
 
 			const line1PrimaryAlgo = toAlgoRefV1(
-				p.line1?.engine.params.algo ?? DEFAULT_ALGO_REF,
+				pdEngineParams(p.line1).algo ?? DEFAULT_ALGO_REF,
 				DEFAULT_ALGO_REF,
 			);
 			const line2PrimaryAlgo = toAlgoRefV1(
-				p.line2?.engine.params.algo ?? DEFAULT_ALGO_REF,
+				pdEngineParams(p.line2).algo ?? DEFAULT_ALGO_REF,
 				DEFAULT_ALGO_REF,
 			);
 			const line1SecondaryAlgo =
-				p.line1?.engine.params.algo2 == null
+				pdEngineParams(p.line1).algo2 == null
 					? null
-					: toAlgoRefV1(p.line1.engine.params.algo2, DEFAULT_ALGO_REF);
+					: toAlgoRefV1(pdEngineParams(p.line1).algo2, DEFAULT_ALGO_REF);
 			const line2SecondaryAlgo =
-				p.line2?.engine.params.algo2 == null
+				pdEngineParams(p.line2).algo2 == null
 					? null
-					: toAlgoRefV1(p.line2.engine.params.algo2, DEFAULT_ALGO_REF);
+					: toAlgoRefV1(pdEngineParams(p.line2).algo2, DEFAULT_ALGO_REF);
 
 			set({
 				line1SynthesisMethod: p.line1?.engine.type ?? "pd",
 				line2SynthesisMethod: p.line2?.engine.type ?? "pd",
-				warpAAmount: safe(p.line1?.engine.params.dcwBase, 0),
-				warpBAmount: safe(p.line2?.engine.params.dcwBase, 0),
+				line1Vz: vzEngineParams(p.line1),
+				line2Vz: vzEngineParams(p.line2),
+				warpAAmount: safe(pdEngineParams(p.line1).dcwBase, 0),
+				warpBAmount: safe(pdEngineParams(p.line2).dcwBase, 0),
 				warpAAlgo: line1PrimaryAlgo,
 				warpBAlgo: line2PrimaryAlgo,
 				algo2A: line1SecondaryAlgo,
 				algo2B: line2SecondaryAlgo,
-				algoBlendA: safe(p.line1?.engine.params.algoBlend, 0),
-				algoBlendB: safe(p.line2?.engine.params.algoBlend, 0),
-				windowType: (p.line1?.engine.params.window as WindowType) ?? "off",
+				algoBlendA: safe(pdEngineParams(p.line1).algoBlend, 0),
+				algoBlendB: safe(pdEngineParams(p.line2).algoBlend, 0),
+				windowType: (pdEngineParams(p.line1).window as WindowType) ?? "off",
 				volume: safe(p.volume, requireEngineParamDefault("volume")),
 				czDacEnabled: currentCzDacEnabled,
-				line1Level: safe(p.line1?.engine.params.dcaBase, 1),
-				line2Level: safe(p.line2?.engine.params.dcaBase, 1),
+				line1Level: safe(pdEngineParams(p.line1).dcaBase, 1),
+				line2Level: safe(pdEngineParams(p.line2).dcaBase, 1),
 				lineOctave: safe(p.line1?.octave, 0),
 				line2DetuneOctave: safe(p.line2?.octave, 0) - safe(p.line1?.octave, 0),
 				line2DetuneNote: safe(p.line2?.detuneNote, 0),
@@ -1060,12 +1157,12 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				),
 				line1AlgoControlsA: normalizeAlgoControls(
 					line1PrimaryAlgo,
-					p.line1?.engine.params.algoControlsA ?? [],
+					pdEngineParams(p.line1).algoControlsA ?? [],
 				),
 				line1AlgoControlsB: line1SecondaryAlgo
 					? normalizeAlgoControls(
 							line1SecondaryAlgo,
-							p.line1?.engine.params.algoControlsB ?? [],
+							pdEngineParams(p.line1).algoControlsB ?? [],
 						)
 					: [],
 				line2DcoEnv: stepEnvelope(p.line2?.envelopes?.pitch, DEFAULT_DCO_ENV),
@@ -1076,12 +1173,12 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				),
 				line2AlgoControlsA: normalizeAlgoControls(
 					line2PrimaryAlgo,
-					p.line2?.engine.params.algoControlsA ?? [],
+					pdEngineParams(p.line2).algoControlsA ?? [],
 				),
 				line2AlgoControlsB: line2SecondaryAlgo
 					? normalizeAlgoControls(
 							line2SecondaryAlgo,
-							p.line2?.engine.params.algoControlsB ?? [],
+							pdEngineParams(p.line2).algoControlsB ?? [],
 						)
 					: [],
 				polyMode: (p.polyMode as PolyMode) ?? "poly8",
@@ -1092,25 +1189,25 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					((p.modMode as ModMode) ?? "normal") as ModMode,
 				),
 				line1BaseWaveformA:
-					(p.line1?.engine.params.baseWaveformA as BaseWaveform) ??
+					(pdEngineParams(p.line1).baseWaveformA as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(line1PrimaryAlgo),
 				line1BaseWaveformB:
-					(p.line1?.engine.params.baseWaveformB as BaseWaveform) ??
+					(pdEngineParams(p.line1).baseWaveformB as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(
 						line1SecondaryAlgo ?? line1PrimaryAlgo,
 					),
 				line2BaseWaveformA:
-					(p.line2?.engine.params.baseWaveformA as BaseWaveform) ??
+					(pdEngineParams(p.line2).baseWaveformA as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(line2PrimaryAlgo),
 				line2BaseWaveformB:
-					(p.line2?.engine.params.baseWaveformB as BaseWaveform) ??
+					(pdEngineParams(p.line2).baseWaveformB as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(
 						line2SecondaryAlgo ?? line2PrimaryAlgo,
 					),
-				line1DcwKeyFollow: safe(p.line1?.engine.params.dcwKeyFollow, 0),
-				line1DcaKeyFollow: safe(p.line1?.engine.params.dcaKeyFollow, 0),
-				line2DcwKeyFollow: safe(p.line2?.engine.params.dcwKeyFollow, 0),
-				line2DcaKeyFollow: safe(p.line2?.engine.params.dcaKeyFollow, 0),
+				line1DcwKeyFollow: safe(pdEngineParams(p.line1).dcwKeyFollow, 0),
+				line1DcaKeyFollow: safe(pdEngineParams(p.line1).dcaKeyFollow, 0),
+				line2DcwKeyFollow: safe(pdEngineParams(p.line2).dcwKeyFollow, 0),
+				line2DcaKeyFollow: safe(pdEngineParams(p.line2).dcaKeyFollow, 0),
 				portamentoEnabled: p.portamento?.enabled ?? false,
 				portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "time",
 				portamentoRate: safe(

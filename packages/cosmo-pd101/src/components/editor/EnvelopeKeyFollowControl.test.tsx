@@ -40,18 +40,21 @@ const createEnvelopes = () => ({
 	envs: {
 		dco: {
 			title: "DCO",
+			shortLabel: "DCO",
 			env: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			setEnv: vi.fn(),
 			envColor: "#fff",
 		},
 		dcw: {
 			title: "DCW",
+			shortLabel: "DCW",
 			env: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			setEnv: vi.fn(),
 			envColor: "#fff",
 		},
 		dca: {
 			title: "DCA",
+			shortLabel: "DCA",
 			env: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
 			setEnv: vi.fn(),
 			envColor: "#fff",
