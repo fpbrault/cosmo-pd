@@ -198,6 +198,7 @@ pub fn timing_cache(sample_rate: f32) -> EnvelopeTimingCache {
     EnvelopeTimingCache::from_slots([dco, dcw, dca])
 }
 
+#[inline(always)]
 pub fn advance_envelopes(
     params: &PdLineParams,
     envelopes: &LineEnvelopeParams,
@@ -226,6 +227,7 @@ pub fn start_envelope_release(envelopes: &LineEnvelopeParams, state: &mut Envelo
     state.slots[2].start_release(envelopes.amplitude.as_step());
 }
 
+#[inline(always)]
 pub fn line_frequency(
     base_frequency: f32,
     octave: f32,
@@ -238,10 +240,12 @@ pub fn line_frequency(
         * (2.0_f32).powf(dco_env_semitones(pitch_envelope) / 12.0)
 }
 
+#[inline(always)]
 pub fn dcw_base_output(base: f32, key_follow: f32, timbre_envelope: f32, note: u8) -> f32 {
     base * dcw_env_depth(timbre_envelope) * dcw_key_follow_scale(key_follow, note)
 }
 
+#[inline(always)]
 pub fn dco_env_semitones(pitch_envelope: f32) -> f32 {
     let level = pitch_envelope.clamp(0.0, 1.0) * 99.0;
     if level <= 64.0 {
@@ -251,14 +255,17 @@ pub fn dco_env_semitones(pitch_envelope: f32) -> f32 {
     }
 }
 
+#[inline(always)]
 pub fn dca_env_gain(amplitude_envelope: f32) -> f32 {
     pow01(amplitude_envelope.clamp(0.0, 1.0), 1.5)
 }
 
+#[inline(always)]
 pub fn dcw_env_depth(timbre_envelope: f32) -> f32 {
     pow01(timbre_envelope.clamp(0.0, 1.0), 0.8)
 }
 
+#[inline(always)]
 pub fn dcw_key_follow_scale(key_follow_amount: f32, note: u8) -> f32 {
     const REFERENCE_NOTE: f32 = 60.0;
     const SEMITONE_SPAN: f32 = 48.0;
@@ -278,6 +285,7 @@ const KEY_FOLLOW_REFERENCE_NOTE: f32 = 48.0;
 const DCA_KEY_FOLLOW_SEMITONE_SPAN: f32 = 48.0;
 const DCA_KEY_FOLLOW_MIN_DURATION_SCALE: f32 = 0.01;
 
+#[inline(always)]
 fn dca_key_follow_duration_scale(key_follow_amount: f32, note: u8) -> f32 {
     let key_follow = (key_follow_amount / 9.0).clamp(0.0, 1.0);
     if key_follow <= 0.0 {

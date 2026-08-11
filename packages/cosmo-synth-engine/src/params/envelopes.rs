@@ -121,12 +121,14 @@ impl Default for EnvelopeProgramV1 {
 }
 
 impl EnvelopeProgramV1 {
+    #[inline(always)]
     pub fn as_step(&self) -> &StepEnvData {
         match self {
             Self::Step(data) => data,
         }
     }
 
+    #[inline(always)]
     pub fn as_step_mut(&mut self) -> &mut StepEnvData {
         match self {
             Self::Step(data) => data,
