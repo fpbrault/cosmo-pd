@@ -1,6 +1,8 @@
-use crate::params::{LineParams, SynthesisMethod};
+use crate::envelope::{EnvelopeBank, EnvelopeTimingCache};
+use crate::params::{LineEnvelopeParams, LineParams, SynthParams, SynthesisMethod};
 
-use super::pd::{PdEngine, PdEngineParams, PdRenderInput};
+use super::pd::{PdEngine, PdEngineParams};
+use crate::processor::render_plan::CompiledPdLinePlan;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum LineRole {
@@ -14,33 +16,107 @@ pub(crate) struct LineEngineContext {
     pub sample_rate: f32,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LineClockFrame {
+    pub cycle_count: u32,
+    pub oscillator_phase: f32,
+    pub shaped_phase: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LineEnvelopeFrame {
+    pub values: [f32; 3],
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LineModulationFrame {
+    pub values: [f32; 8],
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LineEngineFrame {
+    pub clock: LineClockFrame,
+    pub envelopes: LineEnvelopeFrame,
+    pub modulation: LineModulationFrame,
+    pub phase_modulation: f32,
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct LineEngineOutput {
     pub sample: f32,
-    pub prime_source: Option<f32>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LineSignalFrame {
+    pub frequency: f32,
+    pub timbre: f32,
+    pub amplitude: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LinePhaseFrame {
+    pub phase_a_post: f32,
+    pub phase_b_post: f32,
+    pub pm_delta: f32,
+    pub pm_post_mod: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LinePhaseContext<'a> {
+    pub params: &'a SynthParams,
+    pub phi1: f32,
+    pub phi2: f32,
+    pub pm_phi: f32,
+    pub base_frequency: f32,
+    pub sample_rate: f32,
+    pub ratio_modulation: f32,
 }
 
 pub(crate) trait LineEngine {
     type Params<'a>: Copy;
-    type RenderInput<'a>;
-
     fn method(&self) -> SynthesisMethod;
     fn role(&self) -> LineRole;
     fn reset(&mut self, sample_rate: f32, voice_identity: u64);
     fn note_on(&mut self, note: u8, velocity: f32, params: Self::Params<'_>);
     fn note_off(&mut self, params: Self::Params<'_>);
-    fn render_primary<'a>(
+    fn advance_envelopes(
+        &mut self,
+        params: Self::Params<'_>,
+        envelopes: &LineEnvelopeParams,
+        state: &mut EnvelopeBank,
+        timing: &EnvelopeTimingCache,
+        note: u8,
+    ) -> LineEnvelopeFrame;
+    fn start_envelope_release(
+        &mut self,
+        params: Self::Params<'_>,
+        envelopes: &LineEnvelopeParams,
+        state: &mut EnvelopeBank,
+    );
+    fn apply_modulation(
+        &self,
+        output: &mut LineParams,
+        base: &LineParams,
+        line_index: u8,
+        mod_values: &[f32],
+        has_env_step_routes: bool,
+    );
+    fn prepare_signal(
+        &self,
+        line: &LineParams,
+        base_frequency: f32,
+        envelope_values: [f32; 3],
+        note: u8,
+        timbre_modulation: f32,
+        amplitude_modulation: f32,
+    ) -> LineSignalFrame;
+    fn phase_frame(&self, context: LinePhaseContext<'_>) -> LinePhaseFrame;
+    fn render_primary(
         &mut self,
         context: LineEngineContext,
-        input: &Self::RenderInput<'a>,
-        params: Self::Params<'a>,
-    ) -> LineEngineOutput;
-    fn render_prime<'a>(
-        &mut self,
-        context: LineEngineContext,
-        input: &Self::RenderInput<'a>,
-        params: Self::Params<'a>,
-        primary: LineEngineOutput,
+        frame: LineEngineFrame,
+        plan: &CompiledPdLinePlan,
+        params: Self::Params<'_>,
     ) -> LineEngineOutput;
 }
 
@@ -96,13 +172,81 @@ impl LineSynthesisRuntime {
 
     pub fn note_on(&mut self, line: &LineParams, note: u8, velocity: f32) {
         match self {
-            Self::Pd(engine) => engine.note_on(note, velocity, PdEngineParams::new(line)),
+            Self::Pd(engine) => engine.note_on(note, velocity, PdEngineParams::new(&line.pd)),
         }
     }
 
     pub fn note_off(&mut self, line: &LineParams) {
         match self {
-            Self::Pd(engine) => engine.note_off(PdEngineParams::new(line)),
+            Self::Pd(engine) => engine.note_off(PdEngineParams::new(&line.pd)),
+        }
+    }
+
+    pub fn advance_envelopes(
+        &mut self,
+        line: &LineParams,
+        state: &mut EnvelopeBank,
+        timing: &EnvelopeTimingCache,
+        note: u8,
+    ) -> LineEnvelopeFrame {
+        match self {
+            Self::Pd(engine) => engine.advance_envelopes(
+                PdEngineParams::new(&line.pd),
+                &line.envelopes,
+                state,
+                timing,
+                note,
+            ),
+        }
+    }
+
+    pub fn start_envelope_release(&mut self, line: &LineParams, state: &mut EnvelopeBank) {
+        match self {
+            Self::Pd(engine) => {
+                engine.start_envelope_release(PdEngineParams::new(&line.pd), &line.envelopes, state)
+            }
+        }
+    }
+
+    pub fn apply_modulation(
+        &self,
+        output: &mut LineParams,
+        base: &LineParams,
+        line_index: u8,
+        mod_values: &[f32],
+        has_env_step_routes: bool,
+    ) {
+        match self {
+            Self::Pd(engine) => {
+                engine.apply_modulation(output, base, line_index, mod_values, has_env_step_routes)
+            }
+        }
+    }
+
+    pub fn prepare_signal(
+        &self,
+        line: &LineParams,
+        base_frequency: f32,
+        envelope_values: [f32; 3],
+        note: u8,
+        timbre_modulation: f32,
+        amplitude_modulation: f32,
+    ) -> LineSignalFrame {
+        match self {
+            Self::Pd(engine) => engine.prepare_signal(
+                line,
+                base_frequency,
+                envelope_values,
+                note,
+                timbre_modulation,
+                amplitude_modulation,
+            ),
+        }
+    }
+
+    pub fn phase_frame(&self, context: LinePhaseContext<'_>) -> LinePhaseFrame {
+        match self {
+            Self::Pd(engine) => engine.phase_frame(context),
         }
     }
 
@@ -111,24 +255,12 @@ impl LineSynthesisRuntime {
         &mut self,
         line: &LineParams,
         context: LineEngineContext,
-        input: PdRenderInput<'_>,
-    ) -> LineEngineOutput {
-        match self {
-            Self::Pd(engine) => engine.render_primary(context, &input, PdEngineParams::new(line)),
-        }
-    }
-
-    #[inline(always)]
-    pub fn render_prime(
-        &mut self,
-        line: &LineParams,
-        context: LineEngineContext,
-        input: PdRenderInput<'_>,
-        primary: LineEngineOutput,
+        frame: LineEngineFrame,
+        plan: &CompiledPdLinePlan,
     ) -> LineEngineOutput {
         match self {
             Self::Pd(engine) => {
-                engine.render_prime(context, &input, PdEngineParams::new(line), primary)
+                engine.render_primary(context, frame, plan, PdEngineParams::new(&line.pd))
             }
         }
     }

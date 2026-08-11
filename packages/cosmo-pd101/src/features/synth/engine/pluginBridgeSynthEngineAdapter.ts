@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { UiParamChange } from "@/lib/synth/bindings/plugin-bridge";
-import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
+import type {
+	EnvelopeProgramV1,
+	StepEnvData,
+	SynthPresetV1,
+} from "@/lib/synth/bindings/synth";
 import { sanitizeSynthParamsForEngine } from "@/lib/synth/fxSlotSanitizer";
 import {
 	type EnvelopeKind,
@@ -45,7 +49,21 @@ export type PluginPresetSession = {
 	isDirty: boolean;
 };
 
-type StepEnv = SynthPresetV1["params"]["line1"]["dcoEnv"];
+type StepEnv = StepEnvData;
+
+function stepProgram(program: EnvelopeProgramV1): StepEnv | null {
+	return program.type === "step" ? program.params : null;
+}
+
+function mapProgram(
+	program: EnvelopeProgramV1,
+	kind: EnvelopeKind,
+): EnvelopeProgramV1 {
+	const env = stepProgram(program);
+	return env === null
+		? program
+		: { type: "step", params: mapEnvelope(env, kind) };
+}
 
 function mapEnvelope(env: StepEnv, kind: EnvelopeKind): StepEnv {
 	return {
@@ -67,15 +85,17 @@ function hasRawEnvelopeValues(params: SynthPresetV1["params"]): boolean {
 	}
 
 	const envelopes = [
-		line1.dcoEnv,
-		line1.dcwEnv,
-		line1.dcaEnv,
-		line2.dcoEnv,
-		line2.dcwEnv,
-		line2.dcaEnv,
+		line1.envelopes.pitch,
+		line1.envelopes.timbre,
+		line1.envelopes.amplitude,
+		line2.envelopes.pitch,
+		line2.envelopes.timbre,
+		line2.envelopes.amplitude,
 	];
 
-	for (const envelope of envelopes) {
+	for (const program of envelopes) {
+		const envelope = stepProgram(program);
+		if (!envelope) continue;
 		for (const step of envelope.steps) {
 			if ((step.level ?? 0) > 99 || (step.rate ?? 0) > 99) {
 				return true;
@@ -97,15 +117,21 @@ function normalizeHostParamsIfRaw(
 		...params,
 		line1: {
 			...params.line1,
-			dcoEnv: mapEnvelope(params.line1.dcoEnv, "dco"),
-			dcwEnv: mapEnvelope(params.line1.dcwEnv, "dcw"),
-			dcaEnv: mapEnvelope(params.line1.dcaEnv, "dca"),
+			envelopes: {
+				...params.line1.envelopes,
+				pitch: mapProgram(params.line1.envelopes.pitch, "dco"),
+				timbre: mapProgram(params.line1.envelopes.timbre, "dcw"),
+				amplitude: mapProgram(params.line1.envelopes.amplitude, "dca"),
+			},
 		},
 		line2: {
 			...params.line2,
-			dcoEnv: mapEnvelope(params.line2.dcoEnv, "dco"),
-			dcwEnv: mapEnvelope(params.line2.dcwEnv, "dcw"),
-			dcaEnv: mapEnvelope(params.line2.dcaEnv, "dca"),
+			envelopes: {
+				...params.line2.envelopes,
+				pitch: mapProgram(params.line2.envelopes.pitch, "dco"),
+				timbre: mapProgram(params.line2.envelopes.timbre, "dcw"),
+				amplitude: mapProgram(params.line2.envelopes.amplitude, "dca"),
+			},
 		},
 	};
 }

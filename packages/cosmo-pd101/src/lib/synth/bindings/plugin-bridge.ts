@@ -17,9 +17,8 @@ export type AddPresetResponse = {
 export type AdsrPhase = "idle" | "attack" | "decay" | "sustain" | "release";
 
 /**  Flat algorithm selector — unifies CZ waveforms and warp variants. */
-export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "terrain" | "cheby" | "stutter";
+export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "terrain" | "cheby" | "stutter";
 
-/**  One algorithm-specific control value persisted on a line. */
 export type AlgoControlValueV1 = {
 	id: string,
 	value: number | null,
@@ -107,6 +106,14 @@ export type EnvStep = {
 	rate: number | null,
 };
 
+/**
+ *  Engine-neutral envelope program stored in a line's envelope slots.
+ *
+ *  New envelope implementations can add variants here without changing the
+ *  line-engine or synthesis-method boundary.
+ */
+export type EnvelopeProgramV1 = { type: "step"; params: StepEnvData };
+
 /**  8-band EQ parameters */
 export type EqParams = {
 	enabled?: boolean,
@@ -188,28 +195,31 @@ export type LfoSyncDivision = "whole" | "half" | "quarter" | "eighth" | "sixteen
 /**  LFO waveform */
 export type LfoWaveform = "sine" | "triangle" | "square" | "saw" | "invertedSaw";
 
-/**  Per-line parameters */
+/**
+ *  The three generic modulation targets available to every line engine.
+ *  Engines map these slots to their own semantic roles through engine metadata.
+ */
+export type LineEnvelopeParams = {
+	pitch: EnvelopeProgramV1,
+	timbre: EnvelopeProgramV1,
+	amplitude: EnvelopeProgramV1,
+};
+
+/**  Method-independent line parameters plus the active engine payload. */
 export type LineParams = {
 	synthesisMethod?: SynthesisMethod,
-	algo: Algo,
-	algo2: Algo | null,
-	algoBlend: number | null,
-	baseWaveformA?: BaseWaveform,
-	baseWaveformB?: BaseWaveform,
-	window: WindowType,
-	dcaBase: number | null,
-	dcwBase: number | null,
-	modulation: number | null,
+	envelopes: LineEnvelopeParams,
+	/**
+	 *  Parameters owned by the selected line synthesis engine.
+	 *
+	 *  The field remains named `pd` internally while the wire format exposes
+	 *  it as `engine`, keeping the runtime boundary explicit without making
+	 *  the core line schema a flat list of PD controls.
+	 */
+	engine: PdLineParams,
 	detuneNote?: number | null,
 	detuneFine?: number | null,
 	octave: number | null,
-	dcoEnv: StepEnvData,
-	dcwEnv: StepEnvData,
-	dcaEnv: StepEnvData,
-	dcwKeyFollow: number | null,
-	dcaKeyFollow: number | null,
-	algoControlsA?: AlgoControlValueV1[],
-	algoControlsB?: AlgoControlValueV1[],
 };
 
 /**  Line select */
@@ -297,7 +307,7 @@ export type ModMatrixLayout = {
 
 /**
  *  One fixed 8×8 page in the modulation matrix editor.
- * 
+ *
  *  These assignments are editor layout metadata. The audio engine continues to
  *  evaluate the shared `ModMatrix::routes` collection independently of pages.
  */
@@ -336,6 +346,23 @@ export type MultimodeFilterParams = {
 	mix?: number | null,
 };
 
+/**  Parameters owned by the phase-distortion engine for one line. */
+export type PdLineParams = {
+	algo: Algo,
+	algo2: Algo | null,
+	algoBlend: number | null,
+	baseWaveformA?: BaseWaveform,
+	baseWaveformB?: BaseWaveform,
+	window: WindowType,
+	dcaBase: number | null,
+	dcwBase: number | null,
+	modulation: number | null,
+	dcwKeyFollow: number | null,
+	dcaKeyFollow: number | null,
+	algoControlsA?: AlgoControlValueV1[],
+	algoControlsB?: AlgoControlValueV1[],
+};
+
 /**  Phase modulation parameters */
 export type PhaseModParams = {
 	enabled: boolean,
@@ -355,7 +382,7 @@ export type PhaserParams = {
 
 /**
  *  Tagged IPC request envelope deserialized from `{ method, payload }`.
- * 
+ *
  *  Wire format (adjacently tagged by serde):
  *  - Unit variant: `{ "method": "getParams" }`
  *  - Payload variant: `{ "method": "setPresetSession", "payload": { ... } }`
@@ -630,7 +657,7 @@ export type ShimmerVerbParams = {
 	mix?: number | null,
 };
 
-/**  Step envelope data (CZ-style) */
+/**  Generic stepped envelope data. */
 export type StepEnvData = {
 	steps: EnvStep[],
 	/**  Which step to sustain on (0-based index into steps) */

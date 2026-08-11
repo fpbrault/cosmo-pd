@@ -1,5 +1,6 @@
-use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
-use crate::params::{EnvStep, StepEnvData};
+use super::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
+use crate::params::EnvelopeProgramV1;
+use crate::params::{EnvStep, LineEnvelopeParams, StepEnvData};
 
 fn step(kind: EnvelopeKind, level: u8, rate: u8) -> EnvStep {
     EnvStep {
@@ -69,5 +70,13 @@ pub fn default_dco_env() -> StepEnvData {
         sustain_step: 1,
         step_count: 2,
         loop_: false,
+    }
+}
+
+pub fn default_line_envelopes() -> LineEnvelopeParams {
+    LineEnvelopeParams {
+        pitch: EnvelopeProgramV1::Step(default_dco_env()),
+        timbre: EnvelopeProgramV1::Step(default_dcw_env()),
+        amplitude: EnvelopeProgramV1::Step(default_dca_env()),
     }
 }

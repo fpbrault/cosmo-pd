@@ -10,6 +10,7 @@ import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
 	BaseWaveform,
+	EnvelopeProgramV1,
 	FxSlotConfig,
 	FxSlotType,
 	LfoRateMode,
@@ -102,6 +103,13 @@ function normalizeModMode(lineSelect: LineSelect, modMode: ModMode): ModMode {
 		return "normal";
 	}
 	return modMode;
+}
+
+function stepEnvelope(
+	program: EnvelopeProgramV1 | undefined,
+	fallback: StepEnvData,
+): StepEnvData {
+	return program?.type === "step" ? program.params : fallback;
 }
 
 function routesAdded(previous: ModRoute[], next: ModRoute[]): ModRoute[] {
@@ -756,47 +764,55 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				octave: s.octave,
 				line1: {
 					synthesisMethod: s.line1SynthesisMethod,
-					algo: s.warpAAlgo,
-					algo2: s.algo2A,
-					algoBlend: s.algoBlendA,
-					baseWaveformA: s.line1BaseWaveformA,
-					baseWaveformB: s.line1BaseWaveformB,
-					window: s.windowType,
-					dcaBase: s.line1Level,
-					dcwBase: s.warpAAmount,
-					modulation: 0,
+					envelopes: {
+						pitch: { type: "step", params: s.line1DcoEnv },
+						timbre: { type: "step", params: s.line1DcwEnv },
+						amplitude: { type: "step", params: s.line1DcaEnv },
+					},
+					engine: {
+						algo: s.warpAAlgo,
+						algo2: s.algo2A,
+						algoBlend: s.algoBlendA,
+						baseWaveformA: s.line1BaseWaveformA,
+						baseWaveformB: s.line1BaseWaveformB,
+						window: s.windowType,
+						dcaBase: s.line1Level,
+						dcwBase: s.warpAAmount,
+						modulation: 0,
+						dcwKeyFollow: s.line1DcwKeyFollow,
+						dcaKeyFollow: s.line1DcaKeyFollow,
+						algoControlsA: line1NormalizedAlgoControlsA,
+						algoControlsB: line1NormalizedAlgoControlsB,
+					},
 					detuneNote: 0,
 					detuneFine: 0,
 					octave: s.lineOctave,
-					dcoEnv: s.line1DcoEnv,
-					dcwEnv: s.line1DcwEnv,
-					dcaEnv: s.line1DcaEnv,
-					dcwKeyFollow: s.line1DcwKeyFollow,
-					dcaKeyFollow: s.line1DcaKeyFollow,
-					algoControlsA: line1NormalizedAlgoControlsA,
-					algoControlsB: line1NormalizedAlgoControlsB,
 				},
 				line2: {
 					synthesisMethod: s.line2SynthesisMethod,
-					algo: s.warpBAlgo,
-					algo2: s.algo2B,
-					algoBlend: s.algoBlendB,
-					baseWaveformA: s.line2BaseWaveformA,
-					baseWaveformB: s.line2BaseWaveformB,
-					window: s.windowType,
-					dcaBase: s.line2Level,
-					dcwBase: s.warpBAmount,
-					modulation: 0,
+					envelopes: {
+						pitch: { type: "step", params: s.line2DcoEnv },
+						timbre: { type: "step", params: s.line2DcwEnv },
+						amplitude: { type: "step", params: s.line2DcaEnv },
+					},
+					engine: {
+						algo: s.warpBAlgo,
+						algo2: s.algo2B,
+						algoBlend: s.algoBlendB,
+						baseWaveformA: s.line2BaseWaveformA,
+						baseWaveformB: s.line2BaseWaveformB,
+						window: s.windowType,
+						dcaBase: s.line2Level,
+						dcwBase: s.warpBAmount,
+						modulation: 0,
+						dcwKeyFollow: s.line2DcwKeyFollow,
+						dcaKeyFollow: s.line2DcaKeyFollow,
+						algoControlsA: line2NormalizedAlgoControlsA,
+						algoControlsB: line2NormalizedAlgoControlsB,
+					},
 					detuneNote: line2DetuneEnabled ? s.line2DetuneNote : 0,
 					detuneFine: line2DetuneEnabled ? s.line2DetuneFine : 0,
 					octave: s.lineOctave + (line2DetuneEnabled ? s.line2DetuneOctave : 0),
-					dcoEnv: s.line2DcoEnv,
-					dcwEnv: s.line2DcwEnv,
-					dcaEnv: s.line2DcaEnv,
-					dcwKeyFollow: s.line2DcwKeyFollow,
-					dcaKeyFollow: s.line2DcaKeyFollow,
-					algoControlsA: line2NormalizedAlgoControlsA,
-					algoControlsB: line2NormalizedAlgoControlsB,
 				},
 				frequency: 220,
 				volume: s.volume,
@@ -995,40 +1011,40 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 				typeof v === "number" && !Number.isNaN(v) ? v : fallback;
 
 			const line1PrimaryAlgo = toAlgoRefV1(
-				p.line1?.algo ?? DEFAULT_ALGO_REF,
+				p.line1?.engine.algo ?? DEFAULT_ALGO_REF,
 				DEFAULT_ALGO_REF,
 			);
 			const line2PrimaryAlgo = toAlgoRefV1(
-				p.line2?.algo ?? DEFAULT_ALGO_REF,
+				p.line2?.engine.algo ?? DEFAULT_ALGO_REF,
 				DEFAULT_ALGO_REF,
 			);
 			const line1SecondaryAlgo =
-				p.line1?.algo2 == null
+				p.line1?.engine.algo2 == null
 					? null
-					: toAlgoRefV1(p.line1.algo2, DEFAULT_ALGO_REF);
+					: toAlgoRefV1(p.line1.engine.algo2, DEFAULT_ALGO_REF);
 			const line2SecondaryAlgo =
-				p.line2?.algo2 == null
+				p.line2?.engine.algo2 == null
 					? null
-					: toAlgoRefV1(p.line2.algo2, DEFAULT_ALGO_REF);
+					: toAlgoRefV1(p.line2.engine.algo2, DEFAULT_ALGO_REF);
 
 			set({
 				line1SynthesisMethod:
 					(p.line1?.synthesisMethod as SynthesisMethod | undefined) ?? "pd",
 				line2SynthesisMethod:
 					(p.line2?.synthesisMethod as SynthesisMethod | undefined) ?? "pd",
-				warpAAmount: safe(p.line1?.dcwBase, 0),
-				warpBAmount: safe(p.line2?.dcwBase, 0),
+				warpAAmount: safe(p.line1?.engine.dcwBase, 0),
+				warpBAmount: safe(p.line2?.engine.dcwBase, 0),
 				warpAAlgo: line1PrimaryAlgo,
 				warpBAlgo: line2PrimaryAlgo,
 				algo2A: line1SecondaryAlgo,
 				algo2B: line2SecondaryAlgo,
-				algoBlendA: safe(p.line1?.algoBlend, 0),
-				algoBlendB: safe(p.line2?.algoBlend, 0),
-				windowType: (p.line1?.window as WindowType) ?? "off",
+				algoBlendA: safe(p.line1?.engine.algoBlend, 0),
+				algoBlendB: safe(p.line2?.engine.algoBlend, 0),
+				windowType: (p.line1?.engine.window as WindowType) ?? "off",
 				volume: safe(p.volume, requireEngineParamDefault("volume")),
 				czDacEnabled: currentCzDacEnabled,
-				line1Level: safe(p.line1?.dcaBase, 1),
-				line2Level: safe(p.line2?.dcaBase, 1),
+				line1Level: safe(p.line1?.engine.dcaBase, 1),
+				line2Level: safe(p.line2?.engine.dcaBase, 1),
 				lineOctave: safe(p.line1?.octave, 0),
 				line2DetuneOctave: safe(p.line2?.octave, 0) - safe(p.line1?.octave, 0),
 				line2DetuneNote: safe(p.line2?.detuneNote, 0),
@@ -1042,30 +1058,36 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 						),
 					0,
 				),
-				line1DcoEnv: p.line1?.dcoEnv ?? DEFAULT_DCO_ENV,
-				line1DcwEnv: p.line1?.dcwEnv ?? DEFAULT_DCW_ENV,
-				line1DcaEnv: p.line1?.dcaEnv ?? DEFAULT_DCA_ENV,
+				line1DcoEnv: stepEnvelope(p.line1?.envelopes?.pitch, DEFAULT_DCO_ENV),
+				line1DcwEnv: stepEnvelope(p.line1?.envelopes?.timbre, DEFAULT_DCW_ENV),
+				line1DcaEnv: stepEnvelope(
+					p.line1?.envelopes?.amplitude,
+					DEFAULT_DCA_ENV,
+				),
 				line1AlgoControlsA: normalizeAlgoControls(
 					line1PrimaryAlgo,
-					p.line1?.algoControlsA ?? [],
+					p.line1?.engine.algoControlsA ?? [],
 				),
 				line1AlgoControlsB: line1SecondaryAlgo
 					? normalizeAlgoControls(
 							line1SecondaryAlgo,
-							p.line1?.algoControlsB ?? [],
+							p.line1?.engine.algoControlsB ?? [],
 						)
 					: [],
-				line2DcoEnv: p.line2?.dcoEnv ?? DEFAULT_DCO_ENV,
-				line2DcwEnv: p.line2?.dcwEnv ?? DEFAULT_DCW_ENV,
-				line2DcaEnv: p.line2?.dcaEnv ?? DEFAULT_DCA_ENV,
+				line2DcoEnv: stepEnvelope(p.line2?.envelopes?.pitch, DEFAULT_DCO_ENV),
+				line2DcwEnv: stepEnvelope(p.line2?.envelopes?.timbre, DEFAULT_DCW_ENV),
+				line2DcaEnv: stepEnvelope(
+					p.line2?.envelopes?.amplitude,
+					DEFAULT_DCA_ENV,
+				),
 				line2AlgoControlsA: normalizeAlgoControls(
 					line2PrimaryAlgo,
-					p.line2?.algoControlsA ?? [],
+					p.line2?.engine.algoControlsA ?? [],
 				),
 				line2AlgoControlsB: line2SecondaryAlgo
 					? normalizeAlgoControls(
 							line2SecondaryAlgo,
-							p.line2?.algoControlsB ?? [],
+							p.line2?.engine.algoControlsB ?? [],
 						)
 					: [],
 				polyMode: (p.polyMode as PolyMode) ?? "poly8",
@@ -1076,25 +1098,25 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					((p.modMode as ModMode) ?? "normal") as ModMode,
 				),
 				line1BaseWaveformA:
-					(p.line1?.baseWaveformA as BaseWaveform) ??
+					(p.line1?.engine.baseWaveformA as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(line1PrimaryAlgo),
 				line1BaseWaveformB:
-					(p.line1?.baseWaveformB as BaseWaveform) ??
+					(p.line1?.engine.baseWaveformB as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(
 						line1SecondaryAlgo ?? line1PrimaryAlgo,
 					),
 				line2BaseWaveformA:
-					(p.line2?.baseWaveformA as BaseWaveform) ??
+					(p.line2?.engine.baseWaveformA as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(line2PrimaryAlgo),
 				line2BaseWaveformB:
-					(p.line2?.baseWaveformB as BaseWaveform) ??
+					(p.line2?.engine.baseWaveformB as BaseWaveform) ??
 					resolveAlgoDefaultBaseWaveform(
 						line2SecondaryAlgo ?? line2PrimaryAlgo,
 					),
-				line1DcwKeyFollow: safe(p.line1?.dcwKeyFollow, 0),
-				line1DcaKeyFollow: safe(p.line1?.dcaKeyFollow, 0),
-				line2DcwKeyFollow: safe(p.line2?.dcwKeyFollow, 0),
-				line2DcaKeyFollow: safe(p.line2?.dcaKeyFollow, 0),
+				line1DcwKeyFollow: safe(p.line1?.engine.dcwKeyFollow, 0),
+				line1DcaKeyFollow: safe(p.line1?.engine.dcaKeyFollow, 0),
+				line2DcwKeyFollow: safe(p.line2?.engine.dcwKeyFollow, 0),
+				line2DcaKeyFollow: safe(p.line2?.engine.dcaKeyFollow, 0),
 				portamentoEnabled: p.portamento?.enabled ?? false,
 				portamentoMode: (p.portamento?.mode as PortamentoMode) ?? "time",
 				portamentoRate: safe(

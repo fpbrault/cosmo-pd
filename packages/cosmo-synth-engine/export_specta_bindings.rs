@@ -10,10 +10,6 @@ use cosmo_synth_engine::fx::{
     FxControlKindV1, FxControlOptionV1, FxControlV1, FxDefinitionV1, FxPresetOptionV1,
     fx_definitions_v1,
 };
-use cosmo_synth_engine::generators::{
-    AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlPresentationV1,
-    AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
-};
 use cosmo_synth_engine::module_presets::{
     LfoPresetV1, ModEnvPresetV1, ModulePresetGroupV1, lfo_preset_data, mod_env_preset_data,
     module_preset_catalog_v1,
@@ -32,6 +28,10 @@ use cosmo_synth_engine::params::{
 };
 use cosmo_synth_engine::preset_wire::{
     SynthPresetV1, algo_definitions_v1, algo_ui_catalog_v1, cz_presets,
+};
+use cosmo_synth_engine::synthesis::pd::algorithms::{
+    AlgoControlAssignmentV1, AlgoControlKindV1, AlgoControlOptionV1, AlgoControlPresentationV1,
+    AlgoControlV1, AlgoDefinitionV1, AlgoUiEntryV1, CzPresetV1,
 };
 use cosmo_synth_engine::synthesis::{
     EngineCapabilitiesV1, EngineDefinitionV1, engine_definitions_v1,

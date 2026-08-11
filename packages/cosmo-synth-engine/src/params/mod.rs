@@ -11,11 +11,11 @@ mod portamento;
 mod synth_params;
 mod synthesis;
 mod ui_meta;
-mod waveforms;
 
 // Re-exports for backward compatibility
+pub use crate::synthesis::pd::parameters::{Algo, BaseWaveform, CzAlgo, CzWaveform, WindowType};
 pub(crate) use cache::ModMatrixCache;
-pub use envelopes::{EnvStep, NUM_ENV_STEPS, StepEnvData};
+pub use envelopes::{EnvStep, EnvelopeProgramV1, LineEnvelopeParams, NUM_ENV_STEPS, StepEnvData};
 pub use fx_params::{
     BitcrusherParams, ChorusParams, CompressorParams, DelayParams, DistortionParams, EqParams,
     FlangerParams, FxSlotConfig, FxSlotType, GrainDelayParams, JunoChorusParams, LoFiParams,
@@ -46,7 +46,6 @@ pub use ui_meta::{
     EngineEnumValueLabelV1, EngineParamRangeV1, EngineParamReadoutFormatV1, EngineParamUiMetaV1,
     engine_param_default_v1, engine_param_ranges_v1, engine_param_ui_meta_v1,
 };
-pub use waveforms::{Algo, BaseWaveform, CzAlgo, CzWaveform, WindowType};
 
 #[cfg(test)]
 mod tests {

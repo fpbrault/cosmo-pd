@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-use super::fx_params::{FxSlotConfig, PhaseModParams, VibratoParams, default_fx_slot_configs};
+use super::fx_params::{FxSlotConfig, VibratoParams, default_fx_slot_configs};
 use super::lfo::{LfoParams, LfoRateMode, LfoSyncDivision};
 use super::line::{LineParams, LineSelect, ModMode, PolyMode};
 use super::modulation::ModMatrix;
@@ -175,27 +175,22 @@ impl SynthParams {
             }
         })
     }
-
-    pub fn phase_mod_params(&self) -> Option<&PhaseModParams> {
-        self.fx_slots.iter().find_map(|s| {
-            if let FxSlotConfig::PhaseMod(p) = s {
-                Some(p)
-            } else {
-                None
-            }
-        })
-    }
 }
 
 impl Default for SynthParams {
     fn default() -> Self {
+        let mut line1 = LineParams::default();
+        let mut line2 = LineParams::default();
+        line1.envelopes = crate::synthesis::pd::default_envelopes::default_line_envelopes();
+        line2.envelopes = crate::synthesis::pd::default_envelopes::default_line_envelopes();
+
         Self {
             line_select: LineSelect::default(),
             mod_mode: ModMode::default(),
             ring_gain: default_ring_gain(),
             octave: 0.0,
-            line1: LineParams::default(),
-            line2: LineParams::default(),
+            line1,
+            line2,
             frequency: 220.0,
             tempo_bpm: default_tempo_bpm(),
             volume: 1.0,

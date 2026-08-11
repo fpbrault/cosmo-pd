@@ -266,7 +266,7 @@ fn set_params_rpc_syncs_daw_float_params() {
 
     let mut new_params = SynthParams::default();
     new_params.volume = 0.33;
-    new_params.line1.dcw_base = 0.61;
+    new_params.line1.pd.dcw_base = 0.61;
     let result = handle_ipc_invoke(
         PluginIpcRequest::SetParams(Box::new(new_params)),
         &sp,
@@ -514,7 +514,7 @@ fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
     plugin.reset(48_000.0, 64);
 
     let mut synth_params = (*plugin.shared_state.synth.synth_params.load_full()).clone();
-    synth_params.line1.algo = cosmo_synth_engine::params::Algo::Bend;
+    synth_params.line1.pd.algo = cosmo_synth_engine::params::Algo::Bend;
     plugin
         .shared_state
         .synth
@@ -544,6 +544,7 @@ fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
     let published = plugin.shared_state.synth.synth_params.load();
     let bend_bias = published
         .line1
+        .pd
         .algo_controls_a
         .iter()
         .flatten()
@@ -554,6 +555,7 @@ fn midi_mapping_applies_virtual_algo_control_and_publishes_full_params() {
             .audio
             .cached_rt_synth_params
             .line1
+            .pd
             .algo_controls_a
             .iter()
             .flatten()
@@ -667,7 +669,16 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
     });
 
     assert!(
-        (plugin.shared_state.synth.synth_params.load().line1.dcw_base - 64.0 / 127.0).abs()
+        (plugin
+            .shared_state
+            .synth
+            .synth_params
+            .load()
+            .line1
+            .pd
+            .dcw_base
+            - 64.0 / 127.0)
+            .abs()
             < 0.000_001
     );
     assert!((params.warp_a_amount.value() - 64.0 / 127.0).abs() < 0.000_001);
@@ -692,9 +703,19 @@ fn host_param_value_drift_updates_runtime_snapshot_and_version() {
     plugin.sync_runtime_params_from_host(&EventList::default());
 
     assert!(
-        (plugin.shared_state.synth.synth_params.load().line1.dca_base - 0.37).abs() < 0.000_001
+        (plugin
+            .shared_state
+            .synth
+            .synth_params
+            .load()
+            .line1
+            .pd
+            .dca_base
+            - 0.37)
+            .abs()
+            < 0.000_001
     );
-    assert!((plugin.audio.cached_rt_synth_params.line1.dca_base - 0.37).abs() < 0.000_001);
+    assert!((plugin.audio.cached_rt_synth_params.line1.pd.dca_base - 0.37).abs() < 0.000_001);
     assert!(
         plugin
             .shared_state

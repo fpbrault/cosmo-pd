@@ -1,0 +1,481 @@
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "specta-bindings")]
+use specta::Type;
+
+pub const MAX_ALGO_CONTROLS: usize = 8;
+pub type AlgoControlSlots = [Option<AlgoControlValueV1>; MAX_ALGO_CONTROLS];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+pub enum AlgoControlId {
+    AlgoBlend,
+    BendBias,
+    BendCurve,
+    BendKnee,
+    ChebyOrder,
+    ChebyTilt,
+    ChebyWarp,
+    ClipBias,
+    ClipDrive,
+    ClipShape,
+    ClipSoft,
+    CzwDoubleSine,
+    CzwPulse,
+    CzwReso1,
+    CzwReso2,
+    CzwReso3,
+    CzwSaw,
+    CzwSawPulse,
+    CzwSquare,
+    Dcw,
+    FineDetune,
+    FofOffset,
+    FofRatio,
+    FofSkew,
+    FofTightness,
+    FoldSoftness,
+    FoldStages,
+    FoldSymmetry,
+    FoldTilt,
+    KeyFollow,
+    Level,
+    MirrorBlend,
+    MirrorCenter,
+    MirrorClip,
+    MirrorSkew,
+    Octave,
+    PinchAsym,
+    PinchCurve,
+    PinchDrive,
+    PinchFocus,
+    Preset,
+    RippleDepth,
+    RippleFreq,
+    RipplePhase,
+    RippleShape,
+    SkewBias,
+    SkewCurve,
+    SkewSpread,
+    SkewTilt,
+    StutterReverse,
+    StutterSegs,
+    StutterSlip,
+    StutterSpacing,
+    SyncCurve,
+    SyncPhase,
+    SyncRatio,
+    SyncWindow,
+    TerrainDepth,
+    TerrainFmPhase,
+    TerrainRatio,
+    TerrainShape,
+    TwistDepth,
+    TwistHarmonics,
+    TwistPhase,
+    TwistShape,
+    WarpAmount,
+    Waveform1,
+    Waveform2,
+    WindowFunction,
+    #[default]
+    Unknown,
+}
+
+impl AlgoControlId {
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(value: &str) -> Self {
+        match value {
+            "algoBlend" => Self::AlgoBlend,
+            "bendBias" => Self::BendBias,
+            "bendCurve" => Self::BendCurve,
+            "bendKnee" => Self::BendKnee,
+            "chebyOrder" => Self::ChebyOrder,
+            "chebyTilt" => Self::ChebyTilt,
+            "chebyWarp" => Self::ChebyWarp,
+            "clipBias" => Self::ClipBias,
+            "clipDrive" => Self::ClipDrive,
+            "clipShape" => Self::ClipShape,
+            "clipSoft" => Self::ClipSoft,
+            "czDoubleSine" => Self::CzwDoubleSine,
+            "czPulse" => Self::CzwPulse,
+            "czReso1" => Self::CzwReso1,
+            "czReso2" => Self::CzwReso2,
+            "czReso3" => Self::CzwReso3,
+            "czSaw" => Self::CzwSaw,
+            "czSawPulse" => Self::CzwSawPulse,
+            "czSquare" => Self::CzwSquare,
+            "dcw" => Self::Dcw,
+            "fineDetune" => Self::FineDetune,
+            "fofOffset" => Self::FofOffset,
+            "fofRatio" => Self::FofRatio,
+            "fofSkew" => Self::FofSkew,
+            "fofTightness" => Self::FofTightness,
+            "foldSoftness" => Self::FoldSoftness,
+            "foldStages" => Self::FoldStages,
+            "foldSymmetry" => Self::FoldSymmetry,
+            "foldTilt" => Self::FoldTilt,
+            "keyFollow" => Self::KeyFollow,
+            "level" => Self::Level,
+            "mirrorBlend" => Self::MirrorBlend,
+            "mirrorCenter" => Self::MirrorCenter,
+            "mirrorClip" => Self::MirrorClip,
+            "mirrorSkew" => Self::MirrorSkew,
+            "octave" => Self::Octave,
+            "pinchAsym" => Self::PinchAsym,
+            "pinchCurve" => Self::PinchCurve,
+            "pinchDrive" => Self::PinchDrive,
+            "pinchFocus" => Self::PinchFocus,
+            "preset" => Self::Preset,
+            "rippleDepth" => Self::RippleDepth,
+            "rippleFreq" => Self::RippleFreq,
+            "ripplePhase" => Self::RipplePhase,
+            "rippleShape" => Self::RippleShape,
+            "skewBias" => Self::SkewBias,
+            "skewCurve" => Self::SkewCurve,
+            "skewSpread" => Self::SkewSpread,
+            "skewTilt" => Self::SkewTilt,
+            "stutterReverse" => Self::StutterReverse,
+            "stutterSegs" => Self::StutterSegs,
+            "stutterSlip" => Self::StutterSlip,
+            "stutterSpacing" => Self::StutterSpacing,
+            "syncCurve" => Self::SyncCurve,
+            "syncPhase" => Self::SyncPhase,
+            "syncRatio" => Self::SyncRatio,
+            "syncWindow" => Self::SyncWindow,
+            "terrainDepth" => Self::TerrainDepth,
+            "terrainFmPhase" => Self::TerrainFmPhase,
+            "terrainRatio" => Self::TerrainRatio,
+            "terrainShape" => Self::TerrainShape,
+            "twistDepth" => Self::TwistDepth,
+            "twistHarmonics" => Self::TwistHarmonics,
+            "twistPhase" => Self::TwistPhase,
+            "twistShape" => Self::TwistShape,
+            "warpAmount" => Self::WarpAmount,
+            "waveform1" => Self::Waveform1,
+            "waveform2" => Self::Waveform2,
+            "windowFunction" => Self::WindowFunction,
+            _ => Self::Unknown,
+        }
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::AlgoBlend => "algoBlend",
+            Self::BendBias => "bendBias",
+            Self::BendCurve => "bendCurve",
+            Self::BendKnee => "bendKnee",
+            Self::ChebyOrder => "chebyOrder",
+            Self::ChebyTilt => "chebyTilt",
+            Self::ChebyWarp => "chebyWarp",
+            Self::ClipBias => "clipBias",
+            Self::ClipDrive => "clipDrive",
+            Self::ClipShape => "clipShape",
+            Self::ClipSoft => "clipSoft",
+            Self::CzwDoubleSine => "czDoubleSine",
+            Self::CzwPulse => "czPulse",
+            Self::CzwReso1 => "czReso1",
+            Self::CzwReso2 => "czReso2",
+            Self::CzwReso3 => "czReso3",
+            Self::CzwSaw => "czSaw",
+            Self::CzwSawPulse => "czSawPulse",
+            Self::CzwSquare => "czSquare",
+            Self::Dcw => "dcw",
+            Self::FineDetune => "fineDetune",
+            Self::FofOffset => "fofOffset",
+            Self::FofRatio => "fofRatio",
+            Self::FofSkew => "fofSkew",
+            Self::FofTightness => "fofTightness",
+            Self::FoldSoftness => "foldSoftness",
+            Self::FoldStages => "foldStages",
+            Self::FoldSymmetry => "foldSymmetry",
+            Self::FoldTilt => "foldTilt",
+            Self::KeyFollow => "keyFollow",
+            Self::Level => "level",
+            Self::MirrorBlend => "mirrorBlend",
+            Self::MirrorCenter => "mirrorCenter",
+            Self::MirrorClip => "mirrorClip",
+            Self::MirrorSkew => "mirrorSkew",
+            Self::Octave => "octave",
+            Self::PinchAsym => "pinchAsym",
+            Self::PinchCurve => "pinchCurve",
+            Self::PinchDrive => "pinchDrive",
+            Self::PinchFocus => "pinchFocus",
+            Self::Preset => "preset",
+            Self::RippleDepth => "rippleDepth",
+            Self::RippleFreq => "rippleFreq",
+            Self::RipplePhase => "ripplePhase",
+            Self::RippleShape => "rippleShape",
+            Self::SkewBias => "skewBias",
+            Self::SkewCurve => "skewCurve",
+            Self::SkewSpread => "skewSpread",
+            Self::SkewTilt => "skewTilt",
+            Self::StutterReverse => "stutterReverse",
+            Self::StutterSegs => "stutterSegs",
+            Self::StutterSlip => "stutterSlip",
+            Self::StutterSpacing => "stutterSpacing",
+            Self::SyncCurve => "syncCurve",
+            Self::SyncPhase => "syncPhase",
+            Self::SyncRatio => "syncRatio",
+            Self::SyncWindow => "syncWindow",
+            Self::TerrainDepth => "terrainDepth",
+            Self::TerrainFmPhase => "terrainFmPhase",
+            Self::TerrainRatio => "terrainRatio",
+            Self::TerrainShape => "terrainShape",
+            Self::TwistDepth => "twistDepth",
+            Self::TwistHarmonics => "twistHarmonics",
+            Self::TwistPhase => "twistPhase",
+            Self::TwistShape => "twistShape",
+            Self::WarpAmount => "warpAmount",
+            Self::Waveform1 => "waveform1",
+            Self::Waveform2 => "waveform2",
+            Self::WindowFunction => "windowFunction",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+impl Serialize for AlgoControlId {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for AlgoControlId {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let id = String::deserialize(deserializer)?;
+        Ok(Self::from_str(&id))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct AlgoControlValueV1 {
+    #[cfg_attr(feature = "specta-bindings", specta(type = String))]
+    pub id: AlgoControlId,
+    pub value: f32,
+}
+
+/// Low-level CZ waveform selector.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum CzWaveform {
+    #[default]
+    Saw,
+    Square,
+    Pulse,
+    Null,
+    SinePulse,
+    SawPulse,
+    MultiSine,
+    Pulse2,
+}
+
+/// Base waveform used as the final carrier for warp algorithms.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum BaseWaveform {
+    #[default]
+    Cosine,
+    Sine,
+    Triangle,
+    Saw,
+    Square,
+}
+
+/// Front-panel CZ algorithm shortcuts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum CzAlgo {
+    #[default]
+    Saw,
+    Square,
+    Pulse,
+    DoubleSine,
+    SawPulse,
+    Reso1,
+    Reso2,
+    Reso3,
+}
+
+impl CzAlgo {
+    pub fn waveform(self) -> WindowType {
+        match self {
+            CzAlgo::Saw
+            | CzAlgo::Square
+            | CzAlgo::Pulse
+            | CzAlgo::DoubleSine
+            | CzAlgo::SawPulse => WindowType::Off,
+            CzAlgo::Reso1 => WindowType::Saw,
+            CzAlgo::Reso2 => WindowType::Triangle,
+            CzAlgo::Reso3 => WindowType::Trapezoid,
+        }
+    }
+}
+
+/// Window type applied to oscillator output
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum WindowType {
+    #[default]
+    Off,
+    Saw,
+    Triangle,
+    Trapezoid,
+    Pulse,
+    DoubleSaw,
+}
+
+/// Flat algorithm selector — unifies CZ waveforms and warp variants.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub enum Algo {
+    // CZ waveforms
+    Saw,
+    Square,
+    Pulse,
+    Null,
+    SinePulse,
+    SawPulse,
+    MultiSine,
+    Pulse2,
+    // Warp algorithms
+    #[default]
+    Cz101,
+    Bend,
+    Sync,
+    Pinch,
+    Fold,
+    Skew,
+    Twist,
+    Clip,
+    Ripple,
+    Mirror,
+    Fof,
+    Terrain,
+    Cheby,
+    Stutter,
+}
+
+impl Algo {
+    pub fn from_cz_waveform(waveform: CzWaveform) -> Self {
+        match waveform {
+            CzWaveform::Saw => Algo::Saw,
+            CzWaveform::Square => Algo::Square,
+            CzWaveform::Pulse => Algo::Pulse,
+            CzWaveform::Null => Algo::Null,
+            CzWaveform::SinePulse => Algo::SinePulse,
+            CzWaveform::SawPulse => Algo::SawPulse,
+            CzWaveform::MultiSine => Algo::MultiSine,
+            CzWaveform::Pulse2 => Algo::Pulse2,
+        }
+    }
+
+    pub fn as_cz_waveform(self) -> Option<CzWaveform> {
+        match self {
+            Algo::Saw => Some(CzWaveform::Saw),
+            Algo::Square => Some(CzWaveform::Square),
+            Algo::Pulse => Some(CzWaveform::Pulse),
+            Algo::Null => Some(CzWaveform::Null),
+            Algo::SinePulse => Some(CzWaveform::SinePulse),
+            Algo::SawPulse => Some(CzWaveform::SawPulse),
+            Algo::MultiSine => Some(CzWaveform::MultiSine),
+            Algo::Pulse2 => Some(CzWaveform::Pulse2),
+            _ => None,
+        }
+    }
+
+    pub fn is_cz_waveform(self) -> bool {
+        self.as_cz_waveform().is_some()
+    }
+}
+
+fn default_algo_controls() -> AlgoControlSlots {
+    [None; crate::params::MAX_ALGO_CONTROLS]
+}
+
+fn serialize_algo_controls<S: serde::Serializer>(
+    controls: &AlgoControlSlots,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    let entries: Vec<AlgoControlValueV1> = controls.iter().flatten().copied().collect();
+    entries.serialize(serializer)
+}
+
+fn deserialize_algo_controls<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<AlgoControlSlots, D::Error> {
+    let entries = Option::<Vec<AlgoControlValueV1>>::deserialize(deserializer)?;
+    let mut controls = [None; crate::params::MAX_ALGO_CONTROLS];
+    if let Some(entries) = entries {
+        for (index, entry) in entries
+            .into_iter()
+            .take(crate::params::MAX_ALGO_CONTROLS)
+            .enumerate()
+        {
+            if entry.id != crate::params::AlgoControlId::Unknown {
+                controls[index] = Some(entry);
+            }
+        }
+    }
+    Ok(controls)
+}
+
+/// Parameters owned by the phase-distortion engine for one line.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct PdLineParams {
+    pub algo: Algo,
+    pub algo2: Option<Algo>,
+    pub algo_blend: f32,
+    #[serde(default)]
+    pub base_waveform_a: BaseWaveform,
+    #[serde(default)]
+    pub base_waveform_b: BaseWaveform,
+    pub window: WindowType,
+    pub dca_base: f32,
+    pub dcw_base: f32,
+    pub modulation: f32,
+    pub dcw_key_follow: f32,
+    pub dca_key_follow: f32,
+    #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
+    #[serde(
+        default = "default_algo_controls",
+        serialize_with = "serialize_algo_controls",
+        deserialize_with = "deserialize_algo_controls"
+    )]
+    pub algo_controls_a: AlgoControlSlots,
+    #[cfg_attr(feature = "specta-bindings", specta(optional, type = Vec<AlgoControlValueV1>))]
+    #[serde(
+        default = "default_algo_controls",
+        serialize_with = "serialize_algo_controls",
+        deserialize_with = "deserialize_algo_controls"
+    )]
+    pub algo_controls_b: AlgoControlSlots,
+}
+
+impl Default for PdLineParams {
+    fn default() -> Self {
+        Self {
+            algo: Algo::Saw,
+            algo2: None,
+            algo_blend: 0.0,
+            base_waveform_a: BaseWaveform::default(),
+            base_waveform_b: BaseWaveform::default(),
+            window: WindowType::Off,
+            dca_base: 1.0,
+            dcw_base: 1.0,
+            modulation: 0.0,
+            dcw_key_follow: 0.0,
+            dca_key_follow: 0.0,
+            algo_controls_a: default_algo_controls(),
+            algo_controls_b: default_algo_controls(),
+        }
+    }
+}

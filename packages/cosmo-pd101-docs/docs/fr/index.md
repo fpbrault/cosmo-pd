@@ -19,7 +19,7 @@ description: Un synthétiseur à distorsion de phase inspiré du Casio CZ-101.
 
 **Cosmo PD-101** s'inspire du moteur de distorsion de phase du Casio CZ-101 mais va plus loin avec :
 
-- **15 algorithmes de génération sonore** -- bend, sync, pinch, fold, skew, twist, clip, ripple, mirror, karpunk, fof, terrain, stutter, cheby, plus l'algorithme classique CZ-101
+- **14 algorithmes de génération sonore** -- bend, sync, pinch, fold, skew, twist, clip, ripple, mirror, fof, terrain, stutter, cheby, plus l'algorithme classique CZ-101
 - **Deux lignes d'oscillateurs** avec enveloppes indépendantes, désaccord et possibilité de mélanger un algorithme secondaire
 - **Enveloppes à paliers de 8 étapes** -- hauteur, forme d'onde et amplitude par ligne
 - **Matrice de modulation** -- 11 sources routées vers la plupart des paramètres du synthétiseur

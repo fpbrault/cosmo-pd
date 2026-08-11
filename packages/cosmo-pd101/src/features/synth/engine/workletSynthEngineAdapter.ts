@@ -17,26 +17,34 @@ export function createWorkletSynthEngineAdapter({
 	return {
 		sync(snapshot: SynthEngineSnapshot) {
 			const baseParams = snapshot.params;
-			const algoA = baseParams.line1.algo;
-			const algoB = baseParams.line2.algo;
+			const algoA = baseParams.line1.engine.algo;
+			const algoB = baseParams.line2.engine.algo;
 			const resolvedAlgoA = resolveAlgoRef(algoA);
 			const resolvedAlgoB = resolveAlgoRef(algoB);
-			const line1Window = resolvedAlgoA.windowType ?? baseParams.line1.window;
-			const line2Window = resolvedAlgoB.windowType ?? baseParams.line2.window;
+			const line1Window =
+				resolvedAlgoA.windowType ?? baseParams.line1.engine.window;
+			const line2Window =
+				resolvedAlgoB.windowType ?? baseParams.line2.engine.window;
 
 			const params: SynthParams = {
 				...baseParams,
 				line1: {
 					...baseParams.line1,
-					algo: algoA,
-					algo2: baseParams.line1.algo2 ?? null,
-					window: line1Window,
+					engine: {
+						...baseParams.line1.engine,
+						algo: algoA,
+						algo2: baseParams.line1.engine.algo2 ?? null,
+						window: line1Window,
+					},
 				},
 				line2: {
 					...baseParams.line2,
-					algo: algoB,
-					algo2: baseParams.line2.algo2 ?? null,
-					window: line2Window,
+					engine: {
+						...baseParams.line2.engine,
+						algo: algoB,
+						algo2: baseParams.line2.engine.algo2 ?? null,
+						window: line2Window,
+					},
 				},
 				modMatrix: { routes: baseParams.modMatrix?.routes ?? [] },
 			};

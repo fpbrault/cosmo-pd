@@ -221,7 +221,7 @@ describe("useSynthStore", () => {
 		});
 
 		const preset = gatherState();
-		expect(preset.params.line1.dcwBase).toBe(0.75);
+		expect(preset.params.line1.engine.dcwBase).toBe(0.75);
 		expect(preset.params.line1.synthesisMethod).toBe("pd");
 		expect(preset.params.line2.synthesisMethod).toBe("pd");
 		expect(preset.params.tempoBpm).toBe(132);
@@ -256,12 +256,10 @@ describe("useSynthStore", () => {
 				volume: 0.5,
 				tempoBpm: 96,
 				line1: {
-					dcwBase: 0.2,
-					algo: DEFAULT_ALGO_REF,
+					engine: { dcwBase: 0.2, algo: DEFAULT_ALGO_REF },
 				},
 				line2: {
-					dcwBase: 0.4,
-					algo: DEFAULT_ALGO_REF,
+					engine: { dcwBase: 0.4, algo: DEFAULT_ALGO_REF },
 				},
 				lfo: {
 					waveform: "sine",
@@ -481,12 +479,10 @@ describe("useSynthStore", () => {
 					lineSelect: "L1",
 					modMode: "noise",
 					line1: {
-						dcwBase: 0.2,
-						algo: DEFAULT_ALGO_REF,
+						engine: { dcwBase: 0.2, algo: DEFAULT_ALGO_REF },
 					},
 					line2: {
-						dcwBase: 0.4,
-						algo: DEFAULT_ALGO_REF,
+						engine: { dcwBase: 0.4, algo: DEFAULT_ALGO_REF },
 					},
 					lfo: {
 						waveform: "sine",
@@ -499,7 +495,7 @@ describe("useSynthStore", () => {
 						offset: 0,
 					},
 				},
-			} as SynthPresetV1);
+			} as unknown as SynthPresetV1);
 		});
 
 		const state = useSynthStore.getState();

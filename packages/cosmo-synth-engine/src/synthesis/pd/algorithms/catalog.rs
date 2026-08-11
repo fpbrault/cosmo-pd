@@ -9,7 +9,6 @@ use super::clip::DEFINITION as CLIP;
 use super::cz101::DEFINITION as CZ101;
 use super::fof::DEFINITION as FOF;
 use super::fold::DEFINITION as FOLD;
-use super::karpunk::DEFINITION as KARPUNK;
 use super::mirror::DEFINITION as MIRROR;
 use super::pinch::DEFINITION as PINCH;
 use super::ripple::DEFINITION as RIPPLE;
@@ -196,11 +195,10 @@ pub const DCW_CONTROL: [AlgoControlV1; 1] = [AlgoControlV1 {
     readout_format: EngineParamReadoutFormatV1::Percent,
 }];
 
-const ALGO_DEFINITION_COUNT: usize = 15;
+const ALGO_DEFINITION_COUNT: usize = 14;
 
 pub const ALGO_DEFINITIONS_V1: [AlgoDefinitionV1; ALGO_DEFINITION_COUNT] = [
-    CZ101, BEND, SYNC, PINCH, FOLD, SKEW, TWIST, CLIP, RIPPLE, MIRROR, KARPUNK, FOF, TERRAIN,
-    STUTTER, CHEBY,
+    CZ101, BEND, SYNC, PINCH, FOLD, SKEW, TWIST, CLIP, RIPPLE, MIRROR, FOF, TERRAIN, STUTTER, CHEBY,
 ];
 
 pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
@@ -234,7 +232,6 @@ pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
         entry!(11),
         entry!(12),
         entry!(13),
-        entry!(14),
     ];
 
     &CATALOG

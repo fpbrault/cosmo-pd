@@ -17,9 +17,28 @@ pub struct EngineCapabilitiesV1 {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
+pub enum EnvelopeTargetRole {
+    Pitch,
+    Warp,
+    Tone,
+    Amplitude,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct EnvelopeTargetDefinitionV1 {
+    pub slot: u8,
+    pub role: EnvelopeTargetRole,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
 pub struct EngineDefinitionV1 {
     pub method: SynthesisMethod,
     pub capabilities: EngineCapabilitiesV1,
+    pub envelope_targets: [EnvelopeTargetDefinitionV1; 3],
 }
 
 pub const ENGINE_DEFINITIONS_V1: [EngineDefinitionV1; 1] = [EngineDefinitionV1 {
@@ -30,6 +49,20 @@ pub const ENGINE_DEFINITIONS_V1: [EngineDefinitionV1; 1] = [EngineDefinitionV1 {
         has_voice_filter: false,
         has_internal_tail: true,
     },
+    envelope_targets: [
+        EnvelopeTargetDefinitionV1 {
+            slot: 0,
+            role: EnvelopeTargetRole::Pitch,
+        },
+        EnvelopeTargetDefinitionV1 {
+            slot: 1,
+            role: EnvelopeTargetRole::Warp,
+        },
+        EnvelopeTargetDefinitionV1 {
+            slot: 2,
+            role: EnvelopeTargetRole::Amplitude,
+        },
+    ],
 }];
 
 pub fn engine_definitions_v1() -> &'static [EngineDefinitionV1] {

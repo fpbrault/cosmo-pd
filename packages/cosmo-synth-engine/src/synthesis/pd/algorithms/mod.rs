@@ -1,6 +1,7 @@
 use crate::dsp_utils::{TWO_PI, apply_window, lerp, wrap01};
-use crate::params::{Algo, AlgoControlSlots, BaseWaveform, LineParams};
-use crate::render_cache::CompiledLinePlan;
+use crate::params::AlgoControlSlots;
+use crate::processor::render_plan::CompiledPdLinePlan;
+use crate::synthesis::pd::parameters::{Algo, BaseWaveform, PdLineParams};
 use std::sync::LazyLock;
 
 /// Reference per-line output headroom used by processor normalization.
@@ -33,7 +34,6 @@ pub use cz101::{CZ_PRESETS, CzPresetV1};
 pub mod cheby;
 pub mod fof;
 pub mod fold;
-pub mod karpunk;
 pub mod mirror;
 pub mod pinch;
 pub mod ripple;
@@ -53,7 +53,7 @@ pub use catalog::{
 
 /// Per-line render inputs passed to a voice's generator for one sample.
 #[derive(Debug, Clone, Copy)]
-pub struct LineRenderConfig {
+pub struct PdRenderConfig {
     pub primary_algo: Algo,
     pub secondary_algo: Option<Algo>,
     pub blend: f32,
@@ -72,11 +72,11 @@ pub struct LineRenderConfig {
     pub pm_post_mod: f32,
 }
 
-impl LineRenderConfig {
+impl PdRenderConfig {
     #[inline(always)]
     #[allow(clippy::too_many_arguments)]
     pub fn from_line(
-        line: &LineParams,
+        line: &PdLineParams,
         cycle_count: u32,
         window_phi: f32,
         phase: f32,
@@ -131,8 +131,8 @@ impl LineRenderConfig {
     #[inline(always)]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn from_compiled_line(
-        plan: &CompiledLinePlan,
-        line: &LineParams,
+        plan: &CompiledPdLinePlan,
+        line: &PdLineParams,
         cycle_count: u32,
         window_phi: f32,
         phase: f32,
@@ -177,42 +177,8 @@ impl LineRenderConfig {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AlgoRuntimeState {
-    karpunk: karpunk::KarpunkState,
-}
-
-impl AlgoRuntimeState {
-    pub fn new(prng_seed: u32) -> Self {
-        Self {
-            karpunk: karpunk::KarpunkState::new(prng_seed),
-        }
-    }
-
-    pub fn note_on(&mut self, note: u8) {
-        self.karpunk.reseed_for_note(note)
-    }
-
-    pub fn render(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
-            karpunk::render_line(&mut self.karpunk, config)
-        } else {
-            render_line_stateless(config)
-        }
-    }
-}
-
-impl Default for AlgoRuntimeState {
-    fn default() -> Self {
-        Self::new(karpunk::DEFAULT_PRNG_SEED)
-    }
-}
-
 #[inline(always)]
-pub(crate) fn render_sample_from_config(
-    config: &LineRenderConfig,
-    karpunk_raw_sample: Option<f32>,
-) -> f32 {
+pub(crate) fn render_sample_from_config(config: &PdRenderConfig) -> f32 {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
         if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
             render_algo_sample(
@@ -222,7 +188,6 @@ pub(crate) fn render_sample_from_config(
                 config.primary_base_waveform,
                 &config.primary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.primary_window_gain
         } else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
@@ -233,7 +198,6 @@ pub(crate) fn render_sample_from_config(
                 config.secondary_base_waveform,
                 &config.secondary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.secondary_window_gain
         } else {
@@ -246,7 +210,6 @@ pub(crate) fn render_sample_from_config(
                 config.primary_base_waveform,
                 &config.primary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.primary_window_gain;
             let secondary = render_algo_sample(
@@ -256,10 +219,9 @@ pub(crate) fn render_sample_from_config(
                 config.secondary_base_waveform,
                 &config.secondary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.secondary_window_gain;
-            blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+            blend_line_samples(primary, secondary, config.blend)
         }
     } else {
         render_algo_sample(
@@ -269,7 +231,6 @@ pub(crate) fn render_sample_from_config(
             config.primary_base_waveform,
             &config.primary_control_values,
             config.algo_param_mods,
-            karpunk_raw_sample,
             config.pm_post_mod,
         ) * config.primary_window_gain
     };
@@ -277,8 +238,9 @@ pub(crate) fn render_sample_from_config(
 }
 
 #[inline(always)]
-fn render_line_stateless(config: LineRenderConfig) -> (f32, Option<f32>) {
-    (render_sample_from_config(&config, None), None)
+#[cfg_attr(not(test), allow(dead_code))]
+fn render_line_stateless(config: PdRenderConfig) -> (f32, Option<f32>) {
+    (render_sample_from_config(&config), None)
 }
 
 #[inline(always)]
@@ -304,17 +266,8 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
 }
 
 #[inline(always)]
-pub(crate) fn blend_line_samples(
-    primary_algo: Algo,
-    primary: f32,
-    secondary: f32,
-    blend: f32,
-) -> f32 {
-    if primary_algo == Algo::Karpunk {
-        primary + (primary * secondary * 2.0 - primary) * blend
-    } else {
-        primary + (secondary - primary) * blend
-    }
+pub(crate) fn blend_line_samples(primary: f32, secondary: f32, blend: f32) -> f32 {
+    primary + (secondary - primary) * blend
 }
 
 #[inline]
@@ -359,10 +312,6 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
         (Algo::Fof, "fofTightness") => 1,
         (Algo::Fof, "fofOffset") => 2,
         (Algo::Fof, "fofSkew") => 3,
-        (Algo::Karpunk, "karpunkDamp") => 0,
-        (Algo::Karpunk, "karpunkBright") => 1,
-        (Algo::Karpunk, "karpunkDecay") => 2,
-        (Algo::Karpunk, "karpunkExcite") => 3,
         (Algo::Terrain, "terrainRatio") => 0,
         (Algo::Terrain, "terrainDepth") => 1,
         (Algo::Terrain, "terrainFmPhase") => 2,
@@ -435,7 +384,6 @@ pub fn warp_phase(
         Algo::Ripple => ripple::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Mirror => mirror::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Fof => fof::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
-        Algo::Karpunk => phase,
         Algo::Terrain => terrain::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Stutter => stutter::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2)),
@@ -444,7 +392,6 @@ pub fn warp_phase(
 
 /// Unified algorithm sample renderer used by voice and utility paths.
 ///
-/// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
 #[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
     algo: Algo,
@@ -453,25 +400,21 @@ pub fn render_algo_sample(
     base_waveform: BaseWaveform,
     control_values: &[f32; 8],
     algo_param_mods: [f32; 8],
-    runtime_sample: Option<f32>,
     pm_post_mod: f32,
 ) -> f32 {
-    if algo == Algo::Karpunk {
-        return runtime_sample.unwrap_or(0.0);
-    }
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::LineRenderConfig;
+    use super::PdRenderConfig;
     use super::render_line_stateless;
     use crate::params::{Algo, BaseWaveform};
 
     #[test]
     fn stateless_render_applies_algo_param_mods() {
-        let base = LineRenderConfig {
+        let base = PdRenderConfig {
             primary_algo: Algo::Bend,
             secondary_algo: None,
             blend: 0.0,
@@ -490,7 +433,7 @@ mod tests {
             pm_post_mod: 0.0,
         };
 
-        let modded = LineRenderConfig {
+        let modded = PdRenderConfig {
             algo_param_mods: [0.75, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             ..base
         };

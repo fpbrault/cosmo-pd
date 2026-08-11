@@ -591,28 +591,6 @@
 				}
 			}
 		},
-		"karpunk": {
-			"name": "Karpunk",
-			"behavior": "Plucked/resonant distortion character with decaying inharmonic overtones.",
-			"controls": {
-				"karpunkDamp": {
-					"label": "Damp",
-					"description": "Controls how quickly high-frequency energy is damped in the string model."
-				},
-				"karpunkBright": {
-					"label": "Bright",
-					"description": "Adjusts the brightness of the feedback filter inside the string loop."
-				},
-				"karpunkDecay": {
-					"label": "Decay",
-					"description": "Sets how long the plucked string sustains before fading out."
-				},
-				"karpunkExcite": {
-					"label": "Excite",
-					"description": "Injects fresh noise into the delay line for a noisier or raspier pluck."
-				}
-			}
-		},
 		"fof": {
 			"name": "FOF",
 			"behavior": "Formant-like shaping with windowed resonant emphasis suited to vocal-style colors.",

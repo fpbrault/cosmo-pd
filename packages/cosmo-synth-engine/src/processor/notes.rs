@@ -21,12 +21,12 @@ impl CosmoProcessor {
     pub(crate) fn start_line_env_release_for_voice(&mut self, voice_idx: usize) {
         let p = self.params.as_ref();
         let voice = &mut self.voices[voice_idx];
-        voice.line1_env.dco.start_release(&p.line1.dco_env);
-        voice.line1_env.dcw.start_release(&p.line1.dcw_env);
-        voice.line1_env.dca.start_release(&p.line1.dca_env);
-        voice.line2_env.dco.start_release(&p.line2.dco_env);
-        voice.line2_env.dcw.start_release(&p.line2.dcw_env);
-        voice.line2_env.dca.start_release(&p.line2.dca_env);
+        voice
+            .line1_synthesis
+            .start_envelope_release(&p.line1, &mut voice.line1_envelopes);
+        voice
+            .line2_synthesis
+            .start_envelope_release(&p.line2, &mut voice.line2_envelopes);
         voice.line1_synthesis.note_off(&p.line1);
         voice.line2_synthesis.note_off(&p.line2);
     }

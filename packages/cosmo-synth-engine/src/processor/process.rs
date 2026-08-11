@@ -9,7 +9,7 @@ use crate::params::{
     LfoRateMode, LfoSyncDivision, LineParams, MAX_VOICES, ModDestination, ModEnvRetrigMode,
     ModMatrixCache, SynthParams,
 };
-use crate::render_cache::CompiledLinePlan;
+use crate::processor::render_plan::CompiledPdLinePlan;
 use crate::voice::{ModSources, VoiceRenderContext};
 
 use super::CosmoProcessor;
@@ -178,13 +178,17 @@ impl CosmoProcessor {
             );
 
             let lines = if has_active_mod_routes {
-                self.line1_scratch.apply_line1_mods(
+                self.voices[0].line1_synthesis.apply_modulation(
+                    &mut self.line1_scratch,
                     &p.line1,
+                    1,
                     &mod_cache.values,
                     has_env_step_routes,
                 );
-                self.line2_scratch.apply_line2_mods(
+                self.voices[0].line2_synthesis.apply_modulation(
+                    &mut self.line2_scratch,
                     &p.line2,
+                    2,
                     &mod_cache.values,
                     has_env_step_routes,
                 );
@@ -421,8 +425,8 @@ impl CosmoProcessor {
         has_active_mod_routes: bool,
         sr: f32,
         effective_tempo_bpm: f32,
-        line1_plan: CompiledLinePlan,
-        line2_plan: CompiledLinePlan,
+        line1_plan: CompiledPdLinePlan,
+        line2_plan: CompiledPdLinePlan,
     ) -> f32 {
         let is_shared_retrig = p.mod_env.retrig_mode != ModEnvRetrigMode::Poly;
         let render_ctx = VoiceRenderContext {

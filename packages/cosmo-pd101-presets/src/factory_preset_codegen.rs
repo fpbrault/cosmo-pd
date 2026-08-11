@@ -4,9 +4,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use cosmo_synth_engine::fx::{FX_DEFINITIONS_V1, FxControlKindV1};
-use cosmo_synth_engine::generators::{ALGO_DEFINITIONS_V1, AlgoControlKindV1};
 use cosmo_synth_engine::params::engine_param_ranges_v1;
 use cosmo_synth_engine::preset_wire::SynthPresetV1;
+use cosmo_synth_engine::synthesis::pd::algorithms::{ALGO_DEFINITIONS_V1, AlgoControlKindV1};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
@@ -239,6 +239,7 @@ fn decode_authored_preset_source(
 ) -> Result<FactoryPresetSource, String> {
     validate_stable_factory_id(&id, file_name)?;
     validate_tags(&tags, file_name)?;
+    let data = normalize_legacy_envelope_fields(data)?;
     let raw_data = data.clone();
     validate_authored_preset_data(&data, file_name)?;
     let data: SynthPresetV1 = serde_json::from_value(data.clone()).map_err(|error| {
@@ -265,6 +266,65 @@ fn decode_authored_preset_source(
         sort_index,
         data,
     })
+}
+
+fn normalize_legacy_envelope_fields(mut data: Value) -> Result<Value, String> {
+    let params = data
+        .get_mut("params")
+        .and_then(Value::as_object_mut)
+        .ok_or_else(|| "preset data must contain params".to_string())?;
+
+    for line_name in ["line1", "line2"] {
+        let line = params
+            .get_mut(line_name)
+            .and_then(Value::as_object_mut)
+            .ok_or_else(|| format!("preset data must contain params.{line_name}"))?;
+        if !line.contains_key("envelopes") {
+            let pitch = line
+                .remove("dcoEnv")
+                .ok_or_else(|| format!("preset data must contain params.{line_name}.dcoEnv"))?;
+            let timbre = line
+                .remove("dcwEnv")
+                .ok_or_else(|| format!("preset data must contain params.{line_name}.dcwEnv"))?;
+            let amplitude = line
+                .remove("dcaEnv")
+                .ok_or_else(|| format!("preset data must contain params.{line_name}.dcaEnv"))?;
+            line.insert(
+                "envelopes".to_string(),
+                serde_json::json!({
+                    "pitch": { "type": "step", "params": pitch },
+                    "timbre": { "type": "step", "params": timbre },
+                    "amplitude": { "type": "step", "params": amplitude },
+                }),
+            );
+        }
+
+        if !line.contains_key("engine") {
+            let mut engine = serde_json::Map::new();
+            for key in [
+                "algo",
+                "algo2",
+                "algoBlend",
+                "baseWaveformA",
+                "baseWaveformB",
+                "window",
+                "dcaBase",
+                "dcwBase",
+                "modulation",
+                "dcwKeyFollow",
+                "dcaKeyFollow",
+                "algoControlsA",
+                "algoControlsB",
+            ] {
+                if let Some(value) = line.remove(key) {
+                    engine.insert(key.to_string(), value);
+                }
+            }
+            line.insert("engine".to_string(), Value::Object(engine));
+        }
+    }
+
+    Ok(data)
 }
 
 fn stable_factory_id_from_file_name(file_name: &str) -> String {
@@ -468,10 +528,10 @@ fn validate_authored_preset_data(data: &Value, file_name: &str) -> Result<(), St
         file_name,
     )?;
     for path in [
-        ["params", "line1", "dcwKeyFollow"],
-        ["params", "line1", "dcaKeyFollow"],
-        ["params", "line2", "dcwKeyFollow"],
-        ["params", "line2", "dcaKeyFollow"],
+        ["params", "line1", "engine", "dcwKeyFollow"],
+        ["params", "line1", "engine", "dcaKeyFollow"],
+        ["params", "line2", "engine", "dcwKeyFollow"],
+        ["params", "line2", "engine", "dcaKeyFollow"],
     ] {
         validate_numeric_range(data, &path, 0.0, 9.0, true, file_name)?;
     }
@@ -512,8 +572,8 @@ fn validate_all_numbers_are_finite(
 
 fn validate_step_envs(data: &Value, file_name: &str) -> Result<(), String> {
     for line in ["line1", "line2"] {
-        for env in ["dcoEnv", "dcwEnv", "dcaEnv"] {
-            let path = ["params", line, env];
+        for env in ["pitch", "timbre", "amplitude"] {
+            let path = ["params", line, "envelopes", env, "params"];
             let env_value = get_value(data, &path)
                 .ok_or_else(|| format!("{file_name}: missing {}", dot_path(&path)))?;
             let env_object = env_value
@@ -654,28 +714,30 @@ fn validate_algo_controls(data: &Value, file_name: &str) -> Result<(), String> {
         let Some(line_value) = get_value(data, &["params", line]) else {
             continue;
         };
-        let algo_a = get_required_string(line_value, &["algo"], file_name)?;
+        let engine_value = get_value(line_value, &["engine"])
+            .ok_or_else(|| format!("{file_name}: data.params.{line}.engine is required"))?;
+        let algo_a = get_required_string(engine_value, &["algo"], file_name)?;
         validate_algo_control_entries(
-            line_value,
+            engine_value,
             &["algoControlsA"],
             algo_a,
-            &format!("data.params.{line}.algoControlsA"),
+            &format!("data.params.{line}.engine.algoControlsA"),
             file_name,
         )?;
-        if let Some(algo_b) = get_optional_string(line_value, &["algo2"])? {
+        if let Some(algo_b) = get_optional_string(engine_value, &["algo2"])? {
             validate_algo_control_entries(
-                line_value,
+                engine_value,
                 &["algoControlsB"],
                 algo_b,
-                &format!("data.params.{line}.algoControlsB"),
+                &format!("data.params.{line}.engine.algoControlsB"),
                 file_name,
             )?;
         } else if let Some(entries) =
-            get_value(line_value, &["algoControlsB"]).and_then(Value::as_array)
+            get_value(engine_value, &["algoControlsB"]).and_then(Value::as_array)
             && !entries.is_empty()
         {
             return Err(format!(
-                "{file_name}: data.params.{line}.algoControlsB requires a non-null algo2"
+                "{file_name}: data.params.{line}.engine.algoControlsB requires a non-null algo2"
             ));
         }
     }

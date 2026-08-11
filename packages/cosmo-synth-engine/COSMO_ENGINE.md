@@ -209,7 +209,6 @@ flowchart LR
 | `Mirror` | center, blend, clip, skew | Phase mirroring |
 | `Fof` | ratio, tightness, offset, skew | Formant (Fof) synthesis |
 | `Sine` | (none) | Pure sine (amt→amp) |
-| `Karpunk` | (per-voice state) | Chaotic noise oscillator |
 | `Terrain` | x, y, z, scale | 3D terrain lookup noise |
 | `Cheby` | order, mix, —, — | Chebyshev polynomials |
 | `Stutter` | rate, depth, —, — | Granular stutter |

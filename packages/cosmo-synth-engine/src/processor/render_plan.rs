@@ -3,10 +3,9 @@
 //! The audio loop runs sample-by-sample, so stable work derived from
 //! `SynthParams` belongs here and is rebuilt only when parameters change.
 
-use crate::generators::{PER_LINE_HEADROOM, cz101, pre_resolve_controls};
-use crate::params::{
-    Algo, BaseWaveform, DEFAULT_VOICE_LIMIT, LineParams, ModMatrixCache, SynthParams, WindowType,
-};
+use crate::params::{DEFAULT_VOICE_LIMIT, LineParams, ModMatrixCache, SynthParams};
+use crate::synthesis::pd::algorithms::{PER_LINE_HEADROOM, cz101, pre_resolve_controls};
+use crate::synthesis::pd::parameters::{Algo, BaseWaveform, WindowType};
 
 const REFERENCE_LINE_HEADROOM: f32 = 0.75;
 const HEADROOM_MAKEUP_EXPONENT: f32 = 0.8;
@@ -19,8 +18,8 @@ pub(crate) struct CompiledSynthParams {
     pub has_active_mod_routes: bool,
     pub has_env_step_routes: bool,
     pub norm: f32,
-    pub line1: CompiledLinePlan,
-    pub line2: CompiledLinePlan,
+    pub line1: CompiledPdLinePlan,
+    pub line2: CompiledPdLinePlan,
 }
 
 impl CompiledSynthParams {
@@ -35,8 +34,8 @@ impl CompiledSynthParams {
             has_env_step_routes: mod_cache.has_env_step_routes,
             mod_cache,
             norm: compute_norm(params),
-            line1: CompiledLinePlan::from_line(&params.line1),
-            line2: CompiledLinePlan::from_line(&params.line2),
+            line1: CompiledPdLinePlan::from_line(&params.line1),
+            line2: CompiledPdLinePlan::from_line(&params.line2),
         }
     }
 }
@@ -49,26 +48,27 @@ impl Default for CompiledSynthParams {
 
 /// Stable per-line algorithm metadata.
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct CompiledLinePlan {
+pub(crate) struct CompiledPdLinePlan {
     pub primary: CompiledAlgoSlot,
     pub secondary: Option<CompiledAlgoSlot>,
 }
 
-impl CompiledLinePlan {
+impl CompiledPdLinePlan {
     fn from_line(line: &LineParams) -> Self {
+        let pd = &line.pd;
         Self {
             primary: CompiledAlgoSlot::from_line_slot(
-                line.algo,
-                &line.algo_controls_a,
-                line.window,
-                line.base_waveform_a,
+                pd.algo,
+                &pd.algo_controls_a,
+                pd.window,
+                pd.base_waveform_a,
             ),
-            secondary: line.algo2.map(|algo| {
+            secondary: pd.algo2.map(|algo| {
                 CompiledAlgoSlot::from_line_slot(
                     algo,
-                    &line.algo_controls_b,
-                    line.window,
-                    line.base_waveform_b,
+                    &pd.algo_controls_b,
+                    pd.window,
+                    pd.base_waveform_b,
                 )
             }),
         }

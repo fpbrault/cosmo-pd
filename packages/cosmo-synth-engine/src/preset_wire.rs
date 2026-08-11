@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "specta-bindings")]
 use specta::Type;
 
-pub use crate::generators::CzPresetV1;
-use crate::generators::{self, AlgoDefinitionV1, AlgoUiEntryV1, CZ_PRESETS};
 use crate::params::SynthParams;
+pub use crate::synthesis::pd::algorithms::CzPresetV1;
+use crate::synthesis::pd::algorithms::{self, AlgoDefinitionV1, AlgoUiEntryV1, CZ_PRESETS};
 
 pub const SYNTH_SCHEMA_VERSION_V1: u16 = 1;
 
@@ -27,11 +27,11 @@ impl Default for SynthPresetV1 {
 }
 
 pub fn algo_ui_catalog_v1() -> &'static [AlgoUiEntryV1] {
-    generators::algo_ui_catalog_v1()
+    algorithms::algo_ui_catalog_v1()
 }
 
 pub fn algo_definitions_v1() -> &'static [AlgoDefinitionV1] {
-    generators::algo_definitions_v1()
+    algorithms::algo_definitions_v1()
 }
 
 pub fn cz_presets() -> &'static [CzPresetV1] {

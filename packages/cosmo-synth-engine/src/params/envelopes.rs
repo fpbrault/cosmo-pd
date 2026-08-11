@@ -37,7 +37,7 @@ fn deserialize_step_value<'de, D: Deserializer<'de>>(d: D) -> Result<u8, D::Erro
     Ok(v.round().clamp(0.0, 127.0) as u8)
 }
 
-/// Step envelope data (CZ-style)
+/// Generic stepped envelope data.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[cfg_attr(feature = "specta-bindings", derive(Type))]
 #[serde(rename_all = "camelCase")]
@@ -101,4 +101,46 @@ impl Default for StepEnvData {
             loop_: false,
         }
     }
+}
+
+/// Engine-neutral envelope program stored in a line's envelope slots.
+///
+/// New envelope implementations can add variants here without changing the
+/// line-engine or synthesis-method boundary.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(tag = "type", content = "params", rename_all = "camelCase")]
+pub enum EnvelopeProgramV1 {
+    Step(StepEnvData),
+}
+
+impl Default for EnvelopeProgramV1 {
+    fn default() -> Self {
+        Self::Step(StepEnvData::default())
+    }
+}
+
+impl EnvelopeProgramV1 {
+    pub fn as_step(&self) -> &StepEnvData {
+        match self {
+            Self::Step(data) => data,
+        }
+    }
+
+    pub fn as_step_mut(&mut self) -> &mut StepEnvData {
+        match self {
+            Self::Step(data) => data,
+        }
+    }
+}
+
+/// The three generic modulation targets available to every line engine.
+/// Engines map these slots to their own semantic roles through engine metadata.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct LineEnvelopeParams {
+    pub pitch: EnvelopeProgramV1,
+    pub timbre: EnvelopeProgramV1,
+    pub amplitude: EnvelopeProgramV1,
 }

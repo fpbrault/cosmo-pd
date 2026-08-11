@@ -237,12 +237,18 @@ describe("usePluginBridgeSynthEngine", () => {
 
 	it("converts host raw envelope values to UI range only", async () => {
 		const rawParams = makeParams(0.62);
-		rawParams.line1.dcoEnv.steps[0] = {
-			...rawParams.line1.dcoEnv.steps[0],
+		if (rawParams.line1.envelopes.pitch.type !== "step") {
+			throw new Error("expected step pitch envelope");
+		}
+		rawParams.line1.envelopes.pitch.params.steps[0] = {
+			...rawParams.line1.envelopes.pitch.params.steps[0],
 			rate: 127,
 		};
-		rawParams.line1.dcaEnv.steps[0] = {
-			...rawParams.line1.dcaEnv.steps[0],
+		if (rawParams.line1.envelopes.amplitude.type !== "step") {
+			throw new Error("expected step amplitude envelope");
+		}
+		rawParams.line1.envelopes.amplitude.params.steps[0] = {
+			...rawParams.line1.envelopes.amplitude.params.steps[0],
 			level: 127,
 		};
 
@@ -264,13 +270,19 @@ describe("usePluginBridgeSynthEngine", () => {
 
 		const firstOutbound = JSON.parse(outboundJsons[0] ?? "{}") as {
 			line1?: {
-				dcoEnv?: { steps?: Array<{ rate?: number }> };
-				dcaEnv?: { steps?: Array<{ level?: number }> };
+				envelopes?: {
+					pitch?: { params?: { steps?: Array<{ rate?: number }> } };
+					amplitude?: { params?: { steps?: Array<{ level?: number }> } };
+				};
 			};
 		};
 
-		expect(firstOutbound.line1?.dcoEnv?.steps?.[0]?.rate).toBe(99);
-		expect(firstOutbound.line1?.dcaEnv?.steps?.[0]?.level).toBe(99);
+		expect(
+			firstOutbound.line1?.envelopes?.pitch?.params?.steps?.[0]?.rate,
+		).toBe(99);
+		expect(
+			firstOutbound.line1?.envelopes?.amplitude?.params?.steps?.[0]?.level,
+		).toBe(99);
 
 		unmount();
 	});

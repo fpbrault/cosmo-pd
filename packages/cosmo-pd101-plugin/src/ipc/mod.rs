@@ -4,6 +4,7 @@ use std::sync::atomic::Ordering;
 use cosmo_pd101_bridge_types::{PluginIpcEnvelope, PluginIpcRequest, PluginIpcResponse};
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::CosmoInputEvent;
+use cosmo_synth_engine::synthesis::pd::normalize_synth_params_envelopes_to_raw_if_human;
 use uuid::Uuid;
 
 use crate::diagnostics::{append_log, append_log_debug, append_log_error, append_log_warn};
@@ -26,7 +27,7 @@ fn denorm_midi_7bit(value: f32) -> u8 {
 
 fn build_rt_synth_params(params: &SynthParams) -> SynthParams {
     let mut rt_params = params.clone();
-    cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
+    normalize_synth_params_envelopes_to_raw_if_human(&mut rt_params);
     rt_params
 }
 

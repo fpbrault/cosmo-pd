@@ -10,7 +10,7 @@ pub use adsr::{AdsrEnv, AdsrPhase};
 pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
-use crate::envelope::EnvGen;
+use crate::envelope::EnvelopeBank;
 use crate::params::SynthesisMethod;
 use crate::synthesis::{LineRole, LineSynthesisRuntime};
 
@@ -27,18 +27,8 @@ const RELEASE_TAIL_LEVEL_TIME_SECONDS: f32 = 0.01;
 const RELEASE_TAIL_LEVEL_THRESHOLD: f32 = 0.002;
 const ZERO_CROSS_STOP_THRESHOLD: f32 = 0.0005;
 const ZERO_CROSS_STOP_MAX_WAIT_SAMPLES: u32 = 1024;
-const DCA_LEVEL_CURVE_EXPONENT: f32 = 1.5;
-const DCW_LEVEL_CURVE_EXPONENT: f32 = 0.8;
 const DUAL_LINE_MIX_GAIN: f32 = 0.8;
 const DEFAULT_BASE_FREQ: f32 = 220.0;
-
-/// The three envelope generators for a single oscillator line (DCO, DCW, DCA).
-#[derive(Debug, Clone, Default)]
-pub struct LineEnvs {
-    pub dco: EnvGen,
-    pub dcw: EnvGen,
-    pub dca: EnvGen,
-}
 
 #[derive(Debug, Clone)]
 pub struct Voice {
@@ -63,8 +53,8 @@ pub struct Voice {
     pub env_note: u8,
     pub frequency: f32,
     pub velocity: f32,
-    pub line1_env: LineEnvs,
-    pub line2_env: LineEnvs,
+    pub line1_envelopes: EnvelopeBank,
+    pub line2_envelopes: EnvelopeBank,
     pub mod_env: AdsrEnv,
     pub anti_click_fade: u32,
     pub anti_click_fade_len: u32,
@@ -107,8 +97,8 @@ impl Voice {
             note_on_sequence: 0,
             frequency: 0.0,
             velocity: 1.0,
-            line1_env: LineEnvs::default(),
-            line2_env: LineEnvs::default(),
+            line1_envelopes: EnvelopeBank::default(),
+            line2_envelopes: EnvelopeBank::default(),
             mod_env: AdsrEnv::default(),
             anti_click_fade: 0,
             anti_click_fade_len: 0,
@@ -129,12 +119,8 @@ impl Voice {
     }
 
     pub fn reset_envs(&mut self) {
-        self.line1_env.dco.reset();
-        self.line1_env.dcw.reset();
-        self.line1_env.dca.reset();
-        self.line2_env.dco.reset();
-        self.line2_env.dcw.reset();
-        self.line2_env.dca.reset();
+        self.line1_envelopes.reset();
+        self.line2_envelopes.reset();
         self.mod_env.reset();
     }
 }
@@ -150,9 +136,12 @@ impl Default for Voice {
 mod tests {
     use super::ModSources;
     use super::{Voice, render::*};
-    use crate::params::{LineParams, LineSelect, ModMatrixCache, ModMode, SynthParams};
+    use crate::params::{LineSelect, ModMatrixCache, ModMode, SynthParams};
+    use crate::processor::render_plan::CompiledSynthParams;
     use crate::processor::utils;
-    use crate::render_cache::CompiledSynthParams;
+    use crate::synthesis::pd::envelope_map::{
+        dca_env_gain, dco_env_semitones, dcw_key_follow_scale, line_frequency,
+    };
 
     fn render_sequence(params: SynthParams, note: u8, sample_count: usize) -> Vec<f32> {
         let mut voice = Voice::new();
@@ -164,7 +153,7 @@ mod tests {
         voice.is_silent = false;
         voice.velocity = 1.0;
 
-        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let timing = crate::synthesis::pd::envelope_map::timing_cache(48_000.0);
         let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
@@ -205,31 +194,31 @@ mod tests {
 
     #[test]
     fn dca_gain_uses_gentle_power_taper() {
-        assert_eq!(super::render::cz_dca_env_gain(0.0), 0.0);
-        assert_eq!(super::render::cz_dca_env_gain(1.0), 1.0);
-        assert!(super::render::cz_dca_env_gain(0.5) < 0.5);
-        assert!(super::render::cz_dca_env_gain(0.75) < 0.75);
+        assert_eq!(dca_env_gain(0.0), 0.0);
+        assert_eq!(dca_env_gain(1.0), 1.0);
+        assert!(dca_env_gain(0.5) < 0.5);
+        assert!(dca_env_gain(0.75) < 0.75);
     }
 
     #[test]
     fn dcw_depth_uses_gentle_power_taper() {
-        assert_eq!(super::render::cz_dcw_env_depth(0.0), 0.0);
-        assert_eq!(super::render::cz_dcw_env_depth(1.0), 1.0);
-        assert!(super::render::cz_dcw_env_depth(0.5) > 0.5);
-        assert!(super::render::cz_dcw_env_depth(0.75) > 0.75);
+        assert_eq!(crate::synthesis::pd::envelope_map::dcw_env_depth(0.0), 0.0);
+        assert_eq!(crate::synthesis::pd::envelope_map::dcw_env_depth(1.0), 1.0);
+        assert!(crate::synthesis::pd::envelope_map::dcw_env_depth(0.5) > 0.5);
+        assert!(crate::synthesis::pd::envelope_map::dcw_env_depth(0.75) > 0.75);
     }
 
     #[test]
     fn dcw_key_follow_leaves_lower_notes_unchanged() {
-        assert_eq!(super::render::dcw_key_follow_scale(0.0, 96), 1.0);
-        assert_eq!(super::render::dcw_key_follow_scale(9.0, 60), 1.0);
-        assert_eq!(super::render::dcw_key_follow_scale(9.0, 48), 1.0);
+        assert_eq!(dcw_key_follow_scale(0.0, 96), 1.0);
+        assert_eq!(dcw_key_follow_scale(9.0, 60), 1.0);
+        assert_eq!(dcw_key_follow_scale(9.0, 48), 1.0);
     }
 
     #[test]
     fn dcw_key_follow_reduces_higher_note_depth() {
-        let medium_note = super::render::dcw_key_follow_scale(9.0, 72);
-        let high_note = super::render::dcw_key_follow_scale(9.0, 96);
+        let medium_note = dcw_key_follow_scale(9.0, 72);
+        let high_note = dcw_key_follow_scale(9.0, 96);
 
         assert!(medium_note < 1.0);
         assert!(high_note < medium_note);
@@ -253,7 +242,7 @@ mod tests {
         ];
         for (level, expected_semitones) in cases {
             let normalized_level = level as f32 / 99.0;
-            let got = super::render::cz_dco_env_semitones(normalized_level);
+            let got = dco_env_semitones(normalized_level);
             assert!(
                 (got - expected_semitones).abs() <= 0.02,
                 "level {level}: expected {expected_semitones} st, got {got} st"
@@ -266,7 +255,13 @@ mod tests {
         let base_freq = 220.0_f32;
         let line = crate::params::LineParams::default();
         let level_66 = 66.0_f32 / 99.0;
-        let got = super::render::line_frequency(base_freq, &line, level_66);
+        let got = line_frequency(
+            base_freq,
+            line.octave,
+            line.detune_note,
+            line.detune_fine,
+            level_66,
+        );
         let expected = base_freq * 2.0;
         assert!(
             (got - expected).abs() <= expected * 0.02,
@@ -279,11 +274,11 @@ mod tests {
         let mut voice = Voice::new();
         voice.is_silent = true;
         let p = SynthParams::default();
-        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let timing = crate::synthesis::pd::envelope_map::timing_cache(48_000.0);
         let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
-        let default_line = LineParams::default();
+        let default_line = p.line1;
         let plan = CompiledSynthParams::from_params(&p);
         let ctx = super::VoiceRenderContext {
             p: &p,
@@ -318,11 +313,11 @@ mod tests {
         voice.env_note = 60;
         voice.is_silent = false;
         let p = SynthParams::default();
-        let timing = crate::envelope::EnvelopeTimingCache::new(48_000.0);
+        let timing = crate::synthesis::pd::envelope_map::timing_cache(48_000.0);
         let sources = ModSources::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut cache = ModMatrixCache::new();
         cache.compute(&sources);
-        let default_line = LineParams::default();
+        let default_line = p.line1;
         let plan = CompiledSynthParams::from_params(&p);
         let mut any_nonzero = false;
         for _ in 0..64 {
@@ -362,9 +357,9 @@ mod tests {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL2Prime;
         params.mod_mode = ModMode::Noise;
-        params.line1.dca_base = 0.0;
-        params.line2.dca_base = 1.0;
-        params.line2.dcw_base = 0.85;
+        params.line1.pd.dca_base = 0.0;
+        params.line2.pd.dca_base = 1.0;
+        params.line2.pd.dcw_base = 0.85;
 
         let low_note = render_sequence(params.clone(), 48, 16);
         let high_note = render_sequence(params, 84, 16);
@@ -386,15 +381,15 @@ mod tests {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL1Prime;
         params.mod_mode = ModMode::Noise;
-        params.line1.dca_base = 1.0;
-        params.line1.dcw_base = 0.1;
-        params.line2.dca_base = 0.0;
+        params.line1.pd.dca_base = 1.0;
+        params.line1.pd.dcw_base = 0.1;
+        params.line2.pd.dca_base = 0.0;
 
         let quiet = render_sequence(params.clone(), 60, 16);
-        params.line1.dca_base = 0.0;
+        params.line1.pd.dca_base = 0.0;
         let silent = render_sequence(params.clone(), 60, 16);
-        params.line1.dca_base = 1.0;
-        params.line1.dcw_base = 0.9;
+        params.line1.pd.dca_base = 1.0;
+        params.line1.pd.dcw_base = 0.9;
         let bright = render_sequence(params, 60, 16);
 
         assert!(
@@ -413,15 +408,15 @@ mod tests {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL2Prime;
         params.mod_mode = ModMode::Noise;
-        params.line1.dca_base = 0.0;
-        params.line2.dca_base = 1.0;
-        params.line2.dcw_base = 0.15;
+        params.line1.pd.dca_base = 0.0;
+        params.line2.pd.dca_base = 1.0;
+        params.line2.pd.dcw_base = 0.15;
 
         let mellow = render_sequence(params.clone(), 60, 16);
-        params.line2.dca_base = 0.0;
+        params.line2.pd.dca_base = 0.0;
         let silent = render_sequence(params.clone(), 60, 16);
-        params.line2.dca_base = 1.0;
-        params.line2.dcw_base = 0.95;
+        params.line2.pd.dca_base = 1.0;
+        params.line2.pd.dcw_base = 0.95;
         let bright = render_sequence(params, 60, 16);
 
         assert!(
@@ -440,7 +435,7 @@ mod tests {
         let mut noise = SynthParams::default();
         noise.line_select = LineSelect::L1;
         noise.mod_mode = ModMode::Noise;
-        noise.line1.dca_base = 1.0;
+        noise.line1.pd.dca_base = 1.0;
 
         let mut normal = noise.clone();
         normal.mod_mode = ModMode::Normal;
@@ -448,7 +443,7 @@ mod tests {
         let mut ring = SynthParams::default();
         ring.line_select = LineSelect::L2;
         ring.mod_mode = ModMode::Ring;
-        ring.line2.dca_base = 1.0;
+        ring.line2.pd.dca_base = 1.0;
 
         let mut ring_normal = ring.clone();
         ring_normal.mod_mode = ModMode::Normal;
@@ -468,9 +463,9 @@ mod tests {
         let mut l1_prime = SynthParams::default();
         l1_prime.line_select = LineSelect::L1PlusL1Prime;
         l1_prime.mod_mode = ModMode::Normal;
-        l1_prime.line1.algo = crate::params::Algo::Saw;
-        l1_prime.line2.algo = crate::params::Algo::Square;
-        l1_prime.line2.dca_base = 0.0;
+        l1_prime.line1.pd.algo = crate::params::Algo::Saw;
+        l1_prime.line2.pd.algo = crate::params::Algo::Square;
+        l1_prime.line2.pd.dca_base = 0.0;
 
         let mut l2_prime = l1_prime.clone();
         l2_prime.line_select = LineSelect::L1PlusL2Prime;
@@ -487,8 +482,8 @@ mod tests {
         let mut normal = SynthParams::default();
         normal.line_select = LineSelect::L1PlusL2Prime;
         normal.mod_mode = ModMode::Normal;
-        normal.line1.algo = crate::params::Algo::Saw;
-        normal.line2.algo = crate::params::Algo::Square;
+        normal.line1.pd.algo = crate::params::Algo::Saw;
+        normal.line2.pd.algo = crate::params::Algo::Square;
 
         let mut ring = normal.clone();
         ring.mod_mode = ModMode::Ring;

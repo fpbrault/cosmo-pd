@@ -35,7 +35,6 @@ const ALGO_ORDER = [
 	"ripple",
 	"mirror",
 	"fof",
-	"karpunk",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -46,17 +45,17 @@ type FullParamsBlob = {
 	volume?: number;
 	line1?: {
 		[key: string]: unknown;
-		dcwBase?: number;
-		algo?: string;
-		algoControlsA?: { id: string; value: number }[];
-		algoControlsB?: { id: string; value: number }[];
+		engine?: {
+			dcwBase?: number;
+			algo?: string;
+		};
 	};
 	line2?: {
 		[key: string]: unknown;
-		dcwBase?: number;
-		algo?: string;
-		algoControlsA?: { id: string; value: number }[];
-		algoControlsB?: { id: string; value: number }[];
+		engine?: {
+			dcwBase?: number;
+			algo?: string;
+		};
 	};
 	modMatrix?: { routes?: unknown[] };
 	[key: string]: unknown;
@@ -65,16 +64,16 @@ type FullParamsBlob = {
 function extractScalarParams(params: FullParamsBlob): Record<string, number> {
 	const out: Record<string, number> = {};
 	if (typeof params.volume === "number") out.volume = params.volume;
-	if (typeof params.line1?.dcwBase === "number")
-		out.l1_dcw_base = params.line1.dcwBase;
-	if (typeof params.line1?.algo === "string") {
+	if (typeof params.line1?.engine?.dcwBase === "number")
+		out.l1_dcw_base = params.line1.engine.dcwBase;
+	if (typeof params.line1?.engine?.algo === "string") {
 		const idx = ALGO_ORDER.indexOf(
-			params.line1.algo as (typeof ALGO_ORDER)[number],
+			params.line1.engine.algo as (typeof ALGO_ORDER)[number],
 		);
 		if (idx >= 0) out.l1_warp_algo = idx;
 	}
-	if (typeof params.line2?.dcwBase === "number")
-		out.l2_dcw_base = params.line2.dcwBase;
+	if (typeof params.line2?.engine?.dcwBase === "number")
+		out.l2_dcw_base = params.line2.engine.dcwBase;
 	return out;
 }
 

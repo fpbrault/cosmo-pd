@@ -145,7 +145,10 @@ mod tests {
         let params = SynthParams {
             volume: 0.77,
             line1: cosmo_synth_engine::params::LineParams {
-                dcw_base: 0.5,
+                pd: cosmo_synth_engine::synthesis::pd::parameters::PdLineParams {
+                    dcw_base: 0.5,
+                    ..Default::default()
+                },
                 ..Default::default()
             },
             ..Default::default()
@@ -153,7 +156,7 @@ mod tests {
         let bytes = serde_json::to_vec(&params).unwrap();
         let result = deserialize_state(&bytes).unwrap();
         assert_eq!(result.synth_params.volume, 0.77);
-        assert_eq!(result.synth_params.line1.dcw_base, 0.5);
+        assert_eq!(result.synth_params.line1.pd.dcw_base, 0.5);
         assert_eq!(result.preset_session.active_preset_name_base, "");
         assert!(result.preset_session.loaded_preset_id.is_none());
         assert!(!result.preset_session.is_dirty);

@@ -455,12 +455,12 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
 
     match key {
         "volume" => Some(synth.volume),
-        "warpAAmount" => Some(line1.dcw_base),
-        "warpBAmount" => Some(line2.dcw_base),
-        "algoBlendA" => Some(line1.algo_blend),
-        "algoBlendB" => Some(line2.algo_blend),
-        "line1Level" => Some(line1.dca_base),
-        "line2Level" => Some(line2.dca_base),
+        "warpAAmount" => Some(line1.pd.dcw_base),
+        "warpBAmount" => Some(line2.pd.dcw_base),
+        "algoBlendA" => Some(line1.pd.algo_blend),
+        "algoBlendB" => Some(line2.pd.algo_blend),
+        "line1Level" => Some(line1.pd.dca_base),
+        "line2Level" => Some(line2.pd.dca_base),
         "line1Octave" => Some(line1.octave),
         "line2Octave" => Some(line2.octave),
         "line2DetuneOctave" => Some(line2.octave - line1.octave),

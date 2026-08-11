@@ -24,13 +24,19 @@ export function createSynthEngineSnapshot({
 			fxSlots: sanitizedParams.fxSlots,
 			line1: {
 				...sanitizedParams.line1,
-				algoControlsA: sanitizedParams.line1.algoControlsA ?? [],
-				algoControlsB: sanitizedParams.line1.algoControlsB ?? [],
+				engine: {
+					...sanitizedParams.line1.engine,
+					algoControlsA: sanitizedParams.line1.engine.algoControlsA ?? [],
+					algoControlsB: sanitizedParams.line1.engine.algoControlsB ?? [],
+				},
 			},
 			line2: {
 				...sanitizedParams.line2,
-				algoControlsA: sanitizedParams.line2.algoControlsA ?? [],
-				algoControlsB: sanitizedParams.line2.algoControlsB ?? [],
+				engine: {
+					...sanitizedParams.line2.engine,
+					algoControlsA: sanitizedParams.line2.engine.algoControlsA ?? [],
+					algoControlsB: sanitizedParams.line2.engine.algoControlsB ?? [],
+				},
 			},
 			modMatrix: {
 				routes: sanitizedParams.modMatrix?.routes ?? [],

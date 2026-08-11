@@ -26,7 +26,6 @@ describe("algoUiCatalog", () => {
 
 	it("reports whether an algorithm uses the base waveform", () => {
 		expect(algoUsesBaseWaveform("bend")).toBe(true);
-		expect(algoUsesBaseWaveform("karpunk")).toBe(false);
 	});
 
 	it("falls back when no translated behavior text exists", () => {

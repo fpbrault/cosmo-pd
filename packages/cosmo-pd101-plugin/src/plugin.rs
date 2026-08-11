@@ -26,13 +26,13 @@ use crate::runtime_state::{
 };
 #[cfg(test)]
 use arc_swap::ArcSwap;
-use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::SynthParams;
 #[cfg(test)]
 use cosmo_synth_engine::processor::CosmoInputEvent;
 use cosmo_synth_engine::processor::CosmoProcessor;
 #[cfg(test)]
 use cosmo_synth_engine::processor::state::RuntimeModSources;
+use cosmo_synth_engine::synthesis::pd::normalize_synth_params_envelopes_to_raw_if_human;
 #[cfg(test)]
 use crossbeam_queue::ArrayQueue;
 use truce::prelude::*;

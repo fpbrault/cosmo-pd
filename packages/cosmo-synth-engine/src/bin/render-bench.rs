@@ -5,12 +5,12 @@ use std::env;
 use std::sync::Arc;
 use std::time::Instant;
 
-use cosmo_synth_engine::envelope::normalize_synth_params_envelopes_to_raw_if_human;
 use cosmo_synth_engine::params::{
     Algo, AlgoControlId, AlgoControlValueV1, FxSlotConfig, FxSlotType, LineSelect, ModDestination,
     ModMatrix, ModRoute, ModSource, PolyMode, SynthParams,
 };
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
+use cosmo_synth_engine::synthesis::pd::normalize_synth_params_envelopes_to_raw_if_human;
 
 const DEFAULT_NOTES: [u8; 8] = [36, 40, 43, 48, 52, 55, 60, 64];
 
@@ -90,16 +90,16 @@ fn build_algo_bench_params(algo: Algo) -> SynthParams {
     let mut p = SynthParams::default();
     p.poly_mode = PolyMode::Poly8;
     p.line_select = LineSelect::L1PlusL2Prime;
-    p.line1.algo = algo;
-    p.line1.algo2 = None;
-    p.line1.algo_blend = 0.0;
-    p.line1.dcw_base = 0.85;
-    p.line1.dca_base = 0.85;
-    p.line2.algo = algo;
-    p.line2.algo2 = None;
-    p.line2.algo_blend = 0.0;
-    p.line2.dcw_base = 0.85;
-    p.line2.dca_base = 0.85;
+    p.line1.pd.algo = algo;
+    p.line1.pd.algo2 = None;
+    p.line1.pd.algo_blend = 0.0;
+    p.line1.pd.dcw_base = 0.85;
+    p.line1.pd.dca_base = 0.85;
+    p.line2.pd.algo = algo;
+    p.line2.pd.algo2 = None;
+    p.line2.pd.algo_blend = 0.0;
+    p.line2.pd.dcw_base = 0.85;
+    p.line2.pd.dca_base = 0.85;
     p.mod_matrix = ModMatrix::default();
     p.fx_slots = [
         FxSlotConfig::Empty,
@@ -223,16 +223,16 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Skew;
-                p.line1.algo2 = None;
-                p.line1.algo_blend = 0.0;
-                p.line1.dca_base = 0.85;
-                p.line1.dcw_base = 0.0;
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = None;
-                p.line2.algo_blend = 0.0;
-                p.line2.dca_base = 0.85;
-                p.line2.dcw_base = 0.0;
+                p.line1.pd.algo = Algo::Skew;
+                p.line1.pd.algo2 = None;
+                p.line1.pd.algo_blend = 0.0;
+                p.line1.pd.dca_base = 0.85;
+                p.line1.pd.dcw_base = 0.0;
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = None;
+                p.line2.pd.algo_blend = 0.0;
+                p.line2.pd.dca_base = 0.85;
+                p.line2.pd.dcw_base = 0.0;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
                     FxSlotConfig::Empty,
@@ -255,16 +255,16 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Karpunk);
-                p.line1.algo_blend = 0.65;
-                p.line1.dcw_base = 0.95;
-                p.line1.dca_base = 0.85;
-                p.line2.algo = Algo::Karpunk;
-                p.line2.algo2 = Some(Algo::Ripple);
-                p.line2.algo_blend = 0.65;
-                p.line2.dcw_base = 0.95;
-                p.line2.dca_base = 0.85;
+                p.line1.pd.algo = Algo::Fof;
+                p.line1.pd.algo2 = Some(Algo::Cheby);
+                p.line1.pd.algo_blend = 0.65;
+                p.line1.pd.dcw_base = 0.95;
+                p.line1.pd.dca_base = 0.85;
+                p.line2.pd.algo = Algo::Cheby;
+                p.line2.pd.algo2 = Some(Algo::Ripple);
+                p.line2.pd.algo_blend = 0.65;
+                p.line2.pd.dcw_base = 0.95;
+                p.line2.pd.dca_base = 0.85;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
                     FxSlotConfig::Empty,
@@ -287,12 +287,12 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Skew;
-                p.line1.algo2 = None;
-                p.line1.algo_blend = 0.0;
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = None;
-                p.line2.algo_blend = 0.0;
+                p.line1.pd.algo = Algo::Skew;
+                p.line1.pd.algo2 = None;
+                p.line1.pd.algo_blend = 0.0;
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = None;
+                p.line2.pd.algo_blend = 0.0;
                 p.mod_matrix = heavy_mod_matrix();
                 p.lfo.rate = 7.5;
                 p.lfo2.rate = 5.25;
@@ -318,12 +318,12 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Skew;
-                p.line1.algo2 = None;
-                p.line1.algo_blend = 0.0;
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = None;
-                p.line2.algo_blend = 0.0;
+                p.line1.pd.algo = Algo::Skew;
+                p.line1.pd.algo2 = None;
+                p.line1.pd.algo_blend = 0.0;
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = None;
+                p.line2.pd.algo_blend = 0.0;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
                     FxSlotConfig::default_for_type(FxSlotType::Chorus),
@@ -346,14 +346,14 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Mono;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Saw;
-                p.line1.algo2 = Some(Algo::Skew);
-                p.line1.algo_blend = 0.15;
-                p.line1.dca_base = 0.85;
-                p.line2.algo = Algo::Pulse;
-                p.line2.algo2 = Some(Algo::Square);
-                p.line2.algo_blend = 0.2;
-                p.line2.dca_base = 0.65;
+                p.line1.pd.algo = Algo::Saw;
+                p.line1.pd.algo2 = Some(Algo::Skew);
+                p.line1.pd.algo_blend = 0.15;
+                p.line1.pd.dca_base = 0.85;
+                p.line2.pd.algo = Algo::Pulse;
+                p.line2.pd.algo2 = Some(Algo::Square);
+                p.line2.pd.algo_blend = 0.2;
+                p.line2.pd.dca_base = 0.65;
                 p.fx_slots = [
                     FxSlotConfig::default_for_type(FxSlotType::Compressor),
                     FxSlotConfig::Empty,
@@ -374,16 +374,16 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Ripple);
-                p.line1.algo_blend = 0.55;
-                p.line1.dcw_base = 0.85;
-                p.line1.dca_base = 0.8;
-                p.line2.algo = Algo::MultiSine;
-                p.line2.algo2 = Some(Algo::SawPulse);
-                p.line2.algo_blend = 0.45;
-                p.line2.dcw_base = 0.9;
-                p.line2.dca_base = 0.72;
+                p.line1.pd.algo = Algo::Fof;
+                p.line1.pd.algo2 = Some(Algo::Ripple);
+                p.line1.pd.algo_blend = 0.55;
+                p.line1.pd.dcw_base = 0.85;
+                p.line1.pd.dca_base = 0.8;
+                p.line2.pd.algo = Algo::MultiSine;
+                p.line2.pd.algo2 = Some(Algo::SawPulse);
+                p.line2.pd.algo_blend = 0.45;
+                p.line2.pd.dcw_base = 0.9;
+                p.line2.pd.dca_base = 0.72;
                 p.lfo.rate = 4.2;
                 p.lfo2.rate = 6.0;
                 p.random.rate = 9.0;
@@ -408,12 +408,12 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Karpunk;
-                p.line1.algo2 = Some(Algo::Fold);
-                p.line1.algo_blend = 0.6;
-                p.line2.algo = Algo::Twist;
-                p.line2.algo2 = Some(Algo::Clip);
-                p.line2.algo_blend = 0.5;
+                p.line1.pd.algo = Algo::Cheby;
+                p.line1.pd.algo2 = Some(Algo::Fold);
+                p.line1.pd.algo_blend = 0.6;
+                p.line2.pd.algo = Algo::Twist;
+                p.line2.pd.algo2 = Some(Algo::Clip);
+                p.line2.pd.algo_blend = 0.5;
                 p.lfo.rate = 8.0;
                 p.lfo2.rate = 12.0;
                 p.random.rate = 16.0;
@@ -473,14 +473,14 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Karpunk);
-                p.line1.algo_blend = 0.65;
-                p.line1.dcw_base = 0.95;
-                p.line2.algo = Algo::Karpunk;
-                p.line2.algo2 = Some(Algo::Ripple);
-                p.line2.algo_blend = 0.65;
-                p.line2.dcw_base = 0.95;
+                p.line1.pd.algo = Algo::Fof;
+                p.line1.pd.algo2 = Some(Algo::Cheby);
+                p.line1.pd.algo_blend = 0.65;
+                p.line1.pd.dcw_base = 0.95;
+                p.line2.pd.algo = Algo::Cheby;
+                p.line2.pd.algo2 = Some(Algo::Ripple);
+                p.line2.pd.algo_blend = 0.65;
+                p.line2.pd.dcw_base = 0.95;
                 p.mod_matrix = heavy_mod_matrix();
                 p.lfo.rate = 9.0;
                 p.lfo2.rate = 9.0;
@@ -505,10 +505,10 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Skew;
-                p.line1.algo2 = None;
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = None;
+                p.line1.pd.algo = Algo::Skew;
+                p.line1.pd.algo2 = None;
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = None;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
                     FxSlotConfig::Empty,
@@ -525,10 +525,10 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: Some(|| {
                 let mut a = SynthParams::default();
                 a.poly_mode = PolyMode::Poly8;
-                a.line1.algo = Algo::Skew;
-                a.line1.algo2 = None;
-                a.line2.algo = Algo::Skew;
-                a.line2.algo2 = None;
+                a.line1.pd.algo = Algo::Skew;
+                a.line1.pd.algo2 = None;
+                a.line2.pd.algo = Algo::Skew;
+                a.line2.pd.algo2 = None;
                 a.volume = 0.35;
                 a.lfo.rate = 2.0;
 
@@ -537,8 +537,8 @@ fn scenarios() -> Vec<Scenario> {
                 b.lfo.rate = 7.5;
                 b.lfo2.rate = 5.0;
                 b.random.rate = 9.0;
-                b.line1.dcw_base = 0.6;
-                b.line2.dcw_base = 0.4;
+                b.line1.pd.dcw_base = 0.6;
+                b.line2.pd.dcw_base = 0.4;
 
                 vec![a, b]
             }),
@@ -550,10 +550,10 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Skew;
-                p.line1.algo2 = None;
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = None;
+                p.line1.pd.algo = Algo::Skew;
+                p.line1.pd.algo2 = None;
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = None;
                 p.mod_matrix = ModMatrix::default();
                 p.fx_slots = [
                     FxSlotConfig::Empty,
@@ -576,31 +576,31 @@ fn scenarios() -> Vec<Scenario> {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
-                p.line1.algo = Algo::Cz101;
-                p.line1.algo2 = Some(Algo::Sync);
-                p.line1.algo_blend = 0.55;
-                p.line1.algo_controls_a = algo_control_slots(&[
+                p.line1.pd.algo = Algo::Cz101;
+                p.line1.pd.algo2 = Some(Algo::Sync);
+                p.line1.pd.algo_blend = 0.55;
+                p.line1.pd.algo_controls_a = algo_control_slots(&[
                     (AlgoControlId::Preset, 6.0),
                     (AlgoControlId::Waveform1, 5.0),
                     (AlgoControlId::Waveform2, 6.0),
                     (AlgoControlId::WindowFunction, 3.0),
                 ]);
-                p.line1.algo_controls_b = algo_control_slots(&[
+                p.line1.pd.algo_controls_b = algo_control_slots(&[
                     (AlgoControlId::SyncRatio, 0.7),
                     (AlgoControlId::SyncPhase, 0.2),
                     (AlgoControlId::SyncCurve, 0.85),
                     (AlgoControlId::SyncWindow, 0.65),
                 ]);
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = Some(Algo::Bend);
-                p.line2.algo_blend = 0.45;
-                p.line2.algo_controls_a = algo_control_slots(&[
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = Some(Algo::Bend);
+                p.line2.pd.algo_blend = 0.45;
+                p.line2.pd.algo_controls_a = algo_control_slots(&[
                     (AlgoControlId::SkewBias, 0.55),
                     (AlgoControlId::SkewCurve, 0.72),
                     (AlgoControlId::SkewSpread, 0.48),
                     (AlgoControlId::SkewTilt, 0.38),
                 ]);
-                p.line2.algo_controls_b = algo_control_slots(&[
+                p.line2.pd.algo_controls_b = algo_control_slots(&[
                     (AlgoControlId::BendCurve, 0.84),
                     (AlgoControlId::BendBias, 0.44),
                     (AlgoControlId::BendKnee, 0.36),
@@ -629,10 +629,10 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Skew;
-                p.line1.algo2 = None;
-                p.line2.algo = Algo::Skew;
-                p.line2.algo2 = None;
+                p.line1.pd.algo = Algo::Skew;
+                p.line1.pd.algo2 = None;
+                p.line2.pd.algo = Algo::Skew;
+                p.line2.pd.algo2 = None;
                 p.lfo.rate = 20.0; // Fast LFO (high sine sample rate)
                 p.lfo2.rate = 18.5;
                 p.random.rate = 0.5; // Minimal random
@@ -657,8 +657,8 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Skew;
-                p.line2.algo = Algo::Saw;
+                p.line1.pd.algo = Algo::Skew;
+                p.line2.pd.algo = Algo::Saw;
                 p.lfo.rate = 3.5;
                 p.lfo2.rate = 2.75;
                 p.mod_matrix = ModMatrix {
@@ -698,12 +698,12 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::MultiSine;
-                p.line1.algo2 = Some(Algo::Saw);
-                p.line1.algo_blend = 0.5;
-                p.line2.algo = Algo::Pulse;
-                p.line2.algo2 = Some(Algo::Skew);
-                p.line2.algo_blend = 0.3;
+                p.line1.pd.algo = Algo::MultiSine;
+                p.line1.pd.algo2 = Some(Algo::Saw);
+                p.line1.pd.algo_blend = 0.5;
+                p.line2.pd.algo = Algo::Pulse;
+                p.line2.pd.algo2 = Some(Algo::Skew);
+                p.line2.pd.algo_blend = 0.3;
                 p.lfo.rate = 4.0;
                 p.lfo2.rate = 3.25;
                 p.mod_matrix = ModMatrix::default();
@@ -727,12 +727,12 @@ fn scenarios() -> Vec<Scenario> {
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::MultiSine);
-                p.line1.algo_blend = 0.55;
-                p.line2.algo = Algo::Karpunk;
-                p.line2.algo2 = Some(Algo::Saw);
-                p.line2.algo_blend = 0.45;
+                p.line1.pd.algo = Algo::Fof;
+                p.line1.pd.algo2 = Some(Algo::MultiSine);
+                p.line1.pd.algo_blend = 0.55;
+                p.line2.pd.algo = Algo::Cheby;
+                p.line2.pd.algo2 = Some(Algo::Saw);
+                p.line2.pd.algo_blend = 0.45;
                 p.lfo.rate = 7.5;
                 p.lfo2.rate = 5.5;
                 p.random.rate = 12.0;
@@ -899,14 +899,6 @@ fn scenarios() -> Vec<Scenario> {
             name: "algo-fof",
             description: "Per-algo benchmark: Fof",
             build_params: || build_algo_bench_params(Algo::Fof),
-            note_churn_blocks: None,
-            param_swap_blocks: None,
-            build_param_variants: None,
-        },
-        Scenario {
-            name: "algo-karpunk",
-            description: "Per-algo benchmark: Karpunk",
-            build_params: || build_algo_bench_params(Algo::Karpunk),
             note_churn_blocks: None,
             param_swap_blocks: None,
             build_param_variants: None,
@@ -1091,7 +1083,6 @@ fn algo_matrix() -> Vec<&'static str> {
         "algo-ripple",
         "algo-mirror",
         "algo-fof",
-        "algo-karpunk",
         "algo-terrain",
         "algo-stutter",
         "algo-cheby",

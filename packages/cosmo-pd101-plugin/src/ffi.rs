@@ -6,15 +6,15 @@ use std::slice;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
-use cosmo_synth_engine::envelope::{
-    compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human,
-};
 use cosmo_synth_engine::params::{
     EngineParamReadoutFormatV1, SynthParams, engine_param_default_v1, engine_param_ui_meta_v1,
     set_parameter_value_by_key,
 };
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
 use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
+use cosmo_synth_engine::synthesis::pd::{
+    compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human,
+};
 use crossbeam_queue::ArrayQueue;
 
 use crate::preset_library::PresetLibraryEntry;
@@ -676,12 +676,12 @@ fn write_c_char_array<const N: usize>(dest: &mut [c_char; N], value: &str) {
 fn parameter_value(params: &SynthParams, key: &str) -> Option<f32> {
     match key {
         "volume" => Some(params.volume),
-        "warpAAmount" => Some(params.line1.dcw_base),
-        "warpBAmount" => Some(params.line2.dcw_base),
-        "algoBlendA" => Some(params.line1.algo_blend),
-        "algoBlendB" => Some(params.line2.algo_blend),
-        "line1Level" => Some(params.line1.dca_base),
-        "line2Level" => Some(params.line2.dca_base),
+        "warpAAmount" => Some(params.line1.pd.dcw_base),
+        "warpBAmount" => Some(params.line2.pd.dcw_base),
+        "algoBlendA" => Some(params.line1.pd.algo_blend),
+        "algoBlendB" => Some(params.line2.pd.algo_blend),
+        "line1Level" => Some(params.line1.pd.dca_base),
+        "line2Level" => Some(params.line2.pd.dca_base),
         "line1Octave" => Some(params.line1.octave),
         "line2Octave" => Some(params.line2.octave),
         "line2DetuneNote" => Some(params.line2.detune_note),

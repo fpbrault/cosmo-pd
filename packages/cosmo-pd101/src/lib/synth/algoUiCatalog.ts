@@ -14,8 +14,6 @@ type PdAlgoDef = {
 	icon: string;
 };
 
-const NON_BASE_WAVE_ALGOS = new Set<PdAlgo>(["karpunk"]);
-
 export const PD_ALGOS: PdAlgoDef[] = [
 	...ALGO_UI_CATALOG_V1.filter((entry) => entry.visible).map((entry) => {
 		const resolved = resolveAlgoRef(entry.id);
@@ -30,8 +28,8 @@ export const PD_ALGOS: PdAlgoDef[] = [
 	}),
 ];
 
-export function algoUsesBaseWaveform(algo: PdAlgo): boolean {
-	return !NON_BASE_WAVE_ALGOS.has(algo);
+export function algoUsesBaseWaveform(_algo: PdAlgo): boolean {
+	return true;
 }
 
 export function getPdAlgoBehaviorDescription(algo: PdAlgo): string {

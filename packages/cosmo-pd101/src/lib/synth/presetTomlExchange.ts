@@ -59,13 +59,11 @@ const EMPTY_FX_SLOT: FxSlotConfig = { type: "empty" };
 const SECTION_ORDER = [
 	"params",
 	"params.line1",
-	"params.line1.dcoEnv",
-	"params.line1.dcwEnv",
-	"params.line1.dcaEnv",
+	"params.line1.engine",
+	"params.line1.envelopes",
 	"params.line2",
-	"params.line2.dcoEnv",
-	"params.line2.dcwEnv",
-	"params.line2.dcaEnv",
+	"params.line2.engine",
+	"params.line2.envelopes",
 	"params.portamento",
 	"params.lfo",
 	"params.lfo2",
@@ -208,8 +206,58 @@ function normalizeParsedParams(value: unknown): SynthParams | null {
 
 	for (const lineKey of ["line1", "line2"]) {
 		const line = params[lineKey];
-		if (isRecord(line) && !("algo2" in line)) {
-			line.algo2 = null;
+		if (!isRecord(line)) {
+			continue;
+		}
+
+		if (!("envelopes" in line)) {
+			const pitch = line.dcoEnv;
+			const timbre = line.dcwEnv;
+			const amplitude = line.dcaEnv;
+			if (
+				pitch !== undefined &&
+				timbre !== undefined &&
+				amplitude !== undefined
+			) {
+				line.envelopes = {
+					pitch: { type: "step", params: pitch },
+					timbre: { type: "step", params: timbre },
+					amplitude: { type: "step", params: amplitude },
+				};
+				delete line.dcoEnv;
+				delete line.dcwEnv;
+				delete line.dcaEnv;
+			}
+		}
+
+		if (!("engine" in line)) {
+			const engine: Record<string, unknown> = {};
+			for (const key of [
+				"algo",
+				"algo2",
+				"algoBlend",
+				"baseWaveformA",
+				"baseWaveformB",
+				"window",
+				"dcaBase",
+				"dcwBase",
+				"modulation",
+				"dcwKeyFollow",
+				"dcaKeyFollow",
+				"algoControlsA",
+				"algoControlsB",
+			]) {
+				if (line[key] !== undefined) {
+					engine[key] = line[key];
+					delete line[key];
+				}
+			}
+			line.engine = engine;
+		}
+
+		const engine = line.engine;
+		if (isRecord(engine) && !("algo2" in engine)) {
+			engine.algo2 = null;
 		}
 	}
 

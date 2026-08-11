@@ -7,18 +7,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(unsafe_code)]
 
-pub mod default_envelopes;
 pub mod dsp_utils;
 pub mod envelope;
-pub mod envelope_map;
 pub mod fx;
-pub mod generators;
 pub mod lookup_tables;
 pub mod module_presets;
 pub mod params;
 pub mod preset_wire;
 pub mod processor;
-mod render_cache;
 pub mod simd;
 pub mod synthesis;
 pub mod voice;

@@ -9,6 +9,7 @@ vi.mock("@/lib/synth/algoRef", () => ({
 }));
 
 function createSnapshot(overrides?: Partial<SynthParams>): SynthEngineSnapshot {
+	const envelope = { type: "step", params: {} };
 	return {
 		params: {
 			lineSelect: "L1",
@@ -16,69 +17,43 @@ function createSnapshot(overrides?: Partial<SynthParams>): SynthEngineSnapshot {
 			octave: 3,
 			line1: {
 				synthesisMethod: "pd",
-				algo: "saw",
-				algo2: null,
-				algoBlend: 0,
-				window: "off",
-				dcaBase: 0.5,
-				dcwBase: 0.5,
-				modulation: 0,
+				envelopes: { pitch: envelope, timbre: envelope, amplitude: envelope },
+				engine: {
+					algo: "saw",
+					algo2: null,
+					algoBlend: 0,
+					window: "off",
+					dcaBase: 0.5,
+					dcwBase: 0.5,
+					modulation: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
+					algoControlsA: [],
+					algoControlsB: [],
+				},
+				detuneNote: 0,
+				detuneFine: 0,
 				octave: 3,
-				dcoEnv: {
-					steps: [{ level: 127, rate: 0 }],
-					sustainStep: 0,
-					stepCount: 1,
-					loop: false,
-				},
-				dcwEnv: {
-					steps: [{ level: 127, rate: 0 }],
-					sustainStep: 0,
-					stepCount: 1,
-					loop: false,
-				},
-				dcaEnv: {
-					steps: [{ level: 127, rate: 0 }],
-					sustainStep: 0,
-					stepCount: 1,
-					loop: false,
-				},
-				dcwKeyFollow: 0,
-				dcaKeyFollow: 0,
-				algoControlsA: [],
-				algoControlsB: [],
 			},
 			line2: {
 				synthesisMethod: "pd",
-				algo: "square",
-				algo2: null,
-				algoBlend: 0,
-				window: "off",
-				dcaBase: 0.5,
-				dcwBase: 0.5,
-				modulation: 0,
+				envelopes: { pitch: envelope, timbre: envelope, amplitude: envelope },
+				engine: {
+					algo: "square",
+					algo2: null,
+					algoBlend: 0,
+					window: "off",
+					dcaBase: 0.5,
+					dcwBase: 0.5,
+					modulation: 0,
+					dcwKeyFollow: 0,
+					dcaKeyFollow: 0,
+					algoControlsA: [],
+					algoControlsB: [],
+				},
+				detuneNote: 0,
+				detuneFine: 0,
 				octave: 3,
-				dcoEnv: {
-					steps: [{ level: 127, rate: 0 }],
-					sustainStep: 0,
-					stepCount: 1,
-					loop: false,
-				},
-				dcwEnv: {
-					steps: [{ level: 127, rate: 0 }],
-					sustainStep: 0,
-					stepCount: 1,
-					loop: false,
-				},
-				dcaEnv: {
-					steps: [{ level: 127, rate: 0 }],
-					sustainStep: 0,
-					stepCount: 1,
-					loop: false,
-				},
-				dcwKeyFollow: 0,
-				dcaKeyFollow: 0,
-				algoControlsA: [],
-				algoControlsB: [],
 			},
 			frequency: 440,
 			volume: 0.7,
@@ -136,8 +111,8 @@ describe("createWorkletSynthEngineAdapter", () => {
 		const snapshot = createSnapshot();
 		adapter.sync(snapshot);
 		expect(paramsRef.current).toBeDefined();
-		expect(paramsRef.current.line1.algo).toBe("saw");
-		expect(paramsRef.current.line2.algo).toBe("square");
+		expect(paramsRef.current.line1.engine.algo).toBe("saw");
+		expect(paramsRef.current.line2.engine.algo).toBe("square");
 		expect(paramsRef.current.line1.synthesisMethod).toBe("pd");
 		expect(paramsRef.current.line2.synthesisMethod).toBe("pd");
 	});
@@ -149,7 +124,7 @@ describe("createWorkletSynthEngineAdapter", () => {
 			paramsRef,
 		});
 		adapter.sync(createSnapshot());
-		expect(paramsRef.current.line1.algo).toBe("saw");
+		expect(paramsRef.current.line1.engine.algo).toBe("saw");
 	});
 
 	it("sync postsMessage with correct type and params when workletNode is available", () => {
@@ -164,12 +139,12 @@ describe("createWorkletSynthEngineAdapter", () => {
 			type: "setParams",
 			params: expect.objectContaining({
 				line1: expect.objectContaining({
-					algo: "saw",
 					synthesisMethod: "pd",
+					engine: expect.objectContaining({ algo: "saw" }),
 				}),
 				line2: expect.objectContaining({
-					algo: "square",
 					synthesisMethod: "pd",
+					engine: expect.objectContaining({ algo: "square" }),
 				}),
 			}),
 		});
@@ -219,7 +194,7 @@ describe("createWorkletSynthEngineAdapter", () => {
 			paramsRef,
 		});
 		adapter.sync(createSnapshot());
-		expect(paramsRef.current.line1.window).toBe("triangle");
-		expect(paramsRef.current.line2.window).toBe("pulse");
+		expect(paramsRef.current.line1.engine.window).toBe("triangle");
+		expect(paramsRef.current.line2.engine.window).toBe("pulse");
 	});
 });

@@ -6,6 +6,7 @@ mod cz_dac;
 mod input;
 mod notes;
 mod process;
+pub(crate) mod render_plan;
 pub mod state;
 pub mod utils;
 
@@ -16,18 +17,19 @@ use alloc::sync::Arc;
 use arrayvec::ArrayVec;
 use core::array;
 
+use self::render_plan::CompiledSynthParams;
 use crate::dsp_utils::random_hold_value;
-use crate::envelope::{
-    EnvelopeTimingCache, compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human,
-};
+use crate::envelope::EnvelopeTimingCache;
 use crate::fx::FxChain;
 use crate::module_presets;
 use crate::params::{
     DEFAULT_VOICE_LIMIT, FxSlotConfig, FxSlotType, LineParams, MAX_VOICES, ModEnvRetrigMode,
     SynthParams,
 };
-use crate::render_cache::CompiledSynthParams;
 use crate::simd::{SimdBackend, detect_simd_backend};
+use crate::synthesis::pd::envelope_map::{
+    compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human, timing_cache,
+};
 use crate::voice::{AdsrEnv, Voice};
 
 use self::cz_dac::CzDacColor;
@@ -125,7 +127,7 @@ impl CosmoProcessor {
             compiled_params_dirty: false,
             line1_scratch: LineParams::default(),
             line2_scratch: LineParams::default(),
-            envelope_timing: EnvelopeTimingCache::new(sample_rate),
+            envelope_timing: timing_cache(sample_rate),
             voice_limit: DEFAULT_VOICE_LIMIT,
             render_voice_limit: DEFAULT_VOICE_LIMIT,
             shared_mod_env: AdsrEnv::default(),
@@ -195,48 +197,48 @@ impl CosmoProcessor {
                 },
                 line1: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dco.output,
-                        step: voice.line1_env.dco.step,
-                        releasing: voice.line1_env.dco.releasing,
-                        step_pos: voice.line1_env.dco.step_pos,
-                        prev_level: voice.line1_env.dco.prev_level,
+                        value: voice.line1_envelopes.slots[0].output,
+                        step: voice.line1_envelopes.slots[0].step,
+                        releasing: voice.line1_envelopes.slots[0].releasing,
+                        step_pos: voice.line1_envelopes.slots[0].step_pos,
+                        prev_level: voice.line1_envelopes.slots[0].prev_level,
                     },
                     dcw: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dcw.output,
-                        step: voice.line1_env.dcw.step,
-                        releasing: voice.line1_env.dcw.releasing,
-                        step_pos: voice.line1_env.dcw.step_pos,
-                        prev_level: voice.line1_env.dcw.prev_level,
+                        value: voice.line1_envelopes.slots[1].output,
+                        step: voice.line1_envelopes.slots[1].step,
+                        releasing: voice.line1_envelopes.slots[1].releasing,
+                        step_pos: voice.line1_envelopes.slots[1].step_pos,
+                        prev_level: voice.line1_envelopes.slots[1].prev_level,
                     },
                     dca: RuntimeVoiceEnvState {
-                        value: voice.line1_env.dca.output,
-                        step: voice.line1_env.dca.step,
-                        releasing: voice.line1_env.dca.releasing,
-                        step_pos: voice.line1_env.dca.step_pos,
-                        prev_level: voice.line1_env.dca.prev_level,
+                        value: voice.line1_envelopes.slots[2].output,
+                        step: voice.line1_envelopes.slots[2].step,
+                        releasing: voice.line1_envelopes.slots[2].releasing,
+                        step_pos: voice.line1_envelopes.slots[2].step_pos,
+                        prev_level: voice.line1_envelopes.slots[2].prev_level,
                     },
                 },
                 line2: RuntimeVoiceLineState {
                     dco: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dco.output,
-                        step: voice.line2_env.dco.step,
-                        releasing: voice.line2_env.dco.releasing,
-                        step_pos: voice.line2_env.dco.step_pos,
-                        prev_level: voice.line2_env.dco.prev_level,
+                        value: voice.line2_envelopes.slots[0].output,
+                        step: voice.line2_envelopes.slots[0].step,
+                        releasing: voice.line2_envelopes.slots[0].releasing,
+                        step_pos: voice.line2_envelopes.slots[0].step_pos,
+                        prev_level: voice.line2_envelopes.slots[0].prev_level,
                     },
                     dcw: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dcw.output,
-                        step: voice.line2_env.dcw.step,
-                        releasing: voice.line2_env.dcw.releasing,
-                        step_pos: voice.line2_env.dcw.step_pos,
-                        prev_level: voice.line2_env.dcw.prev_level,
+                        value: voice.line2_envelopes.slots[1].output,
+                        step: voice.line2_envelopes.slots[1].step,
+                        releasing: voice.line2_envelopes.slots[1].releasing,
+                        step_pos: voice.line2_envelopes.slots[1].step_pos,
+                        prev_level: voice.line2_envelopes.slots[1].prev_level,
                     },
                     dca: RuntimeVoiceEnvState {
-                        value: voice.line2_env.dca.output,
-                        step: voice.line2_env.dca.step,
-                        releasing: voice.line2_env.dca.releasing,
-                        step_pos: voice.line2_env.dca.step_pos,
-                        prev_level: voice.line2_env.dca.prev_level,
+                        value: voice.line2_envelopes.slots[2].output,
+                        step: voice.line2_envelopes.slots[2].step,
+                        releasing: voice.line2_envelopes.slots[2].releasing,
+                        step_pos: voice.line2_envelopes.slots[2].step_pos,
+                        prev_level: voice.line2_envelopes.slots[2].prev_level,
                     },
                 },
             };
@@ -363,7 +365,7 @@ impl CosmoProcessor {
         self.host_transport_position_beats = 0.0;
         self.line1_scratch = self.params.line1;
         self.line2_scratch = self.params.line2;
-        self.envelope_timing = EnvelopeTimingCache::new(self.sample_rate);
+        self.envelope_timing = timing_cache(self.sample_rate);
         self.render_voice_limit = self.voice_limit;
         self.rebuild_compiled_params();
     }
@@ -524,12 +526,12 @@ impl CosmoProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
     use crate::params::{
-        Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, FxSlotConfig, LineSelect,
-        ModDestination, ModEnvMode, ModEnvRetrigMode, ModRoute, ModSource, PolyMode,
-        ShimmerVerbParams, StepEnvData, VibratoParams,
+        Algo, AlgoControlId, AlgoControlValueV1, DelayParams, EnvStep, EnvelopeProgramV1,
+        FxSlotConfig, LineSelect, ModDestination, ModEnvMode, ModEnvRetrigMode, ModRoute,
+        ModSource, PolyMode, ShimmerVerbParams, StepEnvData, VibratoParams,
     };
+    use crate::synthesis::pd::envelope_map::{EnvelopeKind, human_level_to_raw, human_rate_to_raw};
 
     fn active_voice_indices_for_note(proc: &CosmoProcessor, note: u8) -> Vec<usize> {
         proc.voices
@@ -557,10 +559,10 @@ mod tests {
         proc.set_voice_limit(1);
         proc.params_mut().poly_mode = PolyMode::Poly8;
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.dca_base = 1.0;
-        proc.params_mut().line1.dcw_base = 1.0;
-        proc.params_mut().line1.algo = Algo::Saw;
-        proc.params_mut().line1.dca_env = StepEnvData {
+        proc.params_mut().line1.pd.dca_base = 1.0;
+        proc.params_mut().line1.pd.dcw_base = 1.0;
+        proc.params_mut().line1.pd.algo = Algo::Saw;
+        proc.params_mut().line1.envelopes.amplitude = EnvelopeProgramV1::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),
                 dca_step(99, 99),
@@ -574,7 +576,7 @@ mod tests {
             sustain_step: 0,
             step_count: 2,
             loop_: false,
-        };
+        });
     }
 
     fn render_until_voice_sample_exceeds(proc: &mut CosmoProcessor, threshold: f32) -> f32 {
@@ -752,12 +754,12 @@ mod tests {
     fn set_shared_params_rebuilds_compiled_cz_controls() {
         let mut proc = CosmoProcessor::new(48_000.0);
         let mut params = SynthParams::default();
-        params.line1.algo = Algo::Cz101;
-        params.line1.algo_controls_a[0] = Some(AlgoControlValueV1 {
+        params.line1.pd.algo = Algo::Cz101;
+        params.line1.pd.algo_controls_a[0] = Some(AlgoControlValueV1 {
             id: AlgoControlId::Waveform1,
             value: 1.0,
         });
-        params.line1.algo_controls_a[1] = Some(AlgoControlValueV1 {
+        params.line1.pd.algo_controls_a[1] = Some(AlgoControlValueV1 {
             id: AlgoControlId::Waveform2,
             value: 2.0,
         });
@@ -779,11 +781,11 @@ mod tests {
         fn render_sum(mut params: SynthParams) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             params.line_select = LineSelect::L1;
-            params.line1.algo = Algo::Skew;
-            params.line1.algo2 = Some(Algo::Saw);
-            params.line1.algo_blend = 0.0;
-            params.line1.dca_base = 0.9;
-            params.line1.dcw_base = 0.7;
+            params.line1.pd.algo = Algo::Skew;
+            params.line1.pd.algo2 = Some(Algo::Saw);
+            params.line1.pd.algo_blend = 0.0;
+            params.line1.pd.dca_base = 0.9;
+            params.line1.pd.dcw_base = 0.7;
             proc.set_params(params);
             proc.set_mod_wheel(1.0);
             proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
@@ -854,9 +856,9 @@ mod tests {
         fn render_sum(with_route: bool) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             proc.params_mut().line_select = LineSelect::L1;
-            proc.params_mut().line1.dca_base = 1.0;
-            proc.params_mut().line1.dcw_base = 0.8;
-            proc.params_mut().line1.algo = Algo::Skew;
+            proc.params_mut().line1.pd.dca_base = 1.0;
+            proc.params_mut().line1.pd.dcw_base = 0.8;
+            proc.params_mut().line1.pd.algo = Algo::Skew;
             proc.params_mut().fx_slots[0] = FxSlotConfig::Delay(DelayParams {
                 enabled: true,
                 time: 0.1,
@@ -896,9 +898,9 @@ mod tests {
         fn render_sum(with_route: bool) -> f32 {
             let mut proc = CosmoProcessor::new(48_000.0);
             proc.params_mut().line_select = LineSelect::L1;
-            proc.params_mut().line1.dca_base = 1.0;
-            proc.params_mut().line1.dcw_base = 0.8;
-            proc.params_mut().line1.algo = Algo::Skew;
+            proc.params_mut().line1.pd.dca_base = 1.0;
+            proc.params_mut().line1.pd.dcw_base = 0.8;
+            proc.params_mut().line1.pd.algo = Algo::Skew;
             proc.params_mut().fx_slots[0] = FxSlotConfig::Reverb(crate::params::ReverbParams {
                 enabled: true,
                 mix: 0.0,
@@ -1014,7 +1016,7 @@ mod tests {
         proc.note_on(60, utils::midi_note_to_freq(60), 1.0);
         let previous_sample = render_until_voice_sample_exceeds(&mut proc, 0.05);
 
-        proc.params_mut().line1.dca_base = 0.0;
+        proc.params_mut().line1.pd.dca_base = 0.0;
         proc.note_on(72, utils::midi_note_to_freq(72), 1.0);
 
         let mut block = [0.0_f32; 1];
@@ -1046,13 +1048,13 @@ mod tests {
 
         let mut scratch = [0.0_f32; 32];
         proc.process(&mut scratch);
-        let previous_step_pos = proc.voices[voice_idx].line1_env.dca.step_pos;
+        let previous_step_pos = proc.voices[voice_idx].line1_envelopes.slots[2].step_pos;
 
         proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
 
         assert_eq!(proc.find_voice_for_note(note), Some(voice_idx));
         assert!(
-            proc.voices[voice_idx].line1_env.dca.step_pos < previous_step_pos,
+            proc.voices[voice_idx].line1_envelopes.slots[2].step_pos < previous_step_pos,
             "same-note note-on should retrigger the active voice",
         );
     }
@@ -1061,9 +1063,9 @@ mod tests {
     fn retriggering_bright_voice_preserves_dcw_smoothing_state() {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.dcw_base = 1.0;
-        proc.params_mut().line1.dca_base = 1.0;
-        proc.params_mut().line1.algo = Algo::Saw;
+        proc.params_mut().line1.pd.dcw_base = 1.0;
+        proc.params_mut().line1.pd.dca_base = 1.0;
+        proc.params_mut().line1.pd.algo = Algo::Saw;
 
         let note = 60_u8;
         proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
@@ -1228,7 +1230,7 @@ mod tests {
 
         let mut scratch = [0.0_f32; 32];
         proc.process(&mut scratch);
-        let previous_step_pos = proc.voices[original_voice_idx].line1_env.dca.step_pos;
+        let previous_step_pos = proc.voices[original_voice_idx].line1_envelopes.slots[2].step_pos;
 
         proc.set_sustain(true);
         proc.note_off(first_note);
@@ -1243,7 +1245,7 @@ mod tests {
         assert_eq!(proc.voices[reused_voice_idx].note, Some(next_note));
         assert_eq!(proc.voices[reused_voice_idx].glide_progress, 0.0);
         assert!(
-            proc.voices[reused_voice_idx].line1_env.dca.step_pos >= previous_step_pos,
+            proc.voices[reused_voice_idx].line1_envelopes.slots[2].step_pos >= previous_step_pos,
             "legato takeover should not retrigger the envelope from zero",
         );
     }
@@ -1261,7 +1263,7 @@ mod tests {
 
         let mut scratch = [0.0_f32; 32];
         proc.process(&mut scratch);
-        let previous_step_pos = proc.voices[original_voice_idx].line1_env.dca.step_pos;
+        let previous_step_pos = proc.voices[original_voice_idx].line1_envelopes.slots[2].step_pos;
 
         proc.set_sustain(true);
         proc.note_off(first_note);
@@ -1275,7 +1277,7 @@ mod tests {
             .expect("missing retriggered note");
         assert_eq!(active_voice_idx, original_voice_idx);
         assert!(
-            proc.voices[active_voice_idx].line1_env.dca.step_pos < previous_step_pos,
+            proc.voices[active_voice_idx].line1_envelopes.slots[2].step_pos < previous_step_pos,
             "non-portamento takeover should retrigger the envelope",
         );
     }
@@ -1303,8 +1305,8 @@ mod tests {
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().poly_mode = PolyMode::Mono;
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.dca_base = 1.0;
-        proc.params_mut().line1.algo = Algo::Saw;
+        proc.params_mut().line1.pd.dca_base = 1.0;
+        proc.params_mut().line1.pd.algo = Algo::Saw;
         let note = 60_u8;
 
         proc.note_on(note, utils::midi_note_to_freq(note), 1.0);
@@ -1386,7 +1388,7 @@ mod tests {
 
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L1;
-        proc.params_mut().line1.dca_env = StepEnvData {
+        proc.params_mut().line1.envelopes.amplitude = EnvelopeProgramV1::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),
                 dca_step(0, 99),
@@ -1400,7 +1402,7 @@ mod tests {
             sustain_step: 1,
             step_count: 2,
             loop_: false,
-        };
+        });
 
         let note = 60_u8;
         let freq = utils::midi_note_to_freq(note);
@@ -1458,9 +1460,9 @@ mod tests {
 
         let mut proc = CosmoProcessor::new(48_000.0);
         proc.params_mut().line_select = LineSelect::L2;
-        proc.params_mut().line2.dcw_key_follow = 2.0;
-        proc.params_mut().line2.dca_key_follow = 2.0;
-        proc.params_mut().line2.dca_env = StepEnvData {
+        proc.params_mut().line2.pd.dcw_key_follow = 2.0;
+        proc.params_mut().line2.pd.dca_key_follow = 2.0;
+        proc.params_mut().line2.envelopes.amplitude = EnvelopeProgramV1::Step(StepEnvData {
             steps: [
                 dca_step(99, 99),
                 dca_step(99, 99),
@@ -1474,8 +1476,8 @@ mod tests {
             sustain_step: 0,
             step_count: 2,
             loop_: false,
-        };
-        proc.params_mut().line2.dcw_env = StepEnvData {
+        });
+        proc.params_mut().line2.envelopes.timbre = EnvelopeProgramV1::Step(StepEnvData {
             steps: [
                 dcw_step(80, 99),
                 dcw_step(80, 99),
@@ -1489,7 +1491,7 @@ mod tests {
             sustain_step: 0,
             step_count: 2,
             loop_: false,
-        };
+        });
 
         proc.params_mut().portamento.enabled = true;
         proc.params_mut().portamento.time = 0.1;
