@@ -24,6 +24,7 @@ pub(crate) struct PdEngineParams<'a> {
 }
 
 impl<'a> PdEngineParams<'a> {
+    #[inline(always)]
     pub fn new(line: &'a PdLineParams) -> Self {
         Self { line }
     }
@@ -81,6 +82,7 @@ impl LineEngine for PdEngine {
 
     fn note_off(&mut self, _params: PdEngineParams<'_>) {}
 
+    #[inline(always)]
     fn advance_envelopes(
         &mut self,
         params: PdEngineParams<'_>,
@@ -114,6 +116,7 @@ impl LineEngine for PdEngine {
         modulation::apply_line_mods(output, base, line_index, mod_values, has_env_step_routes);
     }
 
+    #[inline(always)]
     fn prepare_signal(
         &self,
         line: &crate::params::LineParams,
@@ -144,6 +147,7 @@ impl LineEngine for PdEngine {
         }
     }
 
+    #[inline(always)]
     fn phase_frame(&self, context: LinePhaseContext<'_>) -> super::engine::LinePhaseFrame {
         let (enabled, amount, ratio, pm_pre) = context
             .params

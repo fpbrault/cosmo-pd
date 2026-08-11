@@ -182,6 +182,7 @@ impl LineSynthesisRuntime {
         }
     }
 
+    #[inline(always)]
     pub fn advance_envelopes(
         &mut self,
         line: &LineParams,
@@ -223,6 +224,7 @@ impl LineSynthesisRuntime {
         }
     }
 
+    #[inline(always)]
     pub fn prepare_signal(
         &self,
         line: &LineParams,
@@ -244,6 +246,7 @@ impl LineSynthesisRuntime {
         }
     }
 
+    #[inline(always)]
     pub fn phase_frame(&self, context: LinePhaseContext<'_>) -> LinePhaseFrame {
         match self {
             Self::Pd(engine) => engine.phase_frame(context),

@@ -189,7 +189,7 @@ export type EnvStep = {
 
 /**
  *  Engine-neutral envelope program stored in a line's envelope slots.
- *
+ * 
  *  New envelope implementations can add variants here without changing the
  *  line-engine or synthesis-method boundary.
  */
@@ -358,7 +358,7 @@ export type LineParams = {
 	envelopes: LineEnvelopeParams,
 	/**
 	 *  Parameters owned by the selected line synthesis engine.
-	 *
+	 * 
 	 *  The field remains named `pd` internally while the wire format exposes
 	 *  it as `engine`, keeping the runtime boundary explicit without making
 	 *  the core line schema a flat list of PD controls.
@@ -443,7 +443,7 @@ export type ModMatrixLayout = {
 
 /**
  *  One fixed 8×8 page in the modulation matrix editor.
- *
+ * 
  *  These assignments are editor layout metadata. The audio engine continues to
  *  evaluate the shared `ModMatrix::routes` collection independently of pages.
  */

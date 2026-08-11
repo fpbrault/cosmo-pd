@@ -46,15 +46,21 @@ type FullParamsBlob = {
 	line1?: {
 		[key: string]: unknown;
 		engine?: {
+			[key: string]: unknown;
 			dcwBase?: number;
 			algo?: string;
+			algoControlsA?: { id: string; value: number }[];
+			algoControlsB?: { id: string; value: number }[];
 		};
 	};
 	line2?: {
 		[key: string]: unknown;
 		engine?: {
+			[key: string]: unknown;
 			dcwBase?: number;
 			algo?: string;
+			algoControlsA?: { id: string; value: number }[];
+			algoControlsB?: { id: string; value: number }[];
 		};
 	};
 	modMatrix?: { routes?: unknown[] };
@@ -88,19 +94,28 @@ function applyParamToBlob(
 		case "l1_dcw_base":
 			return {
 				...params,
-				line1: { ...params.line1, dcwBase: value },
+				line1: {
+					...params.line1,
+					engine: { ...params.line1?.engine, dcwBase: value },
+				},
 			};
 		case "l1_warp_algo": {
 			const algo = ALGO_ORDER[Math.round(value)] ?? "cz101";
 			return {
 				...params,
-				line1: { ...params.line1, algo },
+				line1: {
+					...params.line1,
+					engine: { ...params.line1?.engine, algo },
+				},
 			};
 		}
 		case "l2_dcw_base":
 			return {
 				...params,
-				line2: { ...params.line2, dcwBase: value },
+				line2: {
+					...params.line2,
+					engine: { ...params.line2?.engine, dcwBase: value },
+				},
 			};
 		default:
 			return params;
@@ -345,6 +360,44 @@ const DEFAULT_PARAMS: PluginParamInfo[] = [
 // Minimal default params blob — satisfies hasRawEnvelopeValues/applyPreset.
 // ---------------------------------------------------------------------------
 
+function createDefaultLineParams(): NonNullable<FullParamsBlob["line1"]> {
+	return {
+		synthesisMethod: "pd",
+		envelopes: {
+			pitch: {
+				type: "step",
+				params: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+			},
+			timbre: {
+				type: "step",
+				params: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+			},
+			amplitude: {
+				type: "step",
+				params: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
+			},
+		},
+		engine: {
+			algo: "cz101",
+			algo2: null,
+			algoBlend: 0,
+			baseWaveformA: "cosine",
+			baseWaveformB: "cosine",
+			window: "off",
+			dcaBase: 1,
+			dcwBase: 0.5,
+			modulation: 0,
+			dcwKeyFollow: 0,
+			dcaKeyFollow: 0,
+			algoControlsA: [],
+			algoControlsB: [],
+		},
+		detuneNote: 0,
+		detuneFine: 0,
+		octave: 0,
+	};
+}
+
 const DEFAULT_FULL_PARAMS: FullParamsBlob = {
 	lineSelect: "L1+L2'",
 	modMode: "normal",
@@ -357,44 +410,8 @@ const DEFAULT_FULL_PARAMS: FullParamsBlob = {
 	tempoBpm: 120,
 	velocityCurve: 64,
 	pitchBendRange: 2,
-	line1: {
-		algo: "cz101",
-		algo2: null,
-		algoBlend: 0,
-		window: "off",
-		dcaBase: 1,
-		dcwBase: 0.5,
-		modulation: 0,
-		detuneNote: 0,
-		detuneFine: 0,
-		octave: 0,
-		dcoEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-		dcwEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-		dcaEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-		dcwKeyFollow: 0,
-		dcaKeyFollow: 0,
-		algoControlsA: [],
-		algoControlsB: [],
-	},
-	line2: {
-		algo: "cz101",
-		algo2: null,
-		algoBlend: 0,
-		window: "off",
-		dcaBase: 1,
-		dcwBase: 0.5,
-		modulation: 0,
-		detuneNote: 0,
-		detuneFine: 0,
-		octave: 0,
-		dcoEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-		dcwEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-		dcaEnv: { steps: [], sustainStep: 0, stepCount: 0, loop: false },
-		dcwKeyFollow: 0,
-		dcaKeyFollow: 0,
-		algoControlsA: [],
-		algoControlsB: [],
-	},
+	line1: createDefaultLineParams(),
+	line2: createDefaultLineParams(),
 	portamento: { enabled: false, mode: "time", rate: 0, time: 0 },
 	lfo: {
 		waveform: "sine",
@@ -613,8 +630,8 @@ export function installMockPluginBridge(): void {
 					prevExtractedScalars = newScalars;
 
 					// Emit setAlgoControls for each non-empty line/slot.
-					const l1 = params.line1;
-					const l2 = params.line2;
+					const l1 = params.line1?.engine;
+					const l2 = params.line2?.engine;
 					if (Array.isArray(l1?.algoControlsA) && l1.algoControlsA.length > 0) {
 						recordMessage({
 							type: "invoke",
