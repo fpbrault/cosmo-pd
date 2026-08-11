@@ -177,42 +177,34 @@ impl LineRenderConfig {
     }
 }
 
-/// Per-voice state for any generator algorithms that need note-lifetime memory.
-///
-/// Today this wraps Karpunk state only. Keeping the API here avoids leaking
-/// individual stateful algorithm details into the processor or voice layers.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct AlgoRuntimeState {
-    karpunk: karpunk::KarpunkPair,
+    karpunk: karpunk::KarpunkState,
 }
 
 impl AlgoRuntimeState {
-    /// Create empty state for all state-aware algorithms used by one voice.
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(prng_seed: u32) -> Self {
+        Self {
+            karpunk: karpunk::KarpunkState::new(prng_seed),
+        }
     }
 
-    /// Reset note-scoped state when a voice starts a new note.
     pub fn note_on(&mut self, note: u8) {
-        self.karpunk.reseed_for_note(note);
+        self.karpunk.reseed_for_note(note)
     }
 
-    /// Render line 1, applying any stateful algorithm behavior as needed.
-    pub fn render_line1(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
+    pub fn render(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
         if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
-            self.karpunk.render_line1(config)
+            karpunk::render_line(&mut self.karpunk, config)
         } else {
             render_line_stateless(config)
         }
     }
+}
 
-    /// Render line 2, applying any stateful algorithm behavior as needed.
-    pub fn render_line2(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
-            self.karpunk.render_line2(config)
-        } else {
-            render_line_stateless(config)
-        }
+impl Default for AlgoRuntimeState {
+    fn default() -> Self {
+        Self::new(karpunk::DEFAULT_PRNG_SEED)
     }
 }
 

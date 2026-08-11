@@ -73,6 +73,7 @@ impl CosmoProcessor {
     fn process_inner(&mut self, output: &mut [f32]) {
         if self.compiled_params_dirty {
             self.update_fx();
+            self.reconcile_synthesis_methods();
             self.rebuild_compiled_params();
         }
 

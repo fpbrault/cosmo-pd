@@ -166,11 +166,7 @@ export type EngineCapabilitiesV1 = {
 };
 
 export type EngineDefinitionV1 = {
-	id: string,
-	name: string,
 	method: SynthesisMethod,
-	primaryPageLabel: string,
-	secondaryPageLabel: string,
 	capabilities: EngineCapabilitiesV1,
 };
 
@@ -2038,11 +2034,7 @@ export const ALGO_DEFINITIONS_V1 = [
 
 export const SYNTHESIS_ENGINE_DEFINITIONS_V1: EngineDefinitionV1[] = [
   {
-    "id": "pd",
-    "name": "PD / Warp",
     "method": "pd",
-    "primaryPageLabel": "WAVE FORM",
-    "secondaryPageLabel": "ENV",
     "capabilities": {
       "oscillatorCount": 1,
       "envelopeCount": 3,

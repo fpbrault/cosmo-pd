@@ -254,6 +254,39 @@ impl CosmoProcessor {
         self.compiled_params_dirty = false;
     }
 
+    pub(crate) fn reconcile_synthesis_methods(&mut self) {
+        let line1_method = self.params.line1.synthesis_method;
+        let line2_method = self.params.line2.synthesis_method;
+        let line1_method_changed = self.voices[0].line1_synthesis.method() != line1_method;
+        let line2_method_changed = self.voices[0].line2_synthesis.method() != line2_method;
+        if !line1_method_changed && !line2_method_changed {
+            return;
+        }
+
+        for (voice_idx, voice) in self.voices.iter_mut().enumerate() {
+            let active_note = voice.note.map(|note| (note, voice.velocity));
+            let identity_base = (voice_idx as u64) * 2;
+            if line1_method_changed {
+                voice.line1_synthesis.reconcile_method(
+                    line1_method,
+                    self.sample_rate,
+                    identity_base,
+                    active_note,
+                    &self.params.line1,
+                );
+            }
+            if line2_method_changed {
+                voice.line2_synthesis.reconcile_method(
+                    line2_method,
+                    self.sample_rate,
+                    identity_base + 1,
+                    active_note,
+                    &self.params.line2,
+                );
+            }
+        }
+    }
+
     /// Copy a `SynthParams` snapshot into the processor.
     pub fn set_params(&mut self, mut params: SynthParams) {
         normalize_synth_params_envelopes_to_raw_if_human(&mut params);
@@ -279,6 +312,7 @@ impl CosmoProcessor {
         self.line1_scratch = params.line1;
         self.line2_scratch = params.line2;
         self.params = params;
+        self.reconcile_synthesis_methods();
         self.rebuild_compiled_params();
         self.update_fx();
     }

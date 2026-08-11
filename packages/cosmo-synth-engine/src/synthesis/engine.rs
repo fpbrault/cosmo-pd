@@ -1,62 +1,47 @@
-use crate::envelope::EnvelopeTimingCache;
 use crate::params::{LineParams, SynthesisMethod};
-use crate::render_cache::CompiledLinePlan;
 
-use super::pd::PdEngine;
+use super::pd::{PdEngine, PdEngineParams, PdRenderInput};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum PdChannel {
+pub(crate) enum LineRole {
     Line1,
     Line2,
-    Prime,
 }
 
-#[derive(Clone, Copy)]
-#[allow(dead_code)]
-pub(crate) struct LineEngineContext<'a> {
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LineEngineContext {
     pub frequency: f32,
-    pub velocity: f32,
-    pub note: u8,
-    pub gate: bool,
     pub sample_rate: f32,
-    pub timing: &'a EnvelopeTimingCache,
-    pub voice_identity: u64,
-    pub envelope_values: [f32; 3],
-    pub modulation_values: [f32; 8],
-}
-
-#[derive(Clone, Copy)]
-pub(crate) struct PdRenderContext<'a> {
-    pub compiled_line: &'a CompiledLinePlan,
-    pub cycle_count: u32,
-    pub oscillator_phase: f32,
-    pub shaped_phase: f32,
-    pub phase_modulation: f32,
-    pub prime_source: Option<f32>,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-#[allow(dead_code)]
 pub(crate) struct LineEngineOutput {
     pub sample: f32,
-    pub amplitude: f32,
-    pub has_tail: bool,
     pub prime_source: Option<f32>,
 }
 
-#[allow(dead_code)]
-pub(crate) trait LineEngine<P, I> {
+pub(crate) trait LineEngine {
+    type Params<'a>: Copy;
+    type RenderInput<'a>;
+
+    fn method(&self) -> SynthesisMethod;
+    fn role(&self) -> LineRole;
     fn reset(&mut self, sample_rate: f32, voice_identity: u64);
-    fn set_sample_rate(&mut self, sample_rate: f32);
-    fn note_on(&mut self, note: u8, velocity: f32, params: &P);
-    fn note_off(&mut self, params: &P);
-    fn render(
+    fn note_on(&mut self, note: u8, velocity: f32, params: Self::Params<'_>);
+    fn note_off(&mut self, params: Self::Params<'_>);
+    fn render_primary<'a>(
         &mut self,
-        context: &LineEngineContext<'_>,
-        input: &I,
-        params: &P,
+        context: LineEngineContext,
+        input: &Self::RenderInput<'a>,
+        params: Self::Params<'a>,
     ) -> LineEngineOutput;
-    fn is_silent(&self, params: &P) -> bool;
+    fn render_prime<'a>(
+        &mut self,
+        context: LineEngineContext,
+        input: &Self::RenderInput<'a>,
+        params: Self::Params<'a>,
+        primary: LineEngineOutput,
+    ) -> LineEngineOutput;
 }
 
 #[derive(Debug, Clone)]
@@ -65,8 +50,42 @@ pub(crate) enum LineSynthesisRuntime {
 }
 
 impl LineSynthesisRuntime {
-    pub fn new(channel: PdChannel) -> Self {
-        Self::Pd(PdEngine::new(channel))
+    pub fn new(method: SynthesisMethod, role: LineRole) -> Self {
+        match method {
+            SynthesisMethod::Pd => Self::Pd(PdEngine::new(role)),
+        }
+    }
+
+    pub fn method(&self) -> SynthesisMethod {
+        match self {
+            Self::Pd(engine) => engine.method(),
+        }
+    }
+
+    pub fn role(&self) -> LineRole {
+        match self {
+            Self::Pd(engine) => engine.role(),
+        }
+    }
+
+    pub fn reconcile_method(
+        &mut self,
+        method: SynthesisMethod,
+        sample_rate: f32,
+        voice_identity: u64,
+        active_note: Option<(u8, f32)>,
+        params: &LineParams,
+    ) {
+        if self.method() == method {
+            return;
+        }
+
+        let role = self.role();
+        *self = Self::new(method, role);
+        self.reset(sample_rate, voice_identity);
+        if let Some((note, velocity)) = active_note {
+            self.note_on(params, note, velocity);
+        }
     }
 
     pub fn reset(&mut self, sample_rate: f32, voice_identity: u64) {
@@ -75,42 +94,42 @@ impl LineSynthesisRuntime {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn set_sample_rate(&mut self, sample_rate: f32) {
-        match self {
-            Self::Pd(engine) => engine.set_sample_rate(sample_rate),
-        }
-    }
-
     pub fn note_on(&mut self, line: &LineParams, note: u8, velocity: f32) {
-        match (self, line.synthesis_method) {
-            (Self::Pd(engine), SynthesisMethod::Pd) => engine.note_on(note, velocity, line),
+        match self {
+            Self::Pd(engine) => engine.note_on(note, velocity, PdEngineParams::new(line)),
         }
     }
 
     pub fn note_off(&mut self, line: &LineParams) {
-        match (self, line.synthesis_method) {
-            (Self::Pd(engine), SynthesisMethod::Pd) => engine.note_off(line),
+        match self {
+            Self::Pd(engine) => engine.note_off(PdEngineParams::new(line)),
         }
     }
 
     #[inline(always)]
-    #[allow(dead_code)]
-    pub fn render(
+    pub fn render_primary(
         &mut self,
         line: &LineParams,
-        context: LineEngineContext<'_>,
-        input: PdRenderContext<'_>,
+        context: LineEngineContext,
+        input: PdRenderInput<'_>,
     ) -> LineEngineOutput {
         match self {
-            Self::Pd(engine) => engine.render(&context, &input, line),
+            Self::Pd(engine) => engine.render_primary(context, &input, PdEngineParams::new(line)),
         }
     }
 
-    #[allow(dead_code)]
-    pub fn is_silent(&self, line: &LineParams) -> bool {
+    #[inline(always)]
+    pub fn render_prime(
+        &mut self,
+        line: &LineParams,
+        context: LineEngineContext,
+        input: PdRenderInput<'_>,
+        primary: LineEngineOutput,
+    ) -> LineEngineOutput {
         match self {
-            Self::Pd(engine) => engine.is_silent(line),
+            Self::Pd(engine) => {
+                engine.render_prime(context, &input, PdEngineParams::new(line), primary)
+            }
         }
     }
 }

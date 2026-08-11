@@ -74,44 +74,6 @@ pub const KS_BUFFER_SIZE: usize = 2048;
 pub const DEFAULT_PRNG_SEED: u32 = 0x1234_5678;
 pub const SECONDARY_PRNG_SALT: u32 = 0x9e37_79b9;
 
-/// All Karpunk state owned by a single synth voice.
-#[derive(Debug, Clone)]
-pub struct KarpunkPair {
-    line1: KarpunkState,
-    line2: KarpunkState,
-}
-
-impl KarpunkPair {
-    pub fn new() -> Self {
-        Self {
-            line1: KarpunkState::default(),
-            line2: KarpunkState::new(DEFAULT_PRNG_SEED ^ SECONDARY_PRNG_SALT),
-        }
-    }
-
-    /// Reseed both Karpunk lines for a note-on event.
-    pub fn reseed_for_note(&mut self, note: u8) {
-        self.line1.reseed_for_note(note);
-        self.line2.reseed_for_note(note.wrapping_add(1));
-    }
-
-    /// Render line 1 using the first Karpunk state buffer when needed.
-    pub fn render_line1(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        render_line(&mut self.line1, config)
-    }
-
-    /// Render line 2 using the second Karpunk state buffer when needed.
-    pub fn render_line2(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        render_line(&mut self.line2, config)
-    }
-}
-
-impl Default for KarpunkPair {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Stateful Karplus-Strong engine state for one oscillator line.
 /// Buffer is heap-allocated via `Vec` to avoid ~8 KB stack usage per state
 /// (8 voices × 2 states = 128 KB on the stack with fixed array).
@@ -185,7 +147,10 @@ impl Default for KarpunkState {
     }
 }
 
-fn render_line(ks_state: &mut KarpunkState, config: LineRenderConfig) -> (f32, Option<f32>) {
+pub(crate) fn render_line(
+    ks_state: &mut KarpunkState,
+    config: LineRenderConfig,
+) -> (f32, Option<f32>) {
     let karpunk_raw_sample = if requires_state_tick(config.primary_algo, config.secondary_algo) {
         Some(ks_state.advance(
             config.effective_freq,

@@ -1,12 +1,13 @@
 use crate::dsp_utils::{TWO_PI, lfo_output, pow01, wrap01};
 use crate::envelope::EnvelopeKind;
 use crate::envelope::EnvelopeTimingCache;
-use crate::generators::{self, LineRenderConfig, PER_LINE_HEADROOM};
+use crate::generators::PER_LINE_HEADROOM;
 use crate::params::{
     LfoRateMode, LfoWaveform, LineParams, LineSelect, ModDestination, ModEnvRetrigMode,
     ModMatrixCache, ModMode, PortamentoMode, SynthParams,
 };
 use crate::render_cache::CompiledLinePlan;
+use crate::synthesis::{LineEngineContext, LineEngineOutput, PdRenderInput};
 
 use super::modulation::{ModSources, algo_control_slot_mods_for_line};
 use super::{
@@ -52,6 +53,25 @@ struct PhaseFrame {
     phase_a_post: f32,
     phase_b_post: f32,
     pm_post_mod: f32,
+}
+
+#[derive(Clone, Copy)]
+struct PrimeRenderFrame<'a> {
+    line1: &'a LineParams,
+    line2: &'a LineParams,
+    line1_plan: &'a CompiledLinePlan,
+    line2_plan: &'a CompiledLinePlan,
+    line1_input: PdRenderInput<'a>,
+    line2_input: PdRenderInput<'a>,
+    line1_output: LineEngineOutput,
+    line2_output: LineEngineOutput,
+}
+
+#[derive(Clone, Copy)]
+struct RenderedLines {
+    line1: f32,
+    line2: f32,
+    prime: Option<f32>,
 }
 
 #[derive(Clone, Copy)]
@@ -201,36 +221,42 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let (s1, prime_source1) = voice
-        .pd_state
-        .render_line1(LineRenderConfig::from_compiled_line(
-            line1_plan,
-            line1_modded,
-            voice.cycle_count1,
-            phase.phi1,
-            phase.phase_a_post,
-            signal.final_dcw1,
-            signal.final_dca1,
-            signal.effective_freq1,
-            sr,
-            line1_algo_param_mods,
-            phase.pm_post_mod,
-        ));
-    let (s2, prime_source2) = voice
-        .pd_state
-        .render_line2(LineRenderConfig::from_compiled_line(
-            line2_plan,
-            line2_modded,
-            voice.cycle_count2,
-            phase.phi2,
-            phase.phase_b_post,
-            signal.final_dcw2,
-            signal.final_dca2,
-            signal.effective_freq2,
-            sr,
-            line2_algo_param_mods,
-            phase.pm_post_mod,
-        ));
+    let line1_input = PdRenderInput {
+        compiled_line: line1_plan,
+        cycle_count: voice.cycle_count1,
+        oscillator_phase: phase.phi1,
+        shaped_phase: phase.phase_a_post,
+        dcw_envelope: signal.final_dcw1,
+        dca_envelope: signal.final_dca1,
+        modulation_values: line1_algo_param_mods,
+        phase_modulation: phase.pm_post_mod,
+    };
+    let line2_input = PdRenderInput {
+        compiled_line: line2_plan,
+        cycle_count: voice.cycle_count2,
+        oscillator_phase: phase.phi2,
+        shaped_phase: phase.phase_b_post,
+        dcw_envelope: signal.final_dcw2,
+        dca_envelope: signal.final_dca2,
+        modulation_values: line2_algo_param_mods,
+        phase_modulation: phase.pm_post_mod,
+    };
+    let line1_output = voice.line1_synthesis.render_primary(
+        line1_modded,
+        LineEngineContext {
+            frequency: signal.effective_freq1,
+            sample_rate: sr,
+        },
+        line1_input,
+    );
+    let line2_output = voice.line2_synthesis.render_primary(
+        line2_modded,
+        LineEngineContext {
+            frequency: signal.effective_freq2,
+            sample_rate: sr,
+        },
+        line2_input,
+    );
     let mod_mode = effective_mod_mode(p);
     let noise_step = if mod_mode == ModMode::Noise {
         let step = voice.noise_step;
@@ -240,28 +266,33 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         0
     };
 
+    let prime_output = render_selected_prime(
+        voice,
+        p.line_select,
+        mod_mode,
+        phase.phi2,
+        PrimeRenderFrame {
+            line1: line1_modded,
+            line2: line2_modded,
+            line1_plan,
+            line2_plan,
+            line1_input,
+            line2_input,
+            line1_output,
+            line2_output,
+        },
+    );
+
     let sample = mix_line_outputs(
         p,
         mod_mode,
-        phase.phi1,
-        phase.phi2,
         noise_step,
-        s1,
-        s2,
-        line1_modded,
-        line2_modded,
-        voice.cycle_count1,
-        voice.cycle_count2,
-        prime_source1,
-        prime_source2,
-        signal.final_dcw1,
-        signal.final_dcw2,
-        signal.final_dca1,
-        signal.final_dca2,
-        line1_algo_param_mods,
-        line2_algo_param_mods,
-        line1_plan,
-        line2_plan,
+        RenderedLines {
+            line1: line1_output.sample,
+            line2: line2_output.sample,
+            prime: prime_output,
+        },
+        signal,
     );
 
     // Apply volume modulation from mod matrix
@@ -806,83 +837,84 @@ fn build_phase_frame(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+fn render_selected_prime(
+    voice: &mut Voice,
+    line_select: LineSelect,
+    mod_mode: ModMode,
+    prime_phase: f32,
+    frame: PrimeRenderFrame<'_>,
+) -> Option<f32> {
+    if mod_mode == ModMode::Noise {
+        return None;
+    }
+
+    let context = LineEngineContext {
+        frequency: 0.0,
+        sample_rate: 1.0,
+    };
+    match line_select {
+        LineSelect::L1PlusL1Prime => {
+            let input = PdRenderInput {
+                compiled_line: frame.line1_plan,
+                oscillator_phase: prime_phase,
+                shaped_phase: prime_phase,
+                phase_modulation: 0.0,
+                ..frame.line1_input
+            };
+            Some(
+                voice
+                    .line1_synthesis
+                    .render_prime(frame.line1, context, input, frame.line1_output)
+                    .sample,
+            )
+        }
+        LineSelect::L1PlusL2Prime => {
+            let input = PdRenderInput {
+                compiled_line: frame.line2_plan,
+                oscillator_phase: prime_phase,
+                shaped_phase: prime_phase,
+                phase_modulation: 0.0,
+                ..frame.line2_input
+            };
+            Some(
+                voice
+                    .line2_synthesis
+                    .render_prime(frame.line2, context, input, frame.line2_output)
+                    .sample,
+            )
+        }
+        LineSelect::L1 | LineSelect::L2 => None,
+    }
+}
+
 fn mix_line_outputs(
     p: &SynthParams,
     mod_mode: ModMode,
-    phi1: f32,
-    phi2: f32,
     noise_step: u32,
-    s1: f32,
-    s2: f32,
-    l1: &LineParams,
-    l2: &LineParams,
-    cycle_count1: u32,
-    cycle_count2: u32,
-    karpunk_raw_sample1: Option<f32>,
-    karpunk_raw_sample2: Option<f32>,
-    final_dcw1: f32,
-    final_dcw2: f32,
-    final_dca1: f32,
-    final_dca2: f32,
-    line1_algo_param_mods: [f32; 8],
-    line2_algo_param_mods: [f32; 8],
-    line1_plan: &CompiledLinePlan,
-    line2_plan: &CompiledLinePlan,
+    lines: RenderedLines,
+    signal: SignalState,
 ) -> f32 {
     match mod_mode {
         ModMode::Ring => {
-            let (mix_a, mix_b) = select_line_sources(
-                p,
-                phi1,
-                phi2,
-                s1,
-                s2,
-                l1,
-                l2,
-                cycle_count1,
-                cycle_count2,
-                karpunk_raw_sample1,
-                karpunk_raw_sample2,
-                final_dcw1,
-                final_dcw2,
-                final_dca1,
-                final_dca2,
-                line1_algo_param_mods,
-                line2_algo_param_mods,
-                line1_plan,
-                line2_plan,
-            );
+            let (mix_a, mix_b) = select_line_sources(p, lines.line1, lines.line2, lines.prime);
             mix_a * mix_b * p.ring_gain.max(0.0)
         }
         ModMode::Noise => {
             let (mix_a, mix_b) = select_noise_line_sources(
-                p, noise_step, s1, s2, final_dcw1, final_dcw2, final_dca1, final_dca2,
+                p,
+                noise_step,
+                lines.line1,
+                lines.line2,
+                signal.final_dcw1,
+                signal.final_dcw2,
+                signal.final_dca1,
+                signal.final_dca2,
             );
             (mix_a + mix_b) * DUAL_LINE_MIX_GAIN
         }
         ModMode::Normal => {
-            let (mix_a, mix_b) = select_line_sources(
-                p,
-                phi1,
-                phi2,
-                s1,
-                s2,
-                l1,
-                l2,
-                cycle_count1,
-                cycle_count2,
-                karpunk_raw_sample1,
-                karpunk_raw_sample2,
-                final_dcw1,
-                final_dcw2,
-                final_dca1,
-                final_dca2,
-                line1_algo_param_mods,
-                line2_algo_param_mods,
-                line1_plan,
-                line2_plan,
-            );
+            let (mix_a, mix_b) = select_line_sources(p, lines.line1, lines.line2, lines.prime);
             match p.line_select {
                 LineSelect::L1 => mix_a,
                 LineSelect::L2 => mix_b,
@@ -900,63 +932,9 @@ fn effective_mod_mode(p: &SynthParams) -> ModMode {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn select_line_sources(
-    p: &SynthParams,
-    _phi1: f32,
-    phi2: f32,
-    s1: f32,
-    s2: f32,
-    l1: &LineParams,
-    l2: &LineParams,
-    cycle_count1: u32,
-    cycle_count2: u32,
-    karpunk_raw_sample1: Option<f32>,
-    karpunk_raw_sample2: Option<f32>,
-    final_dcw1: f32,
-    final_dcw2: f32,
-    final_dca1: f32,
-    final_dca2: f32,
-    line1_algo_param_mods: [f32; 8],
-    line2_algo_param_mods: [f32; 8],
-    line1_plan: &CompiledLinePlan,
-    line2_plan: &CompiledLinePlan,
-) -> (f32, f32) {
+fn select_line_sources(p: &SynthParams, s1: f32, s2: f32, prime_output: Option<f32>) -> (f32, f32) {
     match p.line_select {
-        LineSelect::L1PlusL1Prime => {
-            let cfg = LineRenderConfig::from_compiled_line(
-                line1_plan,
-                l1,
-                cycle_count1,
-                phi2,
-                phi2,
-                final_dcw1,
-                final_dca1,
-                0.0,
-                1.0,
-                line1_algo_param_mods,
-                0.0,
-            );
-            let s1_prime = render_prime_line_sample(cfg, karpunk_raw_sample1);
-            (s1, s1_prime)
-        }
-        LineSelect::L1PlusL2Prime => {
-            let cfg = LineRenderConfig::from_compiled_line(
-                line2_plan,
-                l2,
-                cycle_count2,
-                phi2,
-                phi2,
-                final_dcw2,
-                final_dca2,
-                0.0,
-                1.0,
-                line2_algo_param_mods,
-                0.0,
-            );
-            let s2_prime = render_prime_line_sample(cfg, karpunk_raw_sample2);
-            (s1, s2_prime)
-        }
+        LineSelect::L1PlusL1Prime | LineSelect::L1PlusL2Prime => (s1, prime_output.unwrap_or(0.0)),
         _ => (s1, s2),
     }
 }
@@ -984,10 +962,6 @@ fn select_noise_line_sources(
         LineSelect::L1 => (s1, 0.0),
         LineSelect::L2 => (0.0, s2),
     }
-}
-
-fn render_prime_line_sample(config: LineRenderConfig, prime_source: Option<f32>) -> f32 {
-    generators::render_sample_from_config(&config, prime_source)
 }
 
 fn render_noise_line_sample(final_dcw: f32, final_dca: f32, noise_step: u32) -> f32 {
