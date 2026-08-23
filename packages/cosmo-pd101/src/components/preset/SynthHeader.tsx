@@ -21,18 +21,20 @@ export default function SynthHeader({
 	const { t } = useTranslation("synth");
 	const {
 		allPresetEntries,
+		libraryStatus,
 		navigationEntryIds,
 		activePresetId,
+		activePresetNameBase,
 		activePresetName,
+		isPresetDirty,
+		activatePreset,
+		setNavigationEntryIds,
+		setPresetFavorite,
+		savePreset,
+		savePresetAs,
 	} = usePresetManager();
-	const activeEntry = allPresetEntries.find(
-		(entry) => entry.id === activePresetId,
-	);
-	const activePresetSource =
-		activeEntry?.author.trim() ||
-		(activeEntry
-			? t("synthHeader.unknownAuthor")
-			: t("synthHeader.currentState"));
+	const activeEntry =
+		allPresetEntries.find((entry) => entry.id === activePresetId) ?? null;
 
 	return (
 		<header className="flex shrink-0 flex-row items-center justify-between gap-3 border-cz-border border-b-4 bg-cz-body px-8 py-2 shadow-inner">
@@ -56,9 +58,18 @@ export default function SynthHeader({
 
 			<PresetNavigator
 				presetCount={navigationEntryIds.length}
+				entries={allPresetEntries}
+				activeEntry={activeEntry}
 				activePresetName={activePresetName}
-				activePresetSource={activePresetSource}
+				activePresetNameBase={activePresetNameBase}
+				isPresetDirty={isPresetDirty}
+				persistenceDisabled={libraryStatus.state !== "ready"}
 				onStepPreset={onStepPreset}
+				onActivatePreset={(entryId) => activatePreset({ entryId })}
+				onNavigationEntriesChange={setNavigationEntryIds}
+				onSetPresetFavorite={setPresetFavorite}
+				onSavePreset={savePreset}
+				onSavePresetAs={savePresetAs}
 				isLibraryModeOpen={isLibraryModeOpen}
 				onLibraryModeChange={onLibraryModeChange}
 			/>
