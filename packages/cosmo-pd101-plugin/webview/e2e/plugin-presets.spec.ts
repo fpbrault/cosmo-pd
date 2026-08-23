@@ -33,6 +33,7 @@ test.describe("Preset management", () => {
 		await presetScreen.click();
 
 		await page.getByRole("option", { name: /Factory Brass/ }).click();
+		await page.keyboard.press("Escape");
 
 		await expect(presetScreen).toContainText("Factory Brass");
 		await expect(presetScreen).toContainText("Cosmo Factory Library · Factory");
@@ -145,6 +146,63 @@ test.describe("Preset management", () => {
 			libraryList.getByRole("button", { name: "Renamed Patch", exact: true }),
 		).toHaveCount(0);
 	});
+
+	test("keeps filters and sorting synchronized with quick select", async ({
+		page,
+	}) => {
+		await page.getByRole("button", { name: "Open library" }).click();
+
+		const currentStateSection = page
+			.locator("section")
+			.filter({ has: page.getByRole("heading", { name: "Current State" }) });
+		await currentStateSection.getByRole("button", { name: "Save As" }).click();
+		const saveAsDialog = page
+			.locator("dialog[open]")
+			.filter({ has: page.getByRole("heading", { name: "Save preset as" }) });
+		await saveAsDialog.getByPlaceholder("New preset name").fill("Alpha User");
+		await saveAsDialog.getByRole("button", { name: "Confirm save as" }).click();
+
+		const libraryOptions = page
+			.getByRole("listbox", {
+				name: "Preset library",
+			})
+			.getByRole("option");
+		await expect(
+			libraryOptions.filter({ hasText: "Alpha User" }),
+		).toContainText("User");
+		await page.getByRole("button", { name: "Name", exact: true }).click();
+		await expect(libraryOptions).toHaveCount(2);
+		await expect(libraryOptions.nth(0)).toContainText("Alpha User");
+		await expect(libraryOptions.nth(1)).toContainText("Factory Brass");
+
+		await page.getByRole("radio", { name: "Cosmo Factory Library" }).check();
+		await expect(libraryOptions).toHaveCount(1);
+		await page.getByRole("button", { name: "Return" }).click();
+		await page
+			.getByRole("button", { name: /Choose preset\. Current preset:/i })
+			.click();
+
+		const quickSelect = page.getByRole("dialog", {
+			name: "Quick preset select",
+		});
+		await expect(quickSelect.getByLabel("Filter bank")).toHaveValue(
+			"Cosmo Factory Library",
+		);
+		await expect(
+			quickSelect.getByRole("status", { name: "1 active filters" }),
+		).toBeVisible();
+		await expect(
+			quickSelect.getByRole("option", { name: /Alpha User/ }),
+		).toHaveCount(0);
+
+		await quickSelect.getByRole("button", { name: "Clear" }).click();
+		const quickOptions = quickSelect
+			.getByRole("listbox", { name: "Preset search results" })
+			.getByRole("option");
+		await expect(quickOptions).toHaveCount(2);
+		await expect(quickOptions.nth(0)).toContainText("Alpha User");
+		await expect(quickOptions.nth(1)).toContainText("Factory Brass");
+	});
 });
 
 test.describe("Preset quick select touch", () => {
@@ -165,6 +223,7 @@ test.describe("Preset quick select touch", () => {
 		await expect(search).not.toBeFocused();
 
 		await page.getByRole("option", { name: /Factory Brass/ }).tap();
+		await page.keyboard.press("Escape");
 		await expect(presetScreen).toContainText("Factory Brass");
 	});
 });

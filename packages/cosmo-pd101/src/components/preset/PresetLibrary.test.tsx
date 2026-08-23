@@ -1,8 +1,21 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render as renderWithoutFilters,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import PresetLibrary from "./PresetLibrary";
+import { PresetLibraryFiltersProvider } from "./PresetLibraryFiltersContext";
+
+function render(element: ReactElement) {
+	return renderWithoutFilters(element, {
+		wrapper: PresetLibraryFiltersProvider,
+	});
+}
 
 const libraryPreset: LibraryPreset = {
 	id: "library-1",
@@ -304,23 +317,6 @@ describe("PresetLibrary", () => {
 			new Event("cancel", { bubbles: false, cancelable: true }),
 		);
 		expect(saveAsDialog.open).toBe(false);
-	});
-
-	it("can filter the list down to user presets only", () => {
-		const props = createProps();
-		render(<PresetLibrary {...props} />);
-
-		fireEvent.click(screen.getByRole("button", { name: "User Only" }));
-
-		expect(
-			screen.queryByRole("button", { name: "Factory Bass" }),
-		).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("button", { name: "Archive Pad" }),
-		).not.toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Local Keys" }),
-		).toBeInTheDocument();
 	});
 
 	it("toggles and clears author filters with radio", () => {

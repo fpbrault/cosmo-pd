@@ -303,7 +303,11 @@ pub(super) fn handle(
                     .get_entry(id)
                     .map_err(|e| e.to_string())?
                     .ok_or_else(|| "Preset not found".to_string())?;
-                entry.author = author.clone();
+                entry.author = if author.trim().is_empty() {
+                    DEFAULT_USER_PRESET_AUTHOR.to_string()
+                } else {
+                    author.trim().to_string()
+                };
                 let _ = lib.save_entry(entry).map_err(|e| e.to_string())?;
             }
             Ok(PluginIpcResponse::SetPresetAuthor)

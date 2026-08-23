@@ -100,8 +100,6 @@ export default function PresetLibrary({
 		setAuthorValue,
 		descriptionValue,
 		setDescriptionValue,
-		showOnlyUserPresets,
-		setShowOnlyUserPresets,
 		selectedAuthorFilter,
 		setSelectedAuthorFilter,
 		selectedBankFilter,
@@ -383,10 +381,6 @@ export default function PresetLibrary({
 					selectedTagFilters={selectedTagFilters}
 					onToggleTagFilter={toggleTagFilter}
 					onClearTagFilters={() => setSelectedTagFilters([])}
-					showOnlyUserPresets={showOnlyUserPresets}
-					onToggleShowOnlyUserPresets={() =>
-						setShowOnlyUserPresets((value) => !value)
-					}
 					onToggleSort={toggleSort}
 					sortIndicator={sortIndicator}
 				/>

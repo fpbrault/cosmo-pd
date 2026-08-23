@@ -10,6 +10,10 @@ import { decodeCzPatch } from "@/lib/midi/czSysexDecoder";
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { convertDecodedPatchToSynthPreset } from "@/lib/synth/czPresetConverter";
 import {
+	DEFAULT_USER_PRESET_AUTHOR,
+	normalizePresetAuthor,
+} from "@/lib/synth/presetSources";
+import {
 	DEFAULT_PRESET,
 	deletePreset,
 	exportPreset,
@@ -33,8 +37,6 @@ type CreateWebPresetManagerRepositoryOptions = {
 	libraryPresets: LibraryPreset[];
 	onBeforeApplyPreset?: () => void;
 };
-
-const DEFAULT_USER_PRESET_AUTHOR = "User";
 
 function createSelection(
 	activePresetId: string | null,
@@ -144,7 +146,9 @@ export function createWebPresetManagerRepository({
 			await updateStoredPreset(id, { name: newName });
 		},
 		setPresetAuthor: async (id, author) => {
-			await updateStoredPreset(id, { author });
+			await updateStoredPreset(id, {
+				author: normalizePresetAuthor(author, "user"),
+			});
 		},
 		setPresetDescription: async (id, description) => {
 			await updateStoredPreset(id, { description });
