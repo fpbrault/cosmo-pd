@@ -201,38 +201,28 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         base_freq,
         &mod_sources,
     );
-    let (s1, karpunk_raw_sample1) =
-        voice
-            .algo_runtime
-            .render_line1(LineRenderConfig::from_compiled_line(
-                line1_plan,
-                line1_modded,
-                voice.cycle_count1,
-                phase.phi1,
-                phase.phase_a_post,
-                signal.final_dcw1,
-                signal.final_dca1,
-                signal.effective_freq1,
-                sr,
-                line1_algo_param_mods,
-                phase.pm_post_mod,
-            ));
-    let (s2, karpunk_raw_sample2) =
-        voice
-            .algo_runtime
-            .render_line2(LineRenderConfig::from_compiled_line(
-                line2_plan,
-                line2_modded,
-                voice.cycle_count2,
-                phase.phi2,
-                phase.phase_b_post,
-                signal.final_dcw2,
-                signal.final_dca2,
-                signal.effective_freq2,
-                sr,
-                line2_algo_param_mods,
-                phase.pm_post_mod,
-            ));
+    let s1 = generators::render_sample_from_config(&LineRenderConfig::from_compiled_line(
+        line1_plan,
+        line1_modded,
+        voice.cycle_count1,
+        phase.phi1,
+        phase.phase_a_post,
+        signal.final_dcw1,
+        signal.final_dca1,
+        line1_algo_param_mods,
+        phase.pm_post_mod,
+    ));
+    let s2 = generators::render_sample_from_config(&LineRenderConfig::from_compiled_line(
+        line2_plan,
+        line2_modded,
+        voice.cycle_count2,
+        phase.phi2,
+        phase.phase_b_post,
+        signal.final_dcw2,
+        signal.final_dca2,
+        line2_algo_param_mods,
+        phase.pm_post_mod,
+    ));
     let mod_mode = effective_mod_mode(p);
     let noise_step = if mod_mode == ModMode::Noise {
         let step = voice.noise_step;
@@ -254,8 +244,6 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
         line2_modded,
         voice.cycle_count1,
         voice.cycle_count2,
-        karpunk_raw_sample1,
-        karpunk_raw_sample2,
         signal.final_dcw1,
         signal.final_dcw2,
         signal.final_dca1,
@@ -821,8 +809,6 @@ fn mix_line_outputs(
     l2: &LineParams,
     cycle_count1: u32,
     cycle_count2: u32,
-    karpunk_raw_sample1: Option<f32>,
-    karpunk_raw_sample2: Option<f32>,
     final_dcw1: f32,
     final_dcw2: f32,
     final_dca1: f32,
@@ -844,8 +830,6 @@ fn mix_line_outputs(
                 l2,
                 cycle_count1,
                 cycle_count2,
-                karpunk_raw_sample1,
-                karpunk_raw_sample2,
                 final_dcw1,
                 final_dcw2,
                 final_dca1,
@@ -874,8 +858,6 @@ fn mix_line_outputs(
                 l2,
                 cycle_count1,
                 cycle_count2,
-                karpunk_raw_sample1,
-                karpunk_raw_sample2,
                 final_dcw1,
                 final_dcw2,
                 final_dca1,
@@ -913,8 +895,6 @@ fn select_line_sources(
     l2: &LineParams,
     cycle_count1: u32,
     cycle_count2: u32,
-    karpunk_raw_sample1: Option<f32>,
-    karpunk_raw_sample2: Option<f32>,
     final_dcw1: f32,
     final_dcw2: f32,
     final_dca1: f32,
@@ -934,12 +914,10 @@ fn select_line_sources(
                 phi2,
                 final_dcw1,
                 final_dca1,
-                0.0,
-                1.0,
                 line1_algo_param_mods,
                 0.0,
             );
-            let s1_prime = render_prime_line_sample(cfg, karpunk_raw_sample1);
+            let s1_prime = generators::render_sample_from_config(&cfg);
             (s1, s1_prime)
         }
         LineSelect::L1PlusL2Prime => {
@@ -951,12 +929,10 @@ fn select_line_sources(
                 phi2,
                 final_dcw2,
                 final_dca2,
-                0.0,
-                1.0,
                 line2_algo_param_mods,
                 0.0,
             );
-            let s2_prime = render_prime_line_sample(cfg, karpunk_raw_sample2);
+            let s2_prime = generators::render_sample_from_config(&cfg);
             (s1, s2_prime)
         }
         _ => (s1, s2),
@@ -986,10 +962,6 @@ fn select_noise_line_sources(
         LineSelect::L1 => (s1, 0.0),
         LineSelect::L2 => (0.0, s2),
     }
-}
-
-fn render_prime_line_sample(cfg: LineRenderConfig, karpunk_raw_sample: Option<f32>) -> f32 {
-    generators::render_sample_from_config(&cfg, karpunk_raw_sample)
 }
 
 fn render_noise_line_sample(final_dcw: f32, final_dca: f32, noise_step: u32) -> f32 {

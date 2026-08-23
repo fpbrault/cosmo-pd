@@ -7,7 +7,6 @@ type PhaseLineAlgoSideSectionProps = {
 	section: "A" | "B";
 	algo: PhaseLineAlgoModel;
 	slot: AlgoSlotViewModel;
-	baseWaveEnabled: boolean;
 	lineIndex: LineIndex;
 	color: string;
 };
@@ -16,7 +15,6 @@ export function PhaseLineAlgoSideSection({
 	section,
 	algo,
 	slot,
-	baseWaveEnabled,
 	lineIndex,
 	color,
 }: PhaseLineAlgoSideSectionProps) {
@@ -39,7 +37,7 @@ export function PhaseLineAlgoSideSection({
 					title={`Base Wave ${section}`}
 					value={baseWaveValue}
 					onChange={onBaseWaveChange}
-					disabled={!baseWaveEnabled}
+					disabled={slot.disabled}
 					color={color}
 				/>
 			</div>

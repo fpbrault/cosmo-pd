@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { i18n } from "@/i18n";
 import { ALGO_UI_CATALOG_V1 } from "@/lib/synth/bindings/synth";
-import {
-	algoUsesBaseWaveform,
-	getPdAlgoBehaviorDescription,
-	PD_ALGOS,
-} from "./algoUiCatalog";
+import { getPdAlgoBehaviorDescription, PD_ALGOS } from "./algoUiCatalog";
 
 describe("algoUiCatalog", () => {
 	afterEach(() => {
@@ -22,11 +18,6 @@ describe("algoUiCatalog", () => {
 			expect(entry.key).toBe(entry.value);
 			expect(entry.icon.length).toBeGreaterThan(0);
 		}
-	});
-
-	it("reports whether an algorithm uses the base waveform", () => {
-		expect(algoUsesBaseWaveform("bend")).toBe(true);
-		expect(algoUsesBaseWaveform("karpunk")).toBe(false);
 	});
 
 	it("falls back when no translated behavior text exists", () => {

@@ -73,12 +73,12 @@ function createAlgo(overrides = {}) {
 	};
 }
 
-function createSlot(slotId: "a" | "b"): AlgoSlotViewModel {
+function createSlot(slotId: "a" | "b", disabled = false): AlgoSlotViewModel {
 	return {
 		slotId,
 		value: "saw",
 		onChange: vi.fn(),
-		disabled: false,
+		disabled,
 		controls: [],
 		controlBindings: {},
 		algoControlSlotIndex: {},
@@ -97,7 +97,6 @@ describe("PhaseLineAlgoSideSection", () => {
 				section="A"
 				algo={algo}
 				slot={createSlot("a")}
-				baseWaveEnabled
 				lineIndex={1}
 				color="#123"
 			/>,
@@ -124,7 +123,6 @@ describe("PhaseLineAlgoSideSection", () => {
 				section="A"
 				algo={algo}
 				slot={createSlot("a")}
-				baseWaveEnabled
 				lineIndex={1}
 				color="#123"
 			/>,
@@ -135,14 +133,13 @@ describe("PhaseLineAlgoSideSection", () => {
 		expect(algo.setBaseWaveformB).not.toHaveBeenCalled();
 	});
 
-	it("wires section B and respects base-wave disabled state", () => {
+	it("disables the section B base wave when its algorithm slot is disabled", () => {
 		const algo = createAlgo();
 		render(
 			<PhaseLineAlgoSideSection
 				section="B"
 				algo={algo}
-				slot={createSlot("b")}
-				baseWaveEnabled={false}
+				slot={createSlot("b", true)}
 				lineIndex={2}
 				color="#abc"
 			/>,
