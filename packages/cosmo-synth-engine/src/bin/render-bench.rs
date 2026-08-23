@@ -249,18 +249,18 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "osc-pd-heavy-no-mod-fx",
+            name: "osc-pd-heavy-no-mod-fx-v2",
             description: "High-cost PD/warp algorithms only (no matrix, no FX)",
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
                 p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Karpunk);
+                p.line1.algo2 = Some(Algo::Terrain);
                 p.line1.algo_blend = 0.65;
                 p.line1.dcw_base = 0.95;
                 p.line1.dca_base = 0.85;
-                p.line2.algo = Algo::Karpunk;
+                p.line2.algo = Algo::Terrain;
                 p.line2.algo2 = Some(Algo::Ripple);
                 p.line2.algo_blend = 0.65;
                 p.line2.dcw_base = 0.95;
@@ -403,12 +403,12 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "chops-like",
+            name: "chops-like-v2",
             description: "Aggressive transient patch with high modulation churn",
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
-                p.line1.algo = Algo::Karpunk;
+                p.line1.algo = Algo::Terrain;
                 p.line1.algo2 = Some(Algo::Fold);
                 p.line1.algo_blend = 0.6;
                 p.line2.algo = Algo::Twist;
@@ -467,17 +467,17 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "worst-poly",
+            name: "worst-poly-v2",
             description: "High-cost algorithms, heavy modulation, heavy FX",
             build_params: || {
                 let mut p = SynthParams::default();
                 p.poly_mode = PolyMode::Poly8;
                 p.line_select = LineSelect::L1PlusL2Prime;
                 p.line1.algo = Algo::Fof;
-                p.line1.algo2 = Some(Algo::Karpunk);
+                p.line1.algo2 = Some(Algo::Terrain);
                 p.line1.algo_blend = 0.65;
                 p.line1.dcw_base = 0.95;
-                p.line2.algo = Algo::Karpunk;
+                p.line2.algo = Algo::Terrain;
                 p.line2.algo2 = Some(Algo::Ripple);
                 p.line2.algo_blend = 0.65;
                 p.line2.dcw_base = 0.95;
@@ -722,7 +722,7 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "opt-all-combined",
+            name: "opt-all-combined-v2",
             description: "All optimizations active: cubic sine, param interp, vectorization",
             build_params: || {
                 let mut p = SynthParams::default();
@@ -730,7 +730,7 @@ fn scenarios() -> Vec<Scenario> {
                 p.line1.algo = Algo::Fof;
                 p.line1.algo2 = Some(Algo::MultiSine);
                 p.line1.algo_blend = 0.55;
-                p.line2.algo = Algo::Karpunk;
+                p.line2.algo = Algo::Terrain;
                 p.line2.algo2 = Some(Algo::Saw);
                 p.line2.algo_blend = 0.45;
                 p.lfo.rate = 7.5;
@@ -904,14 +904,6 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "algo-karpunk",
-            description: "Per-algo benchmark: Karpunk",
-            build_params: || build_algo_bench_params(Algo::Karpunk),
-            note_churn_blocks: None,
-            param_swap_blocks: None,
-            build_param_variants: None,
-        },
-        Scenario {
             name: "algo-terrain",
             description: "Per-algo benchmark: Terrain",
             build_params: || build_algo_bench_params(Algo::Terrain),
@@ -1037,15 +1029,15 @@ fn scenario_matrix() -> Vec<(String, usize)> {
         "default",
         "fun-bass-like",
         "chants-like",
-        "chops-like",
+        "chops-like-v2",
         "mod-heavy",
         "fx-heavy",
-        "worst-poly",
+        "worst-poly-v2",
         // Optimization-focused scenarios
         "opt-sine-lfo-heavy",
         "opt-param-interp-light",
         "opt-render-vectorization",
-        "opt-all-combined",
+        "opt-all-combined-v2",
     ];
 
     let mut matrix = Vec::new();
@@ -1064,9 +1056,9 @@ fn hotspot_matrix() -> Vec<(String, usize)> {
         ("hotspot-note-churn".to_string(), 8),
         ("mod-only-sine".to_string(), 8),
         ("hotspot-algo-controls".to_string(), 8),
-        ("osc-pd-heavy-no-mod-fx".to_string(), 8),
+        ("osc-pd-heavy-no-mod-fx-v2".to_string(), 8),
         ("fx-only-sine".to_string(), 8),
-        ("worst-poly".to_string(), 8),
+        ("worst-poly-v2".to_string(), 8),
     ]
 }
 
@@ -1091,7 +1083,6 @@ fn algo_matrix() -> Vec<&'static str> {
         "algo-ripple",
         "algo-mirror",
         "algo-fof",
-        "algo-karpunk",
         "algo-terrain",
         "algo-stutter",
         "algo-cheby",
@@ -1101,7 +1092,12 @@ fn algo_matrix() -> Vec<&'static str> {
 fn is_heavy_scenario(name: &str) -> bool {
     matches!(
         name,
-        "chants-like" | "chops-like" | "fx-heavy" | "mod-heavy" | "worst-poly" | "opt-all-combined"
+        "chants-like"
+            | "chops-like-v2"
+            | "fx-heavy"
+            | "mod-heavy"
+            | "worst-poly-v2"
+            | "opt-all-combined-v2"
     )
 }
 
@@ -1148,7 +1144,7 @@ fn tune_hotspot_case_config(case_cfg: &mut BenchmarkConfig) {
         case_cfg.seconds = case_cfg.seconds.min(3.0);
     }
 
-    if matches!(case_cfg.scenario.as_str(), "fx-only-sine" | "worst-poly") {
+    if matches!(case_cfg.scenario.as_str(), "fx-only-sine" | "worst-poly-v2") {
         case_cfg.seconds = case_cfg.seconds.min(3.0);
         case_cfg.iterations = case_cfg.iterations.min(2);
     }

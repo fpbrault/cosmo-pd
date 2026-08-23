@@ -35,7 +35,9 @@ const ALGO_ORDER = [
 	"ripple",
 	"mirror",
 	"fof",
-	"karpunk",
+	"terrain",
+	"cheby",
+	"stutter",
 ] as const;
 
 // ---------------------------------------------------------------------------

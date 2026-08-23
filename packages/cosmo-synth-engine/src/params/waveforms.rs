@@ -103,7 +103,6 @@ pub enum Algo {
     Ripple,
     Mirror,
     Fof,
-    Karpunk,
     Terrain,
     Cheby,
     Stutter,

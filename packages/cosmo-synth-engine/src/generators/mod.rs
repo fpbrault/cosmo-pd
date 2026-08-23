@@ -33,7 +33,6 @@ pub use cz101::{CZ_PRESETS, CzPresetV1};
 pub mod cheby;
 pub mod fof;
 pub mod fold;
-pub mod karpunk;
 pub mod mirror;
 pub mod pinch;
 pub mod ripple;
@@ -64,8 +63,6 @@ pub struct LineRenderConfig {
     pub final_dca: f32,
     pub primary_base_waveform: BaseWaveform,
     pub secondary_base_waveform: BaseWaveform,
-    pub effective_freq: f32,
-    pub sample_rate: f32,
     pub primary_control_values: [f32; 8],
     pub secondary_control_values: [f32; 8],
     pub algo_param_mods: [f32; 8],
@@ -82,8 +79,6 @@ impl LineRenderConfig {
         phase: f32,
         final_dcw: f32,
         final_dca: f32,
-        effective_freq: f32,
-        sample_rate: f32,
         algo_param_mods: [f32; 8],
         pm_post_mod: f32,
         primary_control_values: [f32; 8],
@@ -119,8 +114,6 @@ impl LineRenderConfig {
             final_dca,
             primary_base_waveform: line.base_waveform_a,
             secondary_base_waveform: line.base_waveform_b,
-            effective_freq,
-            sample_rate,
             primary_control_values,
             secondary_control_values,
             algo_param_mods,
@@ -138,8 +131,6 @@ impl LineRenderConfig {
         phase: f32,
         final_dcw: f32,
         final_dca: f32,
-        effective_freq: f32,
-        sample_rate: f32,
         algo_param_mods: [f32; 8],
         pm_post_mod: f32,
     ) -> Self {
@@ -165,8 +156,6 @@ impl LineRenderConfig {
             secondary_base_waveform: secondary
                 .map(|slot| slot.base_waveform)
                 .unwrap_or(primary.base_waveform),
-            effective_freq,
-            sample_rate,
             primary_control_values: primary.control_values,
             secondary_control_values: secondary
                 .map(|slot| slot.control_values)
@@ -177,50 +166,8 @@ impl LineRenderConfig {
     }
 }
 
-/// Per-voice state for any generator algorithms that need note-lifetime memory.
-///
-/// Today this wraps Karpunk state only. Keeping the API here avoids leaking
-/// individual stateful algorithm details into the processor or voice layers.
-#[derive(Debug, Clone, Default)]
-pub struct AlgoRuntimeState {
-    karpunk: karpunk::KarpunkPair,
-}
-
-impl AlgoRuntimeState {
-    /// Create empty state for all state-aware algorithms used by one voice.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Reset note-scoped state when a voice starts a new note.
-    pub fn note_on(&mut self, note: u8) {
-        self.karpunk.reseed_for_note(note);
-    }
-
-    /// Render line 1, applying any stateful algorithm behavior as needed.
-    pub fn render_line1(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
-            self.karpunk.render_line1(config)
-        } else {
-            render_line_stateless(config)
-        }
-    }
-
-    /// Render line 2, applying any stateful algorithm behavior as needed.
-    pub fn render_line2(&mut self, config: LineRenderConfig) -> (f32, Option<f32>) {
-        if karpunk::requires_state_tick(config.primary_algo, config.secondary_algo) {
-            self.karpunk.render_line2(config)
-        } else {
-            render_line_stateless(config)
-        }
-    }
-}
-
 #[inline(always)]
-pub(crate) fn render_sample_from_config(
-    config: &LineRenderConfig,
-    karpunk_raw_sample: Option<f32>,
-) -> f32 {
+pub(crate) fn render_sample_from_config(config: &LineRenderConfig) -> f32 {
     let sample = if let Some(secondary_algo) = config.secondary_algo {
         if config.blend <= BLEND_SHORT_CIRCUIT_EPSILON {
             render_algo_sample(
@@ -230,7 +177,6 @@ pub(crate) fn render_sample_from_config(
                 config.primary_base_waveform,
                 &config.primary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.primary_window_gain
         } else if config.blend >= 1.0 - BLEND_SHORT_CIRCUIT_EPSILON {
@@ -241,7 +187,6 @@ pub(crate) fn render_sample_from_config(
                 config.secondary_base_waveform,
                 &config.secondary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.secondary_window_gain
         } else {
@@ -254,7 +199,6 @@ pub(crate) fn render_sample_from_config(
                 config.primary_base_waveform,
                 &config.primary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.primary_window_gain;
             let secondary = render_algo_sample(
@@ -264,10 +208,9 @@ pub(crate) fn render_sample_from_config(
                 config.secondary_base_waveform,
                 &config.secondary_control_values,
                 config.algo_param_mods,
-                karpunk_raw_sample,
                 config.pm_post_mod,
             ) * config.secondary_window_gain;
-            blend_line_samples(config.primary_algo, primary, secondary, config.blend)
+            lerp(primary, secondary, config.blend)
         }
     } else {
         render_algo_sample(
@@ -277,16 +220,10 @@ pub(crate) fn render_sample_from_config(
             config.primary_base_waveform,
             &config.primary_control_values,
             config.algo_param_mods,
-            karpunk_raw_sample,
             config.pm_post_mod,
         ) * config.primary_window_gain
     };
     sample * config.final_dca * PER_LINE_HEADROOM
-}
-
-#[inline(always)]
-fn render_line_stateless(config: LineRenderConfig) -> (f32, Option<f32>) {
-    (render_sample_from_config(&config, None), None)
 }
 
 #[inline(always)]
@@ -308,20 +245,6 @@ fn sample_base_wave(base_waveform: BaseWaveform, phase: f32) -> f32 {
                 -1.0
             }
         }
-    }
-}
-
-#[inline(always)]
-pub(crate) fn blend_line_samples(
-    primary_algo: Algo,
-    primary: f32,
-    secondary: f32,
-    blend: f32,
-) -> f32 {
-    if primary_algo == Algo::Karpunk {
-        primary + (primary * secondary * 2.0 - primary) * blend
-    } else {
-        primary + (secondary - primary) * blend
     }
 }
 
@@ -367,10 +290,6 @@ fn algo_control_slot_index(algo: Algo, id: &str) -> Option<usize> {
         (Algo::Fof, "fofTightness") => 1,
         (Algo::Fof, "fofOffset") => 2,
         (Algo::Fof, "fofSkew") => 3,
-        (Algo::Karpunk, "karpunkDamp") => 0,
-        (Algo::Karpunk, "karpunkBright") => 1,
-        (Algo::Karpunk, "karpunkDecay") => 2,
-        (Algo::Karpunk, "karpunkExcite") => 3,
         (Algo::Terrain, "terrainRatio") => 0,
         (Algo::Terrain, "terrainDepth") => 1,
         (Algo::Terrain, "terrainFmPhase") => 2,
@@ -443,7 +362,6 @@ pub fn warp_phase(
         Algo::Ripple => ripple::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Mirror => mirror::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Fof => fof::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
-        Algo::Karpunk => phase,
         Algo::Terrain => terrain::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Stutter => stutter::warp_phase(phase, amt, c(0), c(1), c(2), c(3)),
         Algo::Cheby => cheby::warp_phase(phase, amt, c(0), c(1), c(2)),
@@ -451,8 +369,6 @@ pub fn warp_phase(
 }
 
 /// Unified algorithm sample renderer used by voice and utility paths.
-///
-/// `runtime_sample` is used only when an algorithm is rendered by per-voice state.
 #[allow(clippy::too_many_arguments)]
 pub fn render_algo_sample(
     algo: Algo,
@@ -461,20 +377,15 @@ pub fn render_algo_sample(
     base_waveform: BaseWaveform,
     control_values: &[f32; 8],
     algo_param_mods: [f32; 8],
-    runtime_sample: Option<f32>,
     pm_post_mod: f32,
 ) -> f32 {
-    if algo == Algo::Karpunk {
-        return runtime_sample.unwrap_or(0.0);
-    }
     let warped = warp_phase(algo, phase, dcw, control_values, &algo_param_mods);
     sample_base_wave(base_waveform, warped + pm_post_mod)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::LineRenderConfig;
-    use super::render_line_stateless;
+    use super::{LineRenderConfig, render_sample_from_config};
     use crate::params::{Algo, BaseWaveform};
 
     #[test]
@@ -490,8 +401,6 @@ mod tests {
             final_dca: 1.0,
             primary_base_waveform: BaseWaveform::Cosine,
             secondary_base_waveform: BaseWaveform::Cosine,
-            effective_freq: 220.0,
-            sample_rate: 44100.0,
             primary_control_values: [0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
             secondary_control_values: [0.0f32; 8],
             algo_param_mods: [0.0; 8],
@@ -503,8 +412,33 @@ mod tests {
             ..base
         };
 
-        let (base_sample, _) = render_line_stateless(base);
-        let (modded_sample, _) = render_line_stateless(modded);
+        let base_sample = render_sample_from_config(&base);
+        let modded_sample = render_sample_from_config(&modded);
         assert_ne!(base_sample, modded_sample);
+    }
+
+    #[test]
+    fn blended_render_interpolates_between_algorithms() {
+        let base = LineRenderConfig {
+            primary_algo: Algo::Bend,
+            secondary_algo: Some(Algo::Terrain),
+            blend: 0.0,
+            phase: 0.37,
+            primary_window_gain: 1.0,
+            secondary_window_gain: 1.0,
+            final_dcw: 0.0,
+            final_dca: 1.0,
+            primary_base_waveform: BaseWaveform::Cosine,
+            secondary_base_waveform: BaseWaveform::Triangle,
+            primary_control_values: [0.5; 8],
+            secondary_control_values: [0.5; 8],
+            algo_param_mods: [0.0; 8],
+            pm_post_mod: 0.0,
+        };
+        let primary = render_sample_from_config(&base);
+        let secondary = render_sample_from_config(&LineRenderConfig { blend: 1.0, ..base });
+        let midpoint = render_sample_from_config(&LineRenderConfig { blend: 0.5, ..base });
+
+        assert!((midpoint - (primary + secondary) * 0.5).abs() < 0.000_001);
     }
 }
