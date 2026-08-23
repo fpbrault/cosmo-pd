@@ -50,7 +50,7 @@ describe("PresetLibrarySidebar", () => {
 				onExportCurrentState={vi.fn()}
 				onImportClick={onImportClick}
 				onInitPreset={onInitPreset}
-				importError={null}
+				importFeedback={null}
 			/>,
 		);
 
@@ -121,7 +121,7 @@ describe("PresetLibrarySidebar", () => {
 				onExportCurrentState={vi.fn()}
 				onImportClick={vi.fn()}
 				onInitPreset={vi.fn()}
-				importError={null}
+				importFeedback={null}
 			/>,
 		);
 
@@ -170,7 +170,7 @@ describe("PresetLibrarySidebar", () => {
 				onExportCurrentState={vi.fn()}
 				onImportClick={vi.fn()}
 				onInitPreset={vi.fn()}
-				importError={null}
+				importFeedback={null}
 			/>,
 		);
 
@@ -204,7 +204,7 @@ describe("PresetLibrarySidebar", () => {
 				onExportCurrentState={vi.fn()}
 				onImportClick={vi.fn()}
 				onInitPreset={vi.fn()}
-				importError={null}
+				importFeedback={null}
 			/>,
 		);
 

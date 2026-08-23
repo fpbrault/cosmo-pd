@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSynthStore } from "@/features/synth/synthStore";
+import {
+	type PresetImportFile,
+	preparePresetImportFiles,
+} from "@/lib/synth/presetImport";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
 import type {
 	ExportedPresetFile,
+	PresetImportBatchResult,
 	PresetLibraryStatus,
 	PresetManagerRepository,
 	PresetManagerSession,
@@ -46,6 +51,9 @@ export interface PresetManagerController {
 	initPreset: () => Promise<void>;
 	exportPreset: (id: string) => Promise<ExportedPresetFile | null>;
 	importPreset: (json: string, filename: string) => Promise<void>;
+	importPresetFiles: (
+		files: PresetImportFile[],
+	) => Promise<PresetImportBatchResult>;
 	exportCurrentState: (name: string) => Promise<ExportedPresetFile>;
 	recomputeDirtyState: () => void;
 	reloadLibrary: () => Promise<void>;
@@ -442,6 +450,52 @@ export function useSynthPresetManager({
 		[commitPresetSelection, reloadLibrary, repository],
 	);
 
+	const importPresetFiles = useCallback(
+		async (files: PresetImportFile[]): Promise<PresetImportBatchResult> => {
+			const preparation = preparePresetImportFiles(files);
+			const failures = [...preparation.failures];
+			let importedCount = 0;
+			let lastActivation: Awaited<
+				ReturnType<PresetManagerRepository["importPreset"]>
+			> | null = null;
+
+			for (const prepared of preparation.imports) {
+				try {
+					const activation = await repository.importPreset(
+						prepared.json,
+						prepared.filename,
+					);
+					if (!activation) {
+						failures.push({
+							filename: prepared.filename,
+							reason: "Invalid preset file.",
+						});
+						continue;
+					}
+					importedCount += 1;
+					lastActivation = activation;
+				} catch {
+					failures.push({
+						filename: prepared.filename,
+						reason: "Invalid preset file.",
+					});
+				}
+			}
+
+			if (preparation.imports.length > 0 || importedCount > 0) {
+				await reloadLibrary();
+			}
+			if (lastActivation) {
+				commitPresetSelection(lastActivation.session, {
+					stateSync: lastActivation.stateSync,
+				});
+			}
+
+			return { importedCount, failures };
+		},
+		[commitPresetSelection, reloadLibrary, repository],
+	);
+
 	const exportCurrentState = useCallback(
 		async (name: string) => repository.exportCurrentState(name),
 		[repository],
@@ -471,6 +525,7 @@ export function useSynthPresetManager({
 			initPreset,
 			exportPreset,
 			importPreset,
+			importPresetFiles,
 			exportCurrentState,
 			recomputeDirtyState,
 			reloadLibrary,
@@ -489,6 +544,7 @@ export function useSynthPresetManager({
 			exportCurrentState,
 			exportPreset,
 			importPreset,
+			importPresetFiles,
 			initPreset,
 			isPresetDirty,
 			navigationEntryIds,

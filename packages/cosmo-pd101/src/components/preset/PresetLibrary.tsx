@@ -1,8 +1,12 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { PresetLibraryStatus } from "@/features/synth/presetManagerRepository";
+import type {
+	PresetImportBatchResult,
+	PresetLibraryStatus,
+} from "@/features/synth/presetManagerRepository";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
 import type { PresetRef } from "@/features/synth/useSynthPresetManager";
+import type { PresetImportFile } from "@/lib/synth/presetImport";
 import {
 	PRESET_TAG_OPTIONS,
 	type PresetTagOptions,
@@ -32,7 +36,9 @@ type PresetLibraryProps = {
 	onSetPresetTags: (id: string, tags: PresetTagOptions[]) => void;
 	onExportPreset: (id: string) => void;
 	onExportCurrentState: (name: string) => void;
-	onImportPreset: (json: string, filename: string) => void;
+	onImportPresetFiles: (
+		files: PresetImportFile[],
+	) => Promise<PresetImportBatchResult>;
 	onInitPreset: () => void;
 	onRetryLibrary?: () => void;
 	onRepairLibrary?: () => void;
@@ -59,7 +65,7 @@ export default function PresetLibrary({
 	onSetPresetTags,
 	onExportPreset,
 	onExportCurrentState,
-	onImportPreset,
+	onImportPresetFiles,
 	onInitPreset,
 	onRetryLibrary,
 	onRepairLibrary,
@@ -72,6 +78,10 @@ export default function PresetLibrary({
 	const [recoveryConfirmation, setRecoveryConfirmation] = useState<
 		"repair" | "rebuild" | null
 	>(null);
+	const [importFeedback, setImportFeedback] = useState<{
+		kind: "success" | "warning" | "error";
+		message: string;
+	} | null>(null);
 	const persistenceDisabled = libraryStatus.state === "degraded";
 	const isPluginRuntime = typeof window.__czSetParams === "function";
 
@@ -84,8 +94,6 @@ export default function PresetLibrary({
 		setSaveAsOpen,
 		saveAsName,
 		setSaveAsName,
-		importError,
-		setImportError,
 		renameValue,
 		setRenameValue,
 		authorValue,
@@ -125,11 +133,50 @@ export default function PresetLibrary({
 		onNavigationEntriesChange,
 	});
 
-	const { importFileRef, handleImportFile, handleImportClick } =
-		usePresetLibraryImport({
-			onImportPreset,
-			setImportError,
-		});
+	const handleImportComplete = useCallback(
+		(result: PresetImportBatchResult) => {
+			if (result.importedCount === 0) {
+				setImportFeedback({
+					kind: "error",
+					message: t("presetLibrary.importNone"),
+				});
+				return;
+			}
+
+			const countKey =
+				result.importedCount === 1
+					? "presetLibrary.importSummarySingular"
+					: "presetLibrary.importSummaryPlural";
+			const failureSuffix = result.failures.length
+				? ` ${t("presetLibrary.importFailures", {
+						files: result.failures
+							.map((failure) => failure.filename)
+							.join(", "),
+					})}`
+				: "";
+			setImportFeedback({
+				kind: result.failures.length > 0 ? "warning" : "success",
+				message: `${t(countKey, { count: result.importedCount })}${failureSuffix}`,
+			});
+		},
+		[t],
+	);
+
+	const {
+		importFileRef,
+		handleImportFile,
+		handleImportClick,
+		isDragActive,
+		...dragHandlers
+	} = usePresetLibraryImport({
+		onImportPresetFiles,
+		onImportComplete: handleImportComplete,
+		onImportFailure: () =>
+			setImportFeedback({
+				kind: "error",
+				message: t("presetLibrary.importReadError"),
+			}),
+	});
 
 	const handleLoad = useCallback(
 		(entry: PresetEntry) => {
@@ -254,7 +301,21 @@ export default function PresetLibrary({
 	}, [onExportPreset, selectedLocalEntry]);
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col">
+		<section
+			className="relative flex min-h-0 flex-1 flex-col"
+			aria-label={t("presetLibrary.dropRegionAria")}
+			onDragEnter={dragHandlers.handleDragEnter}
+			onDragOver={dragHandlers.handleDragOver}
+			onDragLeave={dragHandlers.handleDragLeave}
+			onDrop={dragHandlers.handleDrop}
+		>
+			{isDragActive ? (
+				<div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center border-2 border-cz-light-blue border-dashed bg-cz-body/80">
+					<p className="rounded border border-cz-light-blue bg-cz-panel px-5 py-3 font-mono text-cz-light-blue text-sm uppercase tracking-[0.18em]">
+						{t("presetLibrary.dropFiles")}
+					</p>
+				</div>
+			) : null}
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-cz-border bg-cz-panel">
 				{libraryStatus.state === "degraded" && (
 					<div
@@ -409,7 +470,7 @@ export default function PresetLibrary({
 							onExportCurrentState={handleExportCurrentState}
 							onImportClick={handleImportClick}
 							onInitPreset={onInitPreset}
-							importError={importError}
+							importFeedback={importFeedback}
 						/>
 					</div>
 				</div>
@@ -418,7 +479,8 @@ export default function PresetLibrary({
 			<input
 				ref={importFileRef}
 				type="file"
-				accept=".json,application/json"
+				accept=".json,.toml,.syx,application/json,application/toml,application/octet-stream"
+				multiple
 				className="hidden"
 				onChange={handleImportFile}
 			/>
@@ -440,6 +502,6 @@ export default function PresetLibrary({
 				}}
 				onCancelRecovery={() => setRecoveryConfirmation(null)}
 			/>
-		</div>
+		</section>
 	);
 }

@@ -48,6 +48,7 @@ export {
 export type {
 	ExportedPresetFile,
 	PresetActivationResult,
+	PresetImportBatchResult,
 	PresetLibrarySnapshot,
 	PresetLibraryStatus,
 	PresetManagerRepository,
@@ -140,6 +141,13 @@ export type {
 	PluginBridgeWindowCapabilities,
 	PluginBridgeWindowFacade,
 } from "./lib/synth/pluginBridgeWindow";
+export {
+	type PreparedPresetImport,
+	type PresetImportFailure,
+	type PresetImportFile,
+	type PresetImportPreparation,
+	preparePresetImportFiles,
+} from "./lib/synth/presetImport";
 export type { PresetSource } from "./lib/synth/presetSources";
 export {
 	normalizePresetTags,
