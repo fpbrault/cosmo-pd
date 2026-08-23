@@ -249,7 +249,7 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "osc-pd-heavy-no-mod-fx",
+            name: "osc-pd-heavy-no-mod-fx-v2",
             description: "High-cost PD/warp algorithms only (no matrix, no FX)",
             build_params: || {
                 let mut p = SynthParams::default();
@@ -403,7 +403,7 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "chops-like",
+            name: "chops-like-v2",
             description: "Aggressive transient patch with high modulation churn",
             build_params: || {
                 let mut p = SynthParams::default();
@@ -467,7 +467,7 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "worst-poly",
+            name: "worst-poly-v2",
             description: "High-cost algorithms, heavy modulation, heavy FX",
             build_params: || {
                 let mut p = SynthParams::default();
@@ -722,7 +722,7 @@ fn scenarios() -> Vec<Scenario> {
             build_param_variants: None,
         },
         Scenario {
-            name: "opt-all-combined",
+            name: "opt-all-combined-v2",
             description: "All optimizations active: cubic sine, param interp, vectorization",
             build_params: || {
                 let mut p = SynthParams::default();
@@ -1029,15 +1029,15 @@ fn scenario_matrix() -> Vec<(String, usize)> {
         "default",
         "fun-bass-like",
         "chants-like",
-        "chops-like",
+        "chops-like-v2",
         "mod-heavy",
         "fx-heavy",
-        "worst-poly",
+        "worst-poly-v2",
         // Optimization-focused scenarios
         "opt-sine-lfo-heavy",
         "opt-param-interp-light",
         "opt-render-vectorization",
-        "opt-all-combined",
+        "opt-all-combined-v2",
     ];
 
     let mut matrix = Vec::new();
@@ -1056,9 +1056,9 @@ fn hotspot_matrix() -> Vec<(String, usize)> {
         ("hotspot-note-churn".to_string(), 8),
         ("mod-only-sine".to_string(), 8),
         ("hotspot-algo-controls".to_string(), 8),
-        ("osc-pd-heavy-no-mod-fx".to_string(), 8),
+        ("osc-pd-heavy-no-mod-fx-v2".to_string(), 8),
         ("fx-only-sine".to_string(), 8),
-        ("worst-poly".to_string(), 8),
+        ("worst-poly-v2".to_string(), 8),
     ]
 }
 
@@ -1092,7 +1092,12 @@ fn algo_matrix() -> Vec<&'static str> {
 fn is_heavy_scenario(name: &str) -> bool {
     matches!(
         name,
-        "chants-like" | "chops-like" | "fx-heavy" | "mod-heavy" | "worst-poly" | "opt-all-combined"
+        "chants-like"
+            | "chops-like-v2"
+            | "fx-heavy"
+            | "mod-heavy"
+            | "worst-poly-v2"
+            | "opt-all-combined-v2"
     )
 }
 
@@ -1139,7 +1144,7 @@ fn tune_hotspot_case_config(case_cfg: &mut BenchmarkConfig) {
         case_cfg.seconds = case_cfg.seconds.min(3.0);
     }
 
-    if matches!(case_cfg.scenario.as_str(), "fx-only-sine" | "worst-poly") {
+    if matches!(case_cfg.scenario.as_str(), "fx-only-sine" | "worst-poly-v2") {
         case_cfg.seconds = case_cfg.seconds.min(3.0);
         case_cfg.iterations = case_cfg.iterations.min(2);
     }
