@@ -49,7 +49,7 @@ export default memo(function SynthRendererLibraryOverlay({
 		setPresetTags,
 		exportPreset,
 		exportCurrentState,
-		importPreset,
+		importPresetFiles,
 		initPreset,
 		retryLibrary,
 		repairLibrary,
@@ -110,8 +110,8 @@ export default memo(function SynthRendererLibraryOverlay({
 				onExportCurrentState={(name) => {
 					void exportCurrentState(name).then(downloadPresetFile);
 				}}
-				onImportPreset={(json, filename) => {
-					void importPreset(json, filename);
+				onImportPresetFiles={async (files) => {
+					return importPresetFiles(files);
 				}}
 				onInitPreset={() => {
 					void initPreset();

@@ -24,8 +24,7 @@ export function PhaseLineAlgoPanel({
 	lineIndex,
 	color,
 }: PhaseLineAlgoPanelProps) {
-	const { baseWaveEnabledA, baseWaveEnabledB, slotA, slotB } =
-		usePhaseLineAlgorithms(algo);
+	const { slotA, slotB } = usePhaseLineAlgorithms(algo);
 
 	return (
 		<div
@@ -36,7 +35,6 @@ export function PhaseLineAlgoPanel({
 				section="A"
 				algo={algo}
 				slot={slotA}
-				baseWaveEnabled={baseWaveEnabledA}
 				lineIndex={lineIndex}
 				color={color}
 			/>
@@ -87,7 +85,6 @@ export function PhaseLineAlgoPanel({
 				section="B"
 				algo={algo}
 				slot={slotB}
-				baseWaveEnabled={baseWaveEnabledB}
 				lineIndex={lineIndex}
 				color={color}
 			/>

@@ -133,18 +133,12 @@ impl CosmoProcessor {
         self.voices[voice_idx].note_on_sequence = self.next_note_on_sequence();
         self.voices[voice_idx].noise_step = 0;
         self.reset_voice_envs(voice_idx);
-        self.reset_generator_runtime_for_note(voice_idx, note);
 
         if self.params.mod_env.retrig_mode == ModEnvRetrigMode::Poly {
             self.voices[voice_idx].mod_env.note_on();
         } else {
             self.voices[voice_idx].mod_env = self.shared_mod_env.clone();
         }
-    }
-
-    pub(crate) fn reset_generator_runtime_for_note(&mut self, voice_idx: usize, note: u8) {
-        let voice = &mut self.voices[voice_idx];
-        voice.algo_runtime.note_on(note);
     }
 
     pub(crate) fn replace_active_note_entry(&mut self, voice_idx: usize, note: u8) {

@@ -1,3 +1,4 @@
+import type { PresetImportFailure } from "@/lib/synth/presetImport";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
 import type { PresetEntry } from "./types/presetEntry";
 
@@ -35,6 +36,11 @@ export type PresetLibraryStatus =
 export type PresetLibrarySnapshot = {
 	entries: PresetEntry[];
 	status: Exclude<PresetLibraryStatus, { state: "loading" }>;
+};
+
+export type PresetImportBatchResult = {
+	importedCount: number;
+	failures: PresetImportFailure[];
 };
 
 export interface PresetManagerRepository {

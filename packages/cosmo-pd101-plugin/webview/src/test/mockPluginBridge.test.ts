@@ -157,6 +157,21 @@ describe("invoke", () => {
 // ---------------------------------------------------------------------------
 
 describe("pushParamUpdate", () => {
+	it("maps the complete algorithm order for numeric warp updates", () => {
+		const handler = vi.fn();
+		window.__czOnParams = handler;
+
+		for (const [index, expectedAlgo] of [
+			[19, "terrain"],
+			[20, "cheby"],
+			[21, "stutter"],
+		] as const) {
+			window.__MOCK_BRIDGE__?.pushParamUpdate("l1_warp_algo", index);
+			const sent = JSON.parse(handler.mock.lastCall?.[0] ?? "{}");
+			expect(sent.line1.algo).toBe(expectedAlgo);
+		}
+	});
+
 	it("calls window.__czOnParams with serialised JSON when handler is set", () => {
 		const handler = vi.fn();
 		window.__czOnParams = handler;

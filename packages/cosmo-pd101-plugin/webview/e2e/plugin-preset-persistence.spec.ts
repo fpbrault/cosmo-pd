@@ -28,7 +28,9 @@ test.describe("Preset name persistence", () => {
 			timeout: 5000,
 		});
 
-		const presetButton = page.getByRole("button", { name: /^preset /i });
+		const presetButton = page.getByRole("button", {
+			name: /^Choose preset\. Current preset:/i,
+		});
 		await expect(presetButton).toContainText("Warm Pad", { timeout: 5000 });
 	});
 

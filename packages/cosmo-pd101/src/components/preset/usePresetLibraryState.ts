@@ -67,7 +67,6 @@ export function usePresetLibraryState({
 	const [saveName, setSaveName] = useState("");
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [saveAsName, setSaveAsName] = useState("");
-	const [importError, setImportError] = useState<string | null>(null);
 	const [renameValue, setRenameValue] = useState("");
 	const [authorValue, setAuthorValue] = useState("");
 	const [descriptionValue, setDescriptionValue] = useState("");
@@ -447,8 +446,6 @@ export function usePresetLibraryState({
 		setSaveAsOpen,
 		saveAsName,
 		setSaveAsName,
-		importError,
-		setImportError,
 		renameValue,
 		setRenameValue,
 		authorValue,

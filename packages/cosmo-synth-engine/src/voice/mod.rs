@@ -11,7 +11,6 @@ pub(crate) use modulation::ModSources;
 pub(crate) use render::{VoiceRenderContext, render_voice};
 
 use crate::envelope::EnvGen;
-use crate::generators::AlgoRuntimeState;
 
 pub(crate) const ANTI_CLICK_ATTACK_SAMPLES: u32 = 64;
 
@@ -78,7 +77,6 @@ pub struct Voice {
     pub last_output_sample: f32,
     pub release_tail_level: f32,
     pub aftertouch: f32,
-    pub algo_runtime: AlgoRuntimeState,
 }
 
 impl Voice {
@@ -121,7 +119,6 @@ impl Voice {
             last_output_sample: 0.0,
             release_tail_level: 0.0,
             aftertouch: 0.0,
-            algo_runtime: AlgoRuntimeState::default(),
         }
     }
 
@@ -376,6 +373,20 @@ mod tests {
             low_note, high_note,
             "noise-only output should not change pitch with the played note"
         );
+    }
+
+    #[test]
+    fn normal_prime_line_renders_selected_algorithm() {
+        let mut params = SynthParams::default();
+        params.line_select = LineSelect::L1PlusL2Prime;
+        params.mod_mode = ModMode::Normal;
+        params.line1.dca_base = 0.0;
+        params.line2.dca_base = 1.0;
+        params.line2.algo = crate::params::Algo::Terrain;
+
+        let samples = render_sequence(params, 60, 32);
+
+        assert!(sum_abs(&samples) > 0.0);
     }
 
     #[test]

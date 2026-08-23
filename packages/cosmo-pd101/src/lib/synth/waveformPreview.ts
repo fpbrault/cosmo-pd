@@ -290,10 +290,6 @@ function applyPdAlgo(
 				controlValue("chebyWarp", 0),
 				controlValue("chebyMix", 1),
 			);
-		case "karpunk":
-			return wrap01(
-				phase + amount * Math.sin(TAU * phase * 3) * Math.exp(-phase * 2.5),
-			);
 		case "fof":
 			return clamp(
 				wrap01(
@@ -326,9 +322,6 @@ function renderAlgoSample(
 	algoControls?: AlgoControlValueV1[] | null,
 	pmPostMod = 0,
 ): number {
-	if (algo === "karpunk") {
-		return Math.sin(TAU * applyPdAlgo(phase, dcw, algo, algoControls));
-	}
 	const direct = sampleDirectAlgoPreview(algo, phase);
 	if (direct !== null) return direct;
 	const warpedPhase = applyPdAlgo(phase, dcw, algo, algoControls);

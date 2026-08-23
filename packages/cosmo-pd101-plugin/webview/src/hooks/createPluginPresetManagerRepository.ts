@@ -384,7 +384,10 @@ export function createPluginPresetManagerRepository({
 			const importedBank = parseImportedPresetBank(json);
 			if (importedBank) {
 				await window.__czImportPresetBank?.(importedBank);
-				return null;
+				return createActivationResult(
+					createSelection(null, "Current State"),
+					"immediate",
+				);
 			}
 
 			const imported = parseImportedPreset(json, filename);

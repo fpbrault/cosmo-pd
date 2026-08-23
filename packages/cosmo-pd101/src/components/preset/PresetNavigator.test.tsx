@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
-import PresetNavigator from "./PresetNavigator";
+import PresetNavigator, { type PresetNavigatorProps } from "./PresetNavigator";
 
 const { mockUseMidiLearnTarget } = vi.hoisted(() => ({
 	mockUseMidiLearnTarget: vi.fn(),
@@ -18,13 +18,49 @@ const entries: PresetEntry[] = [
 		type: "library",
 		source: "cosmo-factory",
 		sourceLabel: "Cosmo Factory Library",
+		bankId: "cosmo-factory",
+		bankName: "Cosmo Factory Library",
 		author: "Purr Audio",
 		description: "",
 		starred: true,
 		favorite: false,
-		tags: [],
+		tags: ["Bass"],
+	},
+	{
+		id: "local-keys",
+		label: "Local Keys",
+		type: "local",
+		source: "user",
+		sourceLabel: "User",
+		author: "You",
+		description: "",
+		starred: false,
+		favorite: true,
+		tags: ["Keys"],
 	},
 ];
+
+function createProps(
+	overrides: Partial<PresetNavigatorProps> = {},
+): PresetNavigatorProps {
+	return {
+		presetCount: entries.length,
+		entries,
+		activeEntry: entries[0] ?? null,
+		activePresetName: "Factory Bass",
+		activePresetNameBase: "Factory Bass",
+		isPresetDirty: false,
+		persistenceDisabled: false,
+		onStepPreset: vi.fn(),
+		onActivatePreset: vi.fn().mockResolvedValue(undefined),
+		onNavigationEntriesChange: vi.fn(),
+		onSetPresetFavorite: vi.fn().mockResolvedValue(undefined),
+		onSavePreset: vi.fn().mockResolvedValue(undefined),
+		onSavePresetAs: vi.fn().mockResolvedValue(undefined),
+		onLibraryModeChange: vi.fn(),
+		...overrides,
+	};
+}
 
 describe("PresetNavigator", () => {
 	beforeEach(() => {
@@ -38,67 +74,142 @@ describe("PresetNavigator", () => {
 		});
 	});
 
-	it("opens the full-screen library from the preset display", () => {
-		const onLibraryModeChange = vi.fn();
+	it("renders the approved control order and preset metadata", () => {
+		render(<PresetNavigator {...createProps()} />);
 
-		const { rerender } = render(
-			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={vi.fn()}
-				onLibraryModeChange={onLibraryModeChange}
-			/>,
+		const visibleButtons = screen.getAllByRole("button");
+		expect(
+			visibleButtons.map((button) => button.getAttribute("aria-label")),
+		).toEqual([
+			"Open library",
+			"Previous preset",
+			"Favorite Factory Bass",
+			"Choose preset. Current preset: Factory Bass",
+			"Next preset",
+			"Save preset as",
+		]);
+		expect(
+			screen.getByText("Cosmo Factory Library · Purr Audio"),
+		).toBeVisible();
+		expect(screen.getByRole("img", { name: "Featured preset" })).toBeVisible();
+	});
+
+	it("uses only the dedicated library button for the full library", () => {
+		const props = createProps();
+		const { rerender } = render(<PresetNavigator {...props} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Open library" }));
+		expect(props.onLibraryModeChange).toHaveBeenCalledWith(true);
+
+		rerender(<PresetNavigator {...props} isLibraryModeOpen={true} />);
+		fireEvent.click(screen.getByRole("button", { name: "Close library" }));
+		expect(props.onLibraryModeChange).toHaveBeenLastCalledWith(false);
+	});
+
+	it("toggles the active preset favorite inside the screen", async () => {
+		const props = createProps();
+		render(<PresetNavigator {...props} />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Favorite Factory Bass" }),
 		);
+
+		await waitFor(() =>
+			expect(props.onSetPresetFavorite).toHaveBeenCalledWith(
+				"builtin-factory-bass",
+				true,
+			),
+		);
+	});
+
+	it("searches and loads a preset from quick select", async () => {
+		const props = createProps();
+		render(<PresetNavigator {...props} />);
 
 		fireEvent.click(
 			screen.getByRole("button", {
-				name: "Preset Current State. Open library",
+				name: "Choose preset. Current preset: Factory Bass",
 			}),
 		);
+		expect(
+			screen.getByRole("dialog", { name: "Quick preset select" }),
+		).toBeVisible();
 
-		expect(onLibraryModeChange).toHaveBeenCalledWith(true);
-		expect(screen.queryByText("Preset List")).not.toBeInTheDocument();
+		fireEvent.change(screen.getByPlaceholderText("Search presets"), {
+			target: { value: "keys" },
+		});
+		expect(screen.queryByRole("option", { name: /Factory Bass/ })).toBeNull();
 
-		rerender(
+		fireEvent.click(screen.getByRole("option", { name: /Local Keys/ }));
+		await waitFor(() =>
+			expect(props.onActivatePreset).toHaveBeenCalledWith("local-keys"),
+		);
+		expect(props.onNavigationEntriesChange).toHaveBeenCalledWith([
+			"local-keys",
+		]);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Quick preset select" }),
+			).toBeNull(),
+		);
+	});
+
+	it("saves a dirty user preset directly", async () => {
+		const props = createProps({
+			activeEntry: entries[1] ?? null,
+			activePresetName: "Local Keys *",
+			activePresetNameBase: "Local Keys",
+			isPresetDirty: true,
+		});
+		render(<PresetNavigator {...props} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Save preset" }));
+		await waitFor(() =>
+			expect(props.onSavePreset).toHaveBeenCalledWith("Local Keys"),
+		);
+	});
+
+	it("opens Save As for a factory preset", async () => {
+		const props = createProps();
+		render(<PresetNavigator {...props} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Save preset as" }));
+		fireEvent.change(screen.getByPlaceholderText("New preset name"), {
+			target: { value: "Factory Bass Copy" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Confirm save as" }));
+
+		await waitFor(() =>
+			expect(props.onSavePresetAs).toHaveBeenCalledWith("Factory Bass Copy"),
+		);
+	});
+
+	it("disables save for a clean user preset", () => {
+		render(
 			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={vi.fn()}
-				isLibraryModeOpen={true}
-				onLibraryModeChange={onLibraryModeChange}
+				{...createProps({
+					activeEntry: entries[1] ?? null,
+					activePresetName: "Local Keys",
+					activePresetNameBase: "Local Keys",
+				})}
 			/>,
 		);
 
-		fireEvent.click(
-			screen.getByRole("button", {
-				name: "Preset Current State. Close library",
-			}),
-		);
-		expect(onLibraryModeChange).toHaveBeenLastCalledWith(false);
+		expect(screen.getByRole("button", { name: "Save preset" })).toBeDisabled();
 	});
 
 	it("keeps previous and next preset stepping", () => {
-		const onStepPreset = vi.fn();
-
-		render(
-			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={onStepPreset}
-			/>,
-		);
+		const props = createProps();
+		render(<PresetNavigator {...props} />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Previous preset" }));
 		fireEvent.click(screen.getByRole("button", { name: "Next preset" }));
 
-		expect(onStepPreset).toHaveBeenNthCalledWith(1, -1);
-		expect(onStepPreset).toHaveBeenNthCalledWith(2, 1);
+		expect(props.onStepPreset).toHaveBeenNthCalledWith(1, -1);
+		expect(props.onStepPreset).toHaveBeenNthCalledWith(2, 1);
 	});
 
-	it("shows MIDI learn overlays on preset buttons when learnMode is active", () => {
+	it("keeps MIDI learn overlays on the arrow buttons", () => {
 		mockUseMidiLearnTarget.mockReturnValue({
 			learnMode: true,
 			midiLearnState: "available",
@@ -107,70 +218,14 @@ describe("PresetNavigator", () => {
 			onContextMenu: vi.fn(),
 		});
 
-		const { container } = render(
-			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={vi.fn()}
-			/>,
-		);
-
+		const { container } = render(<PresetNavigator {...createProps()} />);
 		const overlays = container.querySelectorAll(
 			".pointer-events-none.absolute.inset-0.z-10",
 		);
-		expect(overlays.length).toBeGreaterThanOrEqual(2);
+		expect(overlays).toHaveLength(2);
 	});
 
-	it("shows mapped state on preset buttons when mapping exists", () => {
-		mockUseMidiLearnTarget.mockReturnValue({
-			learnMode: true,
-			midiLearnState: "mapped",
-			interactionLocked: true,
-			onClick: vi.fn(),
-			onContextMenu: vi.fn(),
-		});
-
-		const { container } = render(
-			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={vi.fn()}
-			/>,
-		);
-
-		const overlays = container.querySelectorAll(
-			".pointer-events-none.absolute.inset-0.z-10",
-		);
-		expect(overlays.length).toBeGreaterThanOrEqual(2);
-	});
-
-	it("does not render MIDI learn overlays when learnMode is off", () => {
-		mockUseMidiLearnTarget.mockReturnValue({
-			learnMode: false,
-			midiLearnState: null,
-			interactionLocked: false,
-			onClick: vi.fn(),
-			onContextMenu: vi.fn(),
-		});
-
-		const { container } = render(
-			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={vi.fn()}
-			/>,
-		);
-
-		const overlays = container.querySelectorAll(
-			".pointer-events-none.absolute.inset-0.z-10",
-		);
-		expect(overlays.length).toBe(0);
-	});
-
-	it("previous preset button click arms MIDI learn in learn mode", () => {
+	it("arms MIDI learn instead of stepping when learn mode is active", () => {
 		const onClick = vi.fn();
 		mockUseMidiLearnTarget.mockReturnValue({
 			learnMode: true,
@@ -179,20 +234,11 @@ describe("PresetNavigator", () => {
 			onClick,
 			onContextMenu: vi.fn(),
 		});
-
-		const onStepPreset = vi.fn();
-
-		render(
-			<PresetNavigator
-				presetCount={entries.length}
-				activePresetName="Current State"
-				activePresetSource="Current State"
-				onStepPreset={onStepPreset}
-			/>,
-		);
+		const props = createProps();
+		render(<PresetNavigator {...props} />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Previous preset" }));
 		expect(onClick).toHaveBeenCalled();
-		expect(onStepPreset).not.toHaveBeenCalled();
+		expect(props.onStepPreset).not.toHaveBeenCalled();
 	});
 });

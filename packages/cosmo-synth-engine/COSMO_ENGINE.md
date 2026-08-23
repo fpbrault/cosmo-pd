@@ -148,8 +148,8 @@ flowchart TD
     STATE --> DCW["apply_dcw_dezipper()<br/><small>1.5ms low-pass on DCW jumps</small>"]
     DCW --> PITCH["apply_pitch_mod()<br/><small>portamento + pitch bend + vibrato + pitch mod</small>"]
     PITCH --> PHASE["build_phase_frame()<br/><small>phase accumulation, internal PM<br/>(pre or post warp)</small>"]
-    PHASE --> RENDER_L1["algo_runtime.render_line1()<br/><small>warp_phase(φ, DCW, controls) → base waveform</small>"]
-    PHASE --> RENDER_L2["algo_runtime.render_line2()"]
+    PHASE --> RENDER_L1["render_sample_from_config(line 1)<br/><small>warp_phase(φ, DCW, controls) → base waveform</small>"]
+    PHASE --> RENDER_L2["render_sample_from_config(line 2)"]
     RENDER_L1 & RENDER_L2 --> MIX["mix_line_outputs()<br/><small>Normal/Ring/Noise mode<br/>LineSelect routing</small>"]
     MIX --> VOLMOD["volume × (1 + volume_mod)"]
     VOLMOD --> CLICK["anti-click attack ramp"]
@@ -209,7 +209,6 @@ flowchart LR
 | `Mirror` | center, blend, clip, skew | Phase mirroring |
 | `Fof` | ratio, tightness, offset, skew | Formant (Fof) synthesis |
 | `Sine` | (none) | Pure sine (amt→amp) |
-| `Karpunk` | (per-voice state) | Chaotic noise oscillator |
 | `Terrain` | x, y, z, scale | 3D terrain lookup noise |
 | `Cheby` | order, mix, —, — | Chebyshev polynomials |
 | `Stutter` | rate, depth, —, — | Granular stutter |

@@ -17,7 +17,7 @@ export type AddPresetResponse = {
 export type AdsrPhase = "idle" | "attack" | "decay" | "sustain" | "release";
 
 /**  Flat algorithm selector — unifies CZ waveforms and warp variants. */
-export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "karpunk" | "terrain" | "cheby" | "stutter";
+export type Algo = "saw" | "square" | "pulse" | "null" | "sinePulse" | "sawPulse" | "multiSine" | "pulse2" | "cz101" | "bend" | "sync" | "pinch" | "fold" | "skew" | "twist" | "clip" | "ripple" | "mirror" | "fof" | "terrain" | "cheby" | "stutter";
 
 /**  One algorithm-specific control value persisted on a line. */
 export type AlgoControlValueV1 = {

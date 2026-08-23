@@ -5,7 +5,7 @@ import type {
 	AlgoControlRuntime,
 } from "@/components/controls/algo/algoControlTypes";
 import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
-import { algoUsesBaseWaveform, PD_ALGOS } from "@/lib/synth/algoUiCatalog";
+import { PD_ALGOS } from "@/lib/synth/algoUiCatalog";
 import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
@@ -18,8 +18,6 @@ const ALGO_DEFINITIONS = ALGO_DEFINITIONS_V1 as AlgoDefinitionV1[];
 
 type PhaseLineAlgorithms = {
 	algoBEnabled: boolean;
-	baseWaveEnabledA: boolean;
-	baseWaveEnabledB: boolean;
 	slotA: AlgoSlotViewModel;
 	slotB: AlgoSlotViewModel;
 };
@@ -347,9 +345,6 @@ export function usePhaseLineAlgorithms(
 
 	return {
 		algoBEnabled,
-		baseWaveEnabledA: algoUsesBaseWaveform(algo.algoA),
-		baseWaveEnabledB:
-			algoBEnabled && algo.algoB != null && algoUsesBaseWaveform(algo.algoB),
 		slotA,
 		slotB,
 	};

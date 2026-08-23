@@ -2,56 +2,104 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { usePresetLibraryImport } from "./usePresetLibraryImport";
 
-class FileReaderMock {
-	result: string | null = null;
-	onload: ((event: { target: { result: string } }) => void) | null = null;
-
-	readAsText(file: File) {
-		this.result = file.name.includes("bad") ? "{bad" : '{"ok":true}';
-		this.onload?.({ target: { result: this.result } });
-	}
-}
-
 describe("usePresetLibraryImport", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
 
-	it("invokes import callback on valid json and clears input value", () => {
-		const onImportPreset = vi.fn();
-		const setImportError = vi.fn();
-		vi.stubGlobal("FileReader", FileReaderMock);
+	it("reads multiple selected files as binary import sources", async () => {
+		const onImportPresetFiles = vi.fn().mockResolvedValue({
+			importedCount: 2,
+			failures: [],
+		});
+		const onImportComplete = vi.fn();
+		const onImportFailure = vi.fn();
 		const { result } = renderHook(() =>
-			usePresetLibraryImport({ onImportPreset, setImportError }),
+			usePresetLibraryImport({
+				onImportPresetFiles,
+				onImportComplete,
+				onImportFailure,
+			}),
 		);
 		const event = {
 			target: {
-				files: [new File(["{}"], "preset.json", { type: "application/json" })],
+				files: [
+					new File([new Uint8Array([0xf0])], "one.syx"),
+					new File(['{"ok":true}'], "two.json"),
+				],
 				value: "x",
 			},
 		} as unknown as React.ChangeEvent<HTMLInputElement>;
-		act(() => result.current.handleImportFile(event));
-		expect(onImportPreset).toHaveBeenCalledWith('{"ok":true}', "preset");
-		expect(setImportError).toHaveBeenCalledWith(null);
+
+		await act(async () => result.current.handleImportFile(event));
+
+		expect(onImportPresetFiles).toHaveBeenCalledWith([
+			expect.objectContaining({
+				filename: "one.syx",
+				data: expect.any(Uint8Array),
+			}),
+			expect.objectContaining({
+				filename: "two.json",
+				data: expect.any(Uint8Array),
+			}),
+		]);
+		expect(onImportComplete).toHaveBeenCalledWith({
+			importedCount: 2,
+			failures: [],
+		});
+		expect(onImportFailure).not.toHaveBeenCalled();
 		expect(event.target.value).toBe("");
 	});
 
-	it("sets import error when callback throws", () => {
-		vi.stubGlobal("FileReader", FileReaderMock);
-		const onImportPreset = vi.fn(() => {
-			throw new Error("bad");
+	it("handles dropped files and resets the drag state", async () => {
+		const onImportPresetFiles = vi.fn().mockResolvedValue({
+			importedCount: 1,
+			failures: [],
 		});
-		const setImportError = vi.fn();
 		const { result } = renderHook(() =>
-			usePresetLibraryImport({ onImportPreset, setImportError }),
+			usePresetLibraryImport({
+				onImportPresetFiles,
+				onImportComplete: vi.fn(),
+				onImportFailure: vi.fn(),
+			}),
 		);
+		const file = new File([new Uint8Array([0xf0])], "drop.syx");
 		const event = {
-			target: {
-				files: [new File(["{}"], "bad.json", { type: "application/json" })],
-				value: "x",
+			preventDefault: vi.fn(),
+			dataTransfer: {
+				types: ["Files"],
+				files: [file],
+				dropEffect: "none",
 			},
-		} as unknown as React.ChangeEvent<HTMLInputElement>;
-		act(() => result.current.handleImportFile(event));
-		expect(setImportError).toHaveBeenCalledWith("Invalid preset file.");
+		} as unknown as React.DragEvent<HTMLDivElement>;
+
+		act(() => result.current.handleDragEnter(event));
+		expect(result.current.isDragActive).toBe(true);
+		await act(async () => result.current.handleDrop(event));
+		expect(result.current.isDragActive).toBe(false);
+		expect(onImportPresetFiles).toHaveBeenCalledTimes(1);
+		expect(event.preventDefault).toHaveBeenCalled();
+	});
+
+	it("reports file-read or import failures", async () => {
+		const onImportFailure = vi.fn();
+		const { result } = renderHook(() =>
+			usePresetLibraryImport({
+				onImportPresetFiles: vi.fn().mockRejectedValue(new Error("bad")),
+				onImportComplete: vi.fn(),
+				onImportFailure,
+			}),
+		);
+
+		await act(async () =>
+			result.current.handleImportFile({
+				target: {
+					files: [new File(["{}"], "bad.json")],
+					value: "x",
+				},
+			} as unknown as React.ChangeEvent<HTMLInputElement>),
+		);
+
+		expect(onImportFailure).toHaveBeenCalled();
 	});
 });

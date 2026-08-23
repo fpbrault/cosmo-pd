@@ -88,7 +88,10 @@ function createProps() {
 		onSetPresetTags: vi.fn(),
 		onExportPreset: vi.fn(),
 		onExportCurrentState: vi.fn(),
-		onImportPreset: vi.fn(),
+		onImportPresetFiles: vi.fn().mockResolvedValue({
+			importedCount: 1,
+			failures: [],
+		}),
 		onInitPreset: vi.fn(),
 		onSavePendingPresetChange: vi.fn(),
 		onDiscardPendingPresetChange: vi.fn(),
@@ -157,16 +160,6 @@ describe("PresetLibrary", () => {
 
 	it("saves, exports, imports, initializes, renames, edits tags, and deletes from library controls", async () => {
 		const props = createProps();
-		class MockFileReader {
-			public onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-
-			readAsText() {
-				this.onload?.({
-					target: { result: '{"schemaVersion":1}' },
-				} as ProgressEvent<FileReader>);
-			}
-		}
-		vi.stubGlobal("FileReader", MockFileReader);
 
 		const { container } = render(<PresetLibrary {...props} />);
 
@@ -192,10 +185,12 @@ describe("PresetLibrary", () => {
 			},
 		});
 		await waitFor(() => {
-			expect(props.onImportPreset).toHaveBeenCalledWith(
-				'{"schemaVersion":1}',
-				"imported-patch",
-			);
+			expect(props.onImportPresetFiles).toHaveBeenCalledWith([
+				expect.objectContaining({
+					filename: "imported-patch.json",
+					data: expect.any(Uint8Array),
+				}),
+			]);
 		});
 
 		const renameInput = screen.getByPlaceholderText("Preset name");
@@ -595,21 +590,9 @@ describe("PresetLibrary", () => {
 		expect(screen.queryByText("No presets available.")).not.toBeInTheDocument();
 	});
 
-	it("shows error on invalid JSON import", () => {
+	it("shows error when selected files cannot be read", async () => {
 		const props = createProps();
-		props.onImportPreset = vi.fn(() => {
-			throw new Error("invalid");
-		});
-		class ErrorFileReader {
-			public onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
-
-			readAsText() {
-				this.onload?.({
-					target: { result: "not-json" },
-				} as ProgressEvent<FileReader>);
-			}
-		}
-		vi.stubGlobal("FileReader", ErrorFileReader);
+		props.onImportPresetFiles = vi.fn().mockRejectedValue(new Error("invalid"));
 
 		const { container } = render(<PresetLibrary {...props} />);
 
@@ -623,6 +606,10 @@ describe("PresetLibrary", () => {
 			},
 		});
 
-		expect(screen.getByText("Invalid preset file.")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(
+				screen.getByText("Could not read the selected preset files."),
+			).toBeInTheDocument();
+		});
 	});
 });

@@ -591,28 +591,6 @@
 				}
 			}
 		},
-		"karpunk": {
-			"name": "Karpunk",
-			"behavior": "Plucked/resonant distortion character with decaying inharmonic overtones.",
-			"controls": {
-				"karpunkDamp": {
-					"label": "Damp",
-					"description": "Controls how quickly high-frequency energy is damped in the string model."
-				},
-				"karpunkBright": {
-					"label": "Bright",
-					"description": "Adjusts the brightness of the feedback filter inside the string loop."
-				},
-				"karpunkDecay": {
-					"label": "Decay",
-					"description": "Sets how long the plucked string sustains before fading out."
-				},
-				"karpunkExcite": {
-					"label": "Excite",
-					"description": "Injects fresh noise into the delay line for a noisier or raspier pluck."
-				}
-			}
-		},
 		"fof": {
 			"name": "FOF",
 			"behavior": "Formant-like shaping with windowed resonant emphasis suited to vocal-style colors.",
@@ -987,7 +965,13 @@
 			"previous": "Load the previous preset in the current navigation list.",
 			"next": "Load the next preset in the current navigation list.",
 			"openLibrary": "Open the preset library.",
-			"closeLibrary": "Close the preset library."
+			"closeLibrary": "Close the preset library.",
+			"quickSelect": "Open quick preset select.",
+			"addFavorite": "Add the current preset to favorites.",
+			"removeFavorite": "Remove the current preset from favorites.",
+			"save": "Save changes to the current user preset.",
+			"saved": "The current user preset has no unsaved changes.",
+			"saveAs": "Save the current sound as a new user preset."
 		},
 		"module": {
 			"enable": "Enable {{title}}.",
@@ -1129,6 +1113,13 @@
 		"save": "Save",
 		"saveAs": "Save As",
 		"import": "Import",
+		"dropFiles": "Drop preset files here to import",
+		"dropRegionAria": "Preset file import area",
+		"importSummarySingular": "Imported {{count}} preset.",
+		"importSummaryPlural": "Imported {{count}} presets.",
+		"importFailures": "Failed: {{files}}",
+		"importNone": "No valid preset files could be imported.",
+		"importReadError": "Could not read the selected preset files.",
 		"initPreset": "Init Preset",
 		"selectedPreset": "Selected Preset",
 		"nameLabel": "Name",
@@ -1225,7 +1216,18 @@
 		"nextPresetMidi": "Next Preset",
 		"presetStatus": "Preset {{name}}",
 		"openLibrary": "Open library",
-		"closeLibrary": "Close library"
+		"closeLibrary": "Close library",
+		"openQuickSelect": "Choose preset. Current preset: {{name}}",
+		"quickSelectAria": "Quick preset select",
+		"quickSelectListAria": "Preset search results",
+		"searchPlaceholder": "Search presets",
+		"noResults": "No presets found",
+		"addFavorite": "Favorite {{name}}",
+		"removeFavorite": "Unfavorite {{name}}",
+		"featuredPreset": "Featured preset",
+		"notFeaturedPreset": "Not a featured preset",
+		"savePreset": "Save preset",
+		"savePresetAs": "Save preset as"
 	},
 	"voiceMode": {
 		"label": "Voice",

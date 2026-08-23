@@ -30,7 +30,10 @@ type PresetLibrarySidebarProps = {
 	onExportCurrentState: () => void;
 	onImportClick: () => void;
 	onInitPreset: () => void;
-	importError: string | null;
+	importFeedback: {
+		kind: "success" | "warning" | "error";
+		message: string;
+	} | null;
 };
 
 export default memo(function PresetLibrarySidebar({
@@ -53,7 +56,7 @@ export default memo(function PresetLibrarySidebar({
 	onOpenSaveAs,
 	onImportClick,
 	onInitPreset,
-	importError,
+	importFeedback,
 }: PresetLibrarySidebarProps) {
 	const { t } = useTranslation("synth");
 	return (
@@ -93,8 +96,19 @@ export default memo(function PresetLibrarySidebar({
 						>
 							{t("presetLibrary.initPreset")}
 						</Button>
-						{importError ? (
-							<p className="mt-2 text-red-400 text-xs">{importError}</p>
+						{importFeedback ? (
+							<p
+								className={`mt-2 text-xs ${
+									importFeedback.kind === "error"
+										? "text-red-400"
+										: importFeedback.kind === "warning"
+											? "text-amber-300"
+											: "text-emerald-300"
+								}`}
+								role={importFeedback.kind === "error" ? "alert" : "status"}
+							>
+								{importFeedback.message}
+							</p>
 						) : null}
 					</div>
 					<div className="grid grid-cols-2 gap-2"></div>
