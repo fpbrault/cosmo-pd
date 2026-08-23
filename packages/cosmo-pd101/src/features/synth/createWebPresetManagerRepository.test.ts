@@ -3,6 +3,7 @@ import { createWebPresetManagerRepository } from "./createWebPresetManagerReposi
 
 const mockSaveStoredPreset = vi.hoisted(() => vi.fn());
 const mockLoadStoredPreset = vi.hoisted(() => vi.fn());
+const mockImportPreset = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/synth/presetStorage", async () => {
 	const actual = await vi.importActual<
@@ -16,7 +17,7 @@ vi.mock("@/lib/synth/presetStorage", async () => {
 		saveStoredPreset: mockSaveStoredPreset,
 		deletePreset: vi.fn(),
 		exportPreset: vi.fn(),
-		importPreset: vi.fn(),
+		importPreset: mockImportPreset,
 		setPresetFavorite: vi.fn(),
 		updatePresetMetadata: vi.fn(),
 		updateStoredPreset: vi.fn(),
@@ -151,6 +152,39 @@ describe("createWebPresetManagerRepository", () => {
 				description: "Warm and wide.",
 				starred: true,
 				tags: ["pad"],
+			}),
+		);
+	});
+
+	it("defaults imported presets with no author to the User author", async () => {
+		mockImportPreset.mockResolvedValue({
+			name: "Imported",
+			author: "",
+			description: "",
+			starred: false,
+			tags: [],
+			favorite: false,
+			data: { schemaVersion: 1, params: { volume: 1 } },
+		});
+		mockSaveStoredPreset.mockResolvedValue({
+			id: "user-1",
+			name: "Imported Patch",
+			data: { schemaVersion: 1, params: { volume: 1 } },
+		});
+
+		const repository = createWebPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 1 } }) as never,
+			libraryPresets: [],
+		});
+
+		await repository.importPreset("{}", "Imported Patch");
+
+		expect(mockSaveStoredPreset).toHaveBeenCalledWith(
+			expect.objectContaining({
+				name: "Imported Patch",
+				author: "User",
 			}),
 		);
 	});

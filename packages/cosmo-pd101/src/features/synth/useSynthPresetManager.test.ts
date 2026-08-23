@@ -1,7 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSynthStore } from "@/features/synth/synthStore";
-import type { PresetManagerRepository } from "./presetManagerRepository";
+import type {
+	PresetImportBatchResult,
+	PresetManagerRepository,
+} from "./presetManagerRepository";
 import type { PresetEntry } from "./types/presetEntry";
 import { useSynthPresetManager } from "./useSynthPresetManager";
 
@@ -118,6 +121,50 @@ describe("useSynthPresetManager", () => {
 		);
 		expect(result.current.activePresetId).toBe("preset-1");
 		expect(result.current.activePresetNameBase).toBe("Preset 1");
+	});
+
+	it("imports a batch and activates the last successful preset", async () => {
+		const { result } = renderHook(() => useSynthPresetManager({ repository }));
+
+		await vi.waitFor(() => {
+			expect(result.current.allPresetEntries).toHaveLength(2);
+		});
+
+		vi.mocked(repository.importPreset)
+			.mockResolvedValueOnce({
+				session: {
+					activePresetId: "imported-1",
+					activePresetNameBase: "One",
+					isDirty: false,
+				},
+				stateSync: "immediate",
+			})
+			.mockResolvedValueOnce({
+				session: {
+					activePresetId: "imported-2",
+					activePresetNameBase: "Two",
+					isDirty: false,
+				},
+				stateSync: "immediate",
+			});
+
+		let batchResult: PresetImportBatchResult | undefined;
+		await act(async () => {
+			batchResult = await result.current.importPresetFiles([
+				{
+					filename: "one.json",
+					data: new TextEncoder().encode('{"schemaVersion":1}'),
+				},
+				{
+					filename: "two.json",
+					data: new TextEncoder().encode('{"schemaVersion":1}'),
+				},
+			]);
+		});
+
+		expect(batchResult).toEqual({ importedCount: 2, failures: [] });
+		expect(result.current.activePresetId).toBe("imported-2");
+		expect(result.current.activePresetNameBase).toBe("Two");
 	});
 
 	it("supports identity-preserving external synchronization", async () => {

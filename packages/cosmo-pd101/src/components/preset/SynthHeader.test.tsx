@@ -61,6 +61,7 @@ function renderWithProvider(element: React.ReactElement) {
 				initPreset: vi.fn(),
 				exportPreset: vi.fn(),
 				importPreset: vi.fn(),
+				importPresetFiles: vi.fn(),
 				exportCurrentState: vi.fn(),
 				recomputeDirtyState: vi.fn(),
 				reloadLibrary: vi.fn(),

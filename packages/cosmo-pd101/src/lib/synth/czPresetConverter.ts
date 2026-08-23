@@ -222,7 +222,7 @@ export function convertDecodedPatchToSynthPreset(
 	p.line2.algoBlend = 0;
 	p.line1.window = "off";
 	p.line2.window = "off";
-	p.volume = 0.8;
+	p.volume = 1.0;
 	p.line1.dcaBase = 1;
 	p.line2.dcaBase = 1;
 	p.portamento.enabled = false;

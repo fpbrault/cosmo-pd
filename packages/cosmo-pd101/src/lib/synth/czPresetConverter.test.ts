@@ -64,6 +64,7 @@ describe("convertDecodedPatchToSynthPreset", () => {
 	it("maps CZ waveforms onto the synth algorithms", () => {
 		const preset = convertDecodedPatchToSynthPreset(basePatch);
 
+		expect(preset.params.volume).toBe(1.0);
 		expect(preset.params.line1.algo).toBe("cz101");
 		expect(preset.params.line1.algo2).toBe("cz101");
 		expect(

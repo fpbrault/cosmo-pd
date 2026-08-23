@@ -188,7 +188,7 @@ export function createWebPresetManagerRepository({
 				name: candidate,
 				data: importedPreset.data,
 				source: "user",
-				author: importedPreset.author,
+				author: importedPreset.author?.trim() || DEFAULT_USER_PRESET_AUTHOR,
 				description: importedPreset.description,
 				starred: importedPreset.starred,
 				tags: importedPreset.tags,
