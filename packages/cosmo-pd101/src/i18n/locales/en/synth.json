@@ -1090,9 +1090,7 @@
 		"cycles": "Cycles",
 		"cyclesTooltip": "Sets how many waveform cycles are shown in scope view.",
 		"zoom": "Zoom",
-		"zoomTooltip": "Sets vertical waveform magnification.",
-		"trig": "Trig",
-		"trigTooltip": "Sets trigger threshold used to stabilize waveform display."
+		"zoomTooltip": "Sets vertical waveform magnification."
 	},
 	"presetLibrary": {
 		"title": "Preset Library",

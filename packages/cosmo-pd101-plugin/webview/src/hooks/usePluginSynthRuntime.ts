@@ -10,6 +10,8 @@ import {
 	normalizeScopeHz,
 } from "../lib/scopePerformance";
 
+const SCOPE_HZ_STATE_UPDATE_INTERVAL_MS = 100;
+
 type UsePluginSynthRuntimeParams = {
 	eventSink: (type: string, payload: Record<string, unknown>) => void;
 };
@@ -25,6 +27,7 @@ export function usePluginSynthRuntime({
 	const keyboardRange = useSynthUiStore((s) => s.keyboardRange);
 	const [scopeActiveHz, setScopeActiveHz] = useState(220);
 	const scopeActiveHzRef = useRef(220);
+	const scopeHzStateUpdatedAtRef = useRef(Number.NEGATIVE_INFINITY);
 	const scopeFrameSubscribersRef = useRef(new Set<ScopeFrameSubscriber>());
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
@@ -41,7 +44,14 @@ export function usePluginSynthRuntime({
 			const nextHz = normalizeScopeHz(hz);
 			if (hasMeaningfulScopeHzChange(scopeActiveHzRef.current, nextHz)) {
 				scopeActiveHzRef.current = nextHz;
-				setScopeActiveHz(nextHz);
+				const now = performance.now();
+				if (
+					now - scopeHzStateUpdatedAtRef.current >=
+					SCOPE_HZ_STATE_UPDATE_INTERVAL_MS
+				) {
+					scopeHzStateUpdatedAtRef.current = now;
+					setScopeActiveHz(nextHz);
+				}
 			}
 			const frame = {
 				samples:

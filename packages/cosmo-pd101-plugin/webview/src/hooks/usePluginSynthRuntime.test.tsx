@@ -58,4 +58,35 @@ describe("usePluginSynthRuntime scope subscriptions", () => {
 		unsubscribeMini?.();
 		expect(window.__czOnScope).toBeUndefined();
 	});
+
+	it("throttles pitch state updates without dropping scope frames", () => {
+		const now = vi.spyOn(performance, "now");
+		now.mockReturnValue(100);
+		const { result } = renderHook(() =>
+			usePluginSynthRuntime({ eventSink: vi.fn() }),
+		);
+		const onFrame = vi.fn();
+		const unsubscribe = result.current.subscribeScopeFrames?.(onFrame);
+
+		act(() => {
+			window.__czOnScope?.([0.25], 48_000, 330);
+		});
+		expect(result.current.effectivePitchHz).toBe(330);
+
+		now.mockReturnValue(150);
+		act(() => {
+			window.__czOnScope?.([0.5], 48_000, 440);
+		});
+		expect(result.current.effectivePitchHz).toBe(330);
+
+		now.mockReturnValue(201);
+		act(() => {
+			window.__czOnScope?.([0.75], 48_000, 550);
+		});
+		expect(result.current.effectivePitchHz).toBe(550);
+		expect(onFrame).toHaveBeenCalledTimes(3);
+
+		unsubscribe?.();
+		now.mockRestore();
+	});
 });

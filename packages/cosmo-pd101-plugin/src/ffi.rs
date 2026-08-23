@@ -375,6 +375,25 @@ impl ScopeRing {
         Ok(sample_count)
     }
 
+    fn copy_tail_f32(&self, output: &mut [f32]) -> usize {
+        let count = output.len().min(self.len);
+        if count == 0 {
+            return 0;
+        }
+        if self.len < SCOPE_CAPACITY {
+            let start = self.len - count;
+            output[..count].copy_from_slice(&self.samples[start..self.len]);
+            return count;
+        }
+        let start = (self.cursor + SCOPE_CAPACITY - count) % SCOPE_CAPACITY;
+        let first = count.min(SCOPE_CAPACITY - start);
+        output[..first].copy_from_slice(&self.samples[start..start + first]);
+        if first < count {
+            output[first..count].copy_from_slice(&self.samples[..count - first]);
+        }
+        count
+    }
+
     fn copy_from(&mut self, source: &Self) {
         self.samples.copy_from_slice(&source.samples);
         self.len = source.len;
@@ -1364,6 +1383,44 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32(
     }
 }
 
+/// Copy the newest `output_len` scope samples in chronological order.
+///
+/// This windowed variant accepts an output buffer smaller than the native
+/// ring, allowing AUv3 to retain enough cycles for phase locking without
+/// transferring all 4096 samples on every poll.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32_tail(
+    engine: *const CosmoPd101FfiEngine,
+    output: *mut f32,
+    output_len: usize,
+    out_sample_rate: *mut f32,
+    out_hz: *mut f32,
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        engine.drain_retired_params();
+        let scope = engine
+            .scope_snapshot
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        if !out_sample_rate.is_null() {
+            *out_sample_rate = scope.sample_rate;
+        }
+        if !out_hz.is_null() {
+            *out_hz = scope.hz;
+        }
+        if output.is_null() || output_len == 0 {
+            return scope.len;
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        scope.copy_tail_f32(output)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::ffi::CString;
@@ -1390,6 +1447,23 @@ mod tests {
         assert_eq!(left, right);
 
         unsafe { cosmo_pd101_ffi_engine_destroy(engine) };
+    }
+
+    #[test]
+    fn scope_ring_tail_copy_returns_latest_samples_in_order() {
+        let mut ring = ScopeRing::new(48_000.0);
+        let samples: Vec<f32> = (0..(SCOPE_CAPACITY + 17)).map(|i| i as f32).collect();
+        ring.push_block(&samples, 48_000.0, 110.0);
+
+        let tail_len = 40;
+        let mut tail = vec![0.0; tail_len];
+        assert_eq!(ring.copy_tail_f32(&mut tail), tail.len());
+        assert_eq!(
+            tail,
+            (SCOPE_CAPACITY + 17 - tail_len..SCOPE_CAPACITY + 17)
+                .map(|i| i as f32)
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]

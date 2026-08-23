@@ -1,5 +1,5 @@
 import { drawOscilloscope } from "@/lib/synth/drawOscilloscope";
-import type { ScopeThemePalette } from "./types";
+import type { ScopeThemePalette, ScopeWindow } from "./types";
 
 export function drawWaveformScope(
 	canvas: HTMLCanvasElement,
@@ -10,6 +10,7 @@ export function drawWaveformScope(
 	triggerLevel: number,
 	zoom: number,
 	palette: ScopeThemePalette,
+	scopeWindow?: ScopeWindow,
 ) {
 	drawOscilloscope(
 		canvas,
@@ -18,7 +19,9 @@ export function drawWaveformScope(
 			cycles,
 			verticalZoom: zoom,
 			triggerLevel,
-			triggerMode: "rise",
+			triggerMode: scopeWindow ? "off" : "rise",
+			fixedWindowSamples: scopeWindow?.count,
+			startIndex: scopeWindow?.start,
 			color: palette.accent,
 			gridColor: palette.grid,
 		},
