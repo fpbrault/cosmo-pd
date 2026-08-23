@@ -27,21 +27,30 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("Preset management", () => {
 	test("loading a preset does not mark it dirty", async ({ page }) => {
-		const presetButton = page.getByRole("button", { name: /^preset /i });
-		await presetButton.click();
+		const presetScreen = page.getByRole("button", {
+			name: /Choose preset\. Current preset:/i,
+		});
+		await presetScreen.click();
 
-		await page
-			.getByRole("button", { name: "Factory Brass", exact: true })
-			.click();
+		await page.getByRole("option", { name: /Factory Brass/ }).click();
 
-		await expect(presetButton).toContainText("Factory Brass");
-		await expect(presetButton).not.toContainText("*");
+		await expect(presetScreen).toContainText("Factory Brass");
+		await expect(presetScreen).toContainText("Cosmo Factory Library · Factory");
+		await expect(presetScreen).not.toContainText("*");
+		await expect(
+			page.getByRole("img", { name: "Featured preset" }),
+		).toBeVisible();
+
+		await page.getByRole("button", { name: "Favorite Factory Brass" }).click();
+		await expect(
+			page.getByRole("button", { name: "Unfavorite Factory Brass" }),
+		).toBeVisible();
 	});
 
 	test("persists a user preset description and finds it in search", async ({
 		page,
 	}) => {
-		await page.getByRole("button", { name: /^preset /i }).click();
+		await page.getByRole("button", { name: "Open library" }).click();
 
 		const currentStateSection = page
 			.locator("section")
@@ -73,7 +82,7 @@ test.describe("Preset management", () => {
 	});
 
 	test("saves, renames, and deletes a local preset", async ({ page }) => {
-		await page.getByRole("button", { name: /^preset /i }).click();
+		await page.getByRole("button", { name: "Open library" }).click();
 
 		const pendingModifiedPresetDialog = page
 			.locator("dialog")
@@ -82,7 +91,7 @@ test.describe("Preset management", () => {
 			await pendingModifiedPresetDialog
 				.getByRole("button", { name: "Discard" })
 				.click();
-			await page.getByRole("button", { name: /^preset /i }).click();
+			await page.getByRole("button", { name: "Open library" }).click();
 		}
 
 		const libraryList = page.getByRole("listbox", { name: "Preset library" });
@@ -97,9 +106,11 @@ test.describe("Preset management", () => {
 		await saveAsDialog.getByPlaceholder("New preset name").fill("E2E Patch");
 		await saveAsDialog.getByRole("button", { name: "Confirm save as" }).click();
 
-		await expect(
-			libraryList.getByRole("button", { name: "E2E Patch", exact: true }),
-		).toBeVisible();
+		const savedPreset = libraryList.getByRole("button", {
+			name: "E2E Patch",
+			exact: true,
+		});
+		await expect(savedPreset).toBeVisible();
 		await waitForMessageMatching(page, (message) => {
 			const payload = Array.isArray(message.args) ? message.args[0] : null;
 			return (
@@ -111,8 +122,9 @@ test.describe("Preset management", () => {
 				payload.name === "E2E Patch"
 			);
 		});
+		await savedPreset.click();
 
-		const renameInput = page.getByPlaceholder("Preset name");
+		const renameInput = page.getByPlaceholder("Preset name", { exact: true });
 		await renameInput.fill("Renamed Patch");
 		await renameInput.press("Enter");
 
@@ -132,5 +144,27 @@ test.describe("Preset management", () => {
 		await expect(
 			libraryList.getByRole("button", { name: "Renamed Patch", exact: true }),
 		).toHaveCount(0);
+	});
+});
+
+test.describe("Preset quick select touch", () => {
+	test.use({ hasTouch: true, viewport: { width: 1024, height: 768 } });
+
+	test("opens and loads with one-tap targets without focusing search", async ({
+		page,
+	}) => {
+		const presetScreen = page.getByRole("button", {
+			name: /Choose preset\. Current preset:/i,
+		});
+		await presetScreen.tap();
+
+		const search = page
+			.getByRole("dialog", { name: "Quick preset select" })
+			.getByPlaceholder("Search presets");
+		await expect(search).toBeVisible();
+		await expect(search).not.toBeFocused();
+
+		await page.getByRole("option", { name: /Factory Brass/ }).tap();
+		await expect(presetScreen).toContainText("Factory Brass");
 	});
 });

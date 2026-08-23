@@ -965,7 +965,13 @@
 			"previous": "Load the previous preset in the current navigation list.",
 			"next": "Load the next preset in the current navigation list.",
 			"openLibrary": "Open the preset library.",
-			"closeLibrary": "Close the preset library."
+			"closeLibrary": "Close the preset library.",
+			"quickSelect": "Open quick preset select.",
+			"addFavorite": "Add the current preset to favorites.",
+			"removeFavorite": "Remove the current preset from favorites.",
+			"save": "Save changes to the current user preset.",
+			"saved": "The current user preset has no unsaved changes.",
+			"saveAs": "Save the current sound as a new user preset."
 		},
 		"module": {
 			"enable": "Enable {{title}}.",
@@ -1210,7 +1216,18 @@
 		"nextPresetMidi": "Next Preset",
 		"presetStatus": "Preset {{name}}",
 		"openLibrary": "Open library",
-		"closeLibrary": "Close library"
+		"closeLibrary": "Close library",
+		"openQuickSelect": "Choose preset. Current preset: {{name}}",
+		"quickSelectAria": "Quick preset select",
+		"quickSelectListAria": "Preset search results",
+		"searchPlaceholder": "Search presets",
+		"noResults": "No presets found",
+		"addFavorite": "Favorite {{name}}",
+		"removeFavorite": "Unfavorite {{name}}",
+		"featuredPreset": "Featured preset",
+		"notFeaturedPreset": "Not a featured preset",
+		"savePreset": "Save preset",
+		"savePresetAs": "Save preset as"
 	},
 	"voiceMode": {
 		"label": "Voice",

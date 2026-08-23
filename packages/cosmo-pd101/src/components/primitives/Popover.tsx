@@ -24,6 +24,7 @@ export interface PopoverProps {
 	ariaLabelledby?: string;
 	modal?: boolean;
 	placement?: Placement;
+	initialFocus?: number;
 }
 
 export default function Popover({
@@ -36,6 +37,7 @@ export default function Popover({
 	ariaLabelledby,
 	modal = true,
 	placement = "bottom",
+	initialFocus,
 	children,
 }: PopoverProps) {
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(() =>
@@ -80,7 +82,12 @@ export default function Popover({
 	return (
 		<FloatingPortal root={portalRoot}>
 			{open ? (
-				<FloatingFocusManager context={context} modal={modal} returnFocus>
+				<FloatingFocusManager
+					context={context}
+					modal={modal}
+					returnFocus
+					initialFocus={initialFocus}
+				>
 					{/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: role is dynamic ("dialog" | "listbox") — both support aria-label */}
 					<div
 						data-theme="cosmo"
