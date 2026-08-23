@@ -14,6 +14,8 @@ const mockSynthStoreState = {
 };
 
 const mockSynthUiStoreState = {
+	workspaceMode: "edit" as "edit" | "performance",
+	setWorkspaceMode: vi.fn(),
 	mainPanelMode: "phase" as MainPanelMode,
 	setMainPanelMode: vi.fn(),
 	keyboardVisible: false,
@@ -27,8 +29,10 @@ const mockSynthUiStoreState = {
 vi.mock("@/components/preset/SynthHeader", () => ({
 	default: ({
 		onStepPreset,
+		trailingContent,
 	}: {
 		onStepPreset: (direction: -1 | 1) => void;
+		trailingContent?: React.ReactNode;
 	}) => (
 		<div data-testid="synth-header">
 			<button
@@ -38,6 +42,7 @@ vi.mock("@/components/preset/SynthHeader", () => ({
 			>
 				next
 			</button>
+			{trailingContent}
 		</div>
 	),
 }));
@@ -110,6 +115,9 @@ vi.mock("./hooks/useAudioLevelMonitor", () => ({
 }));
 vi.mock("./SynthRendererMainPanel", () => ({
 	default: () => <div data-testid="synth-main-panel" />,
+}));
+vi.mock("@/components/performance/PerformanceView", () => ({
+	default: () => <div data-testid="performance-view" />,
 }));
 vi.mock("./SynthRendererOverlays", () => ({
 	default: () => <div data-testid="synth-overlays" />,
@@ -225,6 +233,8 @@ function renderWithProvider() {
 describe("SynthRenderer", () => {
 	beforeEach(() => {
 		mockSynthUiStoreState.mainPanelMode = "phase";
+		mockSynthUiStoreState.workspaceMode = "edit";
+		mockSynthUiStoreState.setWorkspaceMode.mockReset();
 		mockSynthUiStoreState.keyboardVisible = false;
 		mockSynthUiStoreState.keyboardHeight = 0;
 		mockSynthUiStoreState.libraryModeOpen = false;
@@ -253,6 +263,29 @@ describe("SynthRenderer", () => {
 		renderWithProvider();
 		fireEvent.click(screen.getByTestId("step-next"));
 		expect(mockPresetManager.stepPreset).toHaveBeenCalledWith(1);
+	});
+
+	it("switches to the persisted simple workspace from the header", () => {
+		renderWithProvider();
+		fireEvent.click(screen.getByRole("button", { name: "Simple" }));
+		expect(mockSynthUiStoreState.setWorkspaceMode).toHaveBeenCalledWith(
+			"performance",
+		);
+	});
+
+	it("renders the performance surface without the editor layout", () => {
+		mockSynthUiStoreState.workspaceMode = "performance";
+		renderWithProvider();
+		expect(screen.getByTestId("performance-view")).toBeInTheDocument();
+		expect(screen.queryByTestId("synth-main-panel")).not.toBeInTheDocument();
+	});
+
+	it("renders the Simple keyboard with a resize handle", () => {
+		mockSynthUiStoreState.workspaceMode = "performance";
+		mockSynthUiStoreState.keyboardVisible = true;
+		renderWithProvider();
+		expect(screen.getByTestId("mini-keyboard-overlay")).toBeInTheDocument();
+		expect(screen.getByTestId("simple-keyboard-resize")).toBeInTheDocument();
 	});
 
 	it("pushes navigation entry ids back into the shared preset manager", () => {

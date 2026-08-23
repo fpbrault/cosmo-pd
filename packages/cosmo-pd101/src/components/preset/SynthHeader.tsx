@@ -74,6 +74,8 @@ export default function SynthHeader({
 				onLibraryModeChange={onLibraryModeChange}
 			/>
 
+			{trailingContent}
+
 			<button
 				type="button"
 				className="group flex flex-col justify-center border-cz-border border-l pl-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cz-light-blue/70"
@@ -87,8 +89,6 @@ export default function SynthHeader({
 					{t("synthHeader.synthesizerLab")}
 				</span>
 			</button>
-
-			{trailingContent}
 		</header>
 	);
 }

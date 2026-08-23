@@ -98,7 +98,7 @@ type MacroKnobProps = {
 	size: number;
 };
 
-const MacroKnob = memo(function MacroKnob({
+export const MacroKnob = memo(function MacroKnob({
 	macroIndex,
 	size,
 }: MacroKnobProps) {
