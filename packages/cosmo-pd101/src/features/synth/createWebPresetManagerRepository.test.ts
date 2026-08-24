@@ -25,6 +25,19 @@ vi.mock("@/lib/synth/presetStorage", async () => {
 });
 
 describe("createWebPresetManagerRepository", () => {
+	it("only exposes recovery actions supported by browser storage", async () => {
+		const repository = createWebPresetManagerRepository({
+			applyPreset: vi.fn(),
+			gatherPresetState: () =>
+				({ schemaVersion: 1, params: { volume: 0.5 } }) as never,
+			libraryPresets: [],
+		});
+
+		await expect(repository.retryLibrary?.()).resolves.toBeUndefined();
+		expect(repository.repairLibrary).toBeUndefined();
+		expect(repository.rebuildLibrary).toBeUndefined();
+	});
+
 	it("defaults new saved user presets to the User author", async () => {
 		mockLoadStoredPreset.mockResolvedValue(null);
 		mockSaveStoredPreset.mockResolvedValue({

@@ -116,15 +116,27 @@ export default memo(function SynthRendererLibraryOverlay({
 				onInitPreset={() => {
 					void initPreset();
 				}}
-				onRetryLibrary={() => {
-					void retryLibrary();
-				}}
-				onRepairLibrary={() => {
-					void repairLibrary();
-				}}
-				onRebuildLibrary={() => {
-					void rebuildLibrary();
-				}}
+				onRetryLibrary={
+					retryLibrary
+						? () => {
+								void retryLibrary();
+							}
+						: undefined
+				}
+				onRepairLibrary={
+					repairLibrary
+						? () => {
+								void repairLibrary();
+							}
+						: undefined
+				}
+				onRebuildLibrary={
+					rebuildLibrary
+						? () => {
+								void rebuildLibrary();
+							}
+						: undefined
+				}
 				onNavigationEntriesChange={onNavigationEntriesChange}
 				onClose={onClose}
 				isOpen={isOpen}

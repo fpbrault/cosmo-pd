@@ -1388,6 +1388,13 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32(
 /// This windowed variant accepts an output buffer smaller than the native
 /// ring, allowing AUv3 to retain enough cycles for phase locking without
 /// transferring all 4096 samples on every poll.
+///
+/// # Safety
+///
+/// `engine` must be a valid, non-null pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to a
+/// buffer of at least `output_len` f32s when `output_len > 0`.
+/// `out_sample_rate` and `out_hz` may be null.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn cosmo_pd101_ffi_copy_scope_f32_tail(
     engine: *const CosmoPd101FfiEngine,

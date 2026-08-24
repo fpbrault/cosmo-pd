@@ -13,6 +13,12 @@ import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
 const DB_NAME = "cosmo-pd101-preset-storage";
 const DB_VERSION = 2;
+const REQUIRED_OBJECT_STORES = [
+	"presets",
+	"kv",
+	"favorites",
+	"fxModulePresets",
+] as const;
 
 export type { PresetMetadata };
 export type StoredPreset = FrontendPresetV1;
@@ -39,31 +45,71 @@ type StoredPresetInput = {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+function openDatabase(version?: number): Promise<IDBDatabase> {
+	return new Promise((resolve, reject) => {
+		const request =
+			version === undefined
+				? indexedDB.open(DB_NAME)
+				: indexedDB.open(DB_NAME, version);
+		request.onupgradeneeded = () => {
+			const db = request.result;
+			if (!db.objectStoreNames.contains("presets")) {
+				db.createObjectStore("presets", { keyPath: "id" });
+			}
+			if (!db.objectStoreNames.contains("kv")) {
+				db.createObjectStore("kv", { keyPath: "key" });
+			}
+			if (!db.objectStoreNames.contains("favorites")) {
+				db.createObjectStore("favorites", { keyPath: "id" });
+			}
+			if (!db.objectStoreNames.contains("fxModulePresets")) {
+				db.createObjectStore("fxModulePresets", { keyPath: "id" });
+			}
+		};
+		request.onsuccess = () => {
+			const db = request.result;
+			const missingStore = REQUIRED_OBJECT_STORES.find(
+				(storeName) => !db.objectStoreNames.contains(storeName),
+			);
+			if (missingStore) {
+				db.close();
+				reject(
+					new Error(
+						`Preset library database is missing object store: ${missingStore}`,
+					),
+				);
+				return;
+			}
+			db.onversionchange = () => {
+				db.close();
+				dbPromise = null;
+			};
+			resolve(db);
+		};
+		request.onerror = () => reject(request.error);
+	});
+}
+
+function isVersionError(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"name" in error &&
+		error.name === "VersionError"
+	);
+}
+
 export function getDb(): Promise<IDBDatabase> {
 	if (!dbPromise) {
-		dbPromise = new Promise((resolve, reject) => {
-			const request = indexedDB.open(DB_NAME, DB_VERSION);
-			request.onupgradeneeded = () => {
-				const db = request.result;
-				if (!db.objectStoreNames.contains("presets")) {
-					db.createObjectStore("presets", { keyPath: "id" });
-				}
-				if (!db.objectStoreNames.contains("kv")) {
-					db.createObjectStore("kv", { keyPath: "key" });
-				}
-				if (!db.objectStoreNames.contains("favorites")) {
-					db.createObjectStore("favorites", { keyPath: "id" });
-				}
-				if (!db.objectStoreNames.contains("fxModulePresets")) {
-					db.createObjectStore("fxModulePresets", { keyPath: "id" });
-				}
-			};
-			request.onsuccess = () => resolve(request.result);
-			request.onerror = () => {
+		dbPromise = openDatabase(DB_VERSION)
+			.catch((error) => {
+				if (!isVersionError(error)) throw error;
+				return openDatabase();
+			})
+			.catch((error) => {
 				dbPromise = null;
-				reject(request.error);
-			};
-		});
+				throw error;
+			});
 	}
 	return dbPromise;
 }

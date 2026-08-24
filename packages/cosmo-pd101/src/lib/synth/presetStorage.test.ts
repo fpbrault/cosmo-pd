@@ -46,6 +46,18 @@ describe("presetStorage", () => {
 		expect(await loadPreset(stored.id)).toEqual(stored.data);
 	});
 
+	it("opens a newer compatible database without downgrading it", async () => {
+		const db = await openCompatibleDatabase(3);
+		db.close();
+
+		const reopened = await getDb();
+
+		expect(reopened.version).toBe(3);
+		expect(Array.from(reopened.objectStoreNames)).toEqual(
+			expect.arrayContaining(["presets", "kv", "favorites", "fxModulePresets"]),
+		);
+	});
+
 	it("ships default presets without the legacy keyFollow field", () => {
 		expect("keyFollow" in DEFAULT_PRESET.params.line1).toBe(false);
 		expect("keyFollow" in DEFAULT_PRESET.params.line2).toBe(false);
@@ -302,17 +314,7 @@ describe("presetStorage", () => {
 
 async function seedKv(key: string, value: unknown): Promise<void> {
 	await deleteDatabase();
-	const db = await new Promise<IDBDatabase>((resolve, reject) => {
-		const request = indexedDB.open("cosmo-pd101-preset-storage", 2);
-		request.onupgradeneeded = () => {
-			const d = request.result;
-			if (!d.objectStoreNames.contains("kv")) {
-				d.createObjectStore("kv", { keyPath: "key" });
-			}
-		};
-		request.onsuccess = () => resolve(request.result);
-		request.onerror = () => reject(request.error);
-	});
+	const db = await openCompatibleDatabase(2);
 	await new Promise<void>((resolve, reject) => {
 		const tx = db.transaction("kv", "readwrite");
 		tx.objectStore("kv").put({ key, value });
@@ -320,4 +322,27 @@ async function seedKv(key: string, value: unknown): Promise<void> {
 		tx.onerror = () => reject(tx.error);
 	});
 	db.close();
+}
+
+function openCompatibleDatabase(version: number): Promise<IDBDatabase> {
+	return new Promise<IDBDatabase>((resolve, reject) => {
+		const request = indexedDB.open("cosmo-pd101-preset-storage", version);
+		request.onupgradeneeded = () => {
+			const d = request.result;
+			if (!d.objectStoreNames.contains("presets")) {
+				d.createObjectStore("presets", { keyPath: "id" });
+			}
+			if (!d.objectStoreNames.contains("kv")) {
+				d.createObjectStore("kv", { keyPath: "key" });
+			}
+			if (!d.objectStoreNames.contains("favorites")) {
+				d.createObjectStore("favorites", { keyPath: "id" });
+			}
+			if (!d.objectStoreNames.contains("fxModulePresets")) {
+				d.createObjectStore("fxModulePresets", { keyPath: "id" });
+			}
+		};
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+	});
 }

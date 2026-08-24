@@ -13,6 +13,7 @@ import {
 	DEFAULT_PRESET,
 	deletePreset,
 	exportPreset,
+	getDb,
 	importPreset,
 	listPresetFavorites,
 	listStoredPresets,
@@ -202,5 +203,8 @@ export function createWebPresetManagerRepository({
 		},
 		exportCurrentState: async (name) =>
 			buildCurrentStateExport(name, gatherPresetState),
+		retryLibrary: async () => {
+			await getDb();
+		},
 	};
 }

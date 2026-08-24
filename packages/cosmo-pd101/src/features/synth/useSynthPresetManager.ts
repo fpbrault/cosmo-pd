@@ -57,9 +57,9 @@ export interface PresetManagerController {
 	exportCurrentState: (name: string) => Promise<ExportedPresetFile>;
 	recomputeDirtyState: () => void;
 	reloadLibrary: () => Promise<void>;
-	retryLibrary: () => Promise<void>;
-	repairLibrary: () => Promise<void>;
-	rebuildLibrary: () => Promise<void>;
+	retryLibrary?: () => Promise<void>;
+	repairLibrary?: () => Promise<void>;
+	rebuildLibrary?: () => Promise<void>;
 }
 
 function normalizeNavigationEntryIds(
@@ -529,9 +529,9 @@ export function useSynthPresetManager({
 			exportCurrentState,
 			recomputeDirtyState,
 			reloadLibrary,
-			retryLibrary,
-			repairLibrary,
-			rebuildLibrary,
+			retryLibrary: repository.retryLibrary ? retryLibrary : undefined,
+			repairLibrary: repository.repairLibrary ? repairLibrary : undefined,
+			rebuildLibrary: repository.rebuildLibrary ? rebuildLibrary : undefined,
 		}),
 		[
 			activePresetId,
@@ -549,6 +549,9 @@ export function useSynthPresetManager({
 			isPresetDirty,
 			navigationEntryIds,
 			reloadLibrary,
+			repository.rebuildLibrary,
+			repository.repairLibrary,
+			repository.retryLibrary,
 			retryLibrary,
 			repairLibrary,
 			rebuildLibrary,
