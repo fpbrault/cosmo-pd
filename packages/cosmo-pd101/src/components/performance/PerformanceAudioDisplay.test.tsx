@@ -46,6 +46,7 @@ describe("PerformanceAudioDisplay", () => {
 	it("uses a responsive, lower-cost profile on constrained hosts", () => {
 		expect(getPerformanceDisplayProfile("constrained")).toMatchObject({
 			historyInterval: 33,
+			renderInterval: 16,
 			maxPixelRatio: 1.5,
 			glowBlur: 4,
 		});
@@ -64,7 +65,7 @@ describe("PerformanceAudioDisplay", () => {
 		).toEqual({ width: 1_200, height: 450 });
 	});
 
-	it("repaints external scope history only when a new row is ready", () => {
+	it("repaints external scope at 60 FPS without adding history rows", () => {
 		let animationFrame: FrameRequestCallback | undefined;
 		vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
 			animationFrame = callback;
@@ -118,20 +119,20 @@ describe("PerformanceAudioDisplay", () => {
 		);
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(16);
-		expect(drawImage).toHaveBeenCalledTimes(2);
+		expect(drawImage).toHaveBeenCalledTimes(3);
 
 		animationFrame?.(32);
-		expect(drawImage).toHaveBeenCalledTimes(2);
+		expect(drawImage).toHaveBeenCalledTimes(4);
 
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(49);
-		expect(drawImage).toHaveBeenCalledTimes(3);
+		expect(drawImage).toHaveBeenCalledTimes(6);
 
 		animationFrame?.(65);
-		expect(drawImage).toHaveBeenCalledTimes(3);
+		expect(drawImage).toHaveBeenCalledTimes(7);
 
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(82);
-		expect(drawImage).toHaveBeenCalledTimes(4);
+		expect(drawImage).toHaveBeenCalledTimes(9);
 	});
 });

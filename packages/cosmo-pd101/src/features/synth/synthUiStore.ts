@@ -9,6 +9,7 @@ export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 export type MainPanelMode = "phase" | "fx" | "mod" | "display";
 export type SynthWorkspaceMode = "edit" | "performance";
 export type PerformanceDisplayMode = "waterfall" | "scope";
+export type DisplayQualityOverride = "auto" | "high" | "balanced" | "low";
 export type ScopeColorTheme = "vintage" | "amber" | "plasma";
 export type PhaseLinePanelTab =
 	| "line1-algos"
@@ -42,6 +43,10 @@ type SynthUiState = {
 	midiLearnOpen: boolean;
 	macroLabelEditorOpen: boolean;
 	keyboardSettingsOpen: boolean;
+	/** Enables the local performance HUD and per-display diagnostics badges. */
+	debugEnabled: boolean;
+	/** Preferred display quality while diagnostics are enabled. */
+	displayQualityOverride: DisplayQualityOverride;
 };
 
 type SynthUiActions = {
@@ -68,6 +73,8 @@ type SynthUiActions = {
 	setMidiLearnOpen: (open: boolean) => void;
 	setMacroLabelEditorOpen: (open: boolean) => void;
 	setKeyboardSettingsOpen: (open: boolean) => void;
+	setDebugEnabled: (enabled: boolean) => void;
+	setDisplayQualityOverride: (override: DisplayQualityOverride) => void;
 };
 
 export type SynthUiStore = SynthUiState & SynthUiActions;
@@ -95,6 +102,12 @@ const KEYBOARD_INPUT_MODES = new Set<KeyboardInputMode>([
 	"velocity",
 	"aftertouch",
 ]);
+const DISPLAY_QUALITY_OVERRIDES = new Set<DisplayQualityOverride>([
+	"auto",
+	"high",
+	"balanced",
+	"low",
+]);
 
 const DEFAULT_UI_STATE: SynthUiState = {
 	workspaceMode: "edit",
@@ -119,6 +132,8 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	midiLearnOpen: false,
 	macroLabelEditorOpen: false,
 	keyboardSettingsOpen: false,
+	debugEnabled: false,
+	displayQualityOverride: "auto",
 };
 
 const getStringValue = (value: unknown): string | null =>
@@ -144,6 +159,9 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const scopeColorTheme =
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
 	const rawKeyboardInputMode = getStringValue(candidate.keyboardInputMode);
+	const displayQualityOverride = getStringValue(
+		candidate.displayQualityOverride,
+	);
 
 	return {
 		workspaceMode:
@@ -253,6 +271,17 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			typeof candidate.keyboardSettingsOpen === "boolean"
 				? candidate.keyboardSettingsOpen
 				: DEFAULT_UI_STATE.keyboardSettingsOpen,
+		debugEnabled:
+			typeof candidate.debugEnabled === "boolean"
+				? candidate.debugEnabled
+				: DEFAULT_UI_STATE.debugEnabled,
+		displayQualityOverride:
+			displayQualityOverride &&
+			DISPLAY_QUALITY_OVERRIDES.has(
+				displayQualityOverride as DisplayQualityOverride,
+			)
+				? (displayQualityOverride as DisplayQualityOverride)
+				: DEFAULT_UI_STATE.displayQualityOverride,
 	};
 };
 
@@ -285,6 +314,9 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setMidiLearnOpen: (open) => set({ midiLearnOpen: open }),
 			setMacroLabelEditorOpen: (open) => set({ macroLabelEditorOpen: open }),
 			setKeyboardSettingsOpen: (open) => set({ keyboardSettingsOpen: open }),
+			setDebugEnabled: (enabled) => set({ debugEnabled: enabled }),
+			setDisplayQualityOverride: (override) =>
+				set({ displayQualityOverride: override }),
 		}),
 		{
 			name: SYNTH_UI_STATE_STORAGE_KEY,
@@ -307,6 +339,8 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				scopeTriggerLevel: state.scopeTriggerLevel,
 				scopeVisualizationMode: state.scopeVisualizationMode,
 				scopeColorTheme: state.scopeColorTheme,
+				debugEnabled: state.debugEnabled,
+				displayQualityOverride: state.displayQualityOverride,
 			}),
 			merge: (persistedState, currentState) => ({
 				...currentState,

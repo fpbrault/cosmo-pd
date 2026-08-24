@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModSource, SynthParams } from "@/lib/synth/bindings/synth";
 import { DEFAULT_PRESET } from "@/lib/synth/presetStorage";
+import type { PerformanceMetrics } from "../runtime/synthRuntime";
 
 export type RuntimeModSources = Record<ModSource, number> & {
 	pitchBend: number;
@@ -47,20 +48,7 @@ export type RuntimeVoiceDebugState = {
 	line2: RuntimeVoiceLineState;
 };
 
-type WorkletPerformanceMetrics = {
-	enabled: boolean;
-	blockCount: number;
-	lastMs: number;
-	avgMs: number;
-	maxMs: number;
-	blockBudgetMs: number;
-	lastRtPercent: number;
-	avgRtPercent: number;
-	maxRtPercent: number;
-	blockSamples: number;
-	sampleRate: number;
-	activeVoices: number;
-};
+export type WorkletPerformanceMetrics = PerformanceMetrics;
 
 const RUNTIME_MOD_SOURCE_KEYS = {
 	lfo1: true,
@@ -111,6 +99,8 @@ export type AudioEngineRefs = {
 	gainNodeRef: React.MutableRefObject<GainNode | null>;
 	analyserNodeRef: React.MutableRefObject<AnalyserNode | null>;
 	workletNodeRef: React.MutableRefObject<AudioWorkletNode | null>;
+	performanceMetricsRef: React.MutableRefObject<PerformanceMetrics | null>;
+	setPerformanceMonitorEnabled: (enabled: boolean) => void;
 	paramsRef: React.MutableRefObject<SynthParams>;
 	/** Reactive audio context state — null until the context is created. */
 	audioContextState: AudioContextState | null;
@@ -133,6 +123,9 @@ export function useAudioEngine({
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const workletNodeRef = useRef<AudioWorkletNode | null>(null);
 	const telemetryPollRef = useRef<number | null>(null);
+	const performancePollRef = useRef<number | null>(null);
+	const performanceMonitorEnabledRef = useRef(false);
+	const performanceMetricsRef = useRef<PerformanceMetrics | null>(null);
 	const audioInitRef = useRef(false);
 	const disposedRef = useRef(false);
 	const [audioContextState, setAudioContextState] =
@@ -271,6 +264,45 @@ export function useAudioEngine({
 		telemetryPollRef.current = null;
 	}, []);
 
+	const requestPerformanceMetrics = useCallback(() => {
+		if (!performanceMonitorEnabledRef.current) return;
+		workletNodeRef.current?.port.postMessage({
+			type: "requestPerformanceMetrics",
+		});
+	}, []);
+
+	const startPerformancePolling = useCallback(() => {
+		if (performancePollRef.current !== null) return;
+		performancePollRef.current = window.setInterval(
+			requestPerformanceMetrics,
+			500,
+		);
+		requestPerformanceMetrics();
+	}, [requestPerformanceMetrics]);
+
+	const stopPerformancePolling = useCallback(() => {
+		if (performancePollRef.current === null) return;
+		window.clearInterval(performancePollRef.current);
+		performancePollRef.current = null;
+	}, []);
+
+	const setPerformanceMonitorEnabled = useCallback(
+		(enabled: boolean) => {
+			performanceMonitorEnabledRef.current = enabled;
+			if (!enabled) {
+				performanceMetricsRef.current = null;
+				stopPerformancePolling();
+			} else {
+				startPerformancePolling();
+			}
+			workletNodeRef.current?.port.postMessage({
+				type: "setPerformanceMonitorEnabled",
+				enabled,
+			});
+		},
+		[startPerformancePolling, stopPerformancePolling],
+	);
+
 	const initAudio = useCallback(async () => {
 		if (audioInitRef.current) return;
 		audioInitRef.current = true;
@@ -349,6 +381,13 @@ export function useAudioEngine({
 				if (e.data?.type === "ready") {
 					workletNodeRef.current = workletNode;
 					startTelemetryPolling();
+					if (performanceMonitorEnabledRef.current) {
+						workletNode.port.postMessage({
+							type: "setPerformanceMonitorEnabled",
+							enabled: true,
+						});
+						startPerformancePolling();
+					}
 					workletNode.port.postMessage({
 						type: "setParams",
 						params: paramsRef.current,
@@ -379,6 +418,7 @@ export function useAudioEngine({
 						);
 					}
 				} else if (e.data?.type === "performanceMetrics") {
+					performanceMetricsRef.current = e.data.metrics as PerformanceMetrics;
 					window.dispatchEvent(
 						new CustomEvent<WorkletPerformanceMetrics>(
 							"cz-performance-metrics",
@@ -421,6 +461,7 @@ export function useAudioEngine({
 		normalizeRuntimeModSources,
 		normalizeRuntimeVoiceStates,
 		startTelemetryPolling,
+		startPerformancePolling,
 		synthBindingsUrl,
 		synthWasmUrl,
 	]);
@@ -430,6 +471,7 @@ export function useAudioEngine({
 		return () => {
 			disposedRef.current = true;
 			stopTelemetryPolling();
+			stopPerformancePolling();
 			audioInitRef.current = false;
 			workletNodeRef.current?.disconnect();
 			workletNodeRef.current = null;
@@ -440,7 +482,7 @@ export function useAudioEngine({
 			audioCtxRef.current?.close();
 			audioCtxRef.current = null;
 		};
-	}, [stopTelemetryPolling]);
+	}, [stopPerformancePolling, stopTelemetryPolling]);
 
 	const resumeAudio = useCallback(() => {
 		const ctx = audioCtxRef.current;
@@ -465,6 +507,8 @@ export function useAudioEngine({
 		gainNodeRef,
 		analyserNodeRef,
 		workletNodeRef,
+		performanceMetricsRef,
+		setPerformanceMonitorEnabled,
 		paramsRef,
 		audioContextState,
 		resumeAudio,

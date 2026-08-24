@@ -43,7 +43,13 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		waterfallPreview,
 		waterfallActiveLine = 1,
 		constrainedPerformance = false,
+		maxPixelRatio,
+		spectrogramBins = SPECTROGRAM_BINS,
+		spectrogramFftSize,
 	} = params as ScopeRendererParams & { mode: ScopeVisualizationMode };
+	if (maxPixelRatio !== undefined) {
+		canvas.dataset.maxPixelRatio = String(maxPixelRatio);
+	}
 
 	if (mode === "spectrogram") {
 		const bins =
@@ -51,8 +57,8 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				? frequencyBins
 				: computeDftBins(
 						samples,
-						SPECTROGRAM_BINS,
-						constrainedPerformance ? 128 : 256,
+						spectrogramBins,
+						spectrogramFftSize ?? (constrainedPerformance ? 128 : 256),
 					);
 		drawSpectrogramFrame(canvas, bins, spectrogramStateRef, palette);
 		return;

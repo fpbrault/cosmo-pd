@@ -153,6 +153,7 @@ fn handle_ipc_invoke(
         state_snapshot_generation: AtomicU64::new(0),
         voice_limit: std::sync::atomic::AtomicU8::new(crate::global_settings::DEFAULT_VOICE_LIMIT),
         preset_reset_pending: std::sync::atomic::AtomicBool::new(false),
+        performance: crate::runtime_state::PerformanceCounters::default(),
     });
     crate::ipc::IpcContext::new(shared_state, params.clone())
         .invoke_envelope(&cosmo_pd101_bridge_types::PluginIpcEnvelope { id: 0, request })?

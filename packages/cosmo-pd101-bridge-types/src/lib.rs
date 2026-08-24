@@ -37,5 +37,5 @@ pub use preset::{
     PresetLibraryEntry, PresetLibraryResponse, PresetLibraryStatus, PresetLibrarySummaryEntry,
     SavePresetResponse,
 };
-pub use runtime::{ScopeDataResponse, TransportInfoResponse};
+pub use runtime::{PerformanceMetricsResponse, ScopeDataResponse, TransportInfoResponse};
 pub use session::PresetSession;

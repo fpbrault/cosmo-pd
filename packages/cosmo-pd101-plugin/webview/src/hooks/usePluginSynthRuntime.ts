@@ -1,10 +1,10 @@
-import type { SynthRuntime } from "@cosmo/cosmo-pd101";
+import type { PerformanceMetrics, SynthRuntime } from "@cosmo/cosmo-pd101";
 import {
 	useNoteHandling,
 	useSynthStore,
 	useSynthUiStore,
 } from "@cosmo/cosmo-pd101";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	hasMeaningfulScopeHzChange,
 	normalizeScopeHz,
@@ -31,6 +31,10 @@ export function usePluginSynthRuntime({
 	const scopeFrameSubscribersRef = useRef(new Set<ScopeFrameSubscriber>());
 	const analyserNodeRef = useRef<AnalyserNode | null>(null);
 	const audioCtxRef = useRef<AudioContext | null>(null);
+	const performanceEnabledRef = useRef(false);
+	const performanceMetricsRef = useRef<PerformanceMetrics | null>(null);
+	const [performanceEnabled, setPerformanceEnabled] = useState(false);
+	const [, setPerformanceMetricsVersion] = useState(0);
 
 	const noteHandling = useNoteHandling({
 		eventSink,
@@ -90,6 +94,47 @@ export function usePluginSynthRuntime({
 		[dispatchScopeFrame],
 	);
 
+	const setPerformanceMonitorEnabled = useCallback((enabled: boolean) => {
+		performanceEnabledRef.current = enabled;
+		setPerformanceEnabled(enabled);
+		if (!enabled) performanceMetricsRef.current = null;
+		window.__czSetPerformanceMonitorEnabled?.(enabled);
+	}, []);
+
+	useEffect(() => {
+		if (!performanceEnabled || !window.__czGetPerformanceMetrics) {
+			return;
+		}
+		let active = true;
+		const poll = () => {
+			void window.__czGetPerformanceMetrics?.().then((metrics) => {
+				if (!active) return;
+				performanceMetricsRef.current = {
+					enabled: metrics.enabled,
+					blockCount: metrics.blockCount ?? 0,
+					lastMs: metrics.lastMs ?? 0,
+					avgMs: metrics.avgMs ?? 0,
+					maxMs: metrics.maxMs ?? 0,
+					blockBudgetMs: metrics.blockBudgetMs ?? 0,
+					lastRtPercent: metrics.lastRtPercent ?? 0,
+					avgRtPercent: metrics.avgRtPercent ?? 0,
+					maxRtPercent: metrics.maxRtPercent ?? 0,
+					blockSamples: metrics.blockSamples ?? 0,
+					sampleRate: metrics.sampleRate ?? 0,
+					activeVoices: metrics.activeVoices ?? 0,
+					overBudgetBlocks: metrics.overBudgetBlocks ?? 0,
+				};
+				setPerformanceMetricsVersion((version) => version + 1);
+			});
+		};
+		poll();
+		const intervalId = window.setInterval(poll, 500);
+		return () => {
+			active = false;
+			window.clearInterval(intervalId);
+		};
+	}, [performanceEnabled]);
+
 	return useMemo(
 		() => ({
 			activeNotes: noteHandling.activeNotes,
@@ -109,6 +154,11 @@ export function usePluginSynthRuntime({
 			analyserNodeRef,
 			audioCtxRef,
 			subscribeScopeFrames,
+			performanceMonitor: {
+				source: "plugin",
+				setEnabled: setPerformanceMonitorEnabled,
+				getSnapshot: () => performanceMetricsRef.current,
+			},
 		}),
 		[
 			noteHandling.activeNotes,
@@ -122,6 +172,7 @@ export function usePluginSynthRuntime({
 			noteHandling.panic,
 			scopeActiveHz,
 			subscribeScopeFrames,
+			setPerformanceMonitorEnabled,
 		],
 	);
 }

@@ -24,6 +24,11 @@ import {
 	performanceDiagnosticsEnabled,
 	recordPerformanceMeasure,
 } from "./displayPerformance";
+import { PerformanceBadge } from "./PerformanceDiagnosticsOverlay";
+import {
+	getEffectiveDisplayQuality,
+	performanceDiagnosticsRegistry,
+} from "./performanceDiagnostics";
 
 type AudioFrame = {
 	samples: Float32Array | Uint8Array;
@@ -233,14 +238,19 @@ export default function PerformanceAudioDisplay({
 	const historyRef = useRef<Float32Array[]>([]);
 	const lastHistoryUpdateRef = useRef(0);
 	const lastDrawAtRef = useRef<number | null>(null);
-	const frameVersionRef = useRef(0);
+	const lastRenderAtRef = useRef<number | null>(null);
 	const rafRef = useRef(0);
 	const phaseLockRef = useRef(new AutoScopePhaseLock());
 	const effectivePitchHzRef = useRef(1);
 	const analyserSamplesRef = useRef<Float32Array<ArrayBuffer> | null>(null);
 	const analyserFrequencyBinsRef = useRef<Uint8Array | null>(null);
 	const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const historyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const scopeColorTheme = useSynthUiStore((state) => state.scopeColorTheme);
+	const debugEnabled = useSynthUiStore((state) => state.debugEnabled);
+	const displayQualityOverride = useSynthUiStore(
+		(state) => state.displayQualityOverride,
+	);
 	const {
 		analyserNodeRef,
 		audioCtxRef,
@@ -256,10 +266,10 @@ export default function PerformanceAudioDisplay({
 	useEffect(() => {
 		if (!subscribeScopeFrames) return;
 		return subscribeScopeFrames((frame) => {
+			performanceDiagnosticsRegistry.recordDisplayInput(`simple-${mode}`);
 			frameRef.current = { ...frame, hz: Math.max(1, frame.hz) };
-			frameVersionRef.current++;
 		});
-	}, [subscribeScopeFrames]);
+	}, [mode, subscribeScopeFrames]);
 
 	useEffect(() => {
 		const palette = getScopeThemePalette(scopeColorTheme);
@@ -269,38 +279,40 @@ export default function PerformanceAudioDisplay({
 				window.matchMedia("(pointer: coarse)").matches,
 			devicePixelRatio: window.devicePixelRatio || 1,
 		});
-		const quality = new AdaptivePerformanceQuality(
+		const effectiveOverride = debugEnabled ? displayQualityOverride : "auto";
+		const selectedTier = getEffectiveDisplayQuality(
+			debugEnabled,
+			displayQualityOverride,
 			initialTier,
-			scopePerformanceMode === "constrained" ? "balanced" : "high",
 		);
-		let profile = getTierProfile(initialTier);
+		const quality = new AdaptivePerformanceQuality(
+			selectedTier,
+			effectiveOverride === "auto"
+				? scopePerformanceMode === "constrained"
+					? "balanced"
+					: "high"
+				: selectedTier,
+		);
+		let profile = getTierProfile(selectedTier);
 		historyRef.current = [];
 		lastHistoryUpdateRef.current = 0;
 		lastDrawAtRef.current = null;
+		lastRenderAtRef.current = null;
 		gridCanvasRef.current = null;
+		historyCanvasRef.current = null;
 		phaseLockRef.current.reset();
-		let lastConsumedFrameVersion = -1;
-		let hasDrawn = false;
 		const diagnosticsEnabled = performanceDiagnosticsEnabled();
 		const draw = (now: number) => {
 			rafRef.current = window.requestAnimationFrame(draw);
 			const canvas = canvasRef.current;
 			if (!canvas) return;
-			const usesExternalFrames = Boolean(subscribeScopeFrames);
-			const frameVersion = frameVersionRef.current;
 			if (
-				usesExternalFrames &&
-				hasDrawn &&
-				frameVersion === lastConsumedFrameVersion
+				lastRenderAtRef.current !== null &&
+				now - lastRenderAtRef.current < profile.renderInterval
 			) {
 				return;
 			}
-			if (
-				historyRef.current.length > 0 &&
-				now - lastHistoryUpdateRef.current < profile.historyInterval
-			) {
-				return;
-			}
+			lastRenderAtRef.current = now;
 			let frame = frameRef.current;
 			const analyser = analyserNodeRef.current;
 			if (!subscribeScopeFrames && analyser) {
@@ -345,80 +357,112 @@ export default function PerformanceAudioDisplay({
 				palette,
 			);
 			canvas.dataset.performanceTier = quality.currentTier;
-			if (!frame) {
+			if (!frame && historyRef.current.length === 0) {
 				drawCachedGrid(context, gridCanvas);
-				hasDrawn = true;
-				lastConsumedFrameVersion = frameVersion;
 				return;
 			}
-			let values: Float32Array;
-			if (mode === "scope") {
-				const locked = phaseLockRef.current.resolve(
-					frame.samples,
-					Math.max(1, frame.hz),
-					frame.sampleRate,
-					SCOPE_CYCLES,
-				);
-				const source = locked.heldSamples ?? frame.samples;
-				values = resampleWaveformWindow(
-					source,
-					locked.heldSamples ? 0 : locked.window.start,
-					locked.window.count,
-					profile.waveformPointCount,
-				);
-				values = shapeScopeValues(values);
-			} else {
-				values = frame.frequencyBins
-					? resampleFrequencyBins(
-							frame.frequencyBins,
-							frame.sampleRate,
-							profile.bandCount,
-						)
-					: calculateLogFrequencyBands(
-							frame.samples,
-							frame.sampleRate,
-							profile.bandCount,
+			const shouldUpdateHistory =
+				frame !== null &&
+				(historyRef.current.length === 0 ||
+					now - lastHistoryUpdateRef.current >= profile.historyInterval);
+			if (frame && shouldUpdateHistory) {
+				let values: Float32Array;
+				if (mode === "scope") {
+					const locked = phaseLockRef.current.resolve(
+						frame.samples,
+						Math.max(1, frame.hz),
+						frame.sampleRate,
+						SCOPE_CYCLES,
+					);
+					const source = locked.heldSamples ?? frame.samples;
+					values = resampleWaveformWindow(
+						source,
+						locked.heldSamples ? 0 : locked.window.start,
+						locked.window.count,
+						profile.waveformPointCount,
+					);
+					values = shapeScopeValues(values);
+				} else {
+					values = frame.frequencyBins
+						? resampleFrequencyBins(
+								frame.frequencyBins,
+								frame.sampleRate,
+								profile.bandCount,
+							)
+						: calculateLogFrequencyBands(
+								frame.samples,
+								frame.sampleRate,
+								profile.bandCount,
+							);
+				}
+				while (historyRef.current.length >= profile.rowCount) {
+					historyRef.current.shift();
+				}
+				historyRef.current.push(values);
+				lastHistoryUpdateRef.current = now;
+			}
+			let historyCanvas = historyCanvasRef.current;
+			let historyCanvasNeedsRender = false;
+			if (
+				!historyCanvas ||
+				historyCanvas.width !== width ||
+				historyCanvas.height !== height
+			) {
+				historyCanvas = document.createElement("canvas");
+				historyCanvas.width = width;
+				historyCanvas.height = height;
+				historyCanvasRef.current = historyCanvas;
+				historyCanvasNeedsRender = true;
+			}
+			if (shouldUpdateHistory || historyCanvasNeedsRender) {
+				const historyContext = historyCanvas.getContext("2d");
+				if (historyContext) {
+					if (mode === "scope") {
+						drawScopeWaterfall(
+							historyContext,
+							width,
+							height,
+							historyRef.current,
+							palette,
+							profile.glowBlur,
+							gridCanvas,
 						);
+					} else {
+						drawWaterfall(
+							historyContext,
+							width,
+							height,
+							historyRef.current,
+							palette,
+							profile.glowBlur,
+							gridCanvas,
+						);
+					}
+				}
 			}
-			while (historyRef.current.length >= profile.rowCount) {
-				historyRef.current.shift();
-			}
-			historyRef.current.push(values);
-			lastHistoryUpdateRef.current = now;
-			lastConsumedFrameVersion = frameVersion;
-			hasDrawn = true;
-			if (mode === "scope") {
-				drawScopeWaterfall(
-					context,
-					width,
-					height,
-					historyRef.current,
-					palette,
-					profile.glowBlur,
-					gridCanvas,
-				);
-			} else {
-				drawWaterfall(
-					context,
-					width,
-					height,
-					historyRef.current,
-					palette,
-					profile.glowBlur,
-					gridCanvas,
-				);
-			}
+			context.drawImage(historyCanvas, 0, 0);
 			const drawFinishedAt = performance.now();
+			performanceDiagnosticsRegistry.recordDisplayFrame(`simple-${mode}`, {
+				timestamp: now,
+				drawMs: drawFinishedAt - drawStartedAt,
+				canvasWidth: width,
+				canvasHeight: height,
+				quality: quality.currentTier,
+			});
 			const frameGapMs =
 				lastDrawAtRef.current === null ? 0 : now - lastDrawAtRef.current;
 			lastDrawAtRef.current = now;
-			const nextTier = quality.observe({
-				now,
-				drawMs: drawFinishedAt - drawStartedAt,
-				frameGapMs,
-			});
+			const nextTier =
+				effectiveOverride === "auto"
+					? quality.observe({
+							now,
+							drawMs: drawFinishedAt - drawStartedAt,
+							frameGapMs,
+						})
+					: null;
 			if (nextTier) {
 				profile = getTierProfile(nextTier);
+				historyCanvasRef.current = null;
 				canvas.dataset.performanceTier = nextTier;
 				if (diagnosticsEnabled) {
 					performance.mark(`cz-performance-tier-${nextTier}`);
@@ -438,16 +482,21 @@ export default function PerformanceAudioDisplay({
 		analyserNodeRef,
 		audioCtxRef,
 		mode,
+		debugEnabled,
+		displayQualityOverride,
 		scopeColorTheme,
 		scopePerformanceMode,
 		subscribeScopeFrames,
 	]);
 
 	return (
-		<canvas
-			ref={canvasRef}
-			className="h-full min-h-0 w-full"
-			aria-label={`${mode} audio display`}
-		/>
+		<div className="relative h-full min-h-0 w-full">
+			<canvas
+				ref={canvasRef}
+				className="h-full min-h-0 w-full"
+				aria-label={`${mode} audio display`}
+			/>
+			<PerformanceBadge />
+		</div>
 	);
 }

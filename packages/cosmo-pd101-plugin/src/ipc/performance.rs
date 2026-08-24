@@ -77,6 +77,13 @@ pub(super) fn handle(
                 .map_err(|_| "ui input queue is full".to_string())?;
             Ok(PluginIpcResponse::Panic)
         }
+        PluginIpcRequest::SetPerformanceMonitorEnabled(enabled) => {
+            context.shared_state.performance.set_enabled(*enabled);
+            Ok(PluginIpcResponse::SetPerformanceMonitorEnabled)
+        }
+        PluginIpcRequest::GetPerformanceMetrics => Ok(PluginIpcResponse::GetPerformanceMetrics(
+            context.shared_state.performance.snapshot(),
+        )),
         _ => unreachable!("method routed to wrong IPC domain"),
     }
 }

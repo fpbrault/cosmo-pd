@@ -381,6 +381,18 @@ public final class CosmoPD101AUv3Ext_macOSExtensionAudioUnit: AUAudioUnit, @unch
 		} ?? nil
 	}
 
+	public func setPerformanceMonitorEnabled(_ enabled: Bool) {
+		_ = withRetainedEngine { engine in
+			cosmo_pd101_ffi_set_performance_monitor_enabled(engine, enabled)
+		}
+	}
+
+	public func performanceMetricsJson() -> String? {
+		withRetainedEngine { engine in
+			ffiString(engine: engine, call: cosmo_pd101_ffi_get_performance_metrics_json)
+		} ?? nil
+	}
+
 	public func scopeData() -> (samples: [Float], sampleRate: Float, hz: Float) {
 		withRetainedEngine { engine in
 			var sampleRate: Float = 0

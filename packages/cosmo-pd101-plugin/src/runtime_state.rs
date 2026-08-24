@@ -13,8 +13,8 @@ use crate::midi_learn::MidiLearnService;
 use crate::preset_library::PresetLibrary;
 use crate::preset_service::PresetService;
 use cosmo_pd101_bridge_types::{
-    EditorState, MidiLearnState, PresetSession, TransportInfoResponse, UiAlgoControlSection,
-    UiParamChange,
+    EditorState, MidiLearnState, PerformanceMetricsResponse, PresetSession, TransportInfoResponse,
+    UiAlgoControlSection, UiParamChange,
 };
 
 pub const SCOPE_CAPACITY: usize = 4096;
@@ -57,6 +57,127 @@ pub type SharedPresetSession = Arc<ArcSwap<PresetSession>>;
 pub type SharedEditorState = Arc<ArcSwapOption<EditorState>>;
 pub type SharedMidiMappings = Arc<Mutex<MidiLearnState>>;
 pub type SharedStateSnapshot = Arc<ArcSwap<Vec<u8>>>;
+
+/// Lock-free, opt-in audio callback counters for the local diagnostics HUD.
+/// No allocation or locking occurs when the audio thread records a block.
+pub struct PerformanceCounters {
+    pub enabled: AtomicBool,
+    block_count: AtomicU64,
+    total_ns: AtomicU64,
+    last_ns: AtomicU64,
+    max_ns: AtomicU64,
+    over_budget_blocks: AtomicU64,
+    block_samples: AtomicU32,
+    sample_rate_bits: AtomicU64,
+    active_voices: AtomicU32,
+}
+
+impl Default for PerformanceCounters {
+    fn default() -> Self {
+        Self {
+            enabled: AtomicBool::new(false),
+            block_count: AtomicU64::new(0),
+            total_ns: AtomicU64::new(0),
+            last_ns: AtomicU64::new(0),
+            max_ns: AtomicU64::new(0),
+            over_budget_blocks: AtomicU64::new(0),
+            block_samples: AtomicU32::new(0),
+            sample_rate_bits: AtomicU64::new(0),
+            active_voices: AtomicU32::new(0),
+        }
+    }
+}
+
+impl PerformanceCounters {
+    pub fn set_enabled(&self, enabled: bool) {
+        self.enabled.store(enabled, Ordering::Release);
+        if !enabled {
+            self.block_count.store(0, Ordering::Relaxed);
+            self.total_ns.store(0, Ordering::Relaxed);
+            self.last_ns.store(0, Ordering::Relaxed);
+            self.max_ns.store(0, Ordering::Relaxed);
+            self.over_budget_blocks.store(0, Ordering::Relaxed);
+        }
+    }
+
+    pub fn record_block(
+        &self,
+        elapsed_ns: u64,
+        block_samples: usize,
+        sample_rate: f32,
+        active_voices: u32,
+    ) {
+        if !self.enabled.load(Ordering::Relaxed) {
+            return;
+        }
+        let samples = block_samples as u32;
+        let budget_ns = if sample_rate > 0.0 {
+            (block_samples as f64 / f64::from(sample_rate) * 1_000_000_000.0) as u64
+        } else {
+            0
+        };
+        self.block_count.fetch_add(1, Ordering::Relaxed);
+        self.total_ns.fetch_add(elapsed_ns, Ordering::Relaxed);
+        self.last_ns.store(elapsed_ns, Ordering::Relaxed);
+        self.max_ns.fetch_max(elapsed_ns, Ordering::Relaxed);
+        if budget_ns > 0 && elapsed_ns > budget_ns {
+            self.over_budget_blocks.fetch_add(1, Ordering::Relaxed);
+        }
+        self.block_samples.store(samples, Ordering::Relaxed);
+        self.sample_rate_bits
+            .store(f64::from(sample_rate).to_bits(), Ordering::Relaxed);
+        self.active_voices.store(active_voices, Ordering::Relaxed);
+    }
+
+    pub fn snapshot(&self) -> PerformanceMetricsResponse {
+        let block_count = self.block_count.load(Ordering::Acquire);
+        let total_ns = self.total_ns.load(Ordering::Acquire);
+        let block_samples = self.block_samples.load(Ordering::Acquire);
+        let sample_rate = f64::from_bits(self.sample_rate_bits.load(Ordering::Acquire));
+        let block_budget_ms = if sample_rate > 0.0 {
+            f64::from(block_samples) / sample_rate * 1000.0
+        } else {
+            0.0
+        };
+        let avg_ms = if block_count > 0 {
+            total_ns as f64 / block_count as f64 / 1_000_000.0
+        } else {
+            0.0
+        };
+        let last_ms = self.last_ns.load(Ordering::Acquire) as f64 / 1_000_000.0;
+        let max_ms = self.max_ns.load(Ordering::Acquire) as f64 / 1_000_000.0;
+        PerformanceMetricsResponse {
+            enabled: self.enabled.load(Ordering::Acquire),
+            block_count: block_count.min(u64::from(u32::MAX)) as u32,
+            last_ms,
+            avg_ms,
+            max_ms,
+            block_budget_ms,
+            last_rt_percent: if block_budget_ms > 0.0 {
+                last_ms / block_budget_ms * 100.0
+            } else {
+                0.0
+            },
+            avg_rt_percent: if block_budget_ms > 0.0 {
+                avg_ms / block_budget_ms * 100.0
+            } else {
+                0.0
+            },
+            max_rt_percent: if block_budget_ms > 0.0 {
+                max_ms / block_budget_ms * 100.0
+            } else {
+                0.0
+            },
+            block_samples,
+            sample_rate,
+            active_voices: self.active_voices.load(Ordering::Acquire),
+            over_budget_blocks: self
+                .over_budget_blocks
+                .load(Ordering::Acquire)
+                .min(u64::from(u32::MAX)) as u32,
+        }
+    }
+}
 
 pub struct RuntimeTelemetryFrame {
     pub mod_sources: RuntimeModSources,
@@ -439,6 +560,7 @@ pub struct PluginSharedState {
     /// `processor.reset_audio_state()` *before* applying the new preset params.
     /// Ordering: IPC thread stores (Release), audio thread swaps (Acquire).
     pub preset_reset_pending: AtomicBool,
+    pub performance: PerformanceCounters,
 }
 
 impl PluginSharedState {
@@ -479,6 +601,7 @@ impl PluginSharedState {
             state_snapshot_generation: AtomicU64::new(0),
             voice_limit: AtomicU8::new(voice_limit),
             preset_reset_pending: AtomicBool::new(false),
+            performance: PerformanceCounters::default(),
         }
     }
 }
@@ -511,6 +634,30 @@ mod tests {
 
         assert_eq!(state.synth.synth_params.load().volume, 0.42);
         assert_eq!(state.synth.synth_params_version.load(Ordering::Acquire), 1);
+    }
+
+    #[test]
+    fn performance_counters_report_average_maximum_and_budget_overruns() {
+        let counters = PerformanceCounters::default();
+        counters.set_enabled(true);
+        counters.record_block(3_000_000, 128, 48_000.0, 2);
+        counters.record_block(4_000_000, 128, 48_000.0, 4);
+
+        let snapshot = counters.snapshot();
+        assert_eq!(snapshot.block_count, 2);
+        assert_eq!(snapshot.block_samples, 128);
+        assert_eq!(snapshot.sample_rate, 48_000.0);
+        assert_eq!(snapshot.active_voices, 4);
+        assert!((snapshot.avg_ms - 3.5).abs() < f64::EPSILON);
+        assert!((snapshot.max_ms - 4.0).abs() < f64::EPSILON);
+        assert!(snapshot.avg_rt_percent > 100.0);
+        assert_eq!(snapshot.over_budget_blocks, 2);
+
+        counters.set_enabled(false);
+        let reset = counters.snapshot();
+        assert_eq!(reset.block_count, 0);
+        assert_eq!(reset.avg_ms, 0.0);
+        assert_eq!(reset.max_ms, 0.0);
     }
 
     #[test]

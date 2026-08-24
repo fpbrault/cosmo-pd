@@ -6,7 +6,7 @@ use crate::preset::{
     AddPresetResponse, ExportPresetResponse, FxModulePresetEntry, LoadPresetResponse,
     PresetBankBundle, PresetLibraryActionResponse, PresetLibraryResponse, SavePresetResponse,
 };
-use crate::runtime::{ScopeDataResponse, TransportInfoResponse};
+use crate::runtime::{PerformanceMetricsResponse, ScopeDataResponse, TransportInfoResponse};
 use crate::session::PresetSession;
 use cosmo_synth_engine::params::SynthParams;
 use cosmo_synth_engine::processor::state::{RuntimeModSources, RuntimeVoiceDebugState};
@@ -75,6 +75,10 @@ pub enum PluginIpcRequest {
     MacroValue { index: u32, value: f32 },
     #[serde(rename = "panic")]
     Panic,
+    #[serde(rename = "setPerformanceMonitorEnabled")]
+    SetPerformanceMonitorEnabled(bool),
+    #[serde(rename = "getPerformanceMetrics")]
+    GetPerformanceMetrics,
 
     // ── Synth ──
     #[serde(rename = "getParams")]
@@ -198,6 +202,10 @@ pub enum PluginIpcResponse {
     MacroValue,
     #[serde(rename = "panic")]
     Panic,
+    #[serde(rename = "setPerformanceMonitorEnabled")]
+    SetPerformanceMonitorEnabled,
+    #[serde(rename = "getPerformanceMetrics")]
+    GetPerformanceMetrics(PerformanceMetricsResponse),
     #[serde(rename = "getParams")]
     GetParams(Box<SynthParams>),
     #[serde(rename = "setParams")]

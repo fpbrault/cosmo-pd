@@ -79,4 +79,7 @@ export type ScopeRendererParams = {
 	waterfallPreview?: WaterfallPreviewData | null;
 	waterfallActiveLine?: 1 | 2;
 	constrainedPerformance?: boolean;
+	maxPixelRatio?: number;
+	spectrogramBins?: number;
+	spectrogramFftSize?: number;
 };

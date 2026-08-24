@@ -295,6 +295,18 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 				"sampleRate": scope.sampleRate,
 				"hz": scope.hz,
 			])
+		case "setPerformanceMonitorEnabled":
+			audioUnit.setPerformanceMonitorEnabled(methodPayload as? Bool ?? false)
+			sendResponse(session: session, id: id, result: NSNull())
+		case "getPerformanceMetrics":
+			let metrics = audioUnit.performanceMetricsJson()
+				.flatMap { data in
+					data.data(using: .utf8)
+				}
+				.flatMap { data in
+					(try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+				}
+			sendResponse(session: session, id: id, result: metrics ?? [:])
 		case "getRuntimeVoiceStates":
 			sendResponse(session: session, id: id, result: audioUnit.runtimeVoiceStatesJson() ?? "[]")
 		case "getRuntimeModSources":
@@ -930,4 +942,3 @@ public class AudioUnitViewController: AUViewController, AUAudioUnitFactory, WebE
 			]
 		}
 	}
-

@@ -57,6 +57,8 @@ export type {
 	SavePresetRequest,
 } from "./features/synth/presetManagerRepository";
 export type {
+	PerformanceMetrics,
+	SynthPerformanceMonitor,
 	SynthRuntime,
 	SynthScopeFrameSubscription,
 } from "./features/synth/runtime/synthRuntime";
@@ -64,6 +66,7 @@ export type { SynthParamKey } from "./features/synth/SynthParamController";
 export { SYNTH_PARAM_SETTERS } from "./features/synth/SynthParamController";
 export { useSynthStore } from "./features/synth/synthStore";
 export type {
+	DisplayQualityOverride,
 	EnvTab,
 	MainPanelMode,
 	PhaseLinePanelTab,

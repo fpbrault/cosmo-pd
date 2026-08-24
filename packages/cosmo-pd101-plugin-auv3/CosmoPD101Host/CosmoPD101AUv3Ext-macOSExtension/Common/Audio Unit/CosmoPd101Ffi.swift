@@ -21,6 +21,12 @@ func cosmo_pd101_ffi_engine_destroy(_ engine: CosmoPd101FfiEngineRef?)
 @_silgen_name("cosmo_pd101_ffi_engine_retain")
 func cosmo_pd101_ffi_engine_retain(_ engine: CosmoPd101FfiEngineRef?)
 
+@_silgen_name("cosmo_pd101_ffi_set_performance_monitor_enabled")
+func cosmo_pd101_ffi_set_performance_monitor_enabled(_ engine: CosmoPd101FfiEngineRef?, _ enabled: Bool) -> Int32
+
+@_silgen_name("cosmo_pd101_ffi_get_performance_metrics_json")
+func cosmo_pd101_ffi_get_performance_metrics_json(_ engine: CosmoPd101FfiEngineRef?, _ output: UnsafeMutablePointer<UInt8>?, _ outputLen: Int) -> Int
+
 @_silgen_name("cosmo_pd101_ffi_reset_audio_state")
 func cosmo_pd101_ffi_reset_audio_state(_ engine: CosmoPd101FfiEngineRef?) -> Int32
 
