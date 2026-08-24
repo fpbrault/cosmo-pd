@@ -1,11 +1,42 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createConnection } from "node:net";
 import path from "node:path";
 import { chromium } from "playwright";
 
 const DEFAULT_MODES = ["advanced", "scope", "waterfall"];
 const DEFAULT_VOICES = [1, 4, 8];
+const DEFAULT_PROFILES = ["desktop", "portable", "constrained"];
+
+const DISPLAY_PROFILES = {
+	desktop: {
+		viewport: { width: 1440, height: 900 },
+		deviceScaleFactor: 1,
+		cpuRate: 1,
+		isMobile: false,
+		hasTouch: false,
+		userAgent: "Mozilla/5.0 AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+	},
+	portable: {
+		viewport: { width: 1024, height: 768 },
+		deviceScaleFactor: 1.5,
+		cpuRate: 3,
+		isMobile: false,
+		hasTouch: true,
+		userAgent: "Mozilla/5.0 AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+	},
+	constrained: {
+		viewport: { width: 412, height: 915 },
+		deviceScaleFactor: 2,
+		cpuRate: 8,
+		isMobile: true,
+		hasTouch: true,
+		userAgent:
+			"Mozilla/5.0 AppleWebKit/537.36 Chrome/126.0.0.0 Mobile Safari/537.36",
+	},
+};
 
 function parseArgs(argv) {
 	const options = {
@@ -13,10 +44,11 @@ function parseArgs(argv) {
 		port: "4174",
 		url: "",
 		out: "target/perf/ui/display-current.json",
-		cpuRate: 6,
-		warmupMs: 2_000,
-		durationMs: 3_000,
-		repeats: 3,
+		cpuRate: null,
+		warmupMs: 500,
+		durationMs: 1_500,
+		repeats: 1,
+		profiles: [...DEFAULT_PROFILES],
 		modes: [...DEFAULT_MODES],
 		voices: [...DEFAULT_VOICES],
 	};
@@ -39,6 +71,12 @@ function parseArgs(argv) {
 		} else if (arg === "--cpu-rate" && next) {
 			options.cpuRate = Number(next);
 			index += 1;
+		} else if (arg === "--profiles" && next) {
+			options.profiles = next.split(",").filter(Boolean);
+			index += 1;
+		} else if (arg === "--profile" && next) {
+			options.profiles = [next];
+			index += 1;
 		} else if (arg === "--warmup-ms" && next) {
 			options.warmupMs = Number(next);
 			index += 1;
@@ -48,17 +86,39 @@ function parseArgs(argv) {
 		} else if (arg === "--repeats" && next) {
 			options.repeats = Number(next);
 			index += 1;
+		} else if (arg === "--modes" && next) {
+			options.modes = next.split(",").filter(Boolean);
+			index += 1;
 		} else if (arg === "--mode" && next) {
 			options.modes = [next];
 			index += 1;
 		} else if (arg === "--voices" && next) {
-			options.voices = [Number(next)];
+			options.voices = next.split(",").map(Number);
 			index += 1;
 		}
 	}
 
-	if (!Number.isFinite(options.cpuRate) || options.cpuRate < 1) {
+	if (
+		options.cpuRate !== null &&
+		(!Number.isFinite(options.cpuRate) || options.cpuRate < 1)
+	) {
 		throw new Error("--cpu-rate must be a number greater than or equal to 1");
+	}
+	const unknownProfiles = options.profiles.filter(
+		(profile) => !DISPLAY_PROFILES[profile],
+	);
+	if (unknownProfiles.length > 0) {
+		throw new Error(
+			`Unknown display profile(s): ${unknownProfiles.join(", ")}. Available profiles: ${Object.keys(DISPLAY_PROFILES).join(", ")}`,
+		);
+	}
+	if (
+		options.modes.some((mode) => !DEFAULT_MODES.includes(mode)) ||
+		options.voices.some((voices) => !Number.isInteger(voices) || voices < 1)
+	) {
+		throw new Error(
+			`Invalid display cases. Modes: ${DEFAULT_MODES.join(", ")}; voices must be positive integers.`,
+		);
 	}
 	return options;
 }
@@ -75,6 +135,131 @@ async function waitForServer(url, timeoutMs) {
 		await new Promise((resolve) => setTimeout(resolve, 250));
 	}
 	throw new Error(`Timed out waiting for ${url}`);
+}
+
+function isPortInUse(host, port) {
+	return new Promise((resolve) => {
+		const socket = createConnection({ host, port });
+		const finish = (inUse) => {
+			socket.destroy();
+			resolve(inUse);
+		};
+		socket.once("connect", () => finish(true));
+		socket.once("error", () => finish(false));
+		socket.setTimeout(500, () => finish(false));
+	});
+}
+
+async function waitForPortFree(host, port, timeoutMs) {
+	const startedAt = Date.now();
+	while (Date.now() - startedAt < timeoutMs) {
+		if (!(await isPortInUse(host, port))) return;
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	}
+	throw new Error(`Port ${host}:${port} is still in use`);
+}
+
+function listeningPids(port) {
+	if (process.platform === "win32") return [];
+	const result = spawnSync(
+		"lsof",
+		["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"],
+		{ encoding: "utf8" },
+	);
+	if (result.status !== 0 && !result.stdout) return [];
+	return [
+		...new Set(
+			(result.stdout ?? "")
+				.split(/\s+/)
+				.map(Number)
+				.filter((pid) => Number.isInteger(pid) && pid > 0),
+		),
+	];
+}
+
+async function stopPortProcesses(host, port) {
+	const pids = listeningPids(port).filter((pid) => pid !== process.pid);
+	if (pids.length === 0) {
+		await waitForPortFree(host, port, 2_000);
+		return;
+	}
+	console.warn(
+		`Stopping existing benchmark listener(s) on ${host}:${port}: ${pids.join(", ")}`,
+	);
+	for (const pid of pids) {
+		try {
+			process.kill(pid, "SIGTERM");
+		} catch {
+			// The process may have exited between lsof and kill.
+		}
+	}
+	try {
+		await waitForPortFree(host, port, 2_000);
+		return;
+	} catch {
+		for (const pid of pids) {
+			try {
+				process.kill(pid, "SIGKILL");
+			} catch {
+				// The process may have exited between the two signals.
+			}
+		}
+	}
+	await waitForPortFree(host, port, 2_000);
+}
+
+async function stopPreview(preview, host, port) {
+	if (!preview) return;
+	const exited = once(preview, "exit").catch(() => {});
+	const portInUse = await isPortInUse(host, Number(port));
+	if (preview.exitCode === null || portInUse) {
+		const signal = "SIGTERM";
+		if (preview.pid && process.platform !== "win32") {
+			try {
+				process.kill(-preview.pid, signal);
+			} catch {
+				preview.kill(signal);
+			}
+		} else {
+			preview.kill(signal);
+		}
+		await Promise.race([
+			exited,
+			new Promise((resolve) => setTimeout(resolve, 2_000)),
+		]);
+	}
+	if (preview.exitCode === null) {
+		if (preview.pid && process.platform !== "win32") {
+			try {
+				process.kill(-preview.pid, "SIGKILL");
+			} catch {
+				preview.kill("SIGKILL");
+			}
+		} else {
+			preview.kill("SIGKILL");
+		}
+		await Promise.race([
+			exited,
+			new Promise((resolve) => setTimeout(resolve, 1_000)),
+		]);
+	}
+	await waitForPortFree(host, Number(port), 2_000);
+}
+
+async function waitForDisplay(page, mode) {
+	const performanceView = page.locator('[data-testid="performance-view"]');
+	if (mode === "advanced") {
+		await page.waitForFunction(
+			() => !document.querySelector('[data-testid="performance-view"]'),
+		);
+		return;
+	}
+
+	// The persisted UI state hydrates after the first React render. Waiting for
+	// any canvas would race that hydration and measure the Advanced sidebar
+	// canvas while this case is labelled Scope or Waterfall.
+	await performanceView.waitFor({ state: "visible" });
+	await performanceView.locator("canvas").waitFor({ state: "visible" });
 }
 
 async function runCase(page, options, mode, voices) {
@@ -131,17 +316,19 @@ async function runCase(page, options, mode, voices) {
 					.map((entry) => entry.duration);
 				const tierMarks = performance
 					.getEntriesByType("mark")
-					.filter((entry) => entry.name.startsWith("cz-performance-tier-"))
+					.filter(
+						(entry) =>
+							entry.startTime >= startedAt &&
+							entry.name.startsWith("cz-performance-tier-"),
+					)
 					.map((entry) => ({
 						tier: entry.name.replace("cz-performance-tier-", ""),
 						startTime: entry.startTime,
 					}));
 				const canvas =
 					mode === "advanced"
-						? [...document.querySelectorAll("canvas")].find(
-								(candidate) => !candidate.dataset.performanceTier,
-							)
-						: document.querySelector("canvas[data-performance-tier]");
+						? document.querySelector("canvas")
+						: document.querySelector('[data-testid="performance-view"] canvas');
 				const sortedGaps = [...gaps].sort((a, b) => a - b);
 				return {
 					fps: (gaps.length * 1000) / Math.max(1, elapsedMs),
@@ -160,7 +347,7 @@ async function runCase(page, options, mode, voices) {
 					qualityTier:
 						mode === "advanced"
 							? "advanced"
-							: (canvas?.dataset.performanceTier ?? "unknown"),
+							: (canvas?.dataset.performanceTier ?? "legacy"),
 					qualityTransitions: tierMarks,
 				};
 			},
@@ -177,95 +364,120 @@ async function main() {
 	let preview;
 	let baseUrl = options.url;
 
-	if (!baseUrl) {
-		const build = spawnSync(
-			"bun",
-			["--filter", "@cosmo/cosmo-pd101-site", "build"],
-			{ stdio: "inherit" },
-		);
-		if (build.status !== 0) process.exit(build.status ?? 1);
-		preview = spawn(
-			"bun",
-			[
-				"--filter",
-				"@cosmo/cosmo-pd101-site",
-				"preview",
-				"--host",
-				options.host,
-				"--port",
-				options.port,
-			],
-			{ stdio: "inherit" },
-		);
-		baseUrl = `http://${options.host}:${options.port}`;
-		await waitForServer(baseUrl, 30_000);
-	}
-
-	const browser = await chromium.launch({ headless: true });
+	let browser;
 	const cases = [];
 	try {
-		for (const mode of options.modes) {
-			for (const voices of options.voices) {
-				for (let repeat = 1; repeat <= options.repeats; repeat++) {
-					const context = await browser.newContext({
-						viewport: { width: 915, height: 412 },
-						deviceScaleFactor: 3,
-						isMobile: true,
-						hasTouch: true,
-						userAgent:
-							"Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36",
+		if (!baseUrl) {
+			await stopPortProcesses(options.host, Number(options.port));
+			const build = spawnSync(
+				"bun",
+				["--filter", "@cosmo/cosmo-pd101-site", "build"],
+				{ stdio: "inherit" },
+			);
+			if (build.status !== 0) process.exit(build.status ?? 1);
+			preview = spawn(
+				"bun",
+				[
+					"--filter",
+					"@cosmo/cosmo-pd101-site",
+					"preview",
+					"--host",
+					options.host,
+					"--port",
+					options.port,
+				],
+				{
+					stdio: "inherit",
+					detached: process.platform !== "win32",
+				},
+			);
+			baseUrl = `http://${options.host}:${options.port}`;
+			await waitForServer(baseUrl, 30_000);
+		}
+
+		browser = await chromium.launch({ headless: true });
+		for (const profileName of options.profiles) {
+			const profile = DISPLAY_PROFILES[profileName];
+			for (const mode of options.modes) {
+				const context = await browser.newContext({
+					viewport: profile.viewport,
+					deviceScaleFactor: profile.deviceScaleFactor,
+					isMobile: profile.isMobile,
+					hasTouch: profile.hasTouch,
+					userAgent: profile.userAgent,
+				});
+				const page = await context.newPage();
+				const client = await context.newCDPSession(page);
+				await client.send("Emulation.setCPUThrottlingRate", {
+					rate: options.cpuRate ?? profile.cpuRate,
+				});
+				await page.addInitScript(
+					({ mode }) => {
+						localStorage.clear();
+						localStorage.setItem(
+							"cosmo-pd101-ui-state",
+							JSON.stringify({
+								state: {
+									workspaceMode: mode === "advanced" ? "edit" : "performance",
+									performanceDisplayMode:
+										mode === "waterfall" ? "waterfall" : "scope",
+									keyboardVisible: true,
+								},
+								version: 0,
+							}),
+						);
+					},
+					{ mode },
+				);
+				try {
+					await page.goto(`${baseUrl}/?perf=1`, {
+						waitUntil: "domcontentloaded",
 					});
-					const page = await context.newPage();
-					const client = await context.newCDPSession(page);
-					await client.send("Emulation.setCPUThrottlingRate", {
-						rate: options.cpuRate,
-					});
-					await page.addInitScript(
-						({ mode }) => {
-							localStorage.clear();
-							localStorage.setItem(
-								"cosmo-pd101-ui-state",
+					await waitForDisplay(page, mode);
+					for (const voices of options.voices) {
+						for (let repeat = 1; repeat <= options.repeats; repeat++) {
+							const summary = await runCase(page, options, mode, voices);
+							cases.push({
+								profile: profileName,
+								mode,
+								voices,
+								repeat,
+								summary,
+							});
+							console.log(
 								JSON.stringify({
-									state: {
-										workspaceMode: mode === "advanced" ? "edit" : "performance",
-										performanceDisplayMode:
-											mode === "waterfall" ? "waterfall" : "scope",
-										keyboardVisible: true,
-									},
-									version: 0,
+									profile: profileName,
+									mode,
+									voices,
+									repeat,
+									summary,
 								}),
 							);
-						},
-						{ mode },
-					);
-					try {
-						await page.goto(`${baseUrl}/?perf=1`, {
-							waitUntil: "domcontentloaded",
-						});
-						await page.waitForSelector("canvas", { timeout: 30_000 });
-						const summary = await runCase(page, options, mode, voices);
-						cases.push({ mode, voices, repeat, summary });
-						console.log(JSON.stringify({ mode, voices, repeat, summary }));
-					} finally {
-						await context.close();
+						}
 					}
+				} finally {
+					await context.close();
 				}
 			}
 		}
 	} finally {
-		await browser.close();
-		preview?.kill("SIGTERM");
+		await browser?.close();
+		await stopPreview(preview, options.host, options.port);
 	}
 
 	const report = {
-		mode: "android-web-display",
+		mode: "web-display",
 		generatedAt: new Date().toISOString(),
 		configuration: {
-			cpuRate: options.cpuRate,
+			profiles: options.profiles.map((name) => ({
+				name,
+				...DISPLAY_PROFILES[name],
+				...(options.cpuRate === null ? {} : { cpuRate: options.cpuRate }),
+			})),
+			cpuRateOverride: options.cpuRate,
 			warmupMs: options.warmupMs,
 			durationMs: options.durationMs,
 			repeats: options.repeats,
-			viewport: { width: 915, height: 412, deviceScaleFactor: 3 },
 		},
 		cases,
 	};

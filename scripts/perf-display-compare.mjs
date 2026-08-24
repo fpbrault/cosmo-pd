@@ -2,14 +2,24 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 function median(values) {
+	if (values.length === 0) return null;
 	const sorted = [...values].sort((a, b) => a - b);
 	return sorted[Math.floor(sorted.length / 2)] ?? 0;
+}
+
+function readMetric(summaries, key) {
+	return median(
+		summaries
+			.map((summary) => summary[key])
+			.filter((value) => Number.isFinite(value)),
+	);
 }
 
 function readSummary(report) {
 	const grouped = new Map();
 	for (const entry of report.cases ?? []) {
-		const key = `${entry.mode}:${entry.voices}`;
+		const profile = entry.profile ?? "default";
+		const key = `${profile}:${entry.mode}:${entry.voices}`;
 		const summaries = grouped.get(key) ?? [];
 		summaries.push(entry.summary ?? {});
 		grouped.set(key, summaries);
@@ -18,20 +28,31 @@ function readSummary(report) {
 		[...grouped.entries()].map(([key, summaries]) => [
 			key,
 			{
-				fps: median(
-					summaries.map((summary) => summary.fps).filter(Number.isFinite),
-				),
-				p95GapMs: median(
-					summaries.map((summary) => summary.p95GapMs).filter(Number.isFinite),
-				),
-				qualityTier: summaries.at(-1)?.qualityTier ?? "unknown",
+				fps: readMetric(summaries, "fps"),
+				p95GapMs: readMetric(summaries, "p95GapMs"),
+				drawP95Ms: readMetric(summaries, "drawP95Ms"),
+				canvasPixels: readMetric(summaries, "canvasPixels"),
+				qualityTier: summaries.at(-1)?.qualityTier ?? "legacy",
 			},
 		]),
 	);
 }
 
 function deltaPercent(current, baseline) {
+	if (!Number.isFinite(current) || !Number.isFinite(baseline)) return null;
 	return baseline === 0 ? 0 : ((current - baseline) / baseline) * 100;
+}
+
+function formatPercent(value) {
+	return value === null ? "n/a" : `${value.toFixed(1)}%`;
+}
+
+function formatMetricPair(base, next, suffix = "") {
+	const format = (value) =>
+		Number.isFinite(value) && value > 0
+			? `${value.toFixed(suffix === "ms" ? 1 : 0)}${suffix}`
+			: "n/a";
+	return `${format(base)} -> ${format(next)}`;
 }
 
 function tierRank(tier) {
@@ -65,6 +86,9 @@ const [baseline, current] = await Promise.all([
 ]);
 const baselineCases = readSummary(baseline);
 const currentCases = readSummary(current);
+const singleRun =
+	Number(baseline.configuration?.repeats) === 1 ||
+	Number(current.configuration?.repeats) === 1;
 const keys = [...currentCases.keys()]
 	.filter((key) => baselineCases.has(key))
 	.sort();
@@ -82,7 +106,7 @@ if (missingCurrentCases.length > 0) {
 		`Missing current display benchmark cases: ${missingCurrentCases.join(", ")}`,
 	);
 }
-console.log("case\tfps delta\tp95 gap delta\ttier");
+console.log("case\tfps delta\tp95 gap delta\tdraw p95\tcanvas pixels\ttier");
 const markdownRows = [];
 for (const key of keys) {
 	const base = baselineCases.get(key);
@@ -96,22 +120,29 @@ for (const key of keys) {
 		baseTierRank !== undefined &&
 		nextTierRank !== undefined &&
 		nextTierRank > baseTierRank;
-	if (fpsDelta < -10 || gapDelta > 15 || tierRegressed) failures++;
+	const gapRegressed =
+		gapDelta !== null &&
+		gapDelta > 15 &&
+		(!singleRun || (next.p95GapMs ?? 0) > 34);
+	if (fpsDelta < -10 || gapRegressed || tierRegressed) failures++;
 	markdownRows.push(
-		`| ${key} | ${fpsDelta.toFixed(1)}% | ${gapDelta.toFixed(1)}% | ${base.qualityTier} -> ${next.qualityTier} |`,
+		`| ${key} | ${formatPercent(fpsDelta)} | ${formatPercent(gapDelta)} | ${formatMetricPair(base.drawP95Ms, next.drawP95Ms, "ms")} | ${formatMetricPair(base.canvasPixels, next.canvasPixels)} | ${base.qualityTier} -> ${next.qualityTier} |`,
 	);
 	console.log(
-		`${key}\t${fpsDelta.toFixed(1)}%\t${gapDelta.toFixed(1)}%\t${base.qualityTier} -> ${next.qualityTier}`,
+		`${key}\t${formatPercent(fpsDelta)}\t${formatPercent(gapDelta)}\t${formatMetricPair(base.drawP95Ms, next.drawP95Ms, "ms")}\t${formatMetricPair(base.canvasPixels, next.canvasPixels)}\t${base.qualityTier} -> ${next.qualityTier}`,
 	);
 }
 
 if (markdownOut) {
 	const markdown = [
-		"| Case | FPS delta | P95 RAF gap delta | Final tier |",
-		"| --- | ---: | ---: | --- |",
+		"| Case | FPS delta | P95 RAF gap delta | Draw p95 (base -> PR) | Canvas pixels (base -> PR) | Final tier |",
+		"| --- | ---: | ---: | ---: | ---: | --- |",
 		...markdownRows,
 		...(missingCurrentCases.length > 0
 			? ["", `Missing current cases: ${missingCurrentCases.join(", ")}`]
+			: []),
+		...(singleRun
+			? ["", "_Single-run CI smoke: RAF-gap failures require p95 above 34 ms._"]
 			: []),
 		"",
 		failures > 0

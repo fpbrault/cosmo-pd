@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AutoScopePhaseLock } from "@/components/panels/analysis/scope-visualizations/autoScopePhaseLock";
 import { ScopeProvider } from "@/context/ScopeContext";
+import { calculateCanvasBackingSize } from "./displayPerformance";
 import PerformanceAudioDisplay, {
 	getPerformanceDisplayProfile,
 } from "./PerformanceAudioDisplay";
@@ -44,10 +45,23 @@ describe("PerformanceAudioDisplay", () => {
 
 	it("uses a responsive, lower-cost profile on constrained hosts", () => {
 		expect(getPerformanceDisplayProfile("constrained")).toMatchObject({
-			historyInterval: 66,
+			historyInterval: 33,
 			maxPixelRatio: 1.5,
 			glowBlur: 4,
 		});
+	});
+
+	it("sizes the backing canvas from its transformed visible size", () => {
+		expect(
+			calculateCanvasBackingSize({
+				clientWidth: 800,
+				clientHeight: 300,
+				visibleWidth: 600,
+				visibleHeight: 225,
+				devicePixelRatio: 3,
+				maxPixelRatio: 2,
+			}),
+		).toEqual({ width: 1_200, height: 450 });
 	});
 
 	it("repaints external scope history only when a new row is ready", () => {
@@ -57,8 +71,10 @@ describe("PerformanceAudioDisplay", () => {
 			return 1;
 		});
 		const fillRect = vi.fn();
+		const drawImage = vi.fn();
 		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
 			beginPath: vi.fn(),
+			drawImage,
 			fillRect,
 			lineTo: vi.fn(),
 			moveTo: vi.fn(),
@@ -95,22 +111,27 @@ describe("PerformanceAudioDisplay", () => {
 
 		animationFrame?.(0);
 		expect(fillRect).toHaveBeenCalledTimes(1);
+		expect(drawImage).toHaveBeenCalledTimes(1);
 
 		const samples = Float32Array.from({ length: 512 }, (_, index) =>
 			Math.sin((index / 218) * Math.PI * 2),
 		);
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(16);
-		expect(fillRect).toHaveBeenCalledTimes(2);
+		expect(drawImage).toHaveBeenCalledTimes(2);
 
 		animationFrame?.(32);
-		expect(fillRect).toHaveBeenCalledTimes(2);
+		expect(drawImage).toHaveBeenCalledTimes(2);
 
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(49);
-		expect(fillRect).toHaveBeenCalledTimes(2);
+		expect(drawImage).toHaveBeenCalledTimes(3);
 
+		animationFrame?.(65);
+		expect(drawImage).toHaveBeenCalledTimes(3);
+
+		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(82);
-		expect(fillRect).toHaveBeenCalledTimes(3);
+		expect(drawImage).toHaveBeenCalledTimes(4);
 	});
 });
