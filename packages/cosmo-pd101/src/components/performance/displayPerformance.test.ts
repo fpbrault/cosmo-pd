@@ -20,14 +20,14 @@ describe("display performance quality", () => {
 		});
 		expect(balanced).toMatchObject({
 			bandCount: 48,
-			waveformPointCount: 96,
+			waveformPointCount: 160,
 			rowCount: 24,
 			maxPixelRatio: 1.5,
 			glowBlur: 4,
 		});
 		expect(low).toMatchObject({
 			bandCount: 32,
-			waveformPointCount: 64,
+			waveformPointCount: 160,
 			rowCount: 16,
 			maxPixelRatio: 1,
 			glowBlur: 0,
