@@ -305,7 +305,7 @@ export default memo(function PerformanceControlsPanel() {
 
 	return (
 		<section
-			className="flex h-60 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
+			className="flex h-48 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
 			data-testid="performance-controls"
 		>
 			<div className="flex min-w-[16rem] flex-[0.85] flex-col">
