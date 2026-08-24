@@ -12,7 +12,7 @@ description: Deep-dive into the 8-step CZ-style step envelopes.
 | Envelope | Controls | Parameter ID |
 |----------|---------|-------------|
 | **DCO Envelope** | Pitch (frequency) | `dcoEnv` |
-| **DCW Envelope** | Warp depth | `dcwEnv` |
+| **DCW Envelope** | DCW amount | `dcwEnv` |
 | **DCA Envelope** | Amplitude (volume) | `dcaEnv` |
 
 Plus a separate **Mod Envelope** (4-stage ADSR) for modulation routing.

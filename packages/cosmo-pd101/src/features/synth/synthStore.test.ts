@@ -15,7 +15,7 @@ describe("useSynthStore", () => {
 
 	it("initializes with default state", () => {
 		const state = useSynthStore.getState();
-		expect(state.warpAAmount).toBe(0);
+		expect(state.line1DcwAmount).toBe(0);
 		expect(state.warpAAlgo).toBe(DEFAULT_ALGO_REF);
 		expect(state.volume).toBe(1);
 		expect(state.czDacEnabled).toBe(false);
@@ -23,7 +23,7 @@ describe("useSynthStore", () => {
 
 	it("updates state via setters", () => {
 		const {
-			setWarpAAmount,
+			setLine1DcwAmount,
 			setVolume,
 			setLineOctave,
 			setLfoRate,
@@ -31,7 +31,7 @@ describe("useSynthStore", () => {
 		} = useSynthStore.getState();
 
 		act(() => {
-			setWarpAAmount(0.5);
+			setLine1DcwAmount(0.5);
 			setVolume(0.8);
 			setLineOctave(1);
 			setLfoRate(2.5);
@@ -39,7 +39,7 @@ describe("useSynthStore", () => {
 		});
 
 		const state = useSynthStore.getState();
-		expect(state.warpAAmount).toBe(0.5);
+		expect(state.line1DcwAmount).toBe(0.5);
 		expect(state.volume).toBe(0.8);
 		expect(state.lineOctave).toBe(1);
 		expect(state.lfoRate).toBe(2.5);
@@ -187,7 +187,7 @@ describe("useSynthStore", () => {
 
 	it("gathers state into a preset structure", () => {
 		const {
-			setWarpAAmount,
+			setLine1DcwAmount,
 			setTempoBpm,
 			setLfoRateMode,
 			setLfoSyncDivision,
@@ -204,7 +204,7 @@ describe("useSynthStore", () => {
 		} = useSynthStore.getState();
 
 		act(() => {
-			setWarpAAmount(0.75);
+			setLine1DcwAmount(0.75);
 			setTempoBpm(132);
 			setLfoRateMode("sync");
 			setLfoSyncDivision("eighth");
@@ -286,8 +286,8 @@ describe("useSynthStore", () => {
 		expect(state.volume).toBe(0.5);
 		expect(state.czDacEnabled).toBe(true);
 		expect(state.tempoBpm).toBe(96);
-		expect(state.warpAAmount).toBe(0.2);
-		expect(state.warpBAmount).toBe(0.4);
+		expect(state.line1DcwAmount).toBe(0.2);
+		expect(state.line2DcwAmount).toBe(0.4);
 		expect(state.lfoRateMode).toBe("sync");
 		expect(state.lfoSyncDivision).toBe("quarter");
 		expect(state.randomRateMode).toBe("sync");

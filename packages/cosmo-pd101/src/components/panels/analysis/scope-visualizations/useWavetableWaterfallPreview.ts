@@ -23,8 +23,8 @@ export function useWavetableWaterfallPreview(
 		useShallow((state) =>
 			enabled
 				? {
-						warpAAmount: state.warpAAmount,
-						warpBAmount: state.warpBAmount,
+						line1DcwAmount: state.line1DcwAmount,
+						line2DcwAmount: state.line2DcwAmount,
 						warpAAlgo: state.warpAAlgo,
 						warpBAlgo: state.warpBAlgo,
 						algo2A: state.algo2A,
@@ -102,8 +102,8 @@ export function useWavetableWaterfallPreview(
 		const phaseModEnabled = phaseModParams?.enabled ?? false;
 
 		return buildWaterfallPreviewHistories({
-			warpAAmount: waterfallState.warpAAmount,
-			warpBAmount: waterfallState.warpBAmount,
+			line1DcwAmount: waterfallState.line1DcwAmount,
+			line2DcwAmount: waterfallState.line2DcwAmount,
 			warpAAlgo: waterfallState.warpAAlgo,
 			warpBAlgo: waterfallState.warpBAlgo,
 			algo2A: waterfallState.algo2A,

@@ -227,7 +227,7 @@ const DEFAULT_PARAMS: PluginParamInfo[] = [
 		units: "",
 		steps: 0,
 	},
-	// Line 1/2 DCW base (warp amount)
+	// Line 1/2 DCW base (DCW amount)
 	{
 		id: 102,
 		stringId: "l1_dcw_base",

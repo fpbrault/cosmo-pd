@@ -61,7 +61,7 @@ flowchart LR
             L1_PRIMARY["Primary Algo (W)<br/>warp_phase(φ, dcw, W0..W3)"]
             L1_SECONDARY["Secondary Algo (W')<br/><small>blended with primary</small>"]
             L1_BW["Base Waveform<br/><small>sample(warped φ + pm)</small>"]
-            L1_DCW_ENV["DCW Envelope<br/><small>8-step, shapes warp depth</small>"]
+            L1_DCW_ENV["DCW Envelope<br/><small>8-step, modulates DCW amount</small>"]
             L1_DCA_ENV["DCA Envelope<br/><small>8-step, amplitude</small>"]
             L1_WIN["Window<br/><small>amplitude gate</small>"]
             L1_OUT[("Line 1 Sample")]
@@ -167,7 +167,7 @@ flowchart TD
 
 ## Phase Distortion Algorithms
 
-Each oscillator line runs a **phase distortion algorithm**: a warp function transforms the input phase `φ` before sampling a base waveform. The DCW (Digital Controlled Waveshape) envelope controls warp depth.
+Each oscillator line runs a **phase distortion algorithm**: a warp function transforms the input phase `φ` before sampling a base waveform. The DCW (Digital Controlled Waveshape) envelope controls the DCW amount.
 
 ### CZ-101 Legacy Waveforms
 

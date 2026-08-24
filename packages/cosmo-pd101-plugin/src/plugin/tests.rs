@@ -285,7 +285,7 @@ fn set_params_rpc_syncs_daw_float_params() {
     );
     assert!(result.is_ok());
     assert!((params.volume.value() - 0.33).abs() < 0.000_001);
-    assert!((params.warp_a_amount.value() - 0.61).abs() < 0.000_001);
+    assert!((params.line1_dcw_amount.value() - 0.61).abs() < 0.000_001);
 }
 
 #[test]
@@ -654,7 +654,7 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
         .shared_state
         .midi_learn
         .replace_bindings_for_test(vec![crate::session_state::MidiLearnBinding {
-            param_key: "warpAAmount".to_string(),
+            param_key: "line1DcwAmount".to_string(),
             channel: 0,
             cc: 55,
         }]);
@@ -670,7 +670,7 @@ fn midi_mapping_syncs_daw_backed_plugin_params() {
         (plugin.shared_state.synth.synth_params.load().line1.dcw_base - 64.0 / 127.0).abs()
             < 0.000_001
     );
-    assert!((params.warp_a_amount.value() - 64.0 / 127.0).abs() < 0.000_001);
+    assert!((params.line1_dcw_amount.value() - 64.0 / 127.0).abs() < 0.000_001);
 }
 
 #[test]

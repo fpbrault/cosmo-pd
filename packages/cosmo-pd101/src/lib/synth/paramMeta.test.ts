@@ -27,8 +27,8 @@ describe("paramMeta", () => {
 		expect(getParamTooltip("line2Level")).toBe(
 			"Sets base volume level for line 2.",
 		);
-		expect(getParamTooltip("warpBAmount")).toBe(
-			"Sets amount of phase distortion applied to line 2.",
+		expect(getParamTooltip("line2DcwAmount")).toBe(
+			"Sets the DCW amount for line 2.",
 		);
 	});
 

@@ -178,12 +178,12 @@ const DEFAULT_FX_SLOTS: FxSlotTuple = [
 
 type SynthState = {
 	presetEditVersion: number;
-	warpAAmount: number;
+	line1DcwAmount: number;
 	warpAAlgo: Algo;
 	algo2A: Algo | null;
 	algoBlendA: number;
 
-	warpBAmount: number;
+	line2DcwAmount: number;
 	warpBAlgo: Algo;
 	algo2B: Algo | null;
 	algoBlendB: number;
@@ -278,12 +278,12 @@ type SynthState = {
 // ---------------------------------------------------------------------------
 
 type SynthActions = {
-	setWarpAAmount: (v: number) => void;
+	setLine1DcwAmount: (v: number) => void;
 	setWarpAAlgo: (v: Algo) => void;
 	setAlgo2A: (v: Algo | null) => void;
 	setAlgoBlendA: (v: number) => void;
 
-	setWarpBAmount: (v: number) => void;
+	setLine2DcwAmount: (v: number) => void;
 	setWarpBAlgo: (v: Algo) => void;
 	setAlgo2B: (v: Algo | null) => void;
 	setAlgoBlendB: (v: number) => void;
@@ -402,12 +402,12 @@ export type SynthStore = SynthState & SynthActions;
 
 const DEFAULT_STATE: SynthState = {
 	presetEditVersion: 0,
-	warpAAmount: 0,
+	line1DcwAmount: 0,
 	warpAAlgo: DEFAULT_ALGO_REF,
 	algo2A: null,
 	algoBlendA: 0,
 
-	warpBAmount: 0,
+	line2DcwAmount: 0,
 	warpBAlgo: DEFAULT_ALGO_REF,
 	algo2B: null,
 	algoBlendB: 0,
@@ -518,12 +518,12 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 		...DEFAULT_STATE,
 
 		// --- Setters (generated per field) ---
-		setWarpAAmount: (v) => setEditedState({ warpAAmount: v }),
+		setLine1DcwAmount: (v) => setEditedState({ line1DcwAmount: v }),
 		setWarpAAlgo: (v) => setEditedState({ warpAAlgo: v }),
 		setAlgo2A: (v) => setEditedState({ algo2A: v }),
 		setAlgoBlendA: (v) => setEditedState({ algoBlendA: v }),
 
-		setWarpBAmount: (v) => setEditedState({ warpBAmount: v }),
+		setLine2DcwAmount: (v) => setEditedState({ line2DcwAmount: v }),
 		setWarpBAlgo: (v) => setEditedState({ warpBAlgo: v }),
 		setAlgo2B: (v) => setEditedState({ algo2B: v }),
 		setAlgoBlendB: (v) => setEditedState({ algoBlendB: v }),
@@ -757,7 +757,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					baseWaveformB: s.line1BaseWaveformB,
 					window: s.windowType,
 					dcaBase: s.line1Level,
-					dcwBase: s.warpAAmount,
+					dcwBase: s.line1DcwAmount,
 					modulation: 0,
 					detuneNote: 0,
 					detuneFine: 0,
@@ -778,7 +778,7 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					baseWaveformB: s.line2BaseWaveformB,
 					window: s.windowType,
 					dcaBase: s.line2Level,
-					dcwBase: s.warpBAmount,
+					dcwBase: s.line2DcwAmount,
 					modulation: 0,
 					detuneNote: line2DetuneEnabled ? s.line2DetuneNote : 0,
 					detuneFine: line2DetuneEnabled ? s.line2DetuneFine : 0,
@@ -872,8 +872,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 			for (const [key, value] of Object.entries(changes)) {
 				switch (key) {
 					case "volume":
-					case "warpAAmount":
-					case "warpBAmount":
+					case "line1DcwAmount":
+					case "line2DcwAmount":
 					case "algoBlendA":
 					case "algoBlendB":
 					case "line1Level":
@@ -1005,8 +1005,8 @@ export const useSynthStore = create<SynthStore>((set, get) => {
 					: toAlgoRefV1(p.line2.algo2, DEFAULT_ALGO_REF);
 
 			set({
-				warpAAmount: safe(p.line1?.dcwBase, 0),
-				warpBAmount: safe(p.line2?.dcwBase, 0),
+				line1DcwAmount: safe(p.line1?.dcwBase, 0),
+				line2DcwAmount: safe(p.line2?.dcwBase, 0),
 				warpAAlgo: line1PrimaryAlgo,
 				warpBAlgo: line2PrimaryAlgo,
 				algo2A: line1SecondaryAlgo,

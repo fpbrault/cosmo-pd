@@ -4757,14 +4757,14 @@ export const ENGINE_PARAM_UI_META_V1: EngineParamUiMetaV1[] = [
     }
   },
   {
-    "key": "warpAAmount",
+    "key": "line1DcwAmount",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
     }
   },
   {
-    "key": "warpBAmount",
+    "key": "line2DcwAmount",
     "paramDefault": 1.0,
     "readoutFormat": {
       "kind": "decimal"
@@ -5397,12 +5397,12 @@ export const ENGINE_MIDI_PARAM_RANGES_V1: EngineParamRangeV1[] = [
     "max": 1.0
   },
   {
-    "key": "warpAAmount",
+    "key": "line1DcwAmount",
     "min": 0.0,
     "max": 1.0
   },
   {
-    "key": "warpBAmount",
+    "key": "line2DcwAmount",
     "min": 0.0,
     "max": 1.0
   },

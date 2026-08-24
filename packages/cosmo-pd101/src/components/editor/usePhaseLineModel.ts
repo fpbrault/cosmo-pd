@@ -21,10 +21,10 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 	const updateAlgoControlValue = useSynthStore(
 		(state) => state.updateAlgoControlValue,
 	);
-	const { value: warpAAmount, setValue: setWarpAAmount } =
-		useSynthParam("warpAAmount");
-	const { value: warpBAmount, setValue: setWarpBAmount } =
-		useSynthParam("warpBAmount");
+	const { value: line1DcwAmount, setValue: setLine1DcwAmount } =
+		useSynthParam("line1DcwAmount");
+	const { value: line2DcwAmount, setValue: setLine2DcwAmount } =
+		useSynthParam("line2DcwAmount");
 	const { value: warpAAlgo, setValue: setWarpAAlgo } =
 		useSynthParam("warpAAlgo");
 	const { value: warpBAlgo, setValue: setWarpBAlgo } =
@@ -137,8 +137,8 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 					updateAlgoControlValue(lineIndex, "B", id, value),
 			},
 			parameters: {
-				warpAmount: (isLine1 ? warpAAmount : warpBAmount) as number,
-				setWarpAmount: isLine1 ? setWarpAAmount : setWarpBAmount,
+				dcwAmount: (isLine1 ? line1DcwAmount : line2DcwAmount) as number,
+				setDcwAmount: isLine1 ? setLine1DcwAmount : setLine2DcwAmount,
 				level: (isLine1 ? line1Level : line2Level) as number,
 				setLevel: isLine1 ? setLine1Level : setLine2Level,
 				octave: lineOctave as number,
@@ -203,10 +203,10 @@ export function usePhaseLineModel(lineIndex: LineIndex): PhaseLineModel {
 		lineSelectLabel,
 		detuneDisabled,
 		detuneLabelPrefix,
-		warpAAmount,
-		setWarpAAmount,
-		warpBAmount,
-		setWarpBAmount,
+		line1DcwAmount,
+		setLine1DcwAmount,
+		line2DcwAmount,
+		setLine2DcwAmount,
 		warpAAlgo,
 		setWarpAAlgo,
 		warpBAlgo,

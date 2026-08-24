@@ -154,11 +154,11 @@ const ENGINE_PARAM_UI_META_V1: [EngineParamUiMetaV1; 62] = [
         readout_format: EngineParamReadoutFormatV1::Percent,
     },
     EngineParamUiMetaV1 {
-        key: "warpAAmount",
+        key: "line1DcwAmount",
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     EngineParamUiMetaV1 {
-        key: "warpBAmount",
+        key: "line2DcwAmount",
         readout_format: EngineParamReadoutFormatV1::Decimal,
     },
     EngineParamUiMetaV1 {
@@ -455,8 +455,8 @@ pub fn engine_param_default_v1(key: &str) -> Option<f32> {
 
     match key {
         "volume" => Some(synth.volume),
-        "warpAAmount" => Some(line1.dcw_base),
-        "warpBAmount" => Some(line2.dcw_base),
+        "line1DcwAmount" => Some(line1.dcw_base),
+        "line2DcwAmount" => Some(line2.dcw_base),
         "algoBlendA" => Some(line1.algo_blend),
         "algoBlendB" => Some(line2.algo_blend),
         "line1Level" => Some(line1.dca_base),

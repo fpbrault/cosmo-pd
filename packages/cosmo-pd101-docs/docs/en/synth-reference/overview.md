@@ -50,7 +50,7 @@ Each line has its own algorithm, three 8-step envelopes (DCO/DCW/DCA), independe
 | Term | Meaning |
 |------|---------|
 | **DCO** | Digitally Controlled Oscillator -- pitch/frequency |
-| **DCW** | Digitally Controlled Waveshaper -- warp amount |
+| **DCW** | Digitally Controlled Waveshaper -- DCW amount |
 | **DCA** | Digitally Controlled Amplifier -- amplitude |
 | **Algorithm** | The mathematical function that warps the phase |
 | **Envelope** | An 8-step step-function controlling a parameter over time |

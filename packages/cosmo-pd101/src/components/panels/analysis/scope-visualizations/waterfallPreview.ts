@@ -20,8 +20,8 @@ const WAVE_COUNT = 42;
 const POINTS_PER_WAVE = 128;
 
 type BuildWaterfallPreviewHistoriesParams = {
-	warpAAmount: number;
-	warpBAmount: number;
+	line1DcwAmount: number;
+	line2DcwAmount: number;
 	warpAAlgo: Algo;
 	warpBAlgo: Algo;
 	algo2A: Algo | null;
@@ -216,8 +216,8 @@ export function buildWaterfallPreviewHistories(
 	params: BuildWaterfallPreviewHistoriesParams,
 ): Pick<WaterfallPreviewData, "line1History" | "line2History"> {
 	const {
-		warpAAmount,
-		warpBAmount,
+		line1DcwAmount,
+		line2DcwAmount,
 		warpAAlgo,
 		warpBAlgo,
 		algo2A,
@@ -254,8 +254,8 @@ export function buildWaterfallPreviewHistories(
 		const dca1 = evaluateEnvelope(line1DcaEnv, time);
 		const dca2 = evaluateEnvelope(line2DcaEnv, time);
 		const waveform = computeWaveform({
-			warpAAmount: warpAAmount * dcw1,
-			warpBAmount: warpBAmount * dcw2,
+			line1DcwAmount: line1DcwAmount * dcw1,
+			line2DcwAmount: line2DcwAmount * dcw2,
 			warpAAlgo,
 			warpBAlgo,
 			algo2A,

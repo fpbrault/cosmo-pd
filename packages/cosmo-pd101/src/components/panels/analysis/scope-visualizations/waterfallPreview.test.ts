@@ -13,8 +13,8 @@ describe("waterfallPreview", () => {
 		const phaseModParams =
 			phaseModSlot.type === "phaseMod" ? phaseModSlot.params : null;
 		const histories = buildWaterfallPreviewHistories({
-			warpAAmount: state.warpAAmount,
-			warpBAmount: state.warpBAmount,
+			line1DcwAmount: state.line1DcwAmount,
+			line2DcwAmount: state.line2DcwAmount,
 			warpAAlgo: state.warpAAlgo,
 			warpBAlgo: state.warpBAlgo,
 			algo2A: state.algo2A,

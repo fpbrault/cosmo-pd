@@ -94,8 +94,8 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 	color?: string;
 }) {
 	const synthController = useOptionalSynthController();
-	const { value: warpAAmount } = useSynthParam("warpAAmount");
-	const { value: warpBAmount } = useSynthParam("warpBAmount");
+	const { value: line1DcwAmount } = useSynthParam("line1DcwAmount");
+	const { value: line2DcwAmount } = useSynthParam("line2DcwAmount");
 	const { value: warpAAlgo } = useSynthParam("warpAAlgo");
 	const { value: warpBAlgo } = useSynthParam("warpBAlgo");
 	const { value: algo2A } = useSynthParam("algo2A");
@@ -212,8 +212,8 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 			}));
 
 		return computeWaveform({
-			warpAAmount: getLiveValue("line1DcwBase", warpAAmount as number),
-			warpBAmount: getLiveValue("line2DcwBase", warpBAmount as number),
+			line1DcwAmount: getLiveValue("line1DcwBase", line1DcwAmount as number),
+			line2DcwAmount: getLiveValue("line2DcwBase", line2DcwAmount as number),
 			warpAAlgo: warpAAlgo as Algo,
 			warpBAlgo: warpBAlgo as Algo,
 			algo2A: algo2A as Algo | null,
@@ -250,8 +250,8 @@ export const SynthSingleCycleDisplay = memo(function SynthSingleCycleDisplay({
 			sampleCount: 256,
 		});
 	}, [
-		warpAAmount,
-		warpBAmount,
+		line1DcwAmount,
+		line2DcwAmount,
 		warpAAlgo,
 		warpBAlgo,
 		algo2A,
