@@ -190,7 +190,7 @@ const SynthRenderer = memo(function SynthRenderer({
 													data-testid="simple-keyboard-resize"
 												/>
 											</Separator>
-											<Panel defaultSize="23%" minSize="22%" maxSize="30%">
+											<Panel defaultSize="35%" minSize="20%" collapsible maxSize="50%">
 												<MiniKeyboardOverlay
 													activeNotes={activeNotes}
 													pitchBend={pitchBend}
