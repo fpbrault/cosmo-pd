@@ -18,7 +18,13 @@ export function drawScopeBackdrop(
 export function setupScopeCanvas(canvas: HTMLCanvasElement) {
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return null;
-	const dpr = Math.max(2, window.devicePixelRatio || 1);
+	const configuredMaxDpr = Number(canvas.dataset.maxPixelRatio);
+	const dpr = Number.isFinite(configuredMaxDpr)
+		? Math.min(
+				Math.max(1, window.devicePixelRatio || 1),
+				Math.max(1, configuredMaxDpr),
+			)
+		: Math.max(2, window.devicePixelRatio || 1);
 	const width = Math.max(1, Math.floor(canvas.clientWidth));
 	const height = Math.max(1, Math.floor(canvas.clientHeight));
 	const pixelWidth = Math.floor(width * dpr);

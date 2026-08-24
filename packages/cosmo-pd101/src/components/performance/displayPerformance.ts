@@ -5,8 +5,17 @@ export type PerformanceDisplayProfile = {
 	waveformPointCount: number;
 	rowCount: number;
 	historyInterval: number;
+	/** Canvas repaint cadence; historyInterval intentionally remains independent. */
+	renderInterval: number;
 	maxPixelRatio: number;
 	glowBlur: number;
+};
+
+export type AdvancedDisplayProfile = {
+	targetFrameInterval: number;
+	maxPixelRatio: number;
+	spectrogramBins: number;
+	spectrogramFftSize: number;
 };
 
 const QUALITY_ORDER: PerformanceQualityTier[] = ["high", "balanced", "low"];
@@ -20,6 +29,7 @@ export const PERFORMANCE_DISPLAY_PROFILES: Record<
 		waveformPointCount: 160,
 		rowCount: 40,
 		historyInterval: 33,
+		renderInterval: 16,
 		maxPixelRatio: 2,
 		glowBlur: 8,
 	},
@@ -28,6 +38,7 @@ export const PERFORMANCE_DISPLAY_PROFILES: Record<
 		waveformPointCount: 96,
 		rowCount: 24,
 		historyInterval: 33,
+		renderInterval: 16,
 		maxPixelRatio: 1.5,
 		glowBlur: 4,
 	},
@@ -36,8 +47,33 @@ export const PERFORMANCE_DISPLAY_PROFILES: Record<
 		waveformPointCount: 64,
 		rowCount: 16,
 		historyInterval: 33,
+		renderInterval: 16,
 		maxPixelRatio: 1,
 		glowBlur: 0,
+	},
+};
+
+export const ADVANCED_DISPLAY_PROFILES: Record<
+	PerformanceQualityTier,
+	AdvancedDisplayProfile
+> = {
+	high: {
+		targetFrameInterval: 16,
+		maxPixelRatio: 2,
+		spectrogramBins: 56,
+		spectrogramFftSize: 256,
+	},
+	balanced: {
+		targetFrameInterval: 33,
+		maxPixelRatio: 1.5,
+		spectrogramBins: 40,
+		spectrogramFftSize: 128,
+	},
+	low: {
+		targetFrameInterval: 50,
+		maxPixelRatio: 1,
+		spectrogramBins: 28,
+		spectrogramFftSize: 64,
 	},
 };
 
@@ -79,6 +115,12 @@ export function getPerformanceDisplayProfile(
 	tier: PerformanceQualityTier,
 ): PerformanceDisplayProfile {
 	return PERFORMANCE_DISPLAY_PROFILES[tier];
+}
+
+export function getAdvancedDisplayProfile(
+	tier: PerformanceQualityTier,
+): AdvancedDisplayProfile {
+	return ADVANCED_DISPLAY_PROFILES[tier];
 }
 
 export function calculateCanvasBackingSize({

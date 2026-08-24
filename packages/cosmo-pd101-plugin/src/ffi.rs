@@ -5,6 +5,7 @@ use std::ptr;
 use std::slice;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
+use std::time::Instant;
 
 use cosmo_synth_engine::envelope::{
     compute_env_level_norms, normalize_synth_params_envelopes_to_raw_if_human,
@@ -18,6 +19,7 @@ use cosmo_synth_engine::processor::{CosmoProcessor, midi_note_to_freq};
 use crossbeam_queue::ArrayQueue;
 
 use crate::preset_library::PresetLibraryEntry;
+use crate::runtime_state::PerformanceCounters;
 
 const SCOPE_CAPACITY: usize = 4096;
 const PARAM_KEY_CAPACITY: usize = 64;
@@ -497,6 +499,11 @@ impl FfiAudioState {
             return CosmoPd101FfiStatus::InvalidArgument;
         }
 
+        let performance_started_at = engine
+            .performance
+            .enabled
+            .load(Ordering::Relaxed)
+            .then(Instant::now);
         while let Some(command) = engine.commands.pop() {
             self.apply_command(command, &engine.retired_params);
         }
@@ -526,6 +533,20 @@ impl FfiAudioState {
         if let Ok(mut published_mod_sources) = engine.mod_snapshot.try_lock() {
             *published_mod_sources = self.processor.runtime_mod_sources();
         }
+        if let Some(started_at) = performance_started_at {
+            let active_voices = self
+                .processor
+                .voices
+                .iter()
+                .filter(|voice| !voice.is_silent && voice.note.is_some())
+                .count() as u32;
+            engine.performance.record_block(
+                started_at.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64,
+                frames,
+                self.processor.sample_rate,
+                active_voices,
+            );
+        }
         CosmoPd101FfiStatus::Ok
     }
 }
@@ -539,6 +560,7 @@ pub struct CosmoPd101FfiEngine {
     scope_snapshot: Mutex<ScopeRing>,
     voice_snapshot: Mutex<Vec<RuntimeVoiceDebugState>>,
     mod_snapshot: Mutex<RuntimeModSources>,
+    performance: PerformanceCounters,
 }
 
 // SAFETY: only the render functions dereference `audio`, guarded against
@@ -558,6 +580,7 @@ impl CosmoPd101FfiEngine {
             scope_snapshot: Mutex::new(ScopeRing::new(sample_rate)),
             voice_snapshot: Mutex::new(Vec::with_capacity(cosmo_synth_engine::params::MAX_VOICES)),
             mod_snapshot: Mutex::new(RuntimeModSources::default()),
+            performance: PerformanceCounters::default(),
         }
     }
 
@@ -786,6 +809,49 @@ pub unsafe extern "C" fn cosmo_pd101_ffi_engine_retain(engine: *mut CosmoPd101Ff
         if !engine.is_null() {
             Arc::increment_strong_count(engine);
         }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn cosmo_pd101_ffi_set_performance_monitor_enabled(
+    engine: *mut CosmoPd101FfiEngine,
+    enabled: bool,
+) -> CosmoPd101FfiStatus {
+    let Ok(engine) = engine_ref(engine) else {
+        return CosmoPd101FfiStatus::NullPointer;
+    };
+    engine.performance.set_enabled(enabled);
+    CosmoPd101FfiStatus::Ok
+}
+
+/// # Safety
+///
+/// `engine` must be a valid pointer returned by
+/// [`cosmo_pd101_ffi_engine_create`]. `output` must be non-null and point to
+/// a buffer of at least `output_len` bytes when `output_len > 0`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosmo_pd101_ffi_get_performance_metrics_json(
+    engine: *const CosmoPd101FfiEngine,
+    output: *mut u8,
+    output_len: usize,
+) -> usize {
+    unsafe {
+        let Ok(engine) = engine_ref(engine) else {
+            return 0;
+        };
+        let Ok(json) = serde_json::to_string(&engine.performance.snapshot()) else {
+            return 0;
+        };
+        let bytes = json.as_bytes();
+        if output.is_null() || output_len == 0 {
+            return bytes.len();
+        }
+        let Ok(output) = output_slice_mut(output, output_len) else {
+            return 0;
+        };
+        let bytes_to_write = bytes.len().min(output.len());
+        output[..bytes_to_write].copy_from_slice(&bytes[..bytes_to_write]);
+        bytes.len()
     }
 }
 

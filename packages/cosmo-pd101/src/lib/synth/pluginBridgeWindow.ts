@@ -119,6 +119,12 @@ export type PluginBridgeWindowFacade = {
 	__czGetScopeData?: () => Promise<
 		PluginIpcMethods["getScopeData"]["response"]
 	>;
+	__czSetPerformanceMonitorEnabled?: (
+		enabled: PluginIpcMethods["setPerformanceMonitorEnabled"]["request"],
+	) => void;
+	__czGetPerformanceMetrics?: () => Promise<
+		PluginIpcMethods["getPerformanceMetrics"]["response"]
+	>;
 };
 
 declare global {

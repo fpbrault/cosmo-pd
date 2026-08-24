@@ -1,6 +1,7 @@
 import { memo } from "react";
 import AudioStartOverlay from "@/components/layout/AudioStartOverlay";
 import { GlobalVoiceModal, SynthBrandInfoModal } from "@/components/modals";
+import PerformanceDiagnosticsOverlay from "@/components/performance/PerformanceDiagnosticsOverlay";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 type AudioGate = {
@@ -24,6 +25,7 @@ export default memo(function SynthRendererOverlays({
 
 	return (
 		<>
+			<PerformanceDiagnosticsOverlay />
 			<AudioStartOverlay audioGate={audioGate} />
 			<SynthBrandInfoModal
 				open={brandInfoOpen}

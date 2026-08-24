@@ -24,6 +24,8 @@ export function useWebSynthRuntime(): SynthRuntime {
 		audioCtxRef,
 		analyserNodeRef,
 		workletNodeRef,
+		performanceMetricsRef,
+		setPerformanceMonitorEnabled,
 		paramsRef,
 		audioContextState,
 		resumeAudio,
@@ -73,6 +75,11 @@ export function useWebSynthRuntime(): SynthRuntime {
 			effectivePitchHz,
 			analyserNodeRef,
 			audioCtxRef,
+			performanceMonitor: {
+				source: "web",
+				setEnabled: setPerformanceMonitorEnabled,
+				getSnapshot: () => performanceMetricsRef.current,
+			},
 		}),
 		[
 			noteHandling.activeNotes,
@@ -89,6 +96,8 @@ export function useWebSynthRuntime(): SynthRuntime {
 			effectivePitchHz,
 			analyserNodeRef,
 			audioCtxRef,
+			performanceMetricsRef,
+			setPerformanceMonitorEnabled,
 		],
 	);
 }

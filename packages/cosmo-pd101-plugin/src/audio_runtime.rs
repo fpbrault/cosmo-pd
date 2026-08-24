@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::time::Instant;
 
 use cosmo_pd101_bridge_types::UiAlgoControlSection;
 use cosmo_synth_engine::params::{
@@ -547,6 +548,12 @@ impl CzPluginDspState {
         };
 
         let num_samples = buffer.num_samples();
+        let performance_started_at = self
+            .shared_state
+            .performance
+            .enabled
+            .load(Ordering::Relaxed)
+            .then(Instant::now);
         if num_samples > self.audio.mono_output.len() {
             for ch in 0..buffer.num_output_channels() {
                 buffer.output(ch).fill(0.0);
@@ -613,6 +620,20 @@ impl CzPluginDspState {
 
         for ch in 0..buffer.num_output_channels() {
             buffer.output(ch)[..num_samples].copy_from_slice(mono_output);
+        }
+
+        if let Some(started_at) = performance_started_at {
+            let active_voices = proc
+                .voices
+                .iter()
+                .filter(|voice| !voice.is_silent && voice.note.is_some())
+                .count() as u32;
+            self.shared_state.performance.record_block(
+                started_at.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64,
+                num_samples,
+                proc.sample_rate,
+                active_voices,
+            );
         }
 
         let has_tail = proc.voices.iter().any(|voice| !voice.is_silent);

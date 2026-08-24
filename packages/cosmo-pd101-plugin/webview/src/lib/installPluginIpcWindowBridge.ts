@@ -100,6 +100,13 @@ const pluginBridgeWindowInstallers = {
 		fireAndForget("clearMidiLearnBindings", invoke("clearMidiLearnBindings"));
 	},
 	__czGetScopeData: (invoke) => () => invoke("getScopeData"),
+	__czSetPerformanceMonitorEnabled: (invoke) => (enabled) => {
+		fireAndForget(
+			"setPerformanceMonitorEnabled",
+			invoke("setPerformanceMonitorEnabled", enabled),
+		);
+	},
+	__czGetPerformanceMetrics: (invoke) => () => invoke("getPerformanceMetrics"),
 } satisfies PluginBridgeWindowInstallerMap;
 
 export type PluginBridgeWindowOverrides =

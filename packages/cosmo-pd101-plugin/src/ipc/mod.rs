@@ -62,7 +62,9 @@ impl IpcContext {
             | PluginIpcRequest::Aftertouch { .. }
             | PluginIpcRequest::PolyAftertouch { .. }
             | PluginIpcRequest::MacroValue { .. }
-            | PluginIpcRequest::Panic => performance::handle(self, req),
+            | PluginIpcRequest::Panic
+            | PluginIpcRequest::SetPerformanceMonitorEnabled(..)
+            | PluginIpcRequest::GetPerformanceMetrics => performance::handle(self, req),
 
             // Synth
             PluginIpcRequest::GetParams

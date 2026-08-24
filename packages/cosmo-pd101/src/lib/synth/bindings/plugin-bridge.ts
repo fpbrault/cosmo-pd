@@ -335,6 +335,23 @@ export type MultimodeFilterParams = {
 	mix?: number | null,
 };
 
+/**  Optional audio-thread timing counters exposed by the debug diagnostics HUD. */
+export type PerformanceMetricsResponse = {
+	enabled: boolean,
+	blockCount: number,
+	lastMs: number | null,
+	avgMs: number | null,
+	maxMs: number | null,
+	blockBudgetMs: number | null,
+	lastRtPercent: number | null,
+	avgRtPercent: number | null,
+	maxRtPercent: number | null,
+	blockSamples: number,
+	sampleRate: number | null,
+	activeVoices: number,
+	overBudgetBlocks: number,
+};
+
 /**  Phase modulation parameters */
 export type PhaseModParams = {
 	enabled: boolean,
@@ -378,7 +395,7 @@ export type PluginIpcRequest = { method: "noteOn"; payload: {
 } } | { method: "macroValue"; payload: {
 	index: number,
 	value: number | null,
-} } | { method: "panic" } | { method: "getParams" } | { method: "setParams"; payload: SynthParams } | { method: "getParamsVersion" } | { method: "getPendingParamChanges" } | { method: "getRuntimeModSources" } | { method: "getRuntimeVoiceStates" } | { method: "getTransportInfo" } | { method: "getScopeData" } | { method: "clientLog"; payload: {
+} } | { method: "panic" } | { method: "setPerformanceMonitorEnabled"; payload: boolean } | { method: "getPerformanceMetrics" } | { method: "getParams" } | { method: "setParams"; payload: SynthParams } | { method: "getParamsVersion" } | { method: "getPendingParamChanges" } | { method: "getRuntimeModSources" } | { method: "getRuntimeVoiceStates" } | { method: "getTransportInfo" } | { method: "getScopeData" } | { method: "clientLog"; payload: {
 	level: string,
 	message: string,
 } } | { method: "getPresetSession" } | { method: "setPresetSession"; payload: PresetSession } | { method: "getPresetName" } | { method: "setPresetName"; payload: string } | { method: "loadPreset"; payload: LoadPresetPayload } | { method: "getPresetLibrary"; payload: {
@@ -413,7 +430,7 @@ export type PluginIpcRequest = { method: "noteOn"; payload: {
 } } | { method: "removeMidiBinding"; payload: MidiLearnBinding } | { method: "clearMidiLearnBindings" } | { method: "getVoiceLimit" } | { method: "setVoiceLimit"; payload: number };
 
 /**  Typed result for each IPC request. The transport serializes only `result`. */
-export type PluginIpcResponse = { method: "noteOn" } | { method: "noteOff" } | { method: "sustain" } | { method: "pitchBend" } | { method: "modWheel" } | { method: "aftertouch" } | { method: "polyAftertouch" } | { method: "macroValue" } | { method: "panic" } | { method: "getParams"; result: SynthParams } | { method: "setParams" } | { method: "getParamsVersion"; result: number } | { method: "getPendingParamChanges"; result: UiParamChange[] } | { method: "getRuntimeModSources"; result: RuntimeModSources } | { method: "getRuntimeVoiceStates"; result: RuntimeVoiceDebugState[] } | { method: "getTransportInfo"; result: TransportInfoResponse } | { method: "getScopeData"; result: ScopeDataResponse } | { method: "clientLog" } | { method: "getPresetSession"; result: PresetSession } | { method: "setPresetSession" } | { method: "getPresetName"; result: string } | { method: "setPresetName" } | { method: "loadPreset"; result: LoadPresetResponse } | { method: "getPresetLibrary"; result: PresetLibraryResponse } | { method: "retryPresetLibrary"; result: PresetLibraryActionResponse } | { method: "repairPresetLibrary"; result: PresetLibraryActionResponse } | { method: "rebuildPresetLibrary"; result: PresetLibraryActionResponse } | { method: "addPreset"; result: AddPresetResponse } | { method: "savePreset"; result: SavePresetResponse } | { method: "deletePreset" } | { method: "renamePreset" } | { method: "toggleStarred" } | { method: "setPresetAuthor" } | { method: "setPresetDescription" } | { method: "setPresetTags" } | { method: "importPresetBank" } | { method: "exportPreset"; result: ExportPresetResponse } | { method: "listFxModulePresets"; result: FxModulePresetEntry[] } | { method: "saveFxModulePreset"; result: FxModulePresetEntry } | { method: "deleteFxModulePreset" } | { method: "getEditorState"; result: EditorState | null } | { method: "setEditorState" } | { method: "getMidiLearnState"; result: MidiLearnState } | { method: "setMidiLearnMode" } | { method: "setPendingMidiLearnParam" } | { method: "addMidiBinding" } | { method: "removeMidiBinding" } | { method: "clearMidiLearnBindings" } | { method: "getVoiceLimit"; result: number } | { method: "setVoiceLimit" };
+export type PluginIpcResponse = { method: "noteOn" } | { method: "noteOff" } | { method: "sustain" } | { method: "pitchBend" } | { method: "modWheel" } | { method: "aftertouch" } | { method: "polyAftertouch" } | { method: "macroValue" } | { method: "panic" } | { method: "setPerformanceMonitorEnabled" } | { method: "getPerformanceMetrics"; result: PerformanceMetricsResponse } | { method: "getParams"; result: SynthParams } | { method: "setParams" } | { method: "getParamsVersion"; result: number } | { method: "getPendingParamChanges"; result: UiParamChange[] } | { method: "getRuntimeModSources"; result: RuntimeModSources } | { method: "getRuntimeVoiceStates"; result: RuntimeVoiceDebugState[] } | { method: "getTransportInfo"; result: TransportInfoResponse } | { method: "getScopeData"; result: ScopeDataResponse } | { method: "clientLog" } | { method: "getPresetSession"; result: PresetSession } | { method: "setPresetSession" } | { method: "getPresetName"; result: string } | { method: "setPresetName" } | { method: "loadPreset"; result: LoadPresetResponse } | { method: "getPresetLibrary"; result: PresetLibraryResponse } | { method: "retryPresetLibrary"; result: PresetLibraryActionResponse } | { method: "repairPresetLibrary"; result: PresetLibraryActionResponse } | { method: "rebuildPresetLibrary"; result: PresetLibraryActionResponse } | { method: "addPreset"; result: AddPresetResponse } | { method: "savePreset"; result: SavePresetResponse } | { method: "deletePreset" } | { method: "renamePreset" } | { method: "toggleStarred" } | { method: "setPresetAuthor" } | { method: "setPresetDescription" } | { method: "setPresetTags" } | { method: "importPresetBank" } | { method: "exportPreset"; result: ExportPresetResponse } | { method: "listFxModulePresets"; result: FxModulePresetEntry[] } | { method: "saveFxModulePreset"; result: FxModulePresetEntry } | { method: "deleteFxModulePreset" } | { method: "getEditorState"; result: EditorState | null } | { method: "setEditorState" } | { method: "getMidiLearnState"; result: MidiLearnState } | { method: "setMidiLearnMode" } | { method: "setPendingMidiLearnParam" } | { method: "addMidiBinding" } | { method: "removeMidiBinding" } | { method: "clearMidiLearnBindings" } | { method: "getVoiceLimit"; result: number } | { method: "setVoiceLimit" };
 
 /**  Polyphony mode */
 export type PolyMode = "poly8" | "mono";

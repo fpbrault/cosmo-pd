@@ -31,3 +31,23 @@ pub struct TransportInfoResponse {
     pub loop_start_beats: f64,
     pub loop_end_beats: f64,
 }
+
+/// Optional audio-thread timing counters exposed by the debug diagnostics HUD.
+#[derive(Serialize, Clone, Debug)]
+#[cfg_attr(feature = "specta-bindings", derive(Type))]
+#[serde(rename_all = "camelCase")]
+pub struct PerformanceMetricsResponse {
+    pub enabled: bool,
+    pub block_count: u32,
+    pub last_ms: f64,
+    pub avg_ms: f64,
+    pub max_ms: f64,
+    pub block_budget_ms: f64,
+    pub last_rt_percent: f64,
+    pub avg_rt_percent: f64,
+    pub max_rt_percent: f64,
+    pub block_samples: u32,
+    pub sample_rate: f64,
+    pub active_voices: u32,
+    pub over_budget_blocks: u32,
+}

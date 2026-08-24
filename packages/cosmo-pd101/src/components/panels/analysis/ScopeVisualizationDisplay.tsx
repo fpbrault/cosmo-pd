@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+	AdaptivePerformanceQuality,
+	getAdvancedDisplayProfile,
+	getInitialPerformanceTier,
 	performanceDiagnosticsEnabled,
 	recordPerformanceMeasure,
 } from "@/components/performance/displayPerformance";
+import { PerformanceBadge } from "@/components/performance/PerformanceDiagnosticsOverlay";
+import {
+	getEffectiveDisplayQuality,
+	performanceDiagnosticsRegistry,
+} from "@/components/performance/performanceDiagnostics";
 import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { AutoScopePhaseLock } from "./scope-visualizations/autoScopePhaseLock";
@@ -67,10 +75,47 @@ export function ScopeVisualizationDisplay({
 		(s) => s.scopeVisualizationMode,
 	);
 	const scopeColorTheme = useSynthUiStore((s) => s.scopeColorTheme);
+	const debugEnabled = useSynthUiStore((s) => s.debugEnabled);
+	const displayQualityOverride = useSynthUiStore(
+		(s) => s.displayQualityOverride,
+	);
 	const setScopeVisualizationMode = useSynthUiStore(
 		(s) => s.setScopeVisualizationMode,
 	);
 	const setScopeColorTheme = useSynthUiStore((s) => s.setScopeColorTheme);
+	const qualityControllerRef = useRef<AdaptivePerformanceQuality | null>(null);
+	const qualityRef = useRef({
+		tier: "balanced" as "high" | "balanced" | "low",
+		profile: getAdvancedDisplayProfile("balanced"),
+	});
+	const lastRenderedAtRef = useRef(Number.NEGATIVE_INFINITY);
+
+	useEffect(() => {
+		const initialTier = getInitialPerformanceTier(scopePerformanceMode, {
+			coarsePointer:
+				typeof window.matchMedia === "function" &&
+				window.matchMedia("(pointer: coarse)").matches,
+			devicePixelRatio: window.devicePixelRatio || 1,
+		});
+		const selectedTier = getEffectiveDisplayQuality(
+			debugEnabled,
+			displayQualityOverride,
+			initialTier,
+		);
+		qualityRef.current = {
+			tier: selectedTier,
+			profile: getAdvancedDisplayProfile(selectedTier),
+		};
+		qualityControllerRef.current = new AdaptivePerformanceQuality(
+			selectedTier,
+			debugEnabled && displayQualityOverride !== "auto"
+				? selectedTier
+				: scopePerformanceMode === "constrained"
+					? "balanced"
+					: "high",
+		);
+		lastRenderedAtRef.current = Number.NEGATIVE_INFINITY;
+	}, [debugEnabled, displayQualityOverride, scopePerformanceMode]);
 
 	const palette = getScopeThemePalette(scopeColorTheme);
 	const waterfallPreview = useWavetableWaterfallPreview(
@@ -89,12 +134,16 @@ export function ScopeVisualizationDisplay({
 		scopeVerticalZoom,
 		scopeVisualizationMode,
 		scopeColorTheme,
+		debugEnabled,
+		displayQualityOverride,
 	});
 	settingsRef.current = {
 		scopeCycles,
 		scopeVerticalZoom,
 		scopeVisualizationMode,
 		scopeColorTheme,
+		debugEnabled,
+		displayQualityOverride,
 	};
 
 	const propsRef = useRef({ effectivePitchHz, analyserNodeRef, audioCtxRef });
@@ -157,6 +206,18 @@ export function ScopeVisualizationDisplay({
 		frequencyBins?: Uint8Array<ArrayBufferLike>,
 	) => {
 		const drawStartedAt = performance.now();
+		const quality = qualityRef.current;
+		if (
+			drawStartedAt - lastRenderedAtRef.current <
+			quality.profile.targetFrameInterval
+		) {
+			return;
+		}
+		const frameGapMs =
+			lastRenderedAtRef.current === Number.NEGATIVE_INFINITY
+				? 0
+				: drawStartedAt - lastRenderedAtRef.current;
+		lastRenderedAtRef.current = drawStartedAt;
 		const mode = settingsRef.current.scopeVisualizationMode;
 		if (scopePhaseLockModeRef.current !== mode) {
 			scopePhaseLockRef.current.reset();
@@ -186,6 +247,9 @@ export function ScopeVisualizationDisplay({
 			cycles: settingsRef.current.scopeCycles,
 			triggerLevel,
 			scopeWindow,
+			maxPixelRatio: quality.profile.maxPixelRatio,
+			spectrogramBins: quality.profile.spectrogramBins,
+			spectrogramFftSize: quality.profile.spectrogramFftSize,
 			zoom: settingsRef.current.scopeVerticalZoom,
 			palette: getScopeThemePalette(settingsRef.current.scopeColorTheme),
 			spectrogramStateRef,
@@ -195,11 +259,35 @@ export function ScopeVisualizationDisplay({
 			waterfallActiveLine,
 			constrainedPerformance: scopePerformanceMode === "constrained",
 		});
+		const drawFinishedAt = performance.now();
+		performanceDiagnosticsRegistry.recordDisplayFrame(`advanced-${variant}`, {
+			timestamp: drawStartedAt,
+			drawMs: drawFinishedAt - drawStartedAt,
+			canvasWidth: canvas.width,
+			canvasHeight: canvas.height,
+			quality: qualityRef.current.tier,
+		});
+		const adaptive =
+			!settingsRef.current.debugEnabled ||
+			settingsRef.current.displayQualityOverride === "auto";
+		const nextTier = adaptive
+			? qualityControllerRef.current?.observe({
+					now: drawStartedAt,
+					drawMs: drawFinishedAt - drawStartedAt,
+					frameGapMs,
+				})
+			: null;
+		if (nextTier) {
+			qualityRef.current = {
+				tier: nextTier,
+				profile: getAdvancedDisplayProfile(nextTier),
+			};
+		}
 		if (diagnosticsEnabledRef.current) {
 			recordPerformanceMeasure(
 				"cz-performance-display-draw-advanced",
 				drawStartedAt,
-				performance.now(),
+				drawFinishedAt,
 			);
 		}
 
@@ -233,6 +321,7 @@ export function ScopeVisualizationDisplay({
 		unsubscribeRef.current = null;
 		if (!subscribeScopeFrames) return;
 		unsubscribeRef.current = subscribeScopeFrames((frame) => {
+			performanceDiagnosticsRegistry.recordDisplayInput(`advanced-${variant}`);
 			if (
 				scopePerformanceMode === "constrained" &&
 				settingsRef.current.scopeVisualizationMode === "spectrogram"
@@ -257,7 +346,7 @@ export function ScopeVisualizationDisplay({
 			unsubscribeRef.current = null;
 			pendingScopeFrameRef.current = null;
 		};
-	}, [scopePerformanceMode, subscribeScopeFrames]);
+	}, [scopePerformanceMode, subscribeScopeFrames, variant]);
 
 	// RAF loop for AnalyserNode path (web-audio mode).
 	useEffect(() => {
@@ -403,6 +492,7 @@ export function ScopeVisualizationDisplay({
 						setWaterfallActiveLine((line) => (line === 1 ? 2 : 1));
 					}}
 				/>
+				<PerformanceBadge />
 			</div>
 		</div>
 	);

@@ -176,6 +176,19 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 		this._params = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
 		this._queue = []; // messages received before WASM is ready
 		this._supportedModDestinations = null;
+		// AudioWorkletGlobalScope implementations are not uniform: some hosts
+		// expose `performance`, while older Safari/WebViews only provide Date.
+		// Keep a usable clock and cache sampleRate so diagnostics never fail just
+		// because one optional global is missing.
+		this._sampleRate =
+			typeof sampleRate === "number" && sampleRate > 0 ? sampleRate : 48000;
+		this._performanceMonitorEnabled = false;
+		this._performanceBlockCount = 0;
+		this._performanceTotalMs = 0;
+		this._performanceLastMs = 0;
+		this._performanceMaxMs = 0;
+		this._performanceOverBudgetBlocks = 0;
+		this._performanceBlockSamples = 128;
 
 		this.port.onmessage = (e) => this._handleMessage(e.data);
 	}
@@ -297,7 +310,68 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 				this._emitRuntimeModSources();
 				this._emitRuntimeVoiceStates();
 				break;
+			case "setPerformanceMonitorEnabled":
+				this._performanceMonitorEnabled = d.enabled === true;
+				if (!this._performanceMonitorEnabled) this._resetPerformanceMetrics();
+				break;
+			case "requestPerformanceMetrics":
+				this._emitPerformanceMetrics();
+				break;
 		}
+	}
+
+	_resetPerformanceMetrics() {
+		this._performanceBlockCount = 0;
+		this._performanceTotalMs = 0;
+		this._performanceLastMs = 0;
+		this._performanceMaxMs = 0;
+		this._performanceOverBudgetBlocks = 0;
+	}
+
+	_emitPerformanceMetrics() {
+		const blockSamples = this._performanceBlockSamples;
+		const blockBudgetMs = (blockSamples / this._sampleRate) * 1000;
+		const activeVoices =
+			this._synth && typeof this._synth.getRuntimeVoiceStates === "function"
+				? (() => {
+						try {
+							const voices = JSON.parse(this._synth.getRuntimeVoiceStates());
+							return Array.isArray(voices)
+								? voices.filter((voice) => voice?.active === true).length
+								: 0;
+						} catch {
+							return 0;
+						}
+					})()
+				: 0;
+		const avgMs =
+			this._performanceBlockCount > 0
+				? this._performanceTotalMs / this._performanceBlockCount
+				: 0;
+		this.port.postMessage({
+			type: "performanceMetrics",
+			metrics: {
+				enabled: this._performanceMonitorEnabled,
+				blockCount: this._performanceBlockCount,
+				lastMs: this._performanceLastMs,
+				avgMs,
+				maxMs: this._performanceMaxMs,
+				blockBudgetMs,
+				lastRtPercent:
+					blockBudgetMs > 0
+						? (this._performanceLastMs / blockBudgetMs) * 100
+						: 0,
+				avgRtPercent: blockBudgetMs > 0 ? (avgMs / blockBudgetMs) * 100 : 0,
+				maxRtPercent:
+					blockBudgetMs > 0
+						? (this._performanceMaxMs / blockBudgetMs) * 100
+						: 0,
+				blockSamples,
+				sampleRate: this._sampleRate,
+				activeVoices,
+				overBudgetBlocks: this._performanceOverBudgetBlocks,
+			},
+		});
 	}
 
 	// ── Deep-merge helper (mirrors the JS worklet Object.assign logic) ────
@@ -445,7 +519,9 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			const wasmModule = new WebAssembly.Module(wasmBytes);
 			globalThis.wasm_bindgen.initSync({ module: wasmModule });
 
-			this._synth = new globalThis.wasm_bindgen.CzSynthProcessor(sampleRate);
+			this._synth = new globalThis.wasm_bindgen.CzSynthProcessor(
+				this._sampleRate,
+			);
 
 			// Drain queued messages
 			for (const d of this._queue) this._dispatch(d);
@@ -510,12 +586,28 @@ class CzSynthWorkletProcessor extends AudioWorkletProcessor {
 			return true;
 		}
 
+		const startedAt = this._performanceMonitorEnabled
+			? (globalThis.performance?.now?.() ?? Date.now())
+			: 0;
 		// Fill the left channel buffer directly
 		this._synth.process(ch0);
 
 		// Copy to right channel if present
 		if (outputs[0].length > 1) {
 			outputs[0][1].set(ch0);
+		}
+		if (this._performanceMonitorEnabled) {
+			this._performanceBlockSamples = ch0.length;
+			const elapsedMs = Math.max(
+				0,
+				(globalThis.performance?.now?.() ?? Date.now()) - startedAt,
+			);
+			const blockBudgetMs = (ch0.length / this._sampleRate) * 1000;
+			this._performanceBlockCount++;
+			this._performanceTotalMs += elapsedMs;
+			this._performanceLastMs = elapsedMs;
+			this._performanceMaxMs = Math.max(this._performanceMaxMs, elapsedMs);
+			if (elapsedMs > blockBudgetMs) this._performanceOverBudgetBlocks++;
 		}
 
 		return true;

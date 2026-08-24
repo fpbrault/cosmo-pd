@@ -8,6 +8,30 @@ export type SynthScopeFrameSubscription = (
 	}) => void,
 ) => () => void;
 
+export type PerformanceMetrics = {
+	enabled: boolean;
+	blockCount: number;
+	lastMs: number;
+	avgMs: number;
+	maxMs: number;
+	blockBudgetMs: number;
+	lastRtPercent: number;
+	avgRtPercent: number;
+	maxRtPercent: number;
+	blockSamples: number;
+	sampleRate: number;
+	activeVoices: number;
+	overBudgetBlocks?: number;
+	uiQueueDepth?: number;
+	paramsApplyCount?: number;
+};
+
+export type SynthPerformanceMonitor = {
+	source: "web" | "plugin" | "auv3" | "unknown";
+	setEnabled: (enabled: boolean) => void;
+	getSnapshot: () => PerformanceMetrics | null;
+};
+
 export type SynthRuntime = {
 	activeNotes: number[];
 	pitchBend: number;
@@ -25,4 +49,5 @@ export type SynthRuntime = {
 	analyserNodeRef: RefObject<AnalyserNode | null>;
 	audioCtxRef: RefObject<AudioContext | null>;
 	subscribeScopeFrames?: SynthScopeFrameSubscription;
+	performanceMonitor?: SynthPerformanceMonitor;
 };
