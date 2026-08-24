@@ -48,7 +48,7 @@ jobs:
       version_source: ${{ steps.resolve.outputs.version_source }}
       release_sha: ${{ steps.publish.outputs.release_sha }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -215,7 +215,7 @@ jobs:
             platform: windows
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ needs.release-metadata.outputs.release_ref }}
@@ -337,7 +337,7 @@ jobs:
             platform: windows
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ needs.release-metadata.outputs.release_ref }}
