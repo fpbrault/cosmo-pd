@@ -81,6 +81,14 @@ export type {
 	PresetRef,
 } from "./features/synth/useSynthPresetManager";
 export { useSynthPresetManager } from "./features/synth/useSynthPresetManager";
+export {
+	VISUALIZATION_MODE_DEFINITIONS,
+	VISUALIZATION_MODES,
+	type VisualizationFramePolicy,
+	type VisualizationMode,
+	type VisualizationModeDefinition,
+	type VisualizationSurface,
+} from "./features/visualization/visualizationModes";
 export { i18n, initI18n } from "./i18n";
 export type {
 	DecodedPatch,

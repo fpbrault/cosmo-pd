@@ -1,3 +1,5 @@
+import type { VisualizationCanvasTarget } from "@/lib/canvasRenderTarget";
+
 export type OscilloscopeConfig = {
 	cycles: number;
 	verticalZoom: number;
@@ -10,9 +12,10 @@ export type OscilloscopeConfig = {
 };
 
 type OscilloscopeCanvasCache = {
-	dpr: number;
 	drawWidth: number;
 	drawHeight: number;
+	pixelWidth: number;
+	pixelHeight: number;
 	gridColor: string;
 	backdrop: HTMLCanvasElement;
 };
@@ -27,46 +30,50 @@ const oscilloscopeCanvasCache = new WeakMap<
  * Shared between plugin scope renderer and visualizer.
  */
 export function drawOscilloscope(
-	canvas: HTMLCanvasElement,
+	target: VisualizationCanvasTarget,
 	samples: Float32Array | Uint8Array,
 	config: OscilloscopeConfig,
 	pitchHz: number,
 	sampleRate: number,
 ): void {
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return;
-
-	const dpr = Math.max(2, window.devicePixelRatio || 1);
-	const drawWidth = Math.max(1, Math.floor(canvas.clientWidth));
-	const drawHeight = Math.max(1, Math.floor(canvas.clientHeight));
-	const pixelWidth = Math.floor(drawWidth * dpr);
-	const pixelHeight = Math.floor(drawHeight * dpr);
-
-	if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
-		canvas.width = pixelWidth;
-		canvas.height = pixelHeight;
-	}
+	const {
+		canvas,
+		context: ctx,
+		width: drawWidth,
+		height: drawHeight,
+		pixelWidth,
+		pixelHeight,
+		scaleX,
+		scaleY,
+	} = target;
 
 	const color = config.color ?? "#3dff3d";
 	const gridColor = config.gridColor ?? "rgba(0, 120, 0, 0.35)";
 	let canvasCache = oscilloscopeCanvasCache.get(canvas);
 	if (
 		!canvasCache ||
-		canvasCache.dpr !== dpr ||
 		canvasCache.drawWidth !== drawWidth ||
 		canvasCache.drawHeight !== drawHeight ||
+		canvasCache.pixelWidth !== pixelWidth ||
+		canvasCache.pixelHeight !== pixelHeight ||
 		canvasCache.gridColor !== gridColor
 	) {
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		const backdrop = document.createElement("canvas");
 		backdrop.width = pixelWidth;
 		backdrop.height = pixelHeight;
 		const backdropCtx = backdrop.getContext("2d");
 		if (backdropCtx) {
-			backdropCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			backdropCtx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 			drawGrid(backdropCtx, drawWidth, drawHeight, gridColor);
 		}
-		canvasCache = { dpr, drawWidth, drawHeight, gridColor, backdrop };
+		canvasCache = {
+			drawWidth,
+			drawHeight,
+			pixelWidth,
+			pixelHeight,
+			gridColor,
+			backdrop,
+		};
 		oscilloscopeCanvasCache.set(canvas, canvasCache);
 	}
 	const triggerMode = config.triggerMode ?? "rise";
@@ -184,8 +191,8 @@ function drawBackdrop(
 		cache.backdrop,
 		0,
 		0,
-		cache.backdrop.width,
-		cache.backdrop.height,
+		cache.pixelWidth,
+		cache.pixelHeight,
 		0,
 		0,
 		width,

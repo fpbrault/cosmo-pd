@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { VisualizationCanvasTarget } from "@/lib/canvasRenderTarget";
 import { drawOscilloscope, type OscilloscopeConfig } from "./drawOscilloscope";
 
 describe("drawOscilloscope", () => {
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
+	let target: VisualizationCanvasTarget;
 
 	beforeEach(() => {
 		canvas = document.createElement("canvas");
@@ -34,6 +36,16 @@ describe("drawOscilloscope", () => {
 		} as unknown as CanvasRenderingContext2D;
 
 		canvas.getContext = vi.fn().mockReturnValue(ctx);
+		target = {
+			canvas,
+			context: ctx,
+			width: 100,
+			height: 50,
+			pixelWidth: 100,
+			pixelHeight: 50,
+			scaleX: 1,
+			scaleY: 1,
+		};
 	});
 
 	const defaultConfig: OscilloscopeConfig = {
@@ -43,20 +55,29 @@ describe("drawOscilloscope", () => {
 		triggerMode: "rise",
 	};
 
-	it("returns early if context is not available", () => {
-		canvas.getContext = vi.fn().mockReturnValue(null);
-		drawOscilloscope(canvas, new Float32Array(100), defaultConfig, 440, 44100);
-		expect(ctx.setTransform).not.toHaveBeenCalled();
+	it("does not resize the controller-owned backing store", () => {
+		canvas.width = 200;
+		canvas.height = 100;
+		target = {
+			...target,
+			pixelWidth: 200,
+			pixelHeight: 100,
+			scaleX: 2,
+			scaleY: 2,
+		};
+		drawOscilloscope(target, new Float32Array(100), defaultConfig, 440, 44100);
+		expect(canvas.width).toBe(200);
+		expect(canvas.height).toBe(100);
 	});
 
 	it("handles empty samples", () => {
-		drawOscilloscope(canvas, new Float32Array(0), defaultConfig, 440, 44100);
+		drawOscilloscope(target, new Float32Array(0), defaultConfig, 440, 44100);
 		expect(ctx.fillRect).toHaveBeenCalled();
 		expect(ctx.fillStyle).toBe("#051005");
 	});
 
 	it("handles very small number of samples", () => {
-		drawOscilloscope(canvas, new Float32Array(1), defaultConfig, 440, 44100);
+		drawOscilloscope(target, new Float32Array(1), defaultConfig, 440, 44100);
 		expect(ctx.fillRect).toHaveBeenCalled();
 		expect(ctx.fillStyle).toBe("#051005");
 	});
@@ -65,7 +86,7 @@ describe("drawOscilloscope", () => {
 		const samples = new Float32Array(1000)
 			.fill(0)
 			.map((_, i) => Math.sin(i * 0.1));
-		drawOscilloscope(canvas, samples, defaultConfig, 440, 44100);
+		drawOscilloscope(target, samples, defaultConfig, 440, 44100);
 
 		expect(ctx.beginPath).toHaveBeenCalled();
 		expect(ctx.moveTo).toHaveBeenCalled();
@@ -77,7 +98,7 @@ describe("drawOscilloscope", () => {
 		const samples = new Uint8Array(1000)
 			.fill(0)
 			.map((_, i) => Math.sin(i * 0.1) * 127 + 128);
-		drawOscilloscope(canvas, samples, defaultConfig, 440, 44100);
+		drawOscilloscope(target, samples, defaultConfig, 440, 44100);
 
 		expect(ctx.beginPath).toHaveBeenCalled();
 		expect(ctx.moveTo).toHaveBeenCalled();
@@ -94,7 +115,7 @@ describe("drawOscilloscope", () => {
 			triggerMode: "off" as const,
 			startIndex: 100,
 		};
-		drawOscilloscope(canvas, samples, config, 440, 44100);
+		drawOscilloscope(target, samples, config, 440, 44100);
 
 		// If triggerMode is off and startIndex is provided, it should use startIndex.
 		// We can't easily check the exact points without a more detailed mock,
@@ -110,7 +131,7 @@ describe("drawOscilloscope", () => {
 			triggerMode: "rise" as const,
 			triggerLevel: 0,
 		};
-		drawOscilloscope(canvas, samples, config, 440, 44100);
+		drawOscilloscope(target, samples, config, 440, 44100);
 		expect(ctx.stroke).toHaveBeenCalled();
 	});
 
@@ -122,7 +143,7 @@ describe("drawOscilloscope", () => {
 			triggerMode: "fall" as const,
 			triggerLevel: 0,
 		};
-		drawOscilloscope(canvas, samples, config, 440, 44100);
+		drawOscilloscope(target, samples, config, 440, 44100);
 		expect(ctx.stroke).toHaveBeenCalled();
 	});
 
@@ -133,14 +154,14 @@ describe("drawOscilloscope", () => {
 			color: "red",
 			gridColor: "blue",
 		};
-		drawOscilloscope(canvas, samples, config, 440, 44100);
+		drawOscilloscope(target, samples, config, 440, 44100);
 		expect(ctx.strokeStyle).toBe("red");
 	});
 
 	it("handles fixedWindowSamples", () => {
 		const samples = new Float32Array(1000).fill(0);
 		const config = { ...defaultConfig, fixedWindowSamples: 500 };
-		drawOscilloscope(canvas, samples, config, 440, 44100);
+		drawOscilloscope(target, samples, config, 440, 44100);
 		expect(ctx.stroke).toHaveBeenCalled();
 	});
 });

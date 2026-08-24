@@ -10,7 +10,7 @@ describe("synthUiStore", () => {
 		useSynthUiStore.persist.clearStorage();
 		useSynthUiStore.setState({
 			workspaceMode: "edit",
-			performanceDisplayMode: "waterfall",
+			scopeVisualizationMode: "spectrumWaterfall",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
@@ -21,7 +21,7 @@ describe("synthUiStore", () => {
 
 	it("persists the current synth UI state", async () => {
 		useSynthUiStore.getState().setWorkspaceMode("performance");
-		useSynthUiStore.getState().setPerformanceDisplayMode("scope");
+		useSynthUiStore.getState().setScopeVisualizationMode("scopeHistory");
 		useSynthUiStore.getState().setMainPanelMode("fx");
 		useSynthUiStore.getState().setPhaseLinePanelTab("line2-envelopes");
 		useSynthUiStore.getState().setActiveEnvTab("dca");
@@ -31,7 +31,7 @@ describe("synthUiStore", () => {
 
 		useSynthUiStore.setState({
 			workspaceMode: "edit",
-			performanceDisplayMode: "waterfall",
+			scopeVisualizationMode: "spectrumWaterfall",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
@@ -45,7 +45,7 @@ describe("synthUiStore", () => {
 
 		expect(useSynthUiStore.getState()).toMatchObject({
 			workspaceMode: "performance",
-			performanceDisplayMode: "scope",
+			scopeVisualizationMode: "scopeHistory",
 			mainPanelMode: "fx",
 			phaseLinePanelTab: "line2-envelopes",
 			activeEnvTab: "dca",
@@ -72,7 +72,7 @@ describe("synthUiStore", () => {
 
 		expect(useSynthUiStore.getState()).toMatchObject({
 			workspaceMode: "edit",
-			performanceDisplayMode: "waterfall",
+			scopeVisualizationMode: "spectrumWaterfall",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",

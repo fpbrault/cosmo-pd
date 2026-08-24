@@ -1,6 +1,10 @@
 import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScopeProvider } from "@/context/ScopeContext";
+import {
+	VISUALIZATION_MODES,
+	type VisualizationMode,
+} from "@/features/visualization/visualizationModes";
 import PerformanceAudioDisplay from "./PerformanceAudioDisplay";
 
 type CanvasFrame = FrameRequestCallback;
@@ -29,30 +33,53 @@ function createAnalyser() {
 	return { analyser, frequencyTargets, timeTargets };
 }
 
-function mountDisplay(mode: "scope" | "waterfall") {
+type DisplayMode = VisualizationMode | "scope" | "waterfall";
+type CanvasDimensions = {
+	clientWidth?: number;
+	clientHeight?: number;
+	visibleWidth?: number;
+	visibleHeight?: number;
+};
+
+function mountDisplay(
+	mode: DisplayMode,
+	{
+		clientWidth = 320,
+		clientHeight = 180,
+		visibleWidth = clientWidth,
+		visibleHeight = clientHeight,
+	}: CanvasDimensions = {},
+) {
 	const analyserState = createAnalyser();
 	const analyserNodeRef = { current: analyserState.analyser };
 	const audioCtxRef = { current: { sampleRate: 48_000 } as AudioContext };
-	const result = render(
+	const renderDisplay = (displayMode: DisplayMode) => (
 		<ScopeProvider
 			analyserNodeRef={analyserNodeRef}
 			audioCtxRef={audioCtxRef}
 			effectivePitchHz={220}
 		>
-			<PerformanceAudioDisplay mode={mode} />
-		</ScopeProvider>,
+			<PerformanceAudioDisplay mode={displayMode} />
+		</ScopeProvider>
 	);
+	const result = render(renderDisplay(mode));
 	const canvas = result.container.querySelector("canvas");
 	if (!canvas) throw new Error("Expected a performance display canvas");
 	Object.defineProperties(canvas, {
-		clientWidth: { configurable: true, value: 320 },
-		clientHeight: { configurable: true, value: 180 },
+		clientWidth: { configurable: true, value: clientWidth },
+		clientHeight: { configurable: true, value: clientHeight },
 		getBoundingClientRect: {
 			configurable: true,
-			value: () => ({ width: 320, height: 180 }),
+			value: () => ({ width: visibleWidth, height: visibleHeight }),
 		},
 	});
-	return { ...result, analyserState, canvas };
+	return {
+		...result,
+		analyserState,
+		canvas,
+		rerenderMode: (nextMode: DisplayMode) =>
+			result.rerender(renderDisplay(nextMode)),
+	};
 }
 
 describe("PerformanceAudioDisplay (browser)", () => {
@@ -141,5 +168,29 @@ describe("PerformanceAudioDisplay (browser)", () => {
 		expect(changes).toEqual(["balanced", "low"]);
 
 		slowDrawSpy.mockRestore();
+	});
+
+	it("keeps one full-canvas render target across HiDPI mode switches", () => {
+		Object.defineProperty(window, "devicePixelRatio", {
+			configurable: true,
+			value: 2,
+		});
+		const { canvas, rerenderMode } = mountDisplay("scopeHistory", {
+			clientWidth: 320,
+			clientHeight: 180,
+			visibleWidth: 160,
+			visibleHeight: 90,
+		});
+
+		for (const [index, mode] of VISUALIZATION_MODES.entries()) {
+			rerenderMode(mode);
+			step((index + 1) * 40);
+
+			expect(canvas.width).toBe(240);
+			expect(canvas.height).toBe(135);
+			const transform = canvas.getContext("2d")?.getTransform();
+			expect(transform?.a).toBeCloseTo(0.75);
+			expect(transform?.d).toBeCloseTo(0.75);
+		}
 	});
 });

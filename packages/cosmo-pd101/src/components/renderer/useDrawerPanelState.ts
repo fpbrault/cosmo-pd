@@ -5,7 +5,6 @@ import { DRAWER_PANEL_ORDER, isDrawerPanel } from "./drawerHelpers";
 
 type DrawerPanelState = {
 	drawerOpen: boolean;
-	waveDrawerOpen: boolean;
 	activeDrawerPanel: DrawerPanel;
 	drawerSlideDirection: 1 | -1;
 };
@@ -14,7 +13,6 @@ export function useDrawerPanelState(
 	mainPanelMode: MainPanelMode,
 ): DrawerPanelState {
 	const drawerOpen = isDrawerPanel(mainPanelMode);
-	const waveDrawerOpen = mainPanelMode === "display";
 	const [activeDrawerPanel, setActiveDrawerPanel] = useState<DrawerPanel>(
 		isDrawerPanel(mainPanelMode) ? mainPanelMode : "fx",
 	);
@@ -35,7 +33,6 @@ export function useDrawerPanelState(
 
 	return {
 		drawerOpen,
-		waveDrawerOpen,
 		activeDrawerPanel,
 		drawerSlideDirection,
 	};

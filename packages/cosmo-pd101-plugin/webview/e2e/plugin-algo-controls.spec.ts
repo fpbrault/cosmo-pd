@@ -159,7 +159,7 @@ test.describe("Algo controls plugin bridge", () => {
 	}) => {
 		await page
 			.getByRole("button", { name: /wave\s*form/i })
-			.nth(2)
+			.nth(1)
 			.click();
 		await setLineAlgoToBend(page, 2);
 

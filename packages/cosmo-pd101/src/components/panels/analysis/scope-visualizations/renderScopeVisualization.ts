@@ -1,3 +1,7 @@
+import {
+	VISUALIZATION_MODES,
+	type VisualizationMode,
+} from "@/features/visualization/visualizationModes";
 import { drawAsteroidsScope } from "./AsteroidsViz";
 import { computeDftBins, SPECTROGRAM_BINS } from "./frequency";
 import { drawOrbitalScope } from "./OrbitalViz";
@@ -5,29 +9,15 @@ import { drawSpectrogramFrame } from "./SpectrogramViz";
 import { drawTransferCurvesScope } from "./TransferCurvesViz";
 import type { ScopeRendererParams } from "./types";
 import { drawWaveformScope } from "./WaveformViz";
-import { drawWavetableWaterfallScope } from "./WavetableWaterfallCanvasViz";
 
-export type ScopeVisualizationMode =
-	| "waveform"
-	| "orbital"
-	| "spectrogram"
-	| "waterfall3d"
-	| "transferCurves"
-	| "asteroids";
+export type ScopeVisualizationMode = VisualizationMode;
 
-export const SCOPE_VISUALIZATION_MODES: ScopeVisualizationMode[] = [
-	"waveform",
-	"orbital",
-	"spectrogram",
-	"waterfall3d",
-	"transferCurves",
-	"asteroids",
-];
+export const SCOPE_VISUALIZATION_MODES = VISUALIZATION_MODES;
 
 export function renderScopeVisualization(params: ScopeRendererParams) {
 	const {
 		mode,
-		canvas,
+		target,
 		samples,
 		hz,
 		sampleRate,
@@ -40,21 +30,25 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		spectrogramStateRef,
 		pressedKeys,
 		intensityMultiplier = 1,
-		waterfallPreview,
-		waterfallActiveLine = 1,
 		constrainedPerformance = false,
+		spectrogramBins = SPECTROGRAM_BINS,
+		spectrogramFftSize = constrainedPerformance ? 128 : 256,
 	} = params as ScopeRendererParams & { mode: ScopeVisualizationMode };
 
 	if (mode === "spectrogram") {
 		const bins =
 			frequencyBins && frequencyBins.length > 0
 				? frequencyBins
-				: computeDftBins(
-						samples,
-						SPECTROGRAM_BINS,
-						constrainedPerformance ? 128 : 256,
-					);
-		drawSpectrogramFrame(canvas, bins, spectrogramStateRef, palette);
+				: computeDftBins(samples, spectrogramBins, spectrogramFftSize);
+		drawSpectrogramFrame(
+			target,
+			bins,
+			spectrogramStateRef,
+			palette,
+			spectrogramBins,
+			cycles,
+			zoom,
+		);
 		return;
 	}
 
@@ -63,7 +57,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 	switch (mode) {
 		case "orbital":
 			drawOrbitalScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -75,18 +69,9 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 			);
 			return;
 
-		case "waterfall3d":
-			drawWavetableWaterfallScope(
-				canvas,
-				palette,
-				waterfallPreview,
-				waterfallActiveLine,
-				intensityMultiplier,
-			);
-			return;
 		case "transferCurves":
 			drawTransferCurvesScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -99,7 +84,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 			return;
 		case "asteroids":
 			drawAsteroidsScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -112,9 +97,13 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 			);
 			return;
 
+		case "scopeHistory":
+		case "spectrumWaterfall":
+			return;
+
 		default:
 			drawWaveformScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,

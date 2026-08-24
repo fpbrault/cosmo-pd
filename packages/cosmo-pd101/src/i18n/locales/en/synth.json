@@ -1060,17 +1060,19 @@
 		"modDepthAria": "{{label}} depth"
 	},
 	"scope": {
+		"modeScopeHistory": "Wave History",
+		"modeSpectrumWaterfall": "Spectrum Waterfall",
 		"modeWaveform": "Waveform",
 		"modeOrbital": "Orbital",
 		"modeSpectrogram": "Spectrogram",
-		"modeWaterfall3d": "Waterfall 3D",
 		"modeTransferCurves": "Transfer Curves",
 		"modeAsteroids": "Asteroids",
 		"themeVintage": "Vintage",
 		"themeAmber": "Amber",
 		"themePlasma": "Plasma",
+		"audioDisplayAria": "Audio visualization",
 		"toggleThemeAria": "Toggle scope color theme",
-		"waveDrawerFull": "Wave drawer is showing the full scope view",
+		"visualizationModesAria": "Choose visualization",
 		"cycles": "Cycles",
 		"cyclesTooltip": "Sets how many waveform cycles are shown in scope view.",
 		"zoom": "Zoom",
@@ -1298,9 +1300,7 @@
 		"fx": "FX",
 		"fxTooltip": "Toggle FX console drawer.",
 		"mod": "MOD",
-		"modTooltip": "Toggle modulation console drawer.",
-		"display": "DISPLAY",
-		"displayTooltip": "Toggle full-size scope drawer."
+		"modTooltip": "Toggle modulation console drawer."
 	},
 	"update": {
 		"newVersion": "New Version Available!"
