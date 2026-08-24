@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+	performanceDiagnosticsEnabled,
+	recordPerformanceMeasure,
+} from "@/components/performance/displayPerformance";
 import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { AutoScopePhaseLock } from "./scope-visualizations/autoScopePhaseLock";
@@ -53,6 +57,8 @@ export function ScopeVisualizationDisplay({
 		totalMs: 0,
 		startedAt: 0,
 	});
+	const diagnosticsEnabledRef = useRef(false);
+	diagnosticsEnabledRef.current = performanceDiagnosticsEnabled();
 	const [waterfallActiveLine, setWaterfallActiveLine] = useState<1 | 2>(1);
 
 	const scopeCycles = useSynthUiStore((s) => s.scopeCycles);
@@ -150,7 +156,7 @@ export function ScopeVisualizationDisplay({
 		sampleRate: number,
 		frequencyBins?: Uint8Array<ArrayBufferLike>,
 	) => {
-		const drawStartedAt = import.meta.env.DEV ? performance.now() : 0;
+		const drawStartedAt = performance.now();
 		const mode = settingsRef.current.scopeVisualizationMode;
 		if (scopePhaseLockModeRef.current !== mode) {
 			scopePhaseLockRef.current.reset();
@@ -189,6 +195,13 @@ export function ScopeVisualizationDisplay({
 			waterfallActiveLine,
 			constrainedPerformance: scopePerformanceMode === "constrained",
 		});
+		if (diagnosticsEnabledRef.current) {
+			recordPerformanceMeasure(
+				"cz-performance-display-draw-advanced",
+				drawStartedAt,
+				performance.now(),
+			);
+		}
 
 		if (import.meta.env.DEV) {
 			const now = performance.now();

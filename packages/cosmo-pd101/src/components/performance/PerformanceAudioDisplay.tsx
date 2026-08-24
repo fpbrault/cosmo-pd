@@ -15,6 +15,15 @@ import {
 	resampleFrequencyBins,
 	resampleWaveformWindow,
 } from "./audioSpectrum";
+import {
+	AdaptivePerformanceQuality,
+	calculateCanvasBackingSize,
+	getInitialPerformanceTier,
+	getPerformanceDisplayProfile as getTierProfile,
+	type PerformanceQualityTier,
+	performanceDiagnosticsEnabled,
+	recordPerformanceMeasure,
+} from "./displayPerformance";
 
 type AudioFrame = {
 	samples: Float32Array | Uint8Array;
@@ -28,27 +37,29 @@ const SCOPE_VERTICAL_SCALE = 6;
 
 export function getPerformanceDisplayProfile(
 	mode?: "standard" | "constrained",
+	tier?: PerformanceQualityTier,
 ) {
-	const constrained = mode === "constrained";
-	return {
-		bandCount: constrained ? 48 : 64,
-		waveformPointCount: constrained ? 96 : 160,
-		rowCount: constrained ? 24 : 40,
-		historyInterval: constrained ? 66 : 50,
-		maxPixelRatio: constrained ? 1.5 : 2,
-		glowBlur: constrained ? 4 : 8,
-	};
+	return getTierProfile(tier ?? (mode === "constrained" ? "balanced" : "high"));
 }
 
 function prepareCanvas(canvas: HTMLCanvasElement, maxPixelRatio: number) {
-	const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
-	const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
-	const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
+	const clientWidth = Math.max(1, canvas.clientWidth);
+	const clientHeight = Math.max(1, canvas.clientHeight);
+	const bounds = canvas.getBoundingClientRect();
+	const { width, height } = calculateCanvasBackingSize({
+		clientWidth,
+		clientHeight,
+		visibleWidth: bounds.width,
+		visibleHeight: bounds.height,
+		devicePixelRatio: window.devicePixelRatio || 1,
+		maxPixelRatio,
+	});
+	const resized = canvas.width !== width || canvas.height !== height;
 	if (canvas.width !== width || canvas.height !== height) {
 		canvas.width = width;
 		canvas.height = height;
 	}
-	return { width, height };
+	return { width, height, resized };
 }
 
 function drawGrid(
@@ -77,6 +88,46 @@ function drawGrid(
 	}
 }
 
+function getPaletteKey(palette: ScopeThemePalette): string {
+	return [palette.background, palette.grid, palette.centerLine].join("|");
+}
+
+function prepareGridCanvas(
+	gridCanvasRef: { current: HTMLCanvasElement | null },
+	width: number,
+	height: number,
+	palette: ScopeThemePalette,
+) {
+	const paletteKey = getPaletteKey(palette);
+	const current = gridCanvasRef.current;
+	if (
+		current &&
+		current.width === width &&
+		current.height === height &&
+		current.dataset.paletteKey === paletteKey
+	) {
+		return current;
+	}
+
+	const gridCanvas = current ?? document.createElement("canvas");
+	gridCanvas.width = width;
+	gridCanvas.height = height;
+	gridCanvas.dataset.paletteKey = paletteKey;
+	const gridContext = gridCanvas.getContext("2d");
+	if (gridContext) {
+		drawGrid(gridContext, width, height, palette);
+	}
+	gridCanvasRef.current = gridCanvas;
+	return gridCanvas;
+}
+
+function drawCachedGrid(
+	context: CanvasRenderingContext2D,
+	gridCanvas: HTMLCanvasElement,
+) {
+	context.drawImage(gridCanvas, 0, 0);
+}
+
 function drawWaterfall(
 	context: CanvasRenderingContext2D,
 	width: number,
@@ -84,8 +135,9 @@ function drawWaterfall(
 	history: Float32Array[],
 	palette: ScopeThemePalette,
 	glowBlur: number,
+	gridCanvas: HTMLCanvasElement,
 ) {
-	drawGrid(context, width, height, palette);
+	drawCachedGrid(context, gridCanvas);
 	const horizon = height * 0.13;
 	const usableHeight = height * 0.78;
 	for (let row = history.length - 1; row >= 0; row--) {
@@ -108,8 +160,10 @@ function drawWaterfall(
 			depth > 0.72 ? palette.accentSoft : palette.accentDim,
 			alpha,
 		);
-		context.shadowColor = depth > 0.72 ? palette.glow : "transparent";
-		context.shadowBlur = depth > 0.72 ? glowBlur : 0;
+		const isLatest = row === history.length - 1;
+		context.shadowColor =
+			isLatest && glowBlur > 0 ? palette.glow : "transparent";
+		context.shadowBlur = isLatest ? glowBlur : 0;
 		context.lineWidth = Math.max(1, width / 1000) * (0.8 + depth * 0.8);
 		context.stroke();
 	}
@@ -123,8 +177,9 @@ function drawScopeWaterfall(
 	history: Float32Array[],
 	palette: ScopeThemePalette,
 	glowBlur: number,
+	gridCanvas: HTMLCanvasElement,
 ) {
-	drawGrid(context, width, height, palette);
+	drawCachedGrid(context, gridCanvas);
 	const horizon = height * 0.13;
 	const usableHeight = height * 0.72;
 	for (let row = history.length - 1; row >= 0; row--) {
@@ -138,9 +193,7 @@ function drawScopeWaterfall(
 		for (let point = 0; point < values.length; point++) {
 			const x =
 				inset + (point / Math.max(1, values.length - 1)) * (width - inset * 2);
-			const displayValue = Math.tanh(
-				(values[point] ?? 0) * SCOPE_VERTICAL_SCALE,
-			);
+			const displayValue = values[point] ?? 0;
 			const y = baseline - displayValue * height * (0.03 + depth * 0.085);
 			if (point === 0) context.moveTo(x, y);
 			else context.lineTo(x, y);
@@ -151,11 +204,23 @@ function drawScopeWaterfall(
 			alpha,
 		);
 		context.lineWidth = Math.max(1, width / 1000) * (0.8 + depth * 0.8);
-		context.shadowColor = depth > 0.72 ? palette.glow : "transparent";
-		context.shadowBlur = depth > 0.72 ? glowBlur : 0;
+		const isLatest = row === history.length - 1;
+		context.shadowColor =
+			isLatest && glowBlur > 0 ? palette.glow : "transparent";
+		context.shadowBlur = isLatest ? glowBlur : 0;
 		context.stroke();
 	}
 	context.shadowBlur = 0;
+}
+
+function shapeScopeValues(
+	values: Float32Array<ArrayBufferLike>,
+): Float32Array<ArrayBuffer> {
+	const shaped = new Float32Array(values.length);
+	for (let index = 0; index < values.length; index++) {
+		shaped[index] = Math.tanh((values[index] ?? 0) * SCOPE_VERTICAL_SCALE);
+	}
+	return shaped;
 }
 
 export default function PerformanceAudioDisplay({
@@ -167,10 +232,14 @@ export default function PerformanceAudioDisplay({
 	const frameRef = useRef<AudioFrame | null>(null);
 	const historyRef = useRef<Float32Array[]>([]);
 	const lastHistoryUpdateRef = useRef(0);
+	const lastDrawAtRef = useRef<number | null>(null);
 	const frameVersionRef = useRef(0);
 	const rafRef = useRef(0);
 	const phaseLockRef = useRef(new AutoScopePhaseLock());
 	const effectivePitchHzRef = useRef(1);
+	const analyserSamplesRef = useRef<Float32Array<ArrayBuffer> | null>(null);
+	const analyserFrequencyBinsRef = useRef<Uint8Array | null>(null);
+	const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const scopeColorTheme = useSynthUiStore((state) => state.scopeColorTheme);
 	const {
 		analyserNodeRef,
@@ -194,12 +263,25 @@ export default function PerformanceAudioDisplay({
 
 	useEffect(() => {
 		const palette = getScopeThemePalette(scopeColorTheme);
-		const profile = getPerformanceDisplayProfile(scopePerformanceMode);
+		const initialTier = getInitialPerformanceTier(scopePerformanceMode, {
+			coarsePointer:
+				typeof window.matchMedia === "function" &&
+				window.matchMedia("(pointer: coarse)").matches,
+			devicePixelRatio: window.devicePixelRatio || 1,
+		});
+		const quality = new AdaptivePerformanceQuality(
+			initialTier,
+			scopePerformanceMode === "constrained" ? "balanced" : "high",
+		);
+		let profile = getTierProfile(initialTier);
 		historyRef.current = [];
 		lastHistoryUpdateRef.current = 0;
+		lastDrawAtRef.current = null;
+		gridCanvasRef.current = null;
 		phaseLockRef.current.reset();
 		let lastConsumedFrameVersion = -1;
 		let hasDrawn = false;
+		const diagnosticsEnabled = performanceDiagnosticsEnabled();
 		const draw = (now: number) => {
 			rafRef.current = window.requestAnimationFrame(draw);
 			const canvas = canvasRef.current;
@@ -222,14 +304,28 @@ export default function PerformanceAudioDisplay({
 			let frame = frameRef.current;
 			const analyser = analyserNodeRef.current;
 			if (!subscribeScopeFrames && analyser) {
-				const samples = new Float32Array(analyser.fftSize);
+				if (analyserSamplesRef.current?.length !== analyser.fftSize) {
+					analyserSamplesRef.current = new Float32Array(analyser.fftSize);
+				}
+				const samples = analyserSamplesRef.current;
+				if (!samples) return;
 				analyser.getFloatTimeDomainData(samples);
 				let frequencyBins: Uint8Array | undefined;
 				if (mode === "waterfall") {
-					frequencyBins = new Uint8Array(analyser.frequencyBinCount);
-					analyser.getByteFrequencyData(
-						frequencyBins as Uint8Array<ArrayBuffer>,
-					);
+					if (
+						analyserFrequencyBinsRef.current?.length !==
+						analyser.frequencyBinCount
+					) {
+						analyserFrequencyBinsRef.current = new Uint8Array(
+							analyser.frequencyBinCount,
+						);
+					}
+					frequencyBins = analyserFrequencyBinsRef.current ?? undefined;
+					if (frequencyBins) {
+						analyser.getByteFrequencyData(
+							frequencyBins as Uint8Array<ArrayBuffer>,
+						);
+					}
 				}
 				frame = {
 					samples,
@@ -240,9 +336,17 @@ export default function PerformanceAudioDisplay({
 			}
 			const context = canvas.getContext("2d");
 			if (!context) return;
+			const drawStartedAt = performance.now();
 			const { width, height } = prepareCanvas(canvas, profile.maxPixelRatio);
+			const gridCanvas = prepareGridCanvas(
+				gridCanvasRef,
+				width,
+				height,
+				palette,
+			);
+			canvas.dataset.performanceTier = quality.currentTier;
 			if (!frame) {
-				drawGrid(context, width, height, palette);
+				drawCachedGrid(context, gridCanvas);
 				hasDrawn = true;
 				lastConsumedFrameVersion = frameVersion;
 				return;
@@ -262,6 +366,7 @@ export default function PerformanceAudioDisplay({
 					locked.window.count,
 					profile.waveformPointCount,
 				);
+				values = shapeScopeValues(values);
 			} else {
 				values = frame.frequencyBins
 					? resampleFrequencyBins(
@@ -275,7 +380,7 @@ export default function PerformanceAudioDisplay({
 							profile.bandCount,
 						);
 			}
-			if (historyRef.current.length >= profile.rowCount) {
+			while (historyRef.current.length >= profile.rowCount) {
 				historyRef.current.shift();
 			}
 			historyRef.current.push(values);
@@ -290,6 +395,7 @@ export default function PerformanceAudioDisplay({
 					historyRef.current,
 					palette,
 					profile.glowBlur,
+					gridCanvas,
 				);
 			} else {
 				drawWaterfall(
@@ -299,6 +405,30 @@ export default function PerformanceAudioDisplay({
 					historyRef.current,
 					palette,
 					profile.glowBlur,
+					gridCanvas,
+				);
+			}
+			const drawFinishedAt = performance.now();
+			const frameGapMs =
+				lastDrawAtRef.current === null ? 0 : now - lastDrawAtRef.current;
+			lastDrawAtRef.current = now;
+			const nextTier = quality.observe({
+				now,
+				drawMs: drawFinishedAt - drawStartedAt,
+				frameGapMs,
+			});
+			if (nextTier) {
+				profile = getTierProfile(nextTier);
+				canvas.dataset.performanceTier = nextTier;
+				if (diagnosticsEnabled) {
+					performance.mark(`cz-performance-tier-${nextTier}`);
+				}
+			}
+			if (diagnosticsEnabled) {
+				recordPerformanceMeasure(
+					`cz-performance-display-draw-${mode}`,
+					drawStartedAt,
+					drawFinishedAt,
 				);
 			}
 		};
