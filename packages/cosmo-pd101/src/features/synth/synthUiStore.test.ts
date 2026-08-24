@@ -14,6 +14,9 @@ describe("synthUiStore", () => {
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
+			simpleExpandedSection: "sound",
+			simpleEditedLine: 1,
+			simpleEditedAlgo: "a",
 			keyboardVisible: true,
 			pcKeyboardOverlayVisible: false,
 		});
@@ -25,6 +28,9 @@ describe("synthUiStore", () => {
 		useSynthUiStore.getState().setMainPanelMode("fx");
 		useSynthUiStore.getState().setPhaseLinePanelTab("line2-envelopes");
 		useSynthUiStore.getState().setActiveEnvTab("dca");
+		useSynthUiStore.getState().setSimpleExpandedSection("effects");
+		useSynthUiStore.getState().setSimpleEditedLine(2);
+		useSynthUiStore.getState().setSimpleEditedAlgo("b");
 		useSynthUiStore.getState().setKeyboardVisible(false);
 		useSynthUiStore.getState().setPcKeyboardOverlayVisible(true);
 		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
@@ -35,6 +41,9 @@ describe("synthUiStore", () => {
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
+			simpleExpandedSection: "sound",
+			simpleEditedLine: 1,
+			simpleEditedAlgo: "a",
 			keyboardVisible: true,
 			pcKeyboardOverlayVisible: false,
 		});
@@ -49,6 +58,9 @@ describe("synthUiStore", () => {
 			mainPanelMode: "fx",
 			phaseLinePanelTab: "line2-envelopes",
 			activeEnvTab: "dca",
+			simpleExpandedSection: "effects",
+			simpleEditedLine: 2,
+			simpleEditedAlgo: "b",
 			keyboardVisible: false,
 			pcKeyboardOverlayVisible: true,
 		});
@@ -62,6 +74,9 @@ describe("synthUiStore", () => {
 					mainPanelMode: "drawer",
 					phaseLinePanelTab: "line3-algos",
 					activeEnvTab: "pitch",
+					simpleExpandedSection: "drawer",
+					simpleEditedLine: 3,
+					simpleEditedAlgo: "c",
 					keyboardVisible: "nope",
 				},
 				version: 0,
@@ -76,6 +91,9 @@ describe("synthUiStore", () => {
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
 			activeEnvTab: "dcw",
+			simpleExpandedSection: "sound",
+			simpleEditedLine: 1,
+			simpleEditedAlgo: "a",
 			keyboardVisible: true,
 			pcKeyboardOverlayVisible: false,
 		});

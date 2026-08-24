@@ -1,0 +1,45 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import PerformanceControlsPanel from "./PerformanceControlsPanel";
+
+vi.mock("@/components/panels/macro/MacroKnobsPanel", () => ({
+	MacroKnob: ({ macroIndex }: { macroIndex: number }) => (
+		<div>Macro {macroIndex + 1}</div>
+	),
+}));
+
+vi.mock("./PerformanceSoundPanel", () => ({
+	default: () => <div data-testid="mock-sound-panel">Sound controls</div>,
+	CollapsedSoundSummary: ({ onExpand }: { onExpand: () => void }) => (
+		<button type="button" onClick={onExpand} aria-label="Expand Sound section">
+			Sound summary
+		</button>
+	),
+}));
+
+describe("PerformanceControlsPanel", () => {
+	beforeEach(() => {
+		useSynthUiStore.setState({ simpleExpandedSection: "sound" });
+	});
+
+	it("shows exactly one expanded section and switches via the full-height summary", () => {
+		render(<PerformanceControlsPanel />);
+
+		expect(screen.getByTestId("mock-sound-panel")).toBeVisible();
+		expect(screen.getByTestId("simple-effects-summary")).toHaveClass("h-full");
+		expect(screen.queryByTestId("simple-effects-panel")).toBeNull();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Expand Effects section" }),
+		);
+		expect(screen.getByTestId("simple-effects-panel")).toBeVisible();
+		expect(screen.queryByTestId("mock-sound-panel")).toBeNull();
+		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("effects");
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Expand Sound section" }),
+		);
+		expect(screen.getByTestId("mock-sound-panel")).toBeVisible();
+	});
+});

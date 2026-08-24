@@ -15,6 +15,7 @@ import { getFxTypeLabel } from "@/components/panels/fxTypeCategories";
 import { MacroKnob } from "@/components/panels/macro/MacroKnobsPanel";
 import Popover from "@/components/primitives/Popover";
 import { useSynthStore } from "@/features/synth/synthStore";
+import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import {
 	FX_DEFINITIONS_V1,
 	type FxControlV1,
@@ -22,6 +23,11 @@ import {
 	type FxSlotType,
 	type ModDestination,
 } from "@/lib/synth/bindings/synth";
+import PerformanceSoundPanel, {
+	CollapsedSoundSummary,
+} from "./PerformanceSoundPanel";
+
+const FX_SLOT_IDS = ["fx-1", "fx-2", "fx-3", "fx-4", "fx-5", "fx-6"];
 
 function getQuickControl(type: FxSlotType): FxControlV1 | null {
 	const definition = FX_DEFINITIONS_V1.find((entry) => entry.slotType === type);
@@ -183,36 +189,131 @@ function EffectSlot({ slot }: { slot: number }) {
 	);
 }
 
+function ExpandedEffects() {
+	return (
+		<div
+			className="flex min-w-0 flex-1 flex-col"
+			data-testid="simple-effects-panel"
+		>
+			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
+				Effects
+			</h2>
+			<div
+				className="flex min-h-0 flex-1 gap-1.5"
+				data-testid="performance-fx-slots"
+			>
+				{[0, 1, 2, 3, 4, 5].map((slot) => (
+					<EffectSlot key={slot} slot={slot} />
+				))}
+			</div>
+		</div>
+	);
+}
+
+const FX_SUMMARY_COLORS: Record<FxSlotType, string> = {
+	empty: "bg-[#3b3b3b]",
+	chorus: "bg-[#818cf8]",
+	delay: "bg-[#fbbf24]",
+	phaseMod: "bg-[#f43f5e]",
+	vibrato: "bg-[#f472b6]",
+	phaser: "bg-[#a78bfa]",
+	reverb: "bg-[#f97316]",
+	compressor: "bg-[#fb923c]",
+	eq8Band: "bg-[#34d399]",
+	grainDelay: "bg-[#a78bfa]",
+	bitcrusher: "bg-[#f87171]",
+	shimmerVerb: "bg-[#60a5fa]",
+	distortion: "bg-[#f59e0b]",
+	loFi: "bg-[#38bdf8]",
+	ringMod: "bg-[#e879f9]",
+	wavefolder: "bg-[#c084fc]",
+	junoChorus: "bg-[#22d3ee]",
+	tremolo: "bg-[#4ade80]",
+	multimodeFilter: "bg-[#fca5a5]",
+	flanger: "bg-[#67e8f9]",
+};
+
+function CollapsedEffectsSummary({ onExpand }: { onExpand: () => void }) {
+	const slots = useSynthStore((state) => state.fxSlots);
+	const activeCount = slots.filter(
+		(slot) => slot.type !== "empty" && slot.params.enabled !== false,
+	).length;
+
+	return (
+		<button
+			type="button"
+			onClick={onExpand}
+			aria-label="Expand Effects section"
+			className="group flex h-full w-[5.5rem] shrink-0 flex-col items-center bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
+			data-testid="simple-effects-summary"
+		>
+			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.5rem] tracking-[0.12em] transition-[filter] group-hover:brightness-125">
+				FX +
+			</span>
+			<div className="my-auto grid grid-cols-3 gap-1">
+				{slots.map((slot, index) => {
+					const enabled =
+						slot.type !== "empty" && slot.params.enabled !== false;
+					return (
+						<span
+							key={FX_SLOT_IDS[index]}
+							title={`Effect slot ${index + 1}: ${slot.type}${enabled ? " enabled" : " inactive"}`}
+							className={`size-3 rounded-sm border border-cz-border ${FX_SUMMARY_COLORS[slot.type]} ${enabled ? "opacity-100" : "opacity-25"}`}
+						/>
+					);
+				})}
+			</div>
+			<span className="font-mono text-[0.48rem] uppercase tracking-[0.12em]">
+				{activeCount} on
+			</span>
+		</button>
+	);
+}
+
 export default memo(function PerformanceControlsPanel() {
+	const expandedSection = useSynthUiStore(
+		(state) => state.simpleExpandedSection,
+	);
+	const setExpandedSection = useSynthUiStore(
+		(state) => state.setSimpleExpandedSection,
+	);
+
 	return (
 		<section
-			className="flex h-40 shrink-0 items-stretch gap-4 rounded-xl border border-cz-border bg-cz-surface/95 px-4 py-3 shadow-lg"
+			className="flex h-40 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
 			data-testid="performance-controls"
 		>
-			<div className="flex min-w-0 flex-[1.05] flex-col">
+			<div className="flex min-w-[16rem] flex-[0.85] flex-col">
 				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 					Macros
 				</h2>
 				<div className="flex flex-1 items-center justify-around gap-1">
 					{[0, 1, 2, 3].map((index) => (
-						<MacroKnob key={index} macroIndex={index} size={72} />
+						<MacroKnob key={index} macroIndex={index} size={54} />
 					))}
 				</div>
 			</div>
 			<div className="w-px bg-cz-border" />
-			<div className="flex min-w-0 flex-[2.2] flex-col">
-				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
-					Effects
-				</h2>
-				<div
-					className="flex min-h-0 flex-1 gap-1.5"
-					data-testid="performance-fx-slots"
-				>
-					{[0, 1, 2, 3, 4, 5].map((slot) => (
-						<EffectSlot key={slot} slot={slot} />
-					))}
-				</div>
-			</div>
+			{expandedSection === "sound" ? (
+				<>
+					<div className="flex min-w-0 flex-[3.25] flex-col">
+						<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
+							Sound
+						</h2>
+						<PerformanceSoundPanel />
+					</div>
+					<CollapsedEffectsSummary
+						onExpand={() => setExpandedSection("effects")}
+					/>
+				</>
+			) : (
+				<>
+					<CollapsedSoundSummary onExpand={() => setExpandedSection("sound")} />
+					<div className="flex min-w-0 flex-[3.25]">
+						<ExpandedEffects />
+					</div>
+				</>
+			)}
 		</section>
 	);
 });

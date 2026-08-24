@@ -11,7 +11,7 @@ import type {
 	AlgoControlRuntime,
 } from "./algoControlTypes";
 
-function WaveformOptionIcon({
+export function WaveformOptionIcon({
 	value,
 	isWindowFunction = false,
 }: {

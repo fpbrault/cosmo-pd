@@ -14,11 +14,25 @@ test.describe("Simple workspace", () => {
 		await expect(page.getByTestId("performance-view")).toBeVisible();
 		await expect(page.getByTestId("performance-controls")).toBeVisible();
 		await expect(page.getByText("Macros", { exact: true })).toBeVisible();
+		await expect(page.getByTestId("simple-sound-panel")).toBeVisible();
+		await expect(page.getByTestId("simple-routing-controls")).toBeVisible();
+		await expect(page.getByTestId("simple-line-parameters")).toContainText(
+			"Volume",
+		);
+		await expect(page.getByTestId("simple-line-parameters")).toContainText(
+			"DCW",
+		);
+		await expect(page.getByTestId("simple-line-parameters")).toContainText(
+			"Tune",
+		);
+		await expect(page.getByTestId("simple-line-parameters")).toContainText(
+			"L2 Oct",
+		);
+		await expect(page.getByTestId("simple-effects-summary")).toBeVisible();
+		await page.getByRole("button", { name: "Expand Effects section" }).click();
 		await expect(
 			page.getByTestId("performance-fx-slots").locator(":scope > *"),
 		).toHaveCount(6);
-		await expect(page.getByText("Line 1", { exact: true })).toHaveCount(0);
-		await expect(page.getByText("Line 2", { exact: true })).toHaveCount(0);
 		const keyboard = page.getByTestId("mini-keyboard-overlay");
 		const resizeHandle = page.getByTestId("simple-keyboard-resize");
 		const before = await keyboard.boundingBox();
@@ -45,6 +59,7 @@ test.describe("Simple workspace", () => {
 		page,
 	}) => {
 		await page.getByRole("button", { name: "Simple" }).click();
+		await page.getByRole("button", { name: "Expand Effects section" }).click();
 		const slots = page.getByTestId("performance-fx-slots");
 		await slots.getByRole("button", { name: /add effect in slot 1/i }).click();
 		await page
@@ -71,11 +86,56 @@ test.describe("Simple workspace", () => {
 		).toBeVisible();
 	});
 
+	test("edits compact line routing without conflating the edit target", async ({
+		page,
+	}) => {
+		await page.getByRole("button", { name: "Simple" }).click();
+		await page.getByRole("button", { name: /line select:/i }).click();
+		await page
+			.getByRole("dialog", { name: "Line Select" })
+			.getByRole("button", { name: "L1", exact: true })
+			.click();
+
+		await page.getByRole("button", { name: /line mod:/i }).click();
+		const modPicker = page.getByRole("dialog", { name: "Line Mod" });
+		await expect(
+			modPicker.getByRole("button", { name: "Ring" }),
+		).toBeDisabled();
+		await expect(
+			modPicker.getByRole("button", { name: "Noise" }),
+		).toBeDisabled();
+		await page.keyboard.press("Escape");
+
+		await expect(
+			page.getByRole("button", { name: "Edit line 2" }),
+		).toBeDisabled();
+		await expect(
+			page.getByRole("button", { name: "Edit line 1" }),
+		).toHaveAttribute("aria-pressed", "true");
+
+		await page.getByRole("button", { name: /line select:/i }).click();
+		await page
+			.getByRole("dialog", { name: "Line Select" })
+			.getByRole("button", { name: "L2", exact: true })
+			.click();
+		await expect(
+			page.getByRole("button", { name: "Edit line 1" }),
+		).toBeDisabled();
+		await expect(
+			page.getByRole("button", { name: "Edit line 2" }),
+		).toHaveAttribute("aria-pressed", "true");
+	});
+
 	test("toggles its display and persists independently from Advanced", async ({
 		page,
 	}) => {
 		await page.getByRole("button", { name: "Simple" }).click();
-		await page.getByRole("tab", { name: "Wave History" }).click();
+		const waveHistoryTab = page.getByRole("tab", {
+			name: "Wave History",
+			exact: true,
+		});
+		await waveHistoryTab.click();
+		await expect(waveHistoryTab).toHaveAttribute("aria-selected", "true");
 		await expect(page.getByLabel("Audio visualization")).toBeVisible();
 		const palette = page.getByRole("button", {
 			name: "Toggle scope color theme",
@@ -87,6 +147,9 @@ test.describe("Simple workspace", () => {
 		await page.reload({ waitUntil: "domcontentloaded" });
 		await waitForBridge(page);
 		await expect(page.getByTestId("performance-view")).toBeVisible();
+		await expect(
+			page.getByRole("tab", { name: "Wave History", exact: true }),
+		).toHaveAttribute("aria-selected", "true");
 		await expect(page.getByLabel("Audio visualization")).toBeVisible();
 
 		await page.getByRole("button", { name: "Advanced" }).click();
