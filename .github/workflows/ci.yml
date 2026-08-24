@@ -427,6 +427,151 @@ jobs:
             target/perf/engine/engine-compare.md
             target/perf/engine/pr-comment.md
 
+  ui-perf-benchmarks:
+    name: Android Web Display Benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            display:
+              - 'packages/cosmo-pd101/src/components/performance/**'
+              - 'packages/cosmo-pd101/src/components/panels/analysis/ScopeVisualizationDisplay.tsx'
+              - 'packages/cosmo-pd101/site/**'
+              - 'scripts/perf-display-*.mjs'
+              - 'package.json'
+              - 'bun.lock'
+
+      - name: Setup Bun
+        if: steps.filter.outputs.display == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        if: steps.filter.outputs.display == 'true'
+        run: bun install --frozen-lockfile
+        shell: bash
+
+      - name: Install Playwright Chromium
+        if: steps.filter.outputs.display == 'true'
+        run: bunx playwright install chromium --with-deps
+        shell: bash
+
+      - name: Benchmark target branch
+        if: steps.filter.outputs.display == 'true'
+        run: |
+          mkdir -p target/perf/ui
+          base_ref="${{ github.base_ref }}"
+          base_dir="$RUNNER_TEMP/cosmo-pd-ui-base"
+          git fetch origin "$base_ref" --depth=1
+          rm -rf "$base_dir"
+          git worktree add --detach "$base_dir" "origin/$base_ref"
+          cd "$base_dir"
+          bun install --frozen-lockfile
+          bun "$GITHUB_WORKSPACE/scripts/perf-display-benchmark.mjs" \
+            --out "$GITHUB_WORKSPACE/target/perf/ui/display-base.json" \
+            --repeats 3 \
+            --warmup-ms 2000 \
+            --duration-ms 3000
+        shell: bash
+
+      - name: Benchmark pull request head
+        if: steps.filter.outputs.display == 'true'
+        run: |
+          bun run perf:display -- \
+            --out target/perf/ui/display-current.json \
+            --repeats 3 \
+            --warmup-ms 2000 \
+            --duration-ms 3000
+        shell: bash
+
+      - name: Compare display benchmarks
+        id: compare_display
+        if: steps.filter.outputs.display == 'true'
+        continue-on-error: true
+        run: |
+          bun run ./scripts/perf-display-compare.mjs \
+            target/perf/ui/display-base.json \
+            target/perf/ui/display-current.json \
+            --markdown-out target/perf/ui/display-compare.md
+        shell: bash
+
+      - name: Generate display benchmark comment body
+        if: steps.filter.outputs.display == 'true'
+        run: |
+          bun run ./scripts/perf-pr-comment.mjs \
+            --ui-only \
+            --marker "<!-- ui-display-benchmark-comment -->" \
+            --ui-compare target/perf/ui/display-compare.md \
+            --out target/perf/ui/pr-comment.md \
+            --base-ref "${{ github.base_ref }}"
+        shell: bash
+
+      - name: Upsert display benchmark PR comment
+        if: steps.filter.outputs.display == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require("node:fs");
+            const marker = "<!-- ui-display-benchmark-comment -->";
+            const body = fs.readFileSync("target/perf/ui/pr-comment.md", "utf8");
+            const issueNumber = context.payload.pull_request?.number;
+
+            if (!issueNumber) {
+              core.info("No pull_request context found; skipping display benchmark PR comment.");
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+            }
+
+      - name: Fail on display benchmark regressions
+        if: steps.filter.outputs.display == 'true' && steps.compare_display.outcome == 'failure'
+        run: |
+          echo "Android web display performance regression threshold exceeded."
+          exit 1
+        shell: bash
+
+      - name: Upload display benchmark artifacts
+        if: steps.filter.outputs.display == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-web-display-benchmark
+          path: |
+            target/perf/ui/display-base.json
+            target/perf/ui/display-current.json
+            target/perf/ui/display-compare.md
+            target/perf/ui/pr-comment.md
+
   build-plugins:
     name: Build plugins (${{ matrix.platform }})
     strategy:
