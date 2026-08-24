@@ -18,7 +18,8 @@ function readMetric(summaries, key) {
 function readSummary(report) {
 	const grouped = new Map();
 	for (const entry of report.cases ?? []) {
-		const key = `${entry.mode}:${entry.voices}`;
+		const profile = entry.profile ?? "default";
+		const key = `${profile}:${entry.mode}:${entry.voices}`;
 		const summaries = grouped.get(key) ?? [];
 		summaries.push(entry.summary ?? {});
 		grouped.set(key, summaries);
@@ -31,7 +32,7 @@ function readSummary(report) {
 				p95GapMs: readMetric(summaries, "p95GapMs"),
 				drawP95Ms: readMetric(summaries, "drawP95Ms"),
 				canvasPixels: readMetric(summaries, "canvasPixels"),
-				qualityTier: summaries.at(-1)?.qualityTier ?? "unknown",
+				qualityTier: summaries.at(-1)?.qualityTier ?? "legacy",
 			},
 		]),
 	);

@@ -79,7 +79,7 @@ const [engineCompare, uiCompare] = await Promise.all([
 const markdown = options.uiOnly
 	? [
 			options.marker,
-			`## Android Web Display Benchmarks vs ${options.baseRef}`,
+			`## Web Display Benchmarks vs ${options.baseRef}`,
 			"",
 			renderSection("Display comparison", uiCompare),
 			"",

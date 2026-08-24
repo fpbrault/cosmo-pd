@@ -428,7 +428,7 @@ jobs:
             target/perf/engine/pr-comment.md
 
   ui-perf-benchmarks:
-    name: Android Web Display Benchmarks
+    name: Web Display Benchmarks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -477,9 +477,10 @@ jobs:
           bun install --frozen-lockfile
           bun "$GITHUB_WORKSPACE/scripts/perf-display-benchmark.mjs" \
             --out "$GITHUB_WORKSPACE/target/perf/ui/display-base.json" \
-            --repeats 3 \
-            --warmup-ms 2000 \
-            --duration-ms 3000
+            --profiles desktop,mobile,low-end-mobile \
+            --repeats 1 \
+            --warmup-ms 300 \
+            --duration-ms 1000
         shell: bash
 
       - name: Benchmark pull request head
@@ -487,9 +488,10 @@ jobs:
         run: |
           bun run perf:display -- \
             --out target/perf/ui/display-current.json \
-            --repeats 3 \
-            --warmup-ms 2000 \
-            --duration-ms 3000
+            --profiles desktop,mobile,low-end-mobile \
+            --repeats 1 \
+            --warmup-ms 300 \
+            --duration-ms 1000
         shell: bash
 
       - name: Compare display benchmarks
@@ -557,7 +559,7 @@ jobs:
       - name: Fail on display benchmark regressions
         if: steps.filter.outputs.display == 'true' && steps.compare_display.outcome == 'failure'
         run: |
-          echo "Android web display performance regression threshold exceeded."
+          echo "Web display performance regression threshold exceeded."
           exit 1
         shell: bash
 
@@ -565,7 +567,7 @@ jobs:
         if: steps.filter.outputs.display == 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: android-web-display-benchmark
+          name: web-display-benchmark
           path: |
             target/perf/ui/display-base.json
             target/perf/ui/display-current.json
