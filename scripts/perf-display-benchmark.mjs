@@ -88,11 +88,14 @@ function parseArgs(argv) {
 		} else if (arg === "--repeats" && next) {
 			options.repeats = Number(next);
 			index += 1;
+		} else if (arg === "--modes" && next) {
+			options.modes = next.split(",").filter(Boolean);
+			index += 1;
 		} else if (arg === "--mode" && next) {
 			options.modes = [next];
 			index += 1;
 		} else if (arg === "--voices" && next) {
-			options.voices = [Number(next)];
+			options.voices = next.split(",").map(Number);
 			index += 1;
 		}
 	}
@@ -109,6 +112,14 @@ function parseArgs(argv) {
 	if (unknownProfiles.length > 0) {
 		throw new Error(
 			`Unknown display profile(s): ${unknownProfiles.join(", ")}. Available profiles: ${Object.keys(DISPLAY_PROFILES).join(", ")}`,
+		);
+	}
+	if (
+		options.modes.some((mode) => !DEFAULT_MODES.includes(mode)) ||
+		options.voices.some((voices) => !Number.isInteger(voices) || voices < 1)
+	) {
+		throw new Error(
+			`Invalid display cases. Modes: ${DEFAULT_MODES.join(", ")}; voices must be positive integers.`,
 		);
 	}
 	return options;
