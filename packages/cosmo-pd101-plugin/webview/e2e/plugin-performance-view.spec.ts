@@ -75,19 +75,19 @@ test.describe("Simple workspace", () => {
 		page,
 	}) => {
 		await page.getByRole("button", { name: "Simple" }).click();
-		await page.getByRole("button", { name: "Scope", exact: true }).click();
-		await expect(page.getByLabel("scope audio display")).toBeVisible();
+		await page.getByRole("tab", { name: "Wave History" }).click();
+		await expect(page.getByLabel("Audio visualization")).toBeVisible();
 		const palette = page.getByRole("button", {
 			name: "Toggle scope color theme",
 		});
-		await expect(palette).toHaveText("vintage");
+		await expect(palette).toHaveText("Vintage");
 		await palette.click();
-		await expect(palette).toHaveText("amber");
+		await expect(palette).toHaveText("Amber");
 
 		await page.reload({ waitUntil: "domcontentloaded" });
 		await waitForBridge(page);
 		await expect(page.getByTestId("performance-view")).toBeVisible();
-		await expect(page.getByLabel("scope audio display")).toBeVisible();
+		await expect(page.getByLabel("Audio visualization")).toBeVisible();
 
 		await page.getByRole("button", { name: "Advanced" }).click();
 		await expect(page.getByTestId("performance-view")).toHaveCount(0);

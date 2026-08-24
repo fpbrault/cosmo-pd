@@ -30,6 +30,7 @@ describe("PerformanceAudioDisplay", () => {
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 	});
 
 	it("keeps scope history intact when the played note changes", () => {
@@ -78,6 +79,7 @@ describe("PerformanceAudioDisplay", () => {
 			fillRect,
 			lineTo: vi.fn(),
 			moveTo: vi.fn(),
+			setTransform: vi.fn(),
 			stroke: vi.fn(),
 		} as unknown as CanvasRenderingContext2D);
 		let onScopeFrame:
@@ -133,5 +135,54 @@ describe("PerformanceAudioDisplay", () => {
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
 		animationFrame?.(106);
 		expect(drawImage).toHaveBeenCalledTimes(4);
+	});
+
+	it("repaints the current frame when an idle canvas is resized", () => {
+		let animationFrame: FrameRequestCallback | undefined;
+		let resizeCallback: ResizeObserverCallback | undefined;
+		vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+			animationFrame = callback;
+			return 1;
+		});
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				constructor(callback: ResizeObserverCallback) {
+					resizeCallback = callback;
+				}
+
+				observe() {}
+				disconnect() {}
+				unobserve() {}
+			},
+		);
+		const drawImage = vi.fn();
+		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+			beginPath: vi.fn(),
+			drawImage,
+			fillRect: vi.fn(),
+			lineTo: vi.fn(),
+			moveTo: vi.fn(),
+			setTransform: vi.fn(),
+			stroke: vi.fn(),
+		} as unknown as CanvasRenderingContext2D);
+		const subscribeScopeFrames = vi.fn(() => () => {});
+		render(
+			<ScopeProvider
+				analyserNodeRef={analyserNodeRef}
+				audioCtxRef={audioCtxRef}
+				effectivePitchHz={220}
+				subscribeScopeFrames={subscribeScopeFrames}
+			>
+				<PerformanceAudioDisplay mode="scope" />
+			</ScopeProvider>,
+		);
+
+		animationFrame?.(0);
+		expect(drawImage).toHaveBeenCalledTimes(1);
+
+		resizeCallback?.([], {} as ResizeObserver);
+		animationFrame?.(40);
+		expect(drawImage).toHaveBeenCalledTimes(2);
 	});
 });

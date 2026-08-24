@@ -47,18 +47,14 @@ test.describe("Plugin shell visual smoke", () => {
 		await expect(page.getByText("Trig", { exact: true })).toHaveCount(0);
 	});
 
-	test("keeps scope delivery active when switching from display to fx and mod", async ({
+	test("keeps scope delivery active when switching between main, fx and mod", async ({
 		page,
 	}) => {
-		const displayButton = page.getByRole("button", {
-			name: "DISPLAY",
-			exact: true,
-		});
+		const mainButton = page.getByRole("button", { name: "Main", exact: true });
 		const fxButton = page.getByRole("button", { name: "FX", exact: true });
 		const modButton = page.getByRole("button", { name: "MOD", exact: true });
 
-		await displayButton.click();
-		await expect(displayButton).toHaveAttribute("aria-pressed", "true");
+		await expect(mainButton).toHaveAttribute("aria-pressed", "true");
 		await expect
 			.poll(() => page.evaluate(() => typeof window.__czOnScope))
 			.toBe("function");
@@ -69,9 +65,14 @@ test.describe("Plugin shell visual smoke", () => {
 			.poll(() => page.evaluate(() => typeof window.__czOnScope))
 			.toBe("function");
 
-		await displayButton.click();
 		await modButton.click();
 		await expect(modButton).toHaveAttribute("aria-pressed", "true");
+		await expect
+			.poll(() => page.evaluate(() => typeof window.__czOnScope))
+			.toBe("function");
+
+		await mainButton.click();
+		await expect(mainButton).toHaveAttribute("aria-pressed", "true");
 		await expect
 			.poll(() => page.evaluate(() => typeof window.__czOnScope))
 			.toBe("function");

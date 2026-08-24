@@ -1,5 +1,6 @@
 import type { ScopeColorTheme } from "@/features/synth/synthUiStore";
 import type { VisualizationMode } from "@/features/visualization/visualizationModes";
+import type { VisualizationCanvasTarget } from "@/lib/canvasRenderTarget";
 
 export type { ScopeColorTheme };
 export type ScopeVisualizationMode = VisualizationMode;
@@ -46,7 +47,7 @@ export type SpectrogramStateRef = {
 
 export type ScopeRendererParams = {
 	mode: ScopeVisualizationMode;
-	canvas: HTMLCanvasElement;
+	target: VisualizationCanvasTarget;
 	samples: Uint8Array | Float32Array;
 	hz: number;
 	sampleRate: number;
@@ -60,7 +61,6 @@ export type ScopeRendererParams = {
 	pressedKeys: ReadonlySet<string>;
 	intensityMultiplier?: number;
 	constrainedPerformance?: boolean;
-	maxPixelRatio?: number;
 	spectrogramBins?: number;
 	spectrogramFftSize?: number;
 };

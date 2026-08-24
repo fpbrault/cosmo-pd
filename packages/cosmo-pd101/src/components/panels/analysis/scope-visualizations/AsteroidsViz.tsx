@@ -1,4 +1,5 @@
-import { drawScopeGrid, setupScopeCanvas } from "./canvas";
+import type { VisualizationCanvasTarget } from "@/lib/canvasRenderTarget";
+import { drawScopeGrid } from "./canvas";
 import { withAlpha } from "./palette";
 import {
 	calculateScopeActivity,
@@ -268,7 +269,7 @@ function drawExplosion(
 }
 
 export function drawAsteroidsScope(
-	canvas: HTMLCanvasElement,
+	target: VisualizationCanvasTarget,
 	samples: Uint8Array | Float32Array,
 	hz: number,
 	sampleRate: number,
@@ -278,11 +279,8 @@ export function drawAsteroidsScope(
 	palette: ScopeThemePalette,
 	pressedKeys: ReadonlySet<string>,
 	intensityMultiplier = 1,
-	maxPixelRatio = 2,
 ) {
-	const setup = setupScopeCanvas(canvas, maxPixelRatio);
-	if (!setup) return;
-	const { ctx, width, height } = setup;
+	const { canvas, context: ctx, width, height } = target;
 	drawScopeGrid(ctx, width, height, palette);
 
 	const window = resolveScopeWindow(

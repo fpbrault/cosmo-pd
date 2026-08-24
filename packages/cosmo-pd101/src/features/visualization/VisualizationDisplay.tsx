@@ -9,7 +9,6 @@ import { renderScopeVisualization } from "@/components/panels/analysis/scope-vis
 import type { SpectrogramState } from "@/components/panels/analysis/scope-visualizations/types";
 import {
 	AdaptivePerformanceQuality,
-	calculateCanvasBackingSize,
 	getInitialPerformanceTier,
 	getPerformanceDisplayProfile,
 	performanceDiagnosticsEnabled,
@@ -17,6 +16,7 @@ import {
 } from "@/components/performance/displayPerformance";
 import { useScopeContext } from "@/context/ScopeContext";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
+import { prepareVisualizationCanvas } from "@/lib/canvasRenderTarget";
 import {
 	buildHistoryValues,
 	createHistoryRendererState,
@@ -75,26 +75,6 @@ const getModeFrameInterval = (
 	mode === "scopeHistory" || mode === "spectrumWaterfall"
 		? Math.max(33, profile.frameInterval)
 		: profile.frameInterval;
-
-const prepareCanvas = (
-	canvas: HTMLCanvasElement,
-	maxPixelRatio: number,
-): { width: number; height: number } => {
-	const bounds = canvas.getBoundingClientRect();
-	const size = calculateCanvasBackingSize({
-		clientWidth: Math.max(1, canvas.clientWidth),
-		clientHeight: Math.max(1, canvas.clientHeight),
-		visibleWidth: bounds.width,
-		visibleHeight: bounds.height,
-		devicePixelRatio: window.devicePixelRatio || 1,
-		maxPixelRatio,
-	});
-	if (canvas.width !== size.width || canvas.height !== size.height) {
-		canvas.width = size.width;
-		canvas.height = size.height;
-	}
-	return size;
-};
 
 export function VisualizationDisplay({ surface, modeOverride }: Props) {
 	const { t } = useTranslation("synth");
@@ -160,6 +140,26 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 		settingsRef.current.zoom = zoom;
 		invalidationVersionRef.current++;
 	}, [cycles, mode, theme, zoom]);
+
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const invalidateSize = () => {
+			invalidationVersionRef.current++;
+		};
+		const resizeObserver =
+			typeof ResizeObserver === "undefined"
+				? null
+				: new ResizeObserver(invalidateSize);
+		resizeObserver?.observe(canvas);
+		window.addEventListener("resize", invalidateSize);
+		window.visualViewport?.addEventListener("resize", invalidateSize);
+		return () => {
+			resizeObserver?.disconnect();
+			window.removeEventListener("resize", invalidateSize);
+			window.visualViewport?.removeEventListener("resize", invalidateSize);
+		};
+	}, []);
 
 	useEffect(() => {
 		const gameKeys = new Set([
@@ -261,7 +261,8 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 				return;
 			}
 
-			const canvasSize = prepareCanvas(canvas, profile.maxPixelRatio);
+			const target = prepareVisualizationCanvas(canvas, profile.maxPixelRatio);
+			if (!target) return;
 			const drawStartedAt = performance.now();
 			const previousDrawAt = lastDrawAtRef.current;
 			let frame = pendingFrameRef.current ?? frameRef.current;
@@ -309,13 +310,9 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 				currentMode === "scopeHistory" ||
 				currentMode === "spectrumWaterfall"
 			) {
-				const context = canvas.getContext("2d");
-				if (!context) return;
 				if (!frame) {
 					drawHistory({
-						context,
-						width: canvasSize.width,
-						height: canvasSize.height,
+						target,
 						history: historyStateRef.current.history,
 						mode: currentMode,
 						cycles: currentSettings.cycles,
@@ -337,9 +334,7 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 					}
 					historyStateRef.current.history.push(values);
 					drawHistory({
-						context,
-						width: canvasSize.width,
-						height: canvasSize.height,
+						target,
 						history: historyStateRef.current.history,
 						mode: currentMode,
 						cycles: currentSettings.cycles,
@@ -351,7 +346,7 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 				}
 			} else {
 				if (!frame) {
-					drawScopeBackdrop(canvas, palette, profile.maxPixelRatio);
+					drawScopeBackdrop(target, palette);
 					consumedFrameVersionRef.current = frameVersionRef.current;
 					consumedInvalidationRef.current = invalidationVersionRef.current;
 					lastDrawAtRef.current = now;
@@ -368,7 +363,7 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 				const renderSamples = lockResult?.heldSamples ?? frame.samples;
 				renderScopeVisualization({
 					mode: currentMode,
-					canvas,
+					target,
 					samples: renderSamples,
 					hz: frame.hz,
 					sampleRate: frame.sampleRate,
@@ -382,7 +377,6 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 					pressedKeys: pressedKeysRef.current,
 					intensityMultiplier: surface === "drawer" ? 1.55 : 1,
 					constrainedPerformance: scopePerformanceMode === "constrained",
-					maxPixelRatio: profile.maxPixelRatio,
 					spectrogramBins: profile.spectrogramBins,
 					spectrogramFftSize: profile.spectrogramFftSize,
 				});
@@ -473,6 +467,7 @@ export function VisualizationDisplay({ surface, modeOverride }: Props) {
 			>
 				<canvas
 					ref={canvasRef}
+					aria-label={t("scope.audioDisplayAria")}
 					className={`${isDrawer ? "h-full min-h-80 w-full" : surface === "simple" || isMini ? "h-full min-h-0 w-full" : "h-43 w-full"}`}
 				/>
 			</div>

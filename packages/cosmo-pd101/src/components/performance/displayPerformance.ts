@@ -1,5 +1,7 @@
 export type PerformanceQualityTier = "high" | "balanced" | "low";
 
+export { calculateCanvasBackingSize } from "@/lib/canvasRenderTarget";
+
 export type PerformanceDisplayProfile = {
 	bandCount: number;
 	waveformPointCount: number;
@@ -79,30 +81,6 @@ export function getPerformanceDisplayProfile(
 	tier: PerformanceQualityTier,
 ): PerformanceDisplayProfile {
 	return PERFORMANCE_DISPLAY_PROFILES[tier];
-}
-
-export function calculateCanvasBackingSize({
-	clientWidth,
-	clientHeight,
-	visibleWidth,
-	visibleHeight,
-	devicePixelRatio,
-	maxPixelRatio,
-}: {
-	clientWidth: number;
-	clientHeight: number;
-	visibleWidth: number;
-	visibleHeight: number;
-	devicePixelRatio: number;
-	maxPixelRatio: number;
-}): { width: number; height: number } {
-	const ratio = Math.max(1, Math.min(devicePixelRatio, maxPixelRatio));
-	const renderedWidth = visibleWidth > 0 ? visibleWidth : clientWidth;
-	const renderedHeight = visibleHeight > 0 ? visibleHeight : clientHeight;
-	return {
-		width: Math.max(1, Math.round(Math.max(1, renderedWidth) * ratio)),
-		height: Math.max(1, Math.round(Math.max(1, renderedHeight) * ratio)),
-	};
 }
 
 export function performanceDiagnosticsEnabled(): boolean {

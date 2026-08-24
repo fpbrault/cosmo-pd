@@ -17,7 +17,7 @@ export const SCOPE_VISUALIZATION_MODES = VISUALIZATION_MODES;
 export function renderScopeVisualization(params: ScopeRendererParams) {
 	const {
 		mode,
-		canvas,
+		target,
 		samples,
 		hz,
 		sampleRate,
@@ -31,7 +31,6 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 		pressedKeys,
 		intensityMultiplier = 1,
 		constrainedPerformance = false,
-		maxPixelRatio = 2,
 		spectrogramBins = SPECTROGRAM_BINS,
 		spectrogramFftSize = constrainedPerformance ? 128 : 256,
 	} = params as ScopeRendererParams & { mode: ScopeVisualizationMode };
@@ -42,11 +41,10 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				? frequencyBins
 				: computeDftBins(samples, spectrogramBins, spectrogramFftSize);
 		drawSpectrogramFrame(
-			canvas,
+			target,
 			bins,
 			spectrogramStateRef,
 			palette,
-			maxPixelRatio,
 			spectrogramBins,
 			cycles,
 			zoom,
@@ -59,7 +57,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 	switch (mode) {
 		case "orbital":
 			drawOrbitalScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -68,13 +66,12 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				zoom,
 				palette,
 				scopeWindow,
-				maxPixelRatio,
 			);
 			return;
 
 		case "transferCurves":
 			drawTransferCurvesScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -83,12 +80,11 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				zoom,
 				palette,
 				scopeWindow,
-				maxPixelRatio,
 			);
 			return;
 		case "asteroids":
 			drawAsteroidsScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -98,7 +94,6 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				palette,
 				pressedKeys,
 				intensityMultiplier,
-				maxPixelRatio,
 			);
 			return;
 
@@ -108,7 +103,7 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 
 		default:
 			drawWaveformScope(
-				canvas,
+				target,
 				samples,
 				hz,
 				sampleRate,
@@ -117,7 +112,6 @@ export function renderScopeVisualization(params: ScopeRendererParams) {
 				zoom,
 				palette,
 				scopeWindow,
-				maxPixelRatio,
 			);
 	}
 }

@@ -1,8 +1,9 @@
+import type { VisualizationCanvasTarget } from "@/lib/canvasRenderTarget";
 import { drawOscilloscope } from "@/lib/synth/drawOscilloscope";
 import type { ScopeThemePalette, ScopeWindow } from "./types";
 
 export function drawWaveformScope(
-	canvas: HTMLCanvasElement,
+	target: VisualizationCanvasTarget,
 	samples: Uint8Array | Float32Array,
 	hz: number,
 	sampleRate: number,
@@ -11,10 +12,9 @@ export function drawWaveformScope(
 	zoom: number,
 	palette: ScopeThemePalette,
 	scopeWindow?: ScopeWindow,
-	maxPixelRatio = 2,
 ) {
 	drawOscilloscope(
-		canvas,
+		target,
 		samples,
 		{
 			cycles,
@@ -25,7 +25,6 @@ export function drawWaveformScope(
 			startIndex: scopeWindow?.start,
 			color: palette.accent,
 			gridColor: palette.grid,
-			maxPixelRatio,
 		},
 		hz,
 		sampleRate,

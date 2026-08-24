@@ -6,6 +6,7 @@ import {
 	resampleFrequencyBins,
 	resampleWaveformWindow,
 } from "@/components/performance/audioSpectrum";
+import type { VisualizationCanvasTarget } from "@/lib/canvasRenderTarget";
 import type { VisualizationMode } from "./visualizationModes";
 
 export type VisualizationAudioFrame = {
@@ -129,9 +130,7 @@ const paletteKey = (palette: ScopeThemePalette) =>
 	[palette.background, palette.grid, palette.centerLine].join("|");
 
 export const drawHistory = ({
-	context,
-	width,
-	height,
+	target,
 	history,
 	mode,
 	cycles,
@@ -140,9 +139,7 @@ export const drawHistory = ({
 	profile,
 	gridCanvasRef,
 }: {
-	context: CanvasRenderingContext2D;
-	width: number;
-	height: number;
+	target: VisualizationCanvasTarget;
 	history: Float32Array[];
 	mode: "scopeHistory" | "spectrumWaterfall";
 	cycles: number;
@@ -151,23 +148,34 @@ export const drawHistory = ({
 	profile: HistoryProfile;
 	gridCanvasRef: { current: HTMLCanvasElement | null };
 }) => {
-	const key = paletteKey(palette);
+	const { context, width, height, pixelWidth, pixelHeight, scaleX, scaleY } =
+		target;
+	const key = [
+		paletteKey(palette),
+		width,
+		height,
+		pixelWidth,
+		pixelHeight,
+	].join("|");
 	let grid = gridCanvasRef.current;
 	if (
 		!grid ||
-		grid.width !== width ||
-		grid.height !== height ||
+		grid.width !== pixelWidth ||
+		grid.height !== pixelHeight ||
 		grid.dataset.paletteKey !== key
 	) {
 		grid = grid ?? document.createElement("canvas");
-		grid.width = width;
-		grid.height = height;
+		grid.width = pixelWidth;
+		grid.height = pixelHeight;
 		grid.dataset.paletteKey = key;
 		const gridContext = grid.getContext("2d");
-		if (gridContext) drawGrid(gridContext, width, height, palette);
+		if (gridContext) {
+			gridContext.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+			drawGrid(gridContext, width, height, palette);
+		}
 		gridCanvasRef.current = grid;
 	}
-	context.drawImage(grid, 0, 0);
+	context.drawImage(grid, 0, 0, pixelWidth, pixelHeight, 0, 0, width, height);
 
 	const horizon = height * 0.13;
 	const usableHeight = mode === "scopeHistory" ? height * 0.72 : height * 0.78;
