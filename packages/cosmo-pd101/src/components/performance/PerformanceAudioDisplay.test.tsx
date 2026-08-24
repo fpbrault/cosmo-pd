@@ -2,7 +2,9 @@ import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AutoScopePhaseLock } from "@/components/panels/analysis/scope-visualizations/autoScopePhaseLock";
 import { ScopeProvider } from "@/context/ScopeContext";
-import PerformanceAudioDisplay from "./PerformanceAudioDisplay";
+import PerformanceAudioDisplay, {
+	getPerformanceDisplayProfile,
+} from "./PerformanceAudioDisplay";
 
 const analyserNodeRef = { current: null };
 const audioCtxRef = { current: null };
@@ -38,5 +40,77 @@ describe("PerformanceAudioDisplay", () => {
 
 		expect(resetsAfterMount).toBeGreaterThan(0);
 		expect(reset).toHaveBeenCalledTimes(resetsAfterMount);
+	});
+
+	it("uses a responsive, lower-cost profile on constrained hosts", () => {
+		expect(getPerformanceDisplayProfile("constrained")).toMatchObject({
+			historyInterval: 66,
+			maxPixelRatio: 1.5,
+			glowBlur: 4,
+		});
+	});
+
+	it("repaints external scope history only when a new row is ready", () => {
+		let animationFrame: FrameRequestCallback | undefined;
+		vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+			animationFrame = callback;
+			return 1;
+		});
+		const fillRect = vi.fn();
+		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+			beginPath: vi.fn(),
+			fillRect,
+			lineTo: vi.fn(),
+			moveTo: vi.fn(),
+			stroke: vi.fn(),
+		} as unknown as CanvasRenderingContext2D);
+		let onScopeFrame:
+			| ((frame: {
+					samples: Float32Array;
+					sampleRate: number;
+					hz: number;
+			  }) => void)
+			| undefined;
+		const subscribeScopeFrames = vi.fn((callback) => {
+			onScopeFrame = callback;
+			return () => {};
+		});
+		const { container } = render(
+			<ScopeProvider
+				analyserNodeRef={analyserNodeRef}
+				audioCtxRef={audioCtxRef}
+				effectivePitchHz={220}
+				scopePerformanceMode="constrained"
+				subscribeScopeFrames={subscribeScopeFrames}
+			>
+				<PerformanceAudioDisplay mode="scope" />
+			</ScopeProvider>,
+		);
+		const canvas = container.querySelector("canvas");
+		expect(canvas).not.toBeNull();
+		Object.defineProperties(canvas as HTMLCanvasElement, {
+			clientWidth: { configurable: true, value: 800 },
+			clientHeight: { configurable: true, value: 300 },
+		});
+
+		animationFrame?.(0);
+		expect(fillRect).toHaveBeenCalledTimes(1);
+
+		const samples = Float32Array.from({ length: 512 }, (_, index) =>
+			Math.sin((index / 218) * Math.PI * 2),
+		);
+		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
+		animationFrame?.(16);
+		expect(fillRect).toHaveBeenCalledTimes(2);
+
+		animationFrame?.(32);
+		expect(fillRect).toHaveBeenCalledTimes(2);
+
+		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
+		animationFrame?.(49);
+		expect(fillRect).toHaveBeenCalledTimes(2);
+
+		animationFrame?.(82);
+		expect(fillRect).toHaveBeenCalledTimes(3);
 	});
 });

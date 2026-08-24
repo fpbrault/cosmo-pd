@@ -26,8 +26,22 @@ type AudioFrame = {
 const SCOPE_CYCLES = 2;
 const SCOPE_VERTICAL_SCALE = 6;
 
-function prepareCanvas(canvas: HTMLCanvasElement) {
-	const ratio = Math.min(window.devicePixelRatio || 1, 2);
+export function getPerformanceDisplayProfile(
+	mode?: "standard" | "constrained",
+) {
+	const constrained = mode === "constrained";
+	return {
+		bandCount: constrained ? 48 : 64,
+		waveformPointCount: constrained ? 96 : 160,
+		rowCount: constrained ? 24 : 40,
+		historyInterval: constrained ? 66 : 50,
+		maxPixelRatio: constrained ? 1.5 : 2,
+		glowBlur: constrained ? 4 : 8,
+	};
+}
+
+function prepareCanvas(canvas: HTMLCanvasElement, maxPixelRatio: number) {
+	const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
 	const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
 	const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
 	if (canvas.width !== width || canvas.height !== height) {
@@ -69,6 +83,7 @@ function drawWaterfall(
 	height: number,
 	history: Float32Array[],
 	palette: ScopeThemePalette,
+	glowBlur: number,
 ) {
 	drawGrid(context, width, height, palette);
 	const horizon = height * 0.13;
@@ -94,7 +109,7 @@ function drawWaterfall(
 			alpha,
 		);
 		context.shadowColor = depth > 0.72 ? palette.glow : "transparent";
-		context.shadowBlur = depth > 0.72 ? 8 : 0;
+		context.shadowBlur = depth > 0.72 ? glowBlur : 0;
 		context.lineWidth = Math.max(1, width / 1000) * (0.8 + depth * 0.8);
 		context.stroke();
 	}
@@ -107,6 +122,7 @@ function drawScopeWaterfall(
 	height: number,
 	history: Float32Array[],
 	palette: ScopeThemePalette,
+	glowBlur: number,
 ) {
 	drawGrid(context, width, height, palette);
 	const horizon = height * 0.13;
@@ -136,7 +152,7 @@ function drawScopeWaterfall(
 		);
 		context.lineWidth = Math.max(1, width / 1000) * (0.8 + depth * 0.8);
 		context.shadowColor = depth > 0.72 ? palette.glow : "transparent";
-		context.shadowBlur = depth > 0.72 ? 8 : 0;
+		context.shadowBlur = depth > 0.72 ? glowBlur : 0;
 		context.stroke();
 	}
 	context.shadowBlur = 0;
@@ -151,6 +167,7 @@ export default function PerformanceAudioDisplay({
 	const frameRef = useRef<AudioFrame | null>(null);
 	const historyRef = useRef<Float32Array[]>([]);
 	const lastHistoryUpdateRef = useRef(0);
+	const frameVersionRef = useRef(0);
 	const rafRef = useRef(0);
 	const phaseLockRef = useRef(new AutoScopePhaseLock());
 	const effectivePitchHzRef = useRef(1);
@@ -171,23 +188,37 @@ export default function PerformanceAudioDisplay({
 		if (!subscribeScopeFrames) return;
 		return subscribeScopeFrames((frame) => {
 			frameRef.current = { ...frame, hz: Math.max(1, frame.hz) };
+			frameVersionRef.current++;
 		});
 	}, [subscribeScopeFrames]);
 
 	useEffect(() => {
 		const palette = getScopeThemePalette(scopeColorTheme);
+		const profile = getPerformanceDisplayProfile(scopePerformanceMode);
 		historyRef.current = [];
 		lastHistoryUpdateRef.current = 0;
 		phaseLockRef.current.reset();
-		const bandCount = scopePerformanceMode === "constrained" ? 48 : 64;
-		const waveformPointCount =
-			scopePerformanceMode === "constrained" ? 96 : 160;
-		const rowCount = scopePerformanceMode === "constrained" ? 24 : 40;
-		const historyInterval = scopePerformanceMode === "constrained" ? 200 : 50;
+		let lastConsumedFrameVersion = -1;
+		let hasDrawn = false;
 		const draw = (now: number) => {
 			rafRef.current = window.requestAnimationFrame(draw);
 			const canvas = canvasRef.current;
 			if (!canvas) return;
+			const usesExternalFrames = Boolean(subscribeScopeFrames);
+			const frameVersion = frameVersionRef.current;
+			if (
+				usesExternalFrames &&
+				hasDrawn &&
+				frameVersion === lastConsumedFrameVersion
+			) {
+				return;
+			}
+			if (
+				historyRef.current.length > 0 &&
+				now - lastHistoryUpdateRef.current < profile.historyInterval
+			) {
+				return;
+			}
 			let frame = frameRef.current;
 			const analyser = analyserNodeRef.current;
 			if (!subscribeScopeFrames && analyser) {
@@ -209,50 +240,66 @@ export default function PerformanceAudioDisplay({
 			}
 			const context = canvas.getContext("2d");
 			if (!context) return;
-			const { width, height } = prepareCanvas(canvas);
+			const { width, height } = prepareCanvas(canvas, profile.maxPixelRatio);
 			if (!frame) {
 				drawGrid(context, width, height, palette);
+				hasDrawn = true;
+				lastConsumedFrameVersion = frameVersion;
 				return;
 			}
-			if (now - lastHistoryUpdateRef.current >= historyInterval) {
-				let values: Float32Array;
-				if (mode === "scope") {
-					const locked = phaseLockRef.current.resolve(
-						frame.samples,
-						Math.max(1, frame.hz),
-						frame.sampleRate,
-						SCOPE_CYCLES,
-					);
-					const source = locked.heldSamples ?? frame.samples;
-					values = resampleWaveformWindow(
-						source,
-						locked.heldSamples ? 0 : locked.window.start,
-						locked.window.count,
-						waveformPointCount,
-					);
-				} else {
-					values = frame.frequencyBins
-						? resampleFrequencyBins(
-								frame.frequencyBins,
-								frame.sampleRate,
-								bandCount,
-							)
-						: calculateLogFrequencyBands(
-								frame.samples,
-								frame.sampleRate,
-								bandCount,
-							);
-				}
-				historyRef.current = [
-					...historyRef.current.slice(-(rowCount - 1)),
-					values,
-				];
-				lastHistoryUpdateRef.current = now;
-			}
+			let values: Float32Array;
 			if (mode === "scope") {
-				drawScopeWaterfall(context, width, height, historyRef.current, palette);
+				const locked = phaseLockRef.current.resolve(
+					frame.samples,
+					Math.max(1, frame.hz),
+					frame.sampleRate,
+					SCOPE_CYCLES,
+				);
+				const source = locked.heldSamples ?? frame.samples;
+				values = resampleWaveformWindow(
+					source,
+					locked.heldSamples ? 0 : locked.window.start,
+					locked.window.count,
+					profile.waveformPointCount,
+				);
 			} else {
-				drawWaterfall(context, width, height, historyRef.current, palette);
+				values = frame.frequencyBins
+					? resampleFrequencyBins(
+							frame.frequencyBins,
+							frame.sampleRate,
+							profile.bandCount,
+						)
+					: calculateLogFrequencyBands(
+							frame.samples,
+							frame.sampleRate,
+							profile.bandCount,
+						);
+			}
+			if (historyRef.current.length >= profile.rowCount) {
+				historyRef.current.shift();
+			}
+			historyRef.current.push(values);
+			lastHistoryUpdateRef.current = now;
+			lastConsumedFrameVersion = frameVersion;
+			hasDrawn = true;
+			if (mode === "scope") {
+				drawScopeWaterfall(
+					context,
+					width,
+					height,
+					historyRef.current,
+					palette,
+					profile.glowBlur,
+				);
+			} else {
+				drawWaterfall(
+					context,
+					width,
+					height,
+					historyRef.current,
+					palette,
+					profile.glowBlur,
+				);
 			}
 		};
 		rafRef.current = window.requestAnimationFrame(draw);
