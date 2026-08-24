@@ -17,7 +17,7 @@ import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
 
 const CONTROL_POSITION_IDS = ["first", "second", "third", "fourth"] as const;
 
-function AlgorithmMark({ value }: { value: PdAlgo }) {
+export function AlgorithmMark({ value }: { value: PdAlgo }) {
 	const definition =
 		PD_ALGOS.find((algo) => algo.value === value) ?? PD_ALGOS[0];
 	if (value === "cz101") {

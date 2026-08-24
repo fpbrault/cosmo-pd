@@ -1,8 +1,25 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 export const SIMPLE_EDIT_TOGGLE_CLASS =
 	"btn btn-xs size-8 min-h-0 rounded-sm border border-cz-border p-0 font-mono text-[0.62rem] aria-pressed:border-current aria-pressed:text-white";
+
+export function useCoerceSimpleEditedLine(
+	line1Editable: boolean,
+	line2Editable: boolean,
+) {
+	const line = useSynthUiStore((state) => state.simpleEditedLine);
+	const setLine = useSynthUiStore((state) => state.setSimpleEditedLine);
+	const lineRef = useRef(line);
+	lineRef.current = line;
+
+	useEffect(() => {
+		if (lineRef.current === 1 && !line1Editable && line2Editable) setLine(2);
+		if (lineRef.current === 2 && !line2Editable && line1Editable) setLine(1);
+	}, [line1Editable, line2Editable, setLine]);
+
+	return { line, setLine };
+}
 
 export default memo(function CompactLineEditToggle({
 	line1Editable,
@@ -11,13 +28,10 @@ export default memo(function CompactLineEditToggle({
 	line1Editable: boolean;
 	line2Editable: boolean;
 }) {
-	const line = useSynthUiStore((state) => state.simpleEditedLine);
-	const setLine = useSynthUiStore((state) => state.setSimpleEditedLine);
-
-	useEffect(() => {
-		if (line === 1 && !line1Editable && line2Editable) setLine(2);
-		if (line === 2 && !line2Editable && line1Editable) setLine(1);
-	}, [line, line1Editable, line2Editable, setLine]);
+	const { line, setLine } = useCoerceSimpleEditedLine(
+		line1Editable,
+		line2Editable,
+	);
 
 	return (
 		<div className="flex flex-col items-center gap-1">

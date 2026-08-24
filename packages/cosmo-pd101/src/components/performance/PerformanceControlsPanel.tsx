@@ -1,5 +1,6 @@
 import { memo, useRef, useState } from "react";
 import {
+	MdClose,
 	MdDeleteOutline,
 	MdPowerSettingsNew,
 	MdSettings,
@@ -121,8 +122,10 @@ function EffectSlot({ slot }: { slot: number }) {
 				ref={settingsRef}
 				type="button"
 				aria-label={`Edit ${effectLabel}`}
-				onClick={() => setSettingsOpen(true)}
-				className="btn btn-circle btn-ghost absolute top-1 right-1 size-7 min-h-0 p-0 text-cz-cream/55 hover:text-cz-light-blue"
+				aria-haspopup="dialog"
+				aria-expanded={settingsOpen}
+				onClick={() => setSettingsOpen((current) => !current)}
+				className={`btn btn-circle btn-ghost absolute top-1 right-1 size-7 min-h-0 p-0 hover:text-cz-light-blue ${settingsOpen ? "bg-cz-inset text-cz-light-blue ring-1 ring-cz-light-blue/60" : "text-cz-cream/55"}`}
 			>
 				<MdSettings className="size-4" />
 			</button>
@@ -165,10 +168,25 @@ function EffectSlot({ slot }: { slot: number }) {
 				open={settingsOpen}
 				onClose={() => setSettingsOpen(false)}
 				triggerRef={settingsRef}
+				closeOnOutsidePress={false}
+				modal={false}
 				placement="top"
 				ariaLabel={`Edit ${effectLabel}`}
 			>
 				<div className="flex h-[18rem] w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 p-2">
+					<div className="flex shrink-0 items-center justify-between border-cz-border border-b pb-1">
+						<span className="font-bold font-mono text-[0.55rem] text-cz-cream uppercase tracking-[0.14em]">
+							{effectLabel}
+						</span>
+						<button
+							type="button"
+							aria-label={`Close ${effectLabel} editor`}
+							onClick={() => setSettingsOpen(false)}
+							className="btn btn-ghost btn-xs size-6 min-h-0 rounded-sm p-0 text-cz-cream/65 hover:text-cz-cream"
+						>
+							<MdClose className="size-4" />
+						</button>
+					</div>
 					<div className="min-h-0 flex-1">
 						{moduleConfig ? (
 							<FxSlotModuleRenderer config={moduleConfig} slot={slot} />
@@ -195,7 +213,7 @@ function EffectSlot({ slot }: { slot: number }) {
 function ExpandedEffects() {
 	return (
 		<div
-			className="flex min-w-0 flex-1 flex-col border-cz-border border-l pl-2"
+			className="flex h-full min-w-0 flex-1 flex-col border-cz-border border-l pl-2"
 			data-testid="simple-effects-panel"
 		>
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
@@ -215,7 +233,7 @@ function ExpandedEffects() {
 
 function ExpandedSound() {
 	return (
-		<div className="flex min-w-0 flex-[3.25] flex-col border-cz-border border-l pl-2">
+		<div className="flex h-full min-w-0 flex-col border-cz-border border-l pl-2">
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 				Sound
 			</h2>
@@ -226,7 +244,7 @@ function ExpandedSound() {
 
 function ExpandedEnvelope() {
 	return (
-		<div className="flex min-w-0 flex-[3.25] flex-col border-cz-border border-l pl-2">
+		<div className="flex h-full min-w-0 flex-col border-cz-border border-l pl-2">
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 				Envelope
 			</h2>
@@ -269,7 +287,7 @@ function CollapsedEffectsSummary({ onExpand }: { onExpand: () => void }) {
 			type="button"
 			onClick={onExpand}
 			aria-label="Expand Effects section"
-			className="group flex h-full w-[7rem] shrink-0 flex-col items-center border-cz-border border-l bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
+			className="group flex h-full w-full min-w-0 flex-col items-center border-cz-border border-l bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
 			data-testid="simple-effects-summary"
 		>
 			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.5rem] tracking-[0.12em] transition-[filter] group-hover:brightness-125">
@@ -302,6 +320,11 @@ export default memo(function PerformanceControlsPanel() {
 	const setExpandedSection = useSynthUiStore(
 		(state) => state.setSimpleExpandedSection,
 	);
+	const sectionColumns = {
+		sound: "grid-cols-[minmax(0,1fr)_7rem_7rem]",
+		envelope: "grid-cols-[7rem_minmax(0,1fr)_7rem]",
+		effects: "grid-cols-[7rem_7rem_minmax(0,1fr)]",
+	}[expandedSection];
 
 	return (
 		<section
@@ -319,27 +342,38 @@ export default memo(function PerformanceControlsPanel() {
 				</div>
 			</div>
 			<div className="w-px bg-cz-border" />
-			{expandedSection === "sound" ? (
-				<ExpandedSound />
-			) : (
-				<CollapsedSoundSummary onExpand={() => setExpandedSection("sound")} />
-			)}
-			{expandedSection === "envelope" ? (
-				<ExpandedEnvelope />
-			) : (
-				<CollapsedEnvelopeSummary
-					onExpand={() => setExpandedSection("envelope")}
-				/>
-			)}
-			{expandedSection === "effects" ? (
-				<div className="flex min-w-0 flex-[3.25]">
-					<ExpandedEffects />
+			<div
+				className={`grid min-w-0 flex-[3.25] gap-2 overflow-hidden ${sectionColumns}`}
+				data-testid="simple-section-rack"
+			>
+				<div className="min-w-0 overflow-hidden">
+					{expandedSection === "sound" ? (
+						<ExpandedSound />
+					) : (
+						<CollapsedSoundSummary
+							onExpand={() => setExpandedSection("sound")}
+						/>
+					)}
 				</div>
-			) : (
-				<CollapsedEffectsSummary
-					onExpand={() => setExpandedSection("effects")}
-				/>
-			)}
+				<div className="min-w-0 overflow-hidden">
+					{expandedSection === "envelope" ? (
+						<ExpandedEnvelope />
+					) : (
+						<CollapsedEnvelopeSummary
+							onExpand={() => setExpandedSection("envelope")}
+						/>
+					)}
+				</div>
+				<div className="min-w-0 overflow-hidden">
+					{expandedSection === "effects" ? (
+						<ExpandedEffects />
+					) : (
+						<CollapsedEffectsSummary
+							onExpand={() => setExpandedSection("effects")}
+						/>
+					)}
+				</div>
+			</div>
 		</section>
 	);
 });

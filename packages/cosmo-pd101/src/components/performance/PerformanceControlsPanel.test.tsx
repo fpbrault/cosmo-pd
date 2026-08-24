@@ -38,8 +38,10 @@ describe("PerformanceControlsPanel", () => {
 
 	it("shows exactly one expanded section and switches via the full-height summary", () => {
 		render(<PerformanceControlsPanel />);
+		const sectionRack = screen.getByTestId("simple-section-rack");
 
 		expect(screen.getByTestId("mock-sound-panel")).toBeVisible();
+		expect(sectionRack).toHaveClass("grid-cols-[minmax(0,1fr)_7rem_7rem]");
 		expect(
 			screen.getByRole("button", { name: "Expand Envelope section" }),
 		).toBeVisible();
@@ -52,6 +54,7 @@ describe("PerformanceControlsPanel", () => {
 		expect(screen.getByTestId("mock-envelope-panel")).toBeVisible();
 		expect(screen.queryByTestId("mock-sound-panel")).toBeNull();
 		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("envelope");
+		expect(sectionRack).toHaveClass("grid-cols-[7rem_minmax(0,1fr)_7rem]");
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Expand Effects section" }),
@@ -59,6 +62,7 @@ describe("PerformanceControlsPanel", () => {
 		expect(screen.getByTestId("simple-effects-panel")).toBeVisible();
 		expect(screen.queryByTestId("mock-sound-panel")).toBeNull();
 		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("effects");
+		expect(sectionRack).toHaveClass("grid-cols-[7rem_7rem_minmax(0,1fr)]");
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Expand Sound section" }),

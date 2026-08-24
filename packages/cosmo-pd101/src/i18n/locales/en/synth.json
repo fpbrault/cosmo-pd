@@ -917,6 +917,7 @@
 			"square": "Use a square cycle with strong odd-harmonic character."
 		},
 		"phaseLine": {
+			"algoInactive": "Algorithm B is currently inactive at the current blend.",
 			"algos": "Edit line {{line}}'s oscillator algorithms and waveform blend.",
 			"envelopes": "Edit line {{line}}'s DCO, DCW, and DCA envelopes.",
 			"envelope": "Select the {{title}} envelope for this line.",

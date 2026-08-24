@@ -15,8 +15,8 @@ test.describe("Simple workspace", () => {
 		const controls = page.getByTestId("performance-controls");
 		await expect(controls).toBeVisible();
 		const controlsBox = await controls.boundingBox();
-		expect(controlsBox?.height).toBeGreaterThanOrEqual(235);
-		expect(controlsBox?.height).toBeLessThanOrEqual(245);
+		expect(controlsBox?.height).toBeGreaterThanOrEqual(187);
+		expect(controlsBox?.height).toBeLessThanOrEqual(197);
 		await expect(page.getByText("Macros", { exact: true })).toBeVisible();
 		await expect(page.getByTestId("simple-sound-panel")).toBeVisible();
 		await expect(page.getByTestId("simple-routing-controls")).toBeVisible();
@@ -40,14 +40,55 @@ test.describe("Simple workspace", () => {
 		await expect(page.getByTestId("simple-envelope-dco")).toBeVisible();
 		await expect(page.getByTestId("simple-envelope-dcw")).toBeVisible();
 		await expect(page.getByTestId("simple-envelope-dca")).toBeVisible();
+		await page
+			.getByRole("button", { name: "Edit Line 1 DCW envelope" })
+			.click();
+		const envelopeEditor = page.getByRole("dialog", {
+			name: "Edit Line 1 DCW envelope",
+		});
+		await expect(envelopeEditor).toBeVisible();
+		await expect(
+			envelopeEditor.getByText("Line 1 DCW", { exact: true }),
+		).toBeVisible();
+		await expect(
+			envelopeEditor.getByRole("button", { name: /envelope presets/i }),
+		).toBeVisible();
+		await expect(
+			envelopeEditor.getByText("Key Follow", { exact: true }),
+		).toBeVisible();
+		await expect(
+			envelopeEditor.getByText("Loop", { exact: true }),
+		).toBeVisible();
+		await page.getByText("Macros", { exact: true }).click();
+		await expect(envelopeEditor).toBeVisible();
+		await envelopeEditor
+			.getByRole("button", { name: "Close Line 1 DCW envelope editor" })
+			.click();
+		await expect(envelopeEditor).toBeHidden();
+
+		await page.getByRole("button", { name: /DCO envelope preset:/i }).click();
+		await expect(
+			page.getByRole("listbox", { name: "DCO envelope presets" }),
+		).toBeVisible();
+		await page.keyboard.press("Escape");
+
 		const soundSummaryBox = await page
 			.getByTestId("simple-sound-summary")
 			.boundingBox();
+		expect(
+			await page
+				.getByTestId("simple-sound-summary")
+				.locator("fieldset")
+				.count(),
+		).toBe(2);
 		const effectsSummaryBox = await page
 			.getByTestId("simple-effects-summary")
 			.boundingBox();
 		expect(soundSummaryBox?.height).toBe(effectsSummaryBox?.height);
 		await page.getByRole("button", { name: "Expand Effects section" }).click();
+		await expect(
+			page.getByTestId("simple-envelope-summary").locator("canvas"),
+		).toHaveCount(3);
 		await expect(
 			page.getByTestId("performance-fx-slots").locator(":scope > *"),
 		).toHaveCount(6);
@@ -92,11 +133,24 @@ test.describe("Simple workspace", () => {
 			slots.locator('[aria-roledescription="sortable"]'),
 		).toHaveCount(0);
 
-		await slots
+		const settingsButton = slots
 			.getByRole("button", { name: /^edit /i })
-			.first()
-			.click();
+			.first();
+		await settingsButton.click();
 		const editor = page.getByRole("dialog", { name: /^edit /i });
+		await expect(editor).toBeVisible();
+		await expect(settingsButton).toHaveAttribute("aria-expanded", "true");
+		await expect(settingsButton).toHaveClass(/text-cz-light-blue/);
+		await settingsButton.click();
+		await expect(editor).toBeHidden();
+		await expect(settingsButton).toHaveAttribute("aria-expanded", "false");
+		await settingsButton.click();
+		await expect(editor).toBeVisible();
+		await page.getByText("Macros", { exact: true }).click();
+		await expect(editor).toBeVisible();
+		await editor.getByRole("button", { name: /^close .* editor$/i }).click();
+		await expect(editor).toBeHidden();
+		await settingsButton.click();
 		await expect(editor).toBeVisible();
 		await editor.getByRole("button", { name: /^remove /i }).click();
 		await expect(
@@ -125,11 +179,41 @@ test.describe("Simple workspace", () => {
 		await page.keyboard.press("Escape");
 
 		await expect(
-			page.getByRole("button", { name: "Edit line 2" }),
-		).toBeDisabled();
-		await expect(
-			page.getByRole("button", { name: "Edit line 1" }),
+			page.getByRole("button", {
+				name: "Edit line 1 algorithm A",
+				exact: true,
+			}),
 		).toHaveAttribute("aria-pressed", "true");
+		await expect(
+			page.getByRole("button", {
+				name: "Edit line 2 algorithm A",
+				exact: true,
+			}),
+		).toBeEnabled();
+		await page
+			.getByRole("button", {
+				name: "Edit line 1 algorithm B",
+				exact: true,
+			})
+			.click();
+		await expect(
+			page.getByText("Algorithm B is currently inactive at the current blend."),
+		).toBeVisible();
+		await page
+			.getByRole("button", {
+				name: "Edit line 2 algorithm A",
+				exact: true,
+			})
+			.click();
+		await expect(
+			page.getByText("Line 2 is currently inactive in L1 mode."),
+		).toBeVisible();
+		await page
+			.getByRole("button", {
+				name: "Edit line 1 algorithm A",
+				exact: true,
+			})
+			.click();
 
 		await page.getByRole("button", { name: /line select:/i }).click();
 		await page
@@ -137,20 +221,29 @@ test.describe("Simple workspace", () => {
 			.getByRole("button", { name: "L2", exact: true })
 			.click();
 		await expect(
-			page.getByRole("button", { name: "Edit line 1" }),
-		).toBeDisabled();
-		await expect(
-			page.getByRole("button", { name: "Edit line 2" }),
+			page.getByRole("button", {
+				name: "Edit line 2 algorithm A",
+				exact: true,
+			}),
 		).toHaveAttribute("aria-pressed", "true");
+		await expect(
+			page.getByRole("button", {
+				name: "Edit line 1 algorithm A",
+				exact: true,
+			}),
+		).toBeEnabled();
 
 		await page.getByRole("button", { name: "Expand Envelope section" }).click();
 		await expect(page.getByTestId("simple-envelope-panel")).toBeVisible();
 		await expect(
-			page.getByRole("button", { name: "Edit line 2" }),
+			page.getByRole("button", { name: "Edit line 2", exact: true }),
 		).toHaveAttribute("aria-pressed", "true");
 		await page.getByRole("button", { name: "Expand Sound section" }).click();
 		await expect(
-			page.getByRole("button", { name: "Edit line 2" }),
+			page.getByRole("button", {
+				name: "Edit line 2 algorithm A",
+				exact: true,
+			}),
 		).toHaveAttribute("aria-pressed", "true");
 	});
 
