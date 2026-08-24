@@ -16,7 +16,7 @@ export type PhaseLinePanelTab =
 	| "line1-envelopes"
 	| "line2-envelopes";
 export type EnvTab = "dco" | "dcw" | "dca";
-export type SimpleExpandedSection = "sound" | "effects";
+export type SimpleExpandedSection = "sound" | "envelope" | "effects";
 export type SimpleEditedLine = 1 | 2;
 export type SimpleEditedAlgo = "a" | "b";
 type KeyboardInputMode = "velocity" | "aftertouch";
@@ -89,6 +89,7 @@ const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 const ENV_TABS = new Set<EnvTab>(["dco", "dcw", "dca"]);
 const SIMPLE_EXPANDED_SECTIONS = new Set<SimpleExpandedSection>([
 	"sound",
+	"envelope",
 	"effects",
 ]);
 const SIMPLE_EDITED_ALGOS = new Set<SimpleEditedAlgo>(["a", "b"]);

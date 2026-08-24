@@ -30,9 +30,11 @@ const ENVELOPE_CLASSES: Record<
 function EnvelopeCanvas({
 	envelope,
 	color,
+	large,
 }: {
 	envelope: StepEnvData;
 	color: string;
+	large: boolean;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const normalized = useMemo(() => normalizeEnvelope(envelope), [envelope]);
@@ -54,9 +56,9 @@ function EnvelopeCanvas({
 	return (
 		<canvas
 			ref={canvasRef}
-			width={160}
-			height={48}
-			className="h-10 w-full rounded-sm bg-black/25"
+			width={large ? 240 : 160}
+			height={large ? 96 : 48}
+			className={`${large ? "h-24" : "h-10"} w-full rounded-sm bg-black/25`}
 		/>
 	);
 }
@@ -66,6 +68,7 @@ type CompactEnvelopePresetProps = {
 	envelope: StepEnvData;
 	color: string;
 	onApply: (envelope: StepEnvData) => void;
+	large?: boolean;
 };
 
 export default memo(function CompactEnvelopePreset({
@@ -73,6 +76,7 @@ export default memo(function CompactEnvelopePreset({
 	envelope,
 	color,
 	onApply,
+	large = false,
 }: CompactEnvelopePresetProps) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement>(null);
@@ -92,7 +96,7 @@ export default memo(function CompactEnvelopePreset({
 				aria-haspopup="listbox"
 				aria-expanded={open}
 				onClick={() => setOpen((current) => !current)}
-				className={`flex min-w-0 flex-1 flex-col rounded border bg-cz-inset/65 p-1 focus:outline-none focus:ring-1 focus:ring-cz-light-blue ${border}`}
+				className={`flex min-w-0 flex-1 flex-col rounded border bg-cz-inset/65 focus:outline-none focus:ring-1 focus:ring-cz-light-blue ${large ? "max-w-[18rem] p-2" : "p-1"} ${border}`}
 				data-testid={`simple-envelope-${envKind}`}
 			>
 				<span
@@ -100,7 +104,7 @@ export default memo(function CompactEnvelopePreset({
 				>
 					{title}
 				</span>
-				<EnvelopeCanvas envelope={envelope} color={color} />
+				<EnvelopeCanvas envelope={envelope} color={color} large={large} />
 				<span className="mt-0.5 truncate font-mono text-[0.48rem] text-cz-cream uppercase tracking-[0.1em]">
 					{selectedLabel} ▾
 				</span>

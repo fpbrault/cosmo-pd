@@ -18,6 +18,19 @@ vi.mock("./PerformanceSoundPanel", () => ({
 	),
 }));
 
+vi.mock("./PerformanceEnvelopePanel", () => ({
+	default: () => <div data-testid="mock-envelope-panel">Envelope controls</div>,
+	CollapsedEnvelopeSummary: ({ onExpand }: { onExpand: () => void }) => (
+		<button
+			type="button"
+			onClick={onExpand}
+			aria-label="Expand Envelope section"
+		>
+			Envelope summary
+		</button>
+	),
+}));
+
 describe("PerformanceControlsPanel", () => {
 	beforeEach(() => {
 		useSynthUiStore.setState({ simpleExpandedSection: "sound" });
@@ -27,8 +40,18 @@ describe("PerformanceControlsPanel", () => {
 		render(<PerformanceControlsPanel />);
 
 		expect(screen.getByTestId("mock-sound-panel")).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Expand Envelope section" }),
+		).toBeVisible();
 		expect(screen.getByTestId("simple-effects-summary")).toHaveClass("h-full");
 		expect(screen.queryByTestId("simple-effects-panel")).toBeNull();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Expand Envelope section" }),
+		);
+		expect(screen.getByTestId("mock-envelope-panel")).toBeVisible();
+		expect(screen.queryByTestId("mock-sound-panel")).toBeNull();
+		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("envelope");
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Expand Effects section" }),

@@ -23,6 +23,9 @@ import {
 	type FxSlotType,
 	type ModDestination,
 } from "@/lib/synth/bindings/synth";
+import PerformanceEnvelopePanel, {
+	CollapsedEnvelopeSummary,
+} from "./PerformanceEnvelopePanel";
 import PerformanceSoundPanel, {
 	CollapsedSoundSummary,
 } from "./PerformanceSoundPanel";
@@ -210,6 +213,28 @@ function ExpandedEffects() {
 	);
 }
 
+function ExpandedSound() {
+	return (
+		<div className="flex min-w-0 flex-[3.25] flex-col">
+			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
+				Sound
+			</h2>
+			<PerformanceSoundPanel />
+		</div>
+	);
+}
+
+function ExpandedEnvelope() {
+	return (
+		<div className="flex min-w-0 flex-[3.25] flex-col">
+			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
+				Envelope
+			</h2>
+			<PerformanceEnvelopePanel />
+		</div>
+	);
+}
+
 const FX_SUMMARY_COLORS: Record<FxSlotType, string> = {
 	empty: "bg-[#3b3b3b]",
 	chorus: "bg-[#818cf8]",
@@ -280,7 +305,7 @@ export default memo(function PerformanceControlsPanel() {
 
 	return (
 		<section
-			className="flex h-40 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
+			className="flex h-60 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
 			data-testid="performance-controls"
 		>
 			<div className="flex min-w-[16rem] flex-[0.85] flex-col">
@@ -295,24 +320,25 @@ export default memo(function PerformanceControlsPanel() {
 			</div>
 			<div className="w-px bg-cz-border" />
 			{expandedSection === "sound" ? (
-				<>
-					<div className="flex min-w-0 flex-[3.25] flex-col">
-						<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
-							Sound
-						</h2>
-						<PerformanceSoundPanel />
-					</div>
-					<CollapsedEffectsSummary
-						onExpand={() => setExpandedSection("effects")}
-					/>
-				</>
+				<ExpandedSound />
 			) : (
-				<>
-					<CollapsedSoundSummary onExpand={() => setExpandedSection("sound")} />
-					<div className="flex min-w-0 flex-[3.25]">
-						<ExpandedEffects />
-					</div>
-				</>
+				<CollapsedSoundSummary onExpand={() => setExpandedSection("sound")} />
+			)}
+			{expandedSection === "envelope" ? (
+				<ExpandedEnvelope />
+			) : (
+				<CollapsedEnvelopeSummary
+					onExpand={() => setExpandedSection("envelope")}
+				/>
+			)}
+			{expandedSection === "effects" ? (
+				<div className="flex min-w-0 flex-[3.25]">
+					<ExpandedEffects />
+				</div>
+			) : (
+				<CollapsedEffectsSummary
+					onExpand={() => setExpandedSection("effects")}
+				/>
 			)}
 		</section>
 	);

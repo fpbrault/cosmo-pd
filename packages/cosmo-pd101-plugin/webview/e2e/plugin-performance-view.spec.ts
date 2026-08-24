@@ -12,10 +12,15 @@ test.describe("Simple workspace", () => {
 	}) => {
 		await page.getByRole("button", { name: "Simple" }).click();
 		await expect(page.getByTestId("performance-view")).toBeVisible();
-		await expect(page.getByTestId("performance-controls")).toBeVisible();
+		const controls = page.getByTestId("performance-controls");
+		await expect(controls).toBeVisible();
+		const controlsBox = await controls.boundingBox();
+		expect(controlsBox?.height).toBeGreaterThanOrEqual(235);
+		expect(controlsBox?.height).toBeLessThanOrEqual(245);
 		await expect(page.getByText("Macros", { exact: true })).toBeVisible();
 		await expect(page.getByTestId("simple-sound-panel")).toBeVisible();
 		await expect(page.getByTestId("simple-routing-controls")).toBeVisible();
+		await expect(page.getByTestId("simple-envelope-dco")).toHaveCount(0);
 		await expect(page.getByTestId("simple-line-parameters")).toContainText(
 			"Volume",
 		);
@@ -26,9 +31,22 @@ test.describe("Simple workspace", () => {
 			"Tune",
 		);
 		await expect(page.getByTestId("simple-line-parameters")).toContainText(
-			"L2 Oct",
+			"L2 Detune",
 		);
+		await expect(page.getByTestId("simple-envelope-summary")).toBeVisible();
 		await expect(page.getByTestId("simple-effects-summary")).toBeVisible();
+		await page.getByRole("button", { name: "Expand Envelope section" }).click();
+		await expect(page.getByTestId("simple-envelope-panel")).toBeVisible();
+		await expect(page.getByTestId("simple-envelope-dco")).toBeVisible();
+		await expect(page.getByTestId("simple-envelope-dcw")).toBeVisible();
+		await expect(page.getByTestId("simple-envelope-dca")).toBeVisible();
+		const soundSummaryBox = await page
+			.getByTestId("simple-sound-summary")
+			.boundingBox();
+		const effectsSummaryBox = await page
+			.getByTestId("simple-effects-summary")
+			.boundingBox();
+		expect(soundSummaryBox?.height).toBe(effectsSummaryBox?.height);
 		await page.getByRole("button", { name: "Expand Effects section" }).click();
 		await expect(
 			page.getByTestId("performance-fx-slots").locator(":scope > *"),
@@ -121,6 +139,16 @@ test.describe("Simple workspace", () => {
 		await expect(
 			page.getByRole("button", { name: "Edit line 1" }),
 		).toBeDisabled();
+		await expect(
+			page.getByRole("button", { name: "Edit line 2" }),
+		).toHaveAttribute("aria-pressed", "true");
+
+		await page.getByRole("button", { name: "Expand Envelope section" }).click();
+		await expect(page.getByTestId("simple-envelope-panel")).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "Edit line 2" }),
+		).toHaveAttribute("aria-pressed", "true");
+		await page.getByRole("button", { name: "Expand Sound section" }).click();
 		await expect(
 			page.getByRole("button", { name: "Edit line 2" }),
 		).toHaveAttribute("aria-pressed", "true");

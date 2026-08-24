@@ -98,7 +98,7 @@ export default memo(function CompactRoutingControls() {
 
 	return (
 		<div
-			className="flex w-[5.2rem] shrink-0 flex-col gap-1 border-cz-border border-r pr-1"
+			className="flex h-28 w-[5.2rem] shrink-0 flex-col gap-1 self-center border-cz-border border-r pr-1"
 			data-testid="simple-routing-controls"
 		>
 			<CompactPicker

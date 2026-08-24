@@ -7,7 +7,9 @@ import { PD_ALGOS } from "@/lib/synth/algoUiCatalog";
 import CompactAlgorithmControls, {
 	CompactAlgorithmPicker,
 } from "./CompactAlgorithmControls";
-import CompactEnvelopePreset from "./CompactEnvelopePreset";
+import CompactLineEditToggle, {
+	SIMPLE_EDIT_TOGGLE_CLASS,
+} from "./CompactLineEditToggle";
 import CompactLineParameters from "./CompactLineParameters";
 import CompactRoutingControls from "./CompactRoutingControls";
 
@@ -21,7 +23,6 @@ function EditToggles({
 	line2Editable: boolean;
 }) {
 	const line = useSynthUiStore((state) => state.simpleEditedLine);
-	const setLine = useSynthUiStore((state) => state.setSimpleEditedLine);
 	const algo = useSynthUiStore((state) => state.simpleEditedAlgo);
 	const setAlgo = useSynthUiStore((state) => state.setSimpleEditedAlgo);
 	const lineColor = line === 1 ? "text-[#7f9de4]" : "text-[#c45c5c]";
@@ -29,34 +30,12 @@ function EditToggles({
 	useEffect(() => {
 		if (!algoBEnabled && algo === "b") setAlgo("a");
 	}, [algo, algoBEnabled, setAlgo]);
-	useEffect(() => {
-		if (line === 1 && !line1Editable && line2Editable) setLine(2);
-		if (line === 2 && !line2Editable && line1Editable) setLine(1);
-	}, [line, line1Editable, line2Editable, setLine]);
-
-	const toggleClass =
-		"btn btn-xs size-8 min-h-0 rounded-sm border border-cz-border p-0 font-mono text-[0.62rem] aria-pressed:border-current aria-pressed:text-white";
-
 	return (
 		<div className="flex w-[4.6rem] shrink-0 flex-col items-center justify-center gap-1">
-			<span className="font-mono text-[0.44rem] text-cz-cream/65 uppercase tracking-[0.14em]">
-				Line
-			</span>
-			<div className="flex gap-1">
-				{([1, 2] as const).map((value) => (
-					<button
-						key={value}
-						type="button"
-						aria-label={`Edit line ${value}`}
-						aria-pressed={line === value}
-						disabled={value === 1 ? !line1Editable : !line2Editable}
-						onClick={() => setLine(value)}
-						className={`${toggleClass} ${line === value ? (value === 1 ? "border-[#7f9de4] bg-[#7f9de4] text-white" : "border-[#c45c5c] bg-[#c45c5c] text-white") : value === 1 ? "bg-cz-inset text-[#7f9de4]" : "bg-cz-inset text-[#c45c5c]"} disabled:opacity-30`}
-					>
-						{value}
-					</button>
-				))}
-			</div>
+			<CompactLineEditToggle
+				line1Editable={line1Editable}
+				line2Editable={line2Editable}
+			/>
 			<span className="mt-0.5 font-mono text-[0.44rem] text-cz-cream/65 uppercase tracking-[0.14em]">
 				Algo
 			</span>
@@ -69,7 +48,7 @@ function EditToggles({
 						aria-pressed={algo === value}
 						disabled={value === "b" && !algoBEnabled}
 						onClick={() => setAlgo(value)}
-						className={`${toggleClass} bg-cz-inset disabled:opacity-30`}
+						className={`${SIMPLE_EDIT_TOGGLE_CLASS} bg-cz-inset disabled:opacity-30`}
 					>
 						{value.toUpperCase()}
 					</button>
@@ -100,13 +79,13 @@ export default memo(function PerformanceSoundPanel() {
 				line1Editable={line1.meta.isAudible}
 				line2Editable={line2.meta.isAudible}
 			/>
-			<div className="flex w-[20rem] min-w-0 shrink-0 flex-col gap-1">
+			<div className="flex w-[20rem] min-w-0 shrink-0 flex-col justify-center gap-1">
 				<div
 					className={`text-center font-mono text-[0.5rem] uppercase tracking-[0.15em] ${colorClass}`}
 				>
 					Line {selectedLine} · Algo {selectedAlgo.toUpperCase()}
 				</div>
-				<div className="flex min-h-0 flex-1 gap-1">
+				<div className="flex h-28 min-h-0 gap-1">
 					<CompactAlgorithmPicker
 						value={slot.value}
 						disabled={slot.disabled}
@@ -139,20 +118,6 @@ export default memo(function PerformanceSoundPanel() {
 				parameters={line.parameters}
 				color={line.meta.color}
 			/>
-			<div className="flex min-w-0 flex-1 items-center gap-1 border-cz-border border-l pl-1">
-				{(["dco", "dcw", "dca"] as const).map((envKind) => {
-					const entry = line.envelopes.envs[envKind];
-					return (
-						<CompactEnvelopePreset
-							key={envKind}
-							envKind={envKind}
-							envelope={entry.env}
-							color={entry.envColor}
-							onApply={entry.setEnv}
-						/>
-					);
-				})}
-			</div>
 		</div>
 	);
 });
@@ -199,11 +164,6 @@ export const CollapsedSoundSummary = memo(function CollapsedSoundSummary({
 					L{line} · {slot.toUpperCase()}
 				</span>
 				<span className="max-w-20 truncate text-cz-gold">{algoLabel}</span>
-			</div>
-			<div className="flex gap-1" aria-hidden="true">
-				<span className="size-2 rounded-sm bg-[#9cb937]" />
-				<span className="size-2 rounded-sm bg-[#60a5fa]" />
-				<span className="size-2 rounded-sm bg-[#f97316]" />
 			</div>
 		</button>
 	);

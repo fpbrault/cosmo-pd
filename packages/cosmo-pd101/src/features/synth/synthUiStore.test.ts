@@ -99,6 +99,17 @@ describe("synthUiStore", () => {
 		});
 	});
 
+	it("persists the Envelope section as a Simple UI preference", async () => {
+		useSynthUiStore.getState().setSimpleExpandedSection("envelope");
+		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
+
+		useSynthUiStore.setState({ simpleExpandedSection: "sound" });
+		localStorage.setItem(SYNTH_UI_STATE_STORAGE_KEY, savedState ?? "");
+		await useSynthUiStore.persist.rehydrate();
+
+		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("envelope");
+	});
+
 	it("preserves an explicitly persisted PC key label preference", async () => {
 		localStorage.setItem(
 			SYNTH_UI_STATE_STORAGE_KEY,
