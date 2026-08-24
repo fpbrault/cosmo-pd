@@ -16,7 +16,7 @@ export default memo(function CompactLineParameters({
 
 	return (
 		<div
-			className="grid w-[11.5rem] shrink-0 grid-cols-3 grid-rows-[1fr_auto_1fr] place-items-center gap-x-1 border-cz-border border-l px-1"
+			className="grid min-w-[11.5rem] flex-1 grid-cols-3 grid-rows-[1fr_auto_1fr] place-items-center gap-x-1 border-cz-border border-l px-1"
 			data-testid="simple-line-parameters"
 		>
 			<SynthParamKnob

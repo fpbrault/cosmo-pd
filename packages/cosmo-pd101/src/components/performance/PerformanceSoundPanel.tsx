@@ -151,7 +151,7 @@ export const CollapsedSoundSummary = memo(function CollapsedSoundSummary({
 			type="button"
 			onClick={onExpand}
 			aria-label="Expand Sound section"
-			className="group flex h-full w-[5.5rem] shrink-0 flex-col items-center bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
+			className="group flex h-full w-[7rem] shrink-0 flex-col items-center bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
 			data-testid="simple-sound-summary"
 		>
 			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.48rem] tracking-[0.12em] transition-[filter] group-hover:brightness-125">

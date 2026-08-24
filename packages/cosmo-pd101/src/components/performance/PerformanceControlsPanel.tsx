@@ -195,7 +195,7 @@ function EffectSlot({ slot }: { slot: number }) {
 function ExpandedEffects() {
 	return (
 		<div
-			className="flex min-w-0 flex-1 flex-col"
+			className="flex min-w-0 flex-1 flex-col border-cz-border border-l pl-2"
 			data-testid="simple-effects-panel"
 		>
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
@@ -215,7 +215,7 @@ function ExpandedEffects() {
 
 function ExpandedSound() {
 	return (
-		<div className="flex min-w-0 flex-[3.25] flex-col">
+		<div className="flex min-w-0 flex-[3.25] flex-col border-cz-border border-l pl-2">
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 				Sound
 			</h2>
@@ -226,7 +226,7 @@ function ExpandedSound() {
 
 function ExpandedEnvelope() {
 	return (
-		<div className="flex min-w-0 flex-[3.25] flex-col">
+		<div className="flex min-w-0 flex-[3.25] flex-col border-cz-border border-l pl-2">
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 				Envelope
 			</h2>
@@ -269,7 +269,7 @@ function CollapsedEffectsSummary({ onExpand }: { onExpand: () => void }) {
 			type="button"
 			onClick={onExpand}
 			aria-label="Expand Effects section"
-			className="group flex h-full w-[5.5rem] shrink-0 flex-col items-center bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
+			className="group flex h-full w-[7rem] shrink-0 flex-col items-center border-cz-border border-l bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
 			data-testid="simple-effects-summary"
 		>
 			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.5rem] tracking-[0.12em] transition-[filter] group-hover:brightness-125">
