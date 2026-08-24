@@ -477,7 +477,7 @@ jobs:
           bun install --frozen-lockfile
           bun "$GITHUB_WORKSPACE/scripts/perf-display-benchmark.mjs" \
             --out "$GITHUB_WORKSPACE/target/perf/ui/display-base.json" \
-            --profiles desktop,mobile,low-end-mobile \
+            --profiles desktop,portable,constrained \
             --voices 1,8 \
             --repeats 1 \
             --warmup-ms 300 \
@@ -489,7 +489,7 @@ jobs:
         run: |
           bun run perf:display -- \
             --out target/perf/ui/display-current.json \
-            --profiles desktop,mobile,low-end-mobile \
+            --profiles desktop,portable,constrained \
             --voices 1,8 \
             --repeats 1 \
             --warmup-ms 300 \

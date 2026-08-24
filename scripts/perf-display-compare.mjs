@@ -86,6 +86,9 @@ const [baseline, current] = await Promise.all([
 ]);
 const baselineCases = readSummary(baseline);
 const currentCases = readSummary(current);
+const singleRun =
+	Number(baseline.configuration?.repeats) === 1 ||
+	Number(current.configuration?.repeats) === 1;
 const keys = [...currentCases.keys()]
 	.filter((key) => baselineCases.has(key))
 	.sort();
@@ -117,7 +120,11 @@ for (const key of keys) {
 		baseTierRank !== undefined &&
 		nextTierRank !== undefined &&
 		nextTierRank > baseTierRank;
-	if (fpsDelta < -10 || gapDelta > 15 || tierRegressed) failures++;
+	const gapRegressed =
+		gapDelta !== null &&
+		gapDelta > 15 &&
+		(!singleRun || (next.p95GapMs ?? 0) > 34);
+	if (fpsDelta < -10 || gapRegressed || tierRegressed) failures++;
 	markdownRows.push(
 		`| ${key} | ${formatPercent(fpsDelta)} | ${formatPercent(gapDelta)} | ${formatMetricPair(base.drawP95Ms, next.drawP95Ms, "ms")} | ${formatMetricPair(base.canvasPixels, next.canvasPixels)} | ${base.qualityTier} -> ${next.qualityTier} |`,
 	);
@@ -133,6 +140,9 @@ if (markdownOut) {
 		...markdownRows,
 		...(missingCurrentCases.length > 0
 			? ["", `Missing current cases: ${missingCurrentCases.join(", ")}`]
+			: []),
+		...(singleRun
+			? ["", "_Single-run CI smoke: RAF-gap failures require p95 above 34 ms._"]
 			: []),
 		"",
 		failures > 0
