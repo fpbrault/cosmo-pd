@@ -390,6 +390,70 @@ mod tests {
     }
 
     #[test]
+    fn l1_prime_uses_line1_dco_envelope_for_detuned_copy() {
+        let mut base = SynthParams::default();
+        base.line_select = LineSelect::L1PlusL1Prime;
+        base.line1.algo = crate::params::Algo::Skew;
+        base.line2.algo = crate::params::Algo::Skew;
+        base.line1.dca_base = 1.0;
+        base.line2.dca_base = 0.0;
+
+        for mod_mode in [ModMode::Normal, ModMode::Ring] {
+            base.mod_mode = mod_mode;
+            let mut line2_dco = base.clone();
+            line2_dco.line2.dco_env.steps[0].level_norm = 1.0;
+            line2_dco.line2.dco_env.steps[0].rate = 127;
+
+            assert_eq!(
+                render_sequence(base.clone(), 60, 32),
+                render_sequence(line2_dco, 60, 32),
+                "L1+L1' should ignore Line 2's DCO envelope in {mod_mode:?} mode"
+            );
+        }
+    }
+
+    #[test]
+    fn l2_prime_still_uses_line2_dco_envelope() {
+        let mut base = SynthParams::default();
+        base.line_select = LineSelect::L1PlusL2Prime;
+        base.mod_mode = ModMode::Normal;
+        base.line1.algo = crate::params::Algo::Skew;
+        base.line2.algo = crate::params::Algo::Skew;
+        base.line1.dca_base = 0.0;
+        base.line2.dca_base = 1.0;
+
+        let mut line2_dco = base.clone();
+        line2_dco.line2.dco_env.steps[0].level_norm = 1.0;
+        line2_dco.line2.dco_env.steps[0].rate = 127;
+
+        assert_ne!(
+            render_sequence(base, 60, 32),
+            render_sequence(line2_dco, 60, 32),
+            "L1+L2' should continue using Line 2's DCO envelope"
+        );
+    }
+
+    #[test]
+    fn l1_prime_retains_line2_detune_tuning() {
+        let mut base = SynthParams::default();
+        base.line_select = LineSelect::L1PlusL1Prime;
+        base.mod_mode = ModMode::Normal;
+        base.line1.algo = crate::params::Algo::Skew;
+        base.line2.algo = crate::params::Algo::Skew;
+        base.line1.dca_base = 1.0;
+        base.line2.dca_base = 0.0;
+
+        let mut detuned = base.clone();
+        detuned.line2.detune_note = 7.0;
+
+        assert_ne!(
+            render_sequence(base, 60, 32),
+            render_sequence(detuned, 60, 32),
+            "L1+L1' should retain Line 2's detune tuning"
+        );
+    }
+
+    #[test]
     fn l1_prime_noise_uses_line1_dcw_and_dca() {
         let mut params = SynthParams::default();
         params.line_select = LineSelect::L1PlusL1Prime;

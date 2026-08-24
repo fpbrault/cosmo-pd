@@ -172,6 +172,7 @@ pub fn render_voice(voice: &mut Voice, ctx: &VoiceRenderContext<'_>) -> f32 {
     let mut signal = build_signal_state(
         line1_modded,
         line2_modded,
+        p.line_select,
         cache,
         modulation_active,
         &env,
@@ -477,9 +478,11 @@ fn advance_silent_voice(
     advance_voice_phase(voice, sr, freq1, freq2, pm_delta);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_signal_state(
     line1: &LineParams,
     line2: &LineParams,
+    line_select: LineSelect,
     cache: &ModMatrixCache,
     modulation_active: bool,
     env: &EnvelopeSnapshot,
@@ -517,7 +520,15 @@ fn build_signal_state(
 
     SignalState {
         effective_freq1: line_frequency(base_freq, line1, env.dco1_env),
-        effective_freq2: line_frequency(base_freq, line2, env.dco2_env),
+        effective_freq2: line_frequency(
+            base_freq,
+            line2,
+            if line_select == LineSelect::L1PlusL1Prime {
+                env.dco1_env
+            } else {
+                env.dco2_env
+            },
+        ),
         final_dcw1: (env.dcw1 + dcw1_mod).clamp(0.0, 1.0),
         final_dcw2: (env.dcw2 + dcw2_mod).clamp(0.0, 1.0),
         final_dca1: (dca1_level + dca1_mod).max(0.0),
