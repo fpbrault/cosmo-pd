@@ -77,6 +77,22 @@ async function waitForServer(url, timeoutMs) {
 	throw new Error(`Timed out waiting for ${url}`);
 }
 
+async function waitForDisplay(page, mode) {
+	const performanceView = page.locator('[data-testid="performance-view"]');
+	if (mode === "advanced") {
+		await page.waitForFunction(
+			() => !document.querySelector('[data-testid="performance-view"]'),
+		);
+		return;
+	}
+
+	// The persisted UI state hydrates after the first React render. Waiting for
+	// any canvas would race that hydration and measure the Advanced sidebar
+	// canvas while this case is labelled Scope or Waterfall.
+	await performanceView.waitFor({ state: "visible" });
+	await performanceView.locator("canvas").waitFor({ state: "visible" });
+}
+
 async function runCase(page, options, mode, voices) {
 	const notes = ["z", "x", "c", "v", "b", "n", "m", ","].slice(0, voices);
 	const startAudio = page.getByRole("button", { name: "Start Audio" });
@@ -138,10 +154,8 @@ async function runCase(page, options, mode, voices) {
 					}));
 				const canvas =
 					mode === "advanced"
-						? [...document.querySelectorAll("canvas")].find(
-								(candidate) => !candidate.dataset.performanceTier,
-							)
-						: document.querySelector("canvas[data-performance-tier]");
+						? document.querySelector("canvas")
+						: document.querySelector('[data-testid="performance-view"] canvas');
 				const sortedGaps = [...gaps].sort((a, b) => a - b);
 				return {
 					fps: (gaps.length * 1000) / Math.max(1, elapsedMs),
@@ -242,7 +256,7 @@ async function main() {
 						await page.goto(`${baseUrl}/?perf=1`, {
 							waitUntil: "domcontentloaded",
 						});
-						await page.waitForSelector("canvas", { timeout: 30_000 });
+						await waitForDisplay(page, mode);
 						const summary = await runCase(page, options, mode, voices);
 						cases.push({ mode, voices, repeat, summary });
 						console.log(JSON.stringify({ mode, voices, repeat, summary }));
