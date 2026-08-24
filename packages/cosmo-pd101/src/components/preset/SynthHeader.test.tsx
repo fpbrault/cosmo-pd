@@ -94,4 +94,24 @@ describe("SynthHeader", () => {
 		fireEvent.click(screen.getByTestId("preset-nav"));
 		expect(onStepPreset).toHaveBeenCalledWith(1);
 	});
+
+	it("places trailing workspace controls before the lab information", () => {
+		renderWithProvider(
+			<SynthHeader
+				onStepPreset={vi.fn()}
+				isLibraryModeOpen={false}
+				onLibraryModeChange={vi.fn()}
+				trailingContent={<div data-testid="workspace-controls" />}
+			/>,
+		);
+
+		const workspaceControls = screen.getByTestId("workspace-controls");
+		const labInformation = screen.getByLabelText(
+			"Open synthesizer lab information",
+		);
+		expect(
+			workspaceControls.compareDocumentPosition(labInformation) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+	});
 });

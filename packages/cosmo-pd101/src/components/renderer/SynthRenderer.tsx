@@ -11,6 +11,7 @@ import MiniKeyboardOverlay from "@/components/layout/MiniKeyboardOverlay";
 import SynthInfoBar from "@/components/layout/SynthInfoBar";
 import SynthSidebar from "@/components/layout/SynthSidebar";
 import MacroKnobsPanel from "@/components/panels/macro/MacroKnobsPanel";
+import PerformanceView from "@/components/performance/PerformanceView";
 import SynthHeader from "@/components/preset/SynthHeader";
 import { ModMatrixProvider } from "@/context/ModMatrixContext";
 import { usePresetManager } from "@/context/PresetManagerContext";
@@ -69,6 +70,8 @@ const SynthRenderer = memo(function SynthRenderer({
 
 	const mainPanelMode = useSynthUiStore((s) => s.mainPanelMode);
 	const setMainPanelMode = useSynthUiStore((s) => s.setMainPanelMode);
+	const workspaceMode = useSynthUiStore((s) => s.workspaceMode);
+	const setWorkspaceMode = useSynthUiStore((s) => s.setWorkspaceMode);
 	const keyboardVisible = useSynthUiStore((s) => s.keyboardVisible);
 	const setKeyboardVisible = useSynthUiStore((s) => s.setKeyboardVisible);
 	const libraryModeOpen = useSynthUiStore((s) => s.libraryModeOpen);
@@ -100,6 +103,10 @@ const SynthRenderer = memo(function SynthRenderer({
 	}, []);
 
 	const handleKeyboardToggle = useCallback(() => {
+		if (workspaceMode === "performance") {
+			setKeyboardVisible(!keyboardVisible);
+			return;
+		}
 		const panel = keyboardPanelRef.current;
 		if (!panel) return;
 		if (keyboardVisible) {
@@ -108,7 +115,7 @@ const SynthRenderer = memo(function SynthRenderer({
 			panel.expand();
 			panel.resize("23%");
 		}
-	}, [keyboardVisible, keyboardPanelRef]);
+	}, [keyboardVisible, keyboardPanelRef, setKeyboardVisible, workspaceMode]);
 
 	const handleCloseLibrary = useCallback(() => {
 		setLibraryModeOpen(false);
@@ -143,75 +150,47 @@ const SynthRenderer = memo(function SynthRenderer({
 									onBrandInfoClick={() => setBrandInfoOpen(true)}
 									isLibraryModeOpen={libraryModeOpen}
 									onLibraryModeChange={setLibraryModeOpen}
+									trailingContent={
+										<div className="join ml-auto border border-cz-border">
+											{(
+												[
+													{ mode: "performance", label: "Simple" },
+													{ mode: "edit", label: "Advanced" },
+												] as const
+											).map(({ mode, label }) => (
+												<button
+													key={mode}
+													type="button"
+													className={`join-item btn btn-sm h-9 min-h-0 px-5 font-mono text-3xs uppercase tracking-[0.12em] ${workspaceMode === mode ? "bg-cz-tab-blue text-white" : "bg-cz-body text-cz-cream/65"}`}
+													aria-pressed={workspaceMode === mode}
+													onClick={() => setWorkspaceMode(mode)}
+												>
+													{label}
+												</button>
+											))}
+										</div>
+									}
 								/>
 								{headerExtra}
 							</div>
 
-							<Group
-								orientation="horizontal"
-								className="z-10 min-h-0 flex-1 gap-0 overflow-hidden bg-cz-surface px-1"
-							>
-								<Panel
-									defaultSize="23%"
-									minSize="23%"
-									maxSize="30%"
-									collapsible
-								>
-									<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset p-2 shadow-lg">
+							{workspaceMode === "performance" ? (
+								<div className="z-10 min-h-0 flex-1 overflow-hidden bg-cz-surface px-1">
+									{keyboardVisible && !libraryModeOpen ? (
 										<Group
 											orientation="vertical"
-											className="h-full min-h-0 flex-1 gap-0"
+											className="h-full min-h-0 gap-0"
 										>
-											<Panel minSize="40%">
-												<SynthSidebar />
+											<Panel minSize="30%">
+												<PerformanceView />
 											</Panel>
 											<Separator className={RESIZE_HANDLE_VERTICAL}>
-												<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+												<div
+													className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60"
+													data-testid="simple-keyboard-resize"
+												/>
 											</Separator>
-											<Panel defaultSize="25%" minSize="15%" maxSize="30%">
-												<MacroKnobsPanel />
-											</Panel>
-										</Group>
-									</div>
-								</Panel>
-								<Separator className={RESIZE_HANDLE_HORIZONTAL}>
-									<div className="h-12 w-1 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
-								</Separator>
-								<Panel minSize="50%">
-									<Group
-										orientation="vertical"
-										className="h-full min-h-0 gap-0"
-									>
-										<Panel minSize="30%">
-											<SynthRendererMainPanel
-												mainPanelMode={mainPanelMode}
-												setMainPanelMode={setMainPanelMode}
-											/>
-										</Panel>
-										<Separator className={RESIZE_HANDLE_VERTICAL}>
-											<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
-										</Separator>
-										<Panel
-											collapsible
-											collapsedSize="0%"
-											defaultSize="23%"
-											minSize="22%"
-											maxSize="30%"
-											panelRef={keyboardPanelRef}
-											onResize={(_size, _id, prevSize) => {
-												if (prevSize === undefined) return;
-												const size = _size.asPercentage;
-												const prev = prevSize.asPercentage;
-												if (size === 0 && prev > 0) {
-													if (keyboardVisibleRef.current)
-														setKeyboardVisible(false);
-												} else if (size > 0 && prev === 0) {
-													if (!keyboardVisibleRef.current)
-														setKeyboardVisible(true);
-												}
-											}}
-										>
-											{keyboardVisible && !libraryModeOpen ? (
+											<Panel defaultSize="23%" minSize="22%" maxSize="30%">
 												<MiniKeyboardOverlay
 													activeNotes={activeNotes}
 													pitchBend={pitchBend}
@@ -222,11 +201,94 @@ const SynthRenderer = memo(function SynthRenderer({
 													onModWheel={sendModWheel}
 													onPolyAftertouch={sendPolyAftertouch}
 												/>
-											) : null}
-										</Panel>
-									</Group>
-								</Panel>
-							</Group>
+											</Panel>
+										</Group>
+									) : (
+										<PerformanceView />
+									)}
+								</div>
+							) : (
+								<Group
+									orientation="horizontal"
+									className="z-10 min-h-0 flex-1 gap-0 overflow-hidden bg-cz-surface px-1"
+								>
+									<Panel
+										defaultSize="23%"
+										minSize="23%"
+										maxSize="30%"
+										collapsible
+									>
+										<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] border border-cz-border/80 bg-cz-inset p-2 shadow-lg">
+											<Group
+												orientation="vertical"
+												className="h-full min-h-0 flex-1 gap-0"
+											>
+												<Panel minSize="40%">
+													<SynthSidebar />
+												</Panel>
+												<Separator className={RESIZE_HANDLE_VERTICAL}>
+													<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+												</Separator>
+												<Panel defaultSize="25%" minSize="15%" maxSize="30%">
+													<MacroKnobsPanel />
+												</Panel>
+											</Group>
+										</div>
+									</Panel>
+									<Separator className={RESIZE_HANDLE_HORIZONTAL}>
+										<div className="h-12 w-1 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+									</Separator>
+									<Panel minSize="50%">
+										<Group
+											orientation="vertical"
+											className="h-full min-h-0 gap-0"
+										>
+											<Panel minSize="30%">
+												<SynthRendererMainPanel
+													mainPanelMode={mainPanelMode}
+													setMainPanelMode={setMainPanelMode}
+												/>
+											</Panel>
+											<Separator className={RESIZE_HANDLE_VERTICAL}>
+												<div className="h-1 w-12 rounded-full bg-cz-light-blue/20 transition-colors group-hover:bg-cz-light-blue/60" />
+											</Separator>
+											<Panel
+												collapsible
+												collapsedSize="0%"
+												defaultSize="23%"
+												minSize="22%"
+												maxSize="30%"
+												panelRef={keyboardPanelRef}
+												onResize={(_size, _id, prevSize) => {
+													if (prevSize === undefined) return;
+													const size = _size.asPercentage;
+													const prev = prevSize.asPercentage;
+													if (size === 0 && prev > 0) {
+														if (keyboardVisibleRef.current)
+															setKeyboardVisible(false);
+													} else if (size > 0 && prev === 0) {
+														if (!keyboardVisibleRef.current)
+															setKeyboardVisible(true);
+													}
+												}}
+											>
+												{keyboardVisible && !libraryModeOpen ? (
+													<MiniKeyboardOverlay
+														activeNotes={activeNotes}
+														pitchBend={pitchBend}
+														modWheel={modWheel}
+														onNoteOn={sendNoteOn}
+														onNoteOff={sendNoteOff}
+														onPitchBend={sendPitchBend}
+														onModWheel={sendModWheel}
+														onPolyAftertouch={sendPolyAftertouch}
+													/>
+												) : null}
+											</Panel>
+										</Group>
+									</Panel>
+								</Group>
+							)}
 
 							<SynthRendererLibraryOverlay
 								isOpen={libraryModeOpen}
