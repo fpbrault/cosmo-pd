@@ -278,8 +278,9 @@ export function drawAsteroidsScope(
 	palette: ScopeThemePalette,
 	pressedKeys: ReadonlySet<string>,
 	intensityMultiplier = 1,
+	maxPixelRatio = 2,
 ) {
-	const setup = setupScopeCanvas(canvas);
+	const setup = setupScopeCanvas(canvas, maxPixelRatio);
 	if (!setup) return;
 	const { ctx, width, height } = setup;
 	drawScopeGrid(ctx, width, height, palette);

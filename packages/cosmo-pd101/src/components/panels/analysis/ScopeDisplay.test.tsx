@@ -97,7 +97,7 @@ describe("ScopeMiniDisplay", () => {
 			throw new Error("expected scope canvas");
 		}
 
-		expect(canvas.className).toContain("h-43");
+		expect(canvas.className).toContain("h-full");
 		expect(canvas.className).toContain("w-full");
 
 		expect(canvas.style.imageRendering).toBe("");
@@ -111,7 +111,7 @@ describe("ScopeMiniDisplay", () => {
 		expect(screen.queryByText("Trig")).not.toBeInTheDocument();
 	});
 
-	it("uses at least 2x backing pixels for the scope backdrop", () => {
+	it("caps backing pixels to the adaptive display ratio", () => {
 		const context = createMockCanvasContext();
 		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
 			context,
@@ -134,46 +134,34 @@ describe("ScopeMiniDisplay", () => {
 			throw new Error("expected scope canvas");
 		}
 
-		expect(canvas.width).toBeGreaterThanOrEqual(240);
-		expect(canvas.height).toBeGreaterThanOrEqual(96);
+		expect(canvas.width).toBeGreaterThanOrEqual(120);
+		expect(canvas.height).toBeGreaterThanOrEqual(48);
 	});
 
-	it("cycles through scope modes on button click", () => {
+	it("selects any scope mode from the shared tabs", () => {
 		renderWithScope(<ScopeMiniDisplay />);
 
-		const modeButton = screen.getByText("Waveform");
+		const modeButton = screen.getByRole("tab", {
+			name: "Choose visualization: Waveform",
+		});
 		expect(modeButton).toBeInTheDocument();
 
 		fireEvent.click(modeButton);
-		expect(screen.getByText("Orbital")).toBeInTheDocument();
-
-		fireEvent.click(screen.getByText("Orbital"));
-		expect(screen.getByText("Spectrogram")).toBeInTheDocument();
-	});
-
-	it("shows a placeholder instead of the mini scope while expanded", () => {
-		renderWithScope(<ScopeMiniDisplay expanded />);
-
+		fireEvent.click(screen.getByRole("menuitem", { name: "Orbital" }));
 		expect(
-			screen.getByText("Wave drawer is showing the full scope view"),
+			screen.getByRole("tab", { name: "Choose visualization: Orbital" }),
 		).toBeInTheDocument();
-	});
 
-	it("renders the 3D waterfall visualization when mode is set to waterfall3d", () => {
-		const { container } = renderWithScope(<ScopeMiniDisplay />);
-
-		// Click mode button 3 times to reach waterfall3d (waveform → orbital → spectrogram → waterfall3d)
-		fireEvent.click(screen.getByText("Waveform"));
-		fireEvent.click(screen.getByText("Orbital"));
-		fireEvent.click(screen.getByText("Spectrogram"));
-
-		const canvas = container.querySelector("canvas");
-		if (!canvas) {
-			throw new Error("expected scope canvas");
-		}
-
-		expect(canvas).toBeInTheDocument();
-		expect(screen.getByText("Waterfall 3D")).toBeInTheDocument();
-		expect(canvas.className).toContain("cursor-pointer");
+		fireEvent.click(
+			screen.getByRole("tab", { name: "Choose visualization: Orbital" }),
+		);
+		fireEvent.click(
+			screen.getByRole("menuitem", { name: "Spectrum Waterfall" }),
+		);
+		expect(
+			screen.getByRole("tab", {
+				name: "Choose visualization: Spectrum Waterfall",
+			}),
+		).toBeInTheDocument();
 	});
 });

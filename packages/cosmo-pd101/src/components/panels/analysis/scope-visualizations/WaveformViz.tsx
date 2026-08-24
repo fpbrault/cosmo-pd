@@ -11,6 +11,7 @@ export function drawWaveformScope(
 	zoom: number,
 	palette: ScopeThemePalette,
 	scopeWindow?: ScopeWindow,
+	maxPixelRatio = 2,
 ) {
 	drawOscilloscope(
 		canvas,
@@ -24,6 +25,7 @@ export function drawWaveformScope(
 			startIndex: scopeWindow?.start,
 			color: palette.accent,
 			gridColor: palette.grid,
+			maxPixelRatio,
 		},
 		hz,
 		sampleRate,

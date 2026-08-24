@@ -12,14 +12,18 @@ export function drawSpectrogramFrame(
 	bins: Uint8Array<ArrayBufferLike>,
 	spectrogramStateRef: SpectrogramStateRef,
 	palette: ScopeThemePalette,
+	maxPixelRatio = 2,
+	binCount = SPECTROGRAM_BINS,
+	cycles = 2,
+	zoom = 1,
 ) {
-	const setup = setupScopeCanvas(canvas);
+	const setup = setupScopeCanvas(canvas, maxPixelRatio);
 	if (!setup) return;
 	const { ctx, width, height } = setup;
 
 	if (width <= 0 || height <= 0) return;
 
-	const expectedHistoryLength = width * SPECTROGRAM_BINS;
+	const expectedHistoryLength = width * binCount;
 	if (
 		spectrogramStateRef.current.width !== width ||
 		spectrogramStateRef.current.height !== height ||
@@ -33,24 +37,33 @@ export function drawSpectrogramFrame(
 		};
 	}
 
-	const effectiveBins = downsampleBins(bins, SPECTROGRAM_BINS);
+	const effectiveBins = downsampleBins(bins, binCount);
 	const history = spectrogramStateRef.current.history;
 	if (!history) return;
 
-	if (width > 1) {
-		history.copyWithin(0, SPECTROGRAM_BINS, history.length);
+	const timeScale = Math.max(0.5, Math.min(2, cycles / 2));
+	const columnWidth = Math.max(1, Math.round(timeScale));
+	if (width > columnWidth) {
+		history.copyWithin(0, columnWidth * binCount, history.length);
 	}
-	const columnOffset = (width - 1) * SPECTROGRAM_BINS;
-	for (let i = 0; i < SPECTROGRAM_BINS; i++) {
-		history[columnOffset + i] = effectiveBins[i] ?? 0;
+	const magnitudeScale = Math.max(0.25, Math.min(4, zoom));
+	const firstColumn = Math.max(0, width - columnWidth);
+	for (let column = firstColumn; column < width; column++) {
+		const columnOffset = column * binCount;
+		for (let i = 0; i < binCount; i++) {
+			history[columnOffset + i] = Math.min(
+				255,
+				Math.round((effectiveBins[i] ?? 0) * magnitudeScale),
+			);
+		}
 	}
 
 	ctx.fillStyle = palette.background;
 	ctx.fillRect(0, 0, width, height);
-	const binHeight = height / SPECTROGRAM_BINS;
+	const binHeight = height / binCount;
 	for (let x = 0; x < width; x++) {
-		const xOffset = x * SPECTROGRAM_BINS;
-		for (let i = 0; i < SPECTROGRAM_BINS; i++) {
+		const xOffset = x * binCount;
+		for (let i = 0; i < binCount; i++) {
 			const mag = history[xOffset + i] ?? 0;
 			if (mag < 2) continue;
 			ctx.fillStyle = spectrogramColor(mag, palette);

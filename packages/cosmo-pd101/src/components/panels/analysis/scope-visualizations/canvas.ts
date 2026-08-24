@@ -9,16 +9,20 @@ const canvasSetupCache = new WeakMap<
 export function drawScopeBackdrop(
 	canvas: HTMLCanvasElement,
 	palette: ScopeThemePalette = getScopeThemePalette("vintage"),
+	maxPixelRatio = 2,
 ) {
-	const setup = setupScopeCanvas(canvas);
+	const setup = setupScopeCanvas(canvas, maxPixelRatio);
 	if (!setup) return;
 	drawScopeGrid(setup.ctx, setup.width, setup.height, palette);
 }
 
-export function setupScopeCanvas(canvas: HTMLCanvasElement) {
+export function setupScopeCanvas(canvas: HTMLCanvasElement, maxPixelRatio = 2) {
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return null;
-	const dpr = Math.max(2, window.devicePixelRatio || 1);
+	const dpr = Math.max(
+		1,
+		Math.min(maxPixelRatio, window.devicePixelRatio || 1),
+	);
 	const width = Math.max(1, Math.floor(canvas.clientWidth));
 	const height = Math.max(1, Math.floor(canvas.clientHeight));
 	const pixelWidth = Math.floor(width * dpr);

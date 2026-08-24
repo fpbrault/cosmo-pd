@@ -7,6 +7,7 @@ export type OscilloscopeConfig = {
 	startIndex?: number;
 	color?: string;
 	gridColor?: string;
+	maxPixelRatio?: number;
 };
 
 type OscilloscopeCanvasCache = {
@@ -36,7 +37,10 @@ export function drawOscilloscope(
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
 
-	const dpr = Math.max(2, window.devicePixelRatio || 1);
+	const dpr = Math.max(
+		1,
+		Math.min(config.maxPixelRatio ?? 2, window.devicePixelRatio || 1),
+	);
 	const drawWidth = Math.max(1, Math.floor(canvas.clientWidth));
 	const drawHeight = Math.max(1, Math.floor(canvas.clientHeight));
 	const pixelWidth = Math.floor(drawWidth * dpr);

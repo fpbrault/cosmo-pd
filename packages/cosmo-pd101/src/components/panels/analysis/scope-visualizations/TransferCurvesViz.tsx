@@ -12,8 +12,9 @@ export function drawTransferCurvesScope(
 	zoom: number,
 	palette: ScopeThemePalette,
 	scopeWindow?: ScopeWindow,
+	maxPixelRatio = 2,
 ) {
-	const setup = setupScopeCanvas(canvas);
+	const setup = setupScopeCanvas(canvas, maxPixelRatio);
 	if (!setup) return;
 	const { ctx, width, height } = setup;
 	drawScopeGrid(ctx, width, height, palette);

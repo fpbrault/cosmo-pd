@@ -117,21 +117,21 @@ describe("PerformanceAudioDisplay", () => {
 			Math.sin((index / 218) * Math.PI * 2),
 		);
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
-		animationFrame?.(16);
+		animationFrame?.(40);
 		expect(drawImage).toHaveBeenCalledTimes(2);
 
-		animationFrame?.(32);
+		animationFrame?.(56);
 		expect(drawImage).toHaveBeenCalledTimes(2);
 
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
-		animationFrame?.(49);
+		animationFrame?.(73);
 		expect(drawImage).toHaveBeenCalledTimes(3);
 
-		animationFrame?.(65);
+		animationFrame?.(89);
 		expect(drawImage).toHaveBeenCalledTimes(3);
 
 		onScopeFrame?.({ samples, sampleRate: 48_000, hz: 220 });
-		animationFrame?.(82);
+		animationFrame?.(106);
 		expect(drawImage).toHaveBeenCalledTimes(4);
 	});
 });

@@ -1,7 +1,8 @@
 import type { ScopeColorTheme } from "@/features/synth/synthUiStore";
-import type { ScopeVisualizationMode } from "./renderScopeVisualization";
+import type { VisualizationMode } from "@/features/visualization/visualizationModes";
 
 export type { ScopeColorTheme };
+export type ScopeVisualizationMode = VisualizationMode;
 
 export type ScopeWindow = {
 	start: number;
@@ -43,24 +44,6 @@ export type SpectrogramStateRef = {
 	current: SpectrogramState;
 };
 
-export type WaterfallPreviewIndicator = {
-	voiceId: number;
-	progress: number;
-	strength: number;
-};
-
-export type WaterfallVoiceProgressState = {
-	note: number;
-	progress: number;
-};
-
-export type WaterfallPreviewData = {
-	line1History: number[][];
-	line2History: number[][];
-	line1Indicators: WaterfallPreviewIndicator[];
-	line2Indicators: WaterfallPreviewIndicator[];
-};
-
 export type ScopeRendererParams = {
 	mode: ScopeVisualizationMode;
 	canvas: HTMLCanvasElement;
@@ -76,7 +59,8 @@ export type ScopeRendererParams = {
 	spectrogramStateRef: SpectrogramStateRef;
 	pressedKeys: ReadonlySet<string>;
 	intensityMultiplier?: number;
-	waterfallPreview?: WaterfallPreviewData | null;
-	waterfallActiveLine?: 1 | 2;
 	constrainedPerformance?: boolean;
+	maxPixelRatio?: number;
+	spectrogramBins?: number;
+	spectrogramFftSize?: number;
 };

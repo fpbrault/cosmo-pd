@@ -1,6 +1,5 @@
 import { motion } from "motion/react";
 import { memo } from "react";
-import { ScopeDrawerDisplay } from "@/components/panels/analysis/ScopeDisplay";
 import FxConsoleDrawer from "@/components/panels/drawers/FxConsoleDrawer";
 import ModConsoleDrawer from "@/components/panels/drawers/ModConsoleDrawer";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
@@ -15,7 +14,6 @@ import { useDrawerPanelState } from "./useDrawerPanelState";
 const DRAWER_CONTENT: Record<DrawerPanel, React.ReactNode> = {
 	fx: <FxConsoleDrawer />,
 	mod: <ModConsoleDrawer />,
-	display: <ScopeDrawerDisplay />,
 };
 
 export default memo(function SynthRendererDrawer() {

@@ -6,20 +6,18 @@ describe("useDrawerPanelState", () => {
 	it("maps non-drawer modes to closed state", () => {
 		const { result } = renderHook(() => useDrawerPanelState("phase"));
 		expect(result.current.drawerOpen).toBe(false);
-		expect(result.current.waveDrawerOpen).toBe(false);
 		expect(result.current.activeDrawerPanel).toBe("fx");
 	});
 
 	it("tracks drawer mode transitions and direction", () => {
 		const { result, rerender } = renderHook(
 			({ mode }) => useDrawerPanelState(mode),
-			{ initialProps: { mode: "fx" as "fx" | "display" | "phase" } },
+			{ initialProps: { mode: "fx" as "fx" | "mod" | "phase" } },
 		);
 		expect(result.current.drawerOpen).toBe(true);
 		expect(result.current.activeDrawerPanel).toBe("fx");
-		rerender({ mode: "display" as "fx" | "display" | "phase" });
-		expect(result.current.activeDrawerPanel).toBe("display");
+		rerender({ mode: "mod" as "fx" | "mod" | "phase" });
+		expect(result.current.activeDrawerPanel).toBe("mod");
 		expect(result.current.drawerSlideDirection).toBe(1);
-		expect(result.current.waveDrawerOpen).toBe(true);
 	});
 });

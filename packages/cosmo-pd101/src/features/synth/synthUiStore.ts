@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
-	SCOPE_VISUALIZATION_MODES,
-	type ScopeVisualizationMode,
-} from "@/components/panels/analysis/scope-visualizations/renderScopeVisualization";
+	migrateLegacyVisualizationMode,
+	VISUALIZATION_MODES as SCOPE_VISUALIZATION_MODES,
+	type VisualizationMode as ScopeVisualizationMode,
+} from "@/features/visualization/visualizationModes";
 export const SYNTH_UI_STATE_STORAGE_KEY = "cosmo-pd101-ui-state";
 
-export type MainPanelMode = "phase" | "fx" | "mod" | "display";
+export type MainPanelMode = "phase" | "fx" | "mod";
 export type SynthWorkspaceMode = "edit" | "performance";
-export type PerformanceDisplayMode = "waterfall" | "scope";
 export type ScopeColorTheme = "vintage" | "amber" | "plasma";
 export type PhaseLinePanelTab =
 	| "line1-algos"
@@ -20,7 +20,6 @@ type KeyboardInputMode = "velocity" | "aftertouch";
 
 type SynthUiState = {
 	workspaceMode: SynthWorkspaceMode;
-	performanceDisplayMode: PerformanceDisplayMode;
 	mainPanelMode: MainPanelMode;
 	phaseLinePanelTab: PhaseLinePanelTab;
 	activeEnvTab: EnvTab;
@@ -46,7 +45,6 @@ type SynthUiState = {
 
 type SynthUiActions = {
 	setWorkspaceMode: (mode: SynthWorkspaceMode) => void;
-	setPerformanceDisplayMode: (mode: PerformanceDisplayMode) => void;
 	setMainPanelMode: (mode: MainPanelMode) => void;
 	setPhaseLinePanelTab: (tab: PhaseLinePanelTab) => void;
 	setActiveEnvTab: (tab: EnvTab) => void;
@@ -72,12 +70,7 @@ type SynthUiActions = {
 
 export type SynthUiStore = SynthUiState & SynthUiActions;
 
-const MAIN_PANEL_MODES = new Set<MainPanelMode>([
-	"phase",
-	"fx",
-	"mod",
-	"display",
-]);
+const MAIN_PANEL_MODES = new Set<MainPanelMode>(["phase", "fx", "mod"]);
 const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 	"line1-algos",
 	"line2-algos",
@@ -98,7 +91,6 @@ const KEYBOARD_INPUT_MODES = new Set<KeyboardInputMode>([
 
 const DEFAULT_UI_STATE: SynthUiState = {
 	workspaceMode: "edit",
-	performanceDisplayMode: "waterfall",
 	mainPanelMode: "phase",
 	phaseLinePanelTab: "line1-algos",
 	activeEnvTab: "dcw",
@@ -112,7 +104,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	scopeCycles: 2,
 	scopeVerticalZoom: 1,
 	scopeTriggerLevel: 128,
-	scopeVisualizationMode: "waveform",
+	scopeVisualizationMode: "spectrumWaterfall",
 	scopeColorTheme: "vintage",
 	brandInfoOpen: false,
 	globalPanelOpen: false,
@@ -129,32 +121,32 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 		return DEFAULT_UI_STATE;
 	}
 
-	const candidate = value as Partial<Record<keyof SynthUiState, unknown>>;
+	const candidate = value as Record<string, unknown>;
 	const workspaceMode = getStringValue(candidate.workspaceMode);
-	const performanceDisplayMode = getStringValue(
+	const legacyPerformanceMode = migrateLegacyVisualizationMode(
 		candidate.performanceDisplayMode,
 	);
 	const mainPanelMode = getStringValue(candidate.mainPanelMode);
 	const phaseLinePanelTab = getStringValue(candidate.phaseLinePanelTab);
 	const activeEnvTab = getStringValue(candidate.activeEnvTab);
-	const scopeVisualizationMode = getStringValue(
-		candidate.scopeVisualizationMode,
-	);
 	const rawScopeColorTheme = getStringValue(candidate.scopeColorTheme);
 	const scopeColorTheme =
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
 	const rawKeyboardInputMode = getStringValue(candidate.keyboardInputMode);
+	const persistedVisualizationMode = migrateLegacyVisualizationMode(
+		candidate.scopeVisualizationMode,
+	);
+	const normalizedWorkspaceMode =
+		workspaceMode === "performance" || workspaceMode === "edit"
+			? workspaceMode
+			: DEFAULT_UI_STATE.workspaceMode;
+	const visualizationMode =
+		normalizedWorkspaceMode === "performance"
+			? (legacyPerformanceMode ?? persistedVisualizationMode)
+			: (persistedVisualizationMode ?? legacyPerformanceMode);
 
 	return {
-		workspaceMode:
-			workspaceMode === "performance" || workspaceMode === "edit"
-				? workspaceMode
-				: DEFAULT_UI_STATE.workspaceMode,
-		performanceDisplayMode:
-			performanceDisplayMode === "waterfall" ||
-			performanceDisplayMode === "scope"
-				? performanceDisplayMode
-				: DEFAULT_UI_STATE.performanceDisplayMode,
+		workspaceMode: normalizedWorkspaceMode,
 		mainPanelMode:
 			mainPanelMode && MAIN_PANEL_MODES.has(mainPanelMode as MainPanelMode)
 				? (mainPanelMode as MainPanelMode)
@@ -222,11 +214,11 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 				? candidate.scopeTriggerLevel
 				: DEFAULT_UI_STATE.scopeTriggerLevel,
 		scopeVisualizationMode:
-			scopeVisualizationMode &&
+			visualizationMode &&
 			SCOPE_VISUALIZATION_MODES.includes(
-				scopeVisualizationMode as ScopeVisualizationMode,
+				visualizationMode as ScopeVisualizationMode,
 			)
-				? (scopeVisualizationMode as ScopeVisualizationMode)
+				? (visualizationMode as ScopeVisualizationMode)
 				: DEFAULT_UI_STATE.scopeVisualizationMode,
 		scopeColorTheme:
 			scopeColorTheme &&
@@ -261,8 +253,6 @@ export const useSynthUiStore = create<SynthUiStore>()(
 		(set) => ({
 			...DEFAULT_UI_STATE,
 			setWorkspaceMode: (mode) => set({ workspaceMode: mode }),
-			setPerformanceDisplayMode: (mode) =>
-				set({ performanceDisplayMode: mode }),
 			setMainPanelMode: (mode) => set({ mainPanelMode: mode }),
 			setPhaseLinePanelTab: (tab) => set({ phaseLinePanelTab: tab }),
 			setActiveEnvTab: (tab) => set({ activeEnvTab: tab }),
@@ -291,7 +281,6 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			storage: createJSONStorage(() => localStorage),
 			partialize: (state) => ({
 				workspaceMode: state.workspaceMode,
-				performanceDisplayMode: state.performanceDisplayMode,
 				mainPanelMode: state.mainPanelMode,
 				phaseLinePanelTab: state.phaseLinePanelTab,
 				activeEnvTab: state.activeEnvTab,
