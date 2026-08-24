@@ -10,6 +10,8 @@ function parseArgs(argv) {
 		uiComparePath: "",
 		out: "",
 		baseRef: "main",
+		marker: COMMENT_MARKER,
+		uiOnly: false,
 	};
 
 	for (let index = 0; index < argv.length; index += 1) {
@@ -27,6 +29,11 @@ function parseArgs(argv) {
 		} else if (arg === "--base-ref" && next) {
 			options.baseRef = next;
 			index += 1;
+		} else if (arg === "--marker" && next) {
+			options.marker = next;
+			index += 1;
+		} else if (arg === "--ui-only") {
+			options.uiOnly = true;
 		}
 	}
 
@@ -69,18 +76,27 @@ const [engineCompare, uiCompare] = await Promise.all([
 	readOptionalText(options.uiComparePath),
 ]);
 
-const markdown = [
-	COMMENT_MARKER,
-	`## Engine Benchmarks vs ${options.baseRef}`,
-	"",
-	`Web UI presets: \`${DEFAULT_HEAVY_PRESET_NAMES.join("`, `")}\``,
-	"",
-	renderSection("Rust Engine", engineCompare),
-	"",
-	renderSection("Web UI", uiCompare),
-	"",
-	`_Updated: ${new Date().toISOString()}_`,
-].join("\n");
+const markdown = options.uiOnly
+	? [
+			options.marker,
+			`## Android Web Display Benchmarks vs ${options.baseRef}`,
+			"",
+			renderSection("Display comparison", uiCompare),
+			"",
+			`_Updated: ${new Date().toISOString()}_`,
+		].join("\n")
+	: [
+			options.marker,
+			`## Engine Benchmarks vs ${options.baseRef}`,
+			"",
+			`Web UI presets: \`${DEFAULT_HEAVY_PRESET_NAMES.join("`, `")}\``,
+			"",
+			renderSection("Rust Engine", engineCompare),
+			"",
+			renderSection("Web UI", uiCompare),
+			"",
+			`_Updated: ${new Date().toISOString()}_`,
+		].join("\n");
 
 await writeFile(options.out, `${markdown}\n`, "utf8");
 console.log(markdown);

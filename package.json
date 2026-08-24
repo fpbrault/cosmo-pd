@@ -32,6 +32,7 @@
 		"lint:fix": "bun run lint:fix:biome && bun run lint:fix:cargo && cargo clippy --fix --allow-dirty",
 		"clean": "rimraf --glob packages/*/dist packages/**/lib-dist packages/*/target src-tauri/target target dist",
 		"build": "bun run build:engine && bun --filter @cosmo/cosmo-pd101 build:lib:release && bun --filter @cosmo/cosmo-pd101-plugin build",
+		"perf:display": "bun ./scripts/perf-display-benchmark.mjs",
 		"bump-version": "bun run ./scripts/bump-version.mjs",
 		"create-release": "bun run ./scripts/create-release.mjs",
 		"package:plugin:dev": "bun run ./scripts/package-dev.mjs",
