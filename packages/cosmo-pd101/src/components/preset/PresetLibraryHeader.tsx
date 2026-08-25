@@ -2,8 +2,8 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthTextInput from "@/components/controls/SynthTextInput";
+import type { FilterOptions } from "./presetLibraryFilters";
 import { getPresetTagCheckboxClassName } from "./presetTagTone";
-import type { FilterOptions } from "./usePresetLibraryState";
 
 type SortKey = "star" | "favorite" | "name" | "bank" | "author" | "tags";
 
@@ -26,8 +26,6 @@ type PresetLibraryHeaderProps = {
 	selectedTagFilters: string[];
 	onToggleTagFilter: (tag: string) => void;
 	onClearTagFilters: () => void;
-	showOnlyUserPresets: boolean;
-	onToggleShowOnlyUserPresets: () => void;
 	onToggleSort: (key: SortKey) => void;
 	sortIndicator: (key: SortKey) => string;
 };
@@ -51,8 +49,6 @@ export default memo(function PresetLibraryHeader({
 	selectedTagFilters,
 	onToggleTagFilter,
 	onClearTagFilters,
-	showOnlyUserPresets,
-	onToggleShowOnlyUserPresets,
 	onToggleSort,
 	sortIndicator: getSortIndicator,
 }: PresetLibraryHeaderProps) {
@@ -91,13 +87,6 @@ export default memo(function PresetLibraryHeader({
 						x
 					</button>
 				</div>
-				<Button
-					type="button"
-					className={`btn btn-sm ${showOnlyUserPresets ? "btn-secondary" : "border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"}`}
-					onClick={onToggleShowOnlyUserPresets}
-				>
-					{t("presetLibrary.userOnly")}
-				</Button>
 				<Button
 					type="button"
 					className="btn btn-sm border-cz-border bg-cz-inset text-cz-cream hover:bg-cz-body"

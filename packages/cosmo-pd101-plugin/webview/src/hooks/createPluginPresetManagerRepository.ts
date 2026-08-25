@@ -1,9 +1,11 @@
 import {
 	type BridgeJsonValue,
 	createWebPresetManagerRepository,
+	DEFAULT_USER_PRESET_AUTHOR,
 	exportPresetToToml,
 	FACTORY_PRESETS,
 	type LibraryPreset,
+	normalizePresetAuthor,
 	normalizePresetTags,
 	type PresetActivationResult,
 	type PresetBankBundle,
@@ -18,8 +20,6 @@ import {
 	type SavePresetRequest,
 	type SynthPresetV1,
 } from "@cosmo/cosmo-pd101";
-
-const DEFAULT_USER_PRESET_AUTHOR = "User";
 
 function requireHostMethod<T>(
 	name: string,
@@ -244,7 +244,7 @@ function mapNativeEntryToPresetEntry(
 		sourceLabel: getSourceLabel(source),
 		bankId: entry.bankId ?? null,
 		bankName: entry.bankName ?? null,
-		author: entry.author,
+		author: normalizePresetAuthor(entry.author, source),
 		description: entry.description ?? "",
 		starred: entry.starred,
 		favorite: entry.favorite === true,
@@ -335,7 +335,10 @@ export function createPluginPresetManagerRepository({
 			await window.__czRenamePreset?.(id, newName);
 		},
 		setPresetAuthor: async (id, author) => {
-			await window.__czSetPresetAuthor?.(id, author);
+			await window.__czSetPresetAuthor?.(
+				id,
+				normalizePresetAuthor(author, "user"),
+			);
 		},
 		setPresetDescription: async (id, description) => {
 			await window.__czSetPresetDescription?.(id, description);

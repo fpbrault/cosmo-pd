@@ -13,7 +13,7 @@ use crate::SynthParams;
 use crate::preset_library_path;
 
 const DEFAULT_SORT_INDEX: u32 = u32::MAX;
-const LIBRARY_SCHEMA_VERSION: u32 = 6;
+const LIBRARY_SCHEMA_VERSION: u32 = 7;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PresetLibraryRecord {
@@ -296,6 +296,9 @@ impl PresetLibrary {
             }
             if previous_schema_version < 6 {
                 migrate_description_column(conn)?;
+            }
+            if previous_schema_version < 7 {
+                migrate_blank_user_preset_authors(conn)?;
             }
             create_schema_indexes(conn)?;
             merge_factory_entries(conn, &self.factory_entries)?;
@@ -707,6 +710,15 @@ fn migrate_description_column(conn: &Connection) -> Result<(), String> {
         )
         .map_err(db_err)?;
     }
+    Ok(())
+}
+
+fn migrate_blank_user_preset_authors(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "UPDATE presets SET author = 'User' WHERE source = 'user' AND TRIM(author) = ''",
+        [],
+    )
+    .map_err(db_err)?;
     Ok(())
 }
 
@@ -1373,6 +1385,41 @@ mod tests {
             )
             .unwrap();
         assert_eq!(description, "");
+    }
+
+    #[test]
+    fn user_author_migration_defaults_blank_existing_rows() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE presets (
+                id TEXT PRIMARY KEY NOT NULL,
+                source TEXT NOT NULL,
+                author TEXT NOT NULL
+            );
+            INSERT INTO presets (id, source, author) VALUES
+                ('blank-user', 'user', '   '),
+                ('named-user', 'user', 'Ada'),
+                ('factory', 'cosmo-factory', '');",
+        )
+        .unwrap();
+
+        migrate_blank_user_preset_authors(&conn).unwrap();
+
+        let authors: Vec<(String, String)> = conn
+            .prepare("SELECT id, author FROM presets ORDER BY id")
+            .unwrap()
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(
+            authors,
+            vec![
+                ("blank-user".to_string(), "User".to_string()),
+                ("factory".to_string(), "".to_string()),
+                ("named-user".to_string(), "Ada".to_string()),
+            ]
+        );
     }
 
     #[test]

@@ -1,7 +1,20 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render as renderWithoutFilters,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
+import { PresetLibraryFiltersProvider } from "./PresetLibraryFiltersContext";
 import PresetNavigator, { type PresetNavigatorProps } from "./PresetNavigator";
+
+function render(element: ReactElement) {
+	return renderWithoutFilters(element, {
+		wrapper: PresetLibraryFiltersProvider,
+	});
+}
 
 const { mockUseMidiLearnTarget } = vi.hoisted(() => ({
 	mockUseMidiLearnTarget: vi.fn(),
@@ -24,7 +37,7 @@ const entries: PresetEntry[] = [
 		description: "",
 		starred: true,
 		favorite: false,
-		tags: ["Bass"],
+		tags: ["bass"],
 	},
 	{
 		id: "local-keys",
@@ -36,7 +49,7 @@ const entries: PresetEntry[] = [
 		description: "",
 		starred: false,
 		favorite: true,
-		tags: ["Keys"],
+		tags: ["keys"],
 	},
 ];
 
@@ -147,11 +160,57 @@ describe("PresetNavigator", () => {
 		expect(props.onNavigationEntriesChange).toHaveBeenCalledWith([
 			"local-keys",
 		]);
-		await waitFor(() =>
-			expect(
-				screen.queryByRole("dialog", { name: "Quick preset select" }),
-			).toBeNull(),
+		expect(
+			screen.getByRole("dialog", { name: "Quick preset select" }),
+		).toBeVisible();
+	});
+
+	it("loads adjacent presets with arrow keys without closing quick select", async () => {
+		const props = createProps();
+		render(<PresetNavigator {...props} />);
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Choose preset. Current preset: Factory Bass",
+			}),
 		);
+
+		fireEvent.keyDown(screen.getByRole("option", { name: /Factory Bass/ }), {
+			key: "ArrowDown",
+		});
+
+		await waitFor(() =>
+			expect(props.onActivatePreset).toHaveBeenCalledWith("local-keys"),
+		);
+		expect(
+			screen.getByRole("dialog", { name: "Quick preset select" }),
+		).toBeVisible();
+	});
+
+	it("filters the quick picker by bank and tags and clears all filters", () => {
+		render(<PresetNavigator {...createProps()} />);
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Choose preset. Current preset: Factory Bass",
+			}),
+		);
+
+		fireEvent.change(screen.getByLabelText("Filter bank"), {
+			target: { value: "Cosmo Factory Library" },
+		});
+		expect(
+			screen.getByRole("status", { name: "1 active filters" }),
+		).toBeVisible();
+		expect(screen.queryByRole("option", { name: /Local Keys/ })).toBeNull();
+
+		fireEvent.change(screen.getByLabelText("Filter bank"), {
+			target: { value: "" },
+		});
+		fireEvent.click(screen.getByRole("checkbox", { name: "bass" }));
+		expect(screen.queryByRole("option", { name: /Local Keys/ })).toBeNull();
+
+		fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+		expect(screen.getByRole("option", { name: /Local Keys/ })).toBeVisible();
+		expect(screen.queryByRole("status")).toBeNull();
 	});
 
 	it("saves a dirty user preset directly", async () => {

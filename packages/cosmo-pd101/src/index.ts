@@ -156,7 +156,12 @@ export {
 	type PresetImportPreparation,
 	preparePresetImportFiles,
 } from "./lib/synth/presetImport";
-export type { PresetSource } from "./lib/synth/presetSources";
+export {
+	DEFAULT_USER_PRESET_AUTHOR,
+	getPresetSourceLabel,
+	normalizePresetAuthor,
+	type PresetSource,
+} from "./lib/synth/presetSources";
 export {
 	normalizePresetTags,
 	type PresetTagOptions,

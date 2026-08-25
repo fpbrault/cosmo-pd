@@ -4,6 +4,7 @@ import {
 	type PresetImportFile,
 	preparePresetImportFiles,
 } from "@/lib/synth/presetImport";
+import { normalizePresetAuthor } from "@/lib/synth/presetSources";
 import type { PresetTagOptions } from "@/lib/synth/presetTags";
 import type {
 	ExportedPresetFile,
@@ -402,7 +403,10 @@ export function useSynthPresetManager({
 
 	const setPresetAuthor = useCallback(
 		async (id: string, author: string) => {
-			await repository.setPresetAuthor(id, author.trim());
+			await repository.setPresetAuthor(
+				id,
+				normalizePresetAuthor(author, "user"),
+			);
 			await reloadLibrary();
 		},
 		[reloadLibrary, repository],

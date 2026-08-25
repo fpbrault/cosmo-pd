@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { getPresetSourceLabel } from "./presetSources";
+import { normalizePresetAuthor } from "./presetSources";
 
-describe("presetSources", () => {
-	it("returns labels for all preset sources", () => {
-		expect(getPresetSourceLabel("cosmo-factory")).toBe("Cosmo Factory Library");
-		expect(getPresetSourceLabel("cz-factory")).toBe("Temple Of CZ");
-		expect(getPresetSourceLabel("addon")).toBe("Add-On Bank");
-		expect(getPresetSourceLabel("user")).toBe("User");
+describe("normalizePresetAuthor", () => {
+	it("defaults blank user preset authors to User", () => {
+		expect(normalizePresetAuthor("", "user")).toBe("User");
+		expect(normalizePresetAuthor("   ", "user")).toBe("User");
+		expect(normalizePresetAuthor(undefined, "user")).toBe("User");
+	});
+
+	it("preserves explicit authors and does not label factory presets as User", () => {
+		expect(normalizePresetAuthor("  Ada  ", "user")).toBe("Ada");
+		expect(normalizePresetAuthor("", "cosmo-factory")).toBe("");
 	});
 });

@@ -276,6 +276,20 @@ describe("useSynthPresetManager", () => {
 		expect(repository.listEntries).toHaveBeenCalledTimes(3);
 	});
 
+	it("uses User when a user preset author is cleared", async () => {
+		const { result } = renderHook(() => useSynthPresetManager({ repository }));
+
+		await vi.waitFor(() => {
+			expect(result.current.allPresetEntries).toHaveLength(2);
+		});
+
+		await act(async () => {
+			await result.current.setPresetAuthor("local-1", "   ");
+		});
+
+		expect(repository.setPresetAuthor).toHaveBeenCalledWith("local-1", "User");
+	});
+
 	it("uses overwrite for save and create for save as", async () => {
 		const { result } = renderHook(() => useSynthPresetManager({ repository }));
 

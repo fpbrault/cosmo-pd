@@ -1,6 +1,9 @@
 import type { LibraryPreset } from "@/features/synth/types/libraryPreset";
 import type { PresetEntry } from "@/features/synth/types/presetEntry";
-import { getPresetSourceLabel } from "@/lib/synth/presetSources";
+import {
+	getPresetSourceLabel,
+	normalizePresetAuthor,
+} from "@/lib/synth/presetSources";
 import type { StoredPreset } from "@/lib/synth/presetStorage";
 import { inferPresetTags, normalizePresetTags } from "@/lib/synth/presetTags";
 
@@ -60,7 +63,7 @@ export function buildAllPresetEntries({
 				sourceLabel: getPresetSourceLabel(entry.source),
 				bankId: null,
 				bankName: null,
-				author: entry.author,
+				author: normalizePresetAuthor(entry.author, entry.source),
 				description: entry.description,
 				starred: entry.starred,
 				favorite: favoriteIds.has(entry.id),

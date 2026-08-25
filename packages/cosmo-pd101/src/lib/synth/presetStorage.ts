@@ -1,6 +1,7 @@
 import type { SynthPresetV1 } from "@/lib/synth/bindings/synth";
 import { DEFAULT_SYNTH_PARAMS_V1 } from "@/lib/synth/bindings/synth";
 import type { PresetSource } from "@/lib/synth/presetSources";
+import { normalizePresetAuthor } from "@/lib/synth/presetSources";
 import {
 	normalizePresetTags,
 	type PresetTagOptions,
@@ -12,7 +13,7 @@ import {
 import type { FrontendPresetV1, PresetMetadata } from "@/lib/synth/presetTypes";
 
 const DB_NAME = "cosmo-pd101-preset-storage";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const REQUIRED_OBJECT_STORES = [
 	"presets",
 	"kv",
@@ -51,7 +52,7 @@ function openDatabase(version?: number): Promise<IDBDatabase> {
 			version === undefined
 				? indexedDB.open(DB_NAME)
 				: indexedDB.open(DB_NAME, version);
-		request.onupgradeneeded = () => {
+		request.onupgradeneeded = (event) => {
 			const db = request.result;
 			if (!db.objectStoreNames.contains("presets")) {
 				db.createObjectStore("presets", { keyPath: "id" });
@@ -64,6 +65,20 @@ function openDatabase(version?: number): Promise<IDBDatabase> {
 			}
 			if (!db.objectStoreNames.contains("fxModulePresets")) {
 				db.createObjectStore("fxModulePresets", { keyPath: "id" });
+			}
+			if (event.oldVersion < 3 && request.transaction) {
+				const presetStore = request.transaction.objectStore("presets");
+				const cursorRequest = presetStore.openCursor();
+				cursorRequest.onsuccess = () => {
+					const cursor = cursorRequest.result;
+					if (!cursor) return;
+					const preset = cursor.value as StoredPreset;
+					const author = normalizePresetAuthor(preset.author, preset.source);
+					if (author !== preset.author) {
+						cursor.update({ ...preset, author });
+					}
+					cursor.continue();
+				};
 			}
 		};
 		request.onsuccess = () => {
@@ -269,14 +284,15 @@ function createUserPresetId(): string {
 }
 
 function createStoredPreset(input: StoredPresetInput): StoredPreset {
+	const source = input.source ?? "user";
 	const metadata = normalizeMetadata({
 		description: input.description,
 		tags: input.tags,
 	});
 	const basePreset = {
 		name: input.name.trim(),
-		source: input.source ?? "user",
-		author: input.author?.trim() ?? "",
+		source,
+		author: normalizePresetAuthor(input.author, source),
 		description: metadata.description,
 		starred: input.starred ?? false,
 		data: input.data,

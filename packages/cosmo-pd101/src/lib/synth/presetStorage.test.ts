@@ -47,12 +47,12 @@ describe("presetStorage", () => {
 	});
 
 	it("opens a newer compatible database without downgrading it", async () => {
-		const db = await openCompatibleDatabase(3);
+		const db = await openCompatibleDatabase(4);
 		db.close();
 
 		const reopened = await getDb();
 
-		expect(reopened.version).toBe(3);
+		expect(reopened.version).toBe(4);
 		expect(Array.from(reopened.objectStoreNames)).toEqual(
 			expect.arrayContaining(["presets", "kv", "favorites", "fxModulePresets"]),
 		);
@@ -226,6 +226,44 @@ describe("presetStorage", () => {
 		expect(await listStoredPresets()).toEqual([
 			expect.objectContaining({ id: "legacy-row", description: "" }),
 		]);
+	});
+
+	it("migrates blank user preset authors to User", async () => {
+		const legacyDb = await new Promise<IDBDatabase>((resolve, reject) => {
+			const request = indexedDB.open("cosmo-pd101-preset-storage", 2);
+			request.onupgradeneeded = () => {
+				request.result.createObjectStore("presets", { keyPath: "id" });
+			};
+			request.onsuccess = () => resolve(request.result);
+			request.onerror = () => reject(request.error);
+		});
+		await new Promise<void>((resolve, reject) => {
+			const tx = legacyDb.transaction("presets", "readwrite");
+			tx.objectStore("presets").put({
+				id: "blank-author",
+				name: "Blank Author",
+				source: "user",
+				author: "   ",
+				description: "",
+				starred: false,
+				tags: [],
+				data: DEFAULT_PRESET,
+			});
+			tx.oncomplete = () => resolve();
+			tx.onerror = () => reject(tx.error);
+		});
+		legacyDb.close();
+
+		const upgradedDb = await getDb();
+		const migrated = await new Promise<{ author: string }>(
+			(resolve, reject) => {
+				const tx = upgradedDb.transaction("presets", "readonly");
+				const request = tx.objectStore("presets").get("blank-author");
+				request.onsuccess = () => resolve(request.result as { author: string });
+				request.onerror = () => reject(request.error);
+			},
+		);
+		expect(migrated.author).toBe("User");
 	});
 
 	it("imports raw synth preset payloads", async () => {
