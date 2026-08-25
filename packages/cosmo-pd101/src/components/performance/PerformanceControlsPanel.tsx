@@ -233,7 +233,7 @@ function ExpandedEffects() {
 
 function ExpandedSound() {
 	return (
-		<div className="flex h-full min-w-0 flex-col border-cz-border border-l pl-2">
+		<div className="flex h-full min-w-0 flex-col border-cz-border">
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 				Sound
 			</h2>
@@ -331,13 +331,13 @@ export default memo(function PerformanceControlsPanel() {
 			className="flex h-48 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
 			data-testid="performance-controls"
 		>
-			<div className="flex min-w-[16rem] flex-[0.85] flex-col">
+			<div className="flex max-w-60 flex-[0.85] flex-col">
 				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 					Macros
 				</h2>
-				<div className="flex flex-1 items-center justify-around gap-1">
+				<div className="grid h-full grid-cols-2 items-center justify-around gap-1">
 					{[0, 1, 2, 3].map((index) => (
-						<MacroKnob key={index} macroIndex={index} size={54} />
+						<MacroKnob key={index} macroIndex={index} size={64} />
 					))}
 				</div>
 			</div>
