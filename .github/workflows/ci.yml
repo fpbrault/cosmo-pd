@@ -164,7 +164,7 @@ jobs:
 
       - name: Restore cosmo-pd101 lib-dist cache
         id: cosmo-pd101-lib-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**', 'packages/cosmo-pd101/scripts/gen-bindings.mjs', 'packages/cosmo-synth-engine/src/**', 'packages/cosmo-synth-engine/Cargo.toml', 'packages/cosmo-synth-engine/export_specta_bindings.rs', 'packages/cosmo-pd101-bridge-types/src/**', 'packages/cosmo-pd101-bridge-types/Cargo.toml', 'packages/cosmo-pd101-bridge-types/export_specta_bindings.rs') }}
@@ -196,7 +196,7 @@ jobs:
 
       - name: Restore cosmo-pd101 lib-dist
         id: cosmo-pd101-lib-cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**', 'packages/cosmo-pd101/scripts/gen-bindings.mjs', 'packages/cosmo-synth-engine/src/**', 'packages/cosmo-synth-engine/Cargo.toml', 'packages/cosmo-synth-engine/export_specta_bindings.rs', 'packages/cosmo-pd101-bridge-types/src/**', 'packages/cosmo-pd101-bridge-types/Cargo.toml', 'packages/cosmo-pd101-bridge-types/export_specta_bindings.rs') }}
@@ -232,7 +232,7 @@ jobs:
 
       - name: Restore cosmo-pd101 lib-dist
         id: cosmo-pd101-lib-cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**', 'packages/cosmo-pd101/scripts/gen-bindings.mjs', 'packages/cosmo-synth-engine/src/**', 'packages/cosmo-synth-engine/Cargo.toml', 'packages/cosmo-synth-engine/export_specta_bindings.rs', 'packages/cosmo-pd101-bridge-types/src/**', 'packages/cosmo-pd101-bridge-types/Cargo.toml', 'packages/cosmo-pd101-bridge-types/export_specta_bindings.rs') }}
@@ -272,7 +272,7 @@ jobs:
 
       - name: Restore cosmo-pd101 lib-dist
         id: cosmo-pd101-lib-cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: packages/cosmo-pd101/lib-dist
           key: cosmo-pd101-lib-dist-${{ runner.os }}-${{ hashFiles('bun.lock', 'packages/cosmo-pd101/package.json', 'packages/cosmo-pd101/tsconfig.json', 'packages/cosmo-pd101/src/**', 'packages/cosmo-pd101/scripts/gen-bindings.mjs', 'packages/cosmo-synth-engine/src/**', 'packages/cosmo-synth-engine/Cargo.toml', 'packages/cosmo-synth-engine/export_specta_bindings.rs', 'packages/cosmo-pd101-bridge-types/src/**', 'packages/cosmo-pd101-bridge-types/Cargo.toml', 'packages/cosmo-pd101-bridge-types/export_specta_bindings.rs') }}

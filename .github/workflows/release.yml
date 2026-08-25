@@ -227,7 +227,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Bun install cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: bun-cache-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -242,7 +242,7 @@ jobs:
 
       - name: Cache cargo-truce
         id: cargo-truce-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/bin/cargo-truce
           key: cargo-truce-${{ runner.os }}-v2
