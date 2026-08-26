@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type {
 	AlgoControlBinding,
 	AlgoControlOptionRuntime,
@@ -50,13 +50,7 @@ export function assignAlgoControlSlots(
 export function usePhaseLineAlgorithms(
 	algo: PhaseLineAlgoModel,
 ): PhaseLineAlgorithms {
-	const algoBEnabled = algo.blend > 0.001;
-
-	useEffect(() => {
-		if (algo.blend > 0 && algo.algoB == null) {
-			algo.setAlgoB(PD_ALGOS[0].value);
-		}
-	}, [algo]);
+	const algoBEnabled = algo.algoB !== null;
 
 	const handleAlgoChangeA = useCallback(
 		(nextAlgo: PdAlgo) => {

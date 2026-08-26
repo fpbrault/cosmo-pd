@@ -19,6 +19,10 @@ export type EnvTab = "dco" | "dcw" | "dca";
 export type SimpleExpandedSection = "sound" | "envelope" | "effects";
 export type SimpleEditedLine = 1 | 2;
 export type SimpleEditedAlgo = "a" | "b";
+export type SimpleEditedAlgoByLine = {
+	1: SimpleEditedAlgo;
+	2: SimpleEditedAlgo;
+};
 type KeyboardInputMode = "velocity" | "aftertouch";
 
 type SynthUiState = {
@@ -29,6 +33,7 @@ type SynthUiState = {
 	simpleExpandedSection: SimpleExpandedSection;
 	simpleEditedLine: SimpleEditedLine;
 	simpleEditedAlgo: SimpleEditedAlgo;
+	simpleEditedAlgoByLine: SimpleEditedAlgoByLine;
 	keyboardVisible: boolean;
 	keyboardOctaves: number;
 	keyboardRange: number;
@@ -57,6 +62,10 @@ type SynthUiActions = {
 	setSimpleExpandedSection: (section: SimpleExpandedSection) => void;
 	setSimpleEditedLine: (line: SimpleEditedLine) => void;
 	setSimpleEditedAlgo: (algo: SimpleEditedAlgo) => void;
+	setSimpleEditedAlgoForLine: (
+		line: SimpleEditedLine,
+		algo: SimpleEditedAlgo,
+	) => void;
 	setKeyboardVisible: (visible: boolean) => void;
 	setKeyboardOctaves: (octaves: number) => void;
 	setKeyboardRange: (range: number) => void;
@@ -112,6 +121,7 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	simpleExpandedSection: "sound",
 	simpleEditedLine: 1,
 	simpleEditedAlgo: "a",
+	simpleEditedAlgoByLine: { 1: "a", 2: "a" },
 	keyboardVisible: true,
 	keyboardOctaves: 2,
 	keyboardRange: 0,
@@ -149,6 +159,25 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const activeEnvTab = getStringValue(candidate.activeEnvTab);
 	const simpleExpandedSection = getStringValue(candidate.simpleExpandedSection);
 	const simpleEditedAlgo = getStringValue(candidate.simpleEditedAlgo);
+	const persistedAlgos = candidate.simpleEditedAlgoByLine;
+	const persistedAlgoByLine: SimpleEditedAlgoByLine = {
+		1:
+			typeof persistedAlgos === "object" &&
+			persistedAlgos !== null &&
+			SIMPLE_EDITED_ALGOS.has(
+				(persistedAlgos as Record<string, unknown>)["1"] as SimpleEditedAlgo,
+			)
+				? ((persistedAlgos as Record<string, unknown>)["1"] as SimpleEditedAlgo)
+				: "a",
+		2:
+			typeof persistedAlgos === "object" &&
+			persistedAlgos !== null &&
+			SIMPLE_EDITED_ALGOS.has(
+				(persistedAlgos as Record<string, unknown>)["2"] as SimpleEditedAlgo,
+			)
+				? ((persistedAlgos as Record<string, unknown>)["2"] as SimpleEditedAlgo)
+				: "a",
+	};
 	const rawScopeColorTheme = getStringValue(candidate.scopeColorTheme);
 	const scopeColorTheme =
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
@@ -164,6 +193,27 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 		normalizedWorkspaceMode === "performance"
 			? (legacyPerformanceMode ?? persistedVisualizationMode)
 			: (persistedVisualizationMode ?? legacyPerformanceMode);
+
+	const simpleEditedLine =
+		candidate.simpleEditedLine === 1 || candidate.simpleEditedLine === 2
+			? candidate.simpleEditedLine
+			: DEFAULT_UI_STATE.simpleEditedLine;
+	const normalizedSimpleEditedAlgo =
+		simpleEditedAlgo &&
+		SIMPLE_EDITED_ALGOS.has(simpleEditedAlgo as SimpleEditedAlgo)
+			? (simpleEditedAlgo as SimpleEditedAlgo)
+			: DEFAULT_UI_STATE.simpleEditedAlgo;
+	const hasPersistedAlgoByLine =
+		typeof persistedAlgos === "object" && persistedAlgos !== null;
+	const simpleEditedAlgoByLine = hasPersistedAlgoByLine
+		? persistedAlgoByLine
+		: {
+				...DEFAULT_UI_STATE.simpleEditedAlgoByLine,
+				[simpleEditedLine]: normalizedSimpleEditedAlgo,
+			};
+	const activeSimpleEditedAlgo = hasPersistedAlgoByLine
+		? simpleEditedAlgoByLine[simpleEditedLine]
+		: normalizedSimpleEditedAlgo;
 
 	return {
 		workspaceMode: normalizedWorkspaceMode,
@@ -187,15 +237,9 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			)
 				? (simpleExpandedSection as SimpleExpandedSection)
 				: DEFAULT_UI_STATE.simpleExpandedSection,
-		simpleEditedLine:
-			candidate.simpleEditedLine === 1 || candidate.simpleEditedLine === 2
-				? candidate.simpleEditedLine
-				: DEFAULT_UI_STATE.simpleEditedLine,
-		simpleEditedAlgo:
-			simpleEditedAlgo &&
-			SIMPLE_EDITED_ALGOS.has(simpleEditedAlgo as SimpleEditedAlgo)
-				? (simpleEditedAlgo as SimpleEditedAlgo)
-				: DEFAULT_UI_STATE.simpleEditedAlgo,
+		simpleEditedLine,
+		simpleEditedAlgo: activeSimpleEditedAlgo,
+		simpleEditedAlgoByLine,
 		keyboardVisible:
 			typeof candidate.keyboardVisible === "boolean"
 				? candidate.keyboardVisible
@@ -294,8 +338,28 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setActiveEnvTab: (tab) => set({ activeEnvTab: tab }),
 			setSimpleExpandedSection: (section) =>
 				set({ simpleExpandedSection: section }),
-			setSimpleEditedLine: (line) => set({ simpleEditedLine: line }),
-			setSimpleEditedAlgo: (algo) => set({ simpleEditedAlgo: algo }),
+			setSimpleEditedLine: (line) =>
+				set((state) => ({
+					simpleEditedLine: line,
+					simpleEditedAlgo: state.simpleEditedAlgoByLine[line],
+				})),
+			setSimpleEditedAlgo: (algo) =>
+				set((state) => ({
+					simpleEditedAlgo: algo,
+					simpleEditedAlgoByLine: {
+						...state.simpleEditedAlgoByLine,
+						[state.simpleEditedLine]: algo,
+					},
+				})),
+			setSimpleEditedAlgoForLine: (line, algo) =>
+				set((state) => ({
+					simpleEditedLine: line,
+					simpleEditedAlgo: algo,
+					simpleEditedAlgoByLine: {
+						...state.simpleEditedAlgoByLine,
+						[line]: algo,
+					},
+				})),
 			setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
 			setKeyboardOctaves: (octaves) => set({ keyboardOctaves: octaves }),
 			setKeyboardRange: (range) => set({ keyboardRange: range }),
@@ -327,6 +391,7 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				simpleExpandedSection: state.simpleExpandedSection,
 				simpleEditedLine: state.simpleEditedLine,
 				simpleEditedAlgo: state.simpleEditedAlgo,
+				simpleEditedAlgoByLine: state.simpleEditedAlgoByLine,
 				keyboardVisible: state.keyboardVisible,
 				keyboardOctaves: state.keyboardOctaves,
 				keyboardRange: state.keyboardRange,

@@ -13,11 +13,13 @@ export default function VoiceModeControl() {
 			<div className="cz-light-blue mb-1">{t("voiceMode.label")}</div>
 			<div className="grid grid-cols-2 gap-1">
 				<CzButton
+					ariaLabel={t("voiceMode.mono")}
+					ariaPressed={polyMode === "mono"}
 					active={polyMode === "mono"}
 					onClick={() => setPolyMode(polyMode === "poly8" ? "mono" : "poly8")}
 					tooltip={t("voiceMode.tooltip")}
 				>
-					{polyMode === "mono" ? t("voiceMode.mono") : t("voiceMode.poly8")}
+					{t("voiceMode.mono")}
 				</CzButton>
 				<CzButton
 					active={Boolean(portamentoEnabled)}

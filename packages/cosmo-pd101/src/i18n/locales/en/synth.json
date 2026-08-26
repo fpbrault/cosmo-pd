@@ -1260,6 +1260,26 @@
 	"lineSelect": {
 		"label": "Line Select"
 	},
+	"simpleMode": {
+		"lineSelect": "Line Select",
+		"modulation": "Modulation",
+		"voice": "Voice",
+		"detune": "Detune",
+		"portamento": "Portamento",
+		"portamentoTime": "Portamento time",
+		"volume": "Volume",
+		"dcw": "DCW",
+		"octave": "Oct",
+		"blend": "Blend",
+		"note": "Note",
+		"fine": "Fine",
+		"select": "Select",
+		"ring": "Ring",
+		"noise": "Noise",
+		"time": "Time",
+		"rate": "Rate",
+		"onOff": "On/Off"
+	},
 	"fxSlot": {
 		"addEffectAria": "Add effect to slot",
 		"addButton": "+",

@@ -19,20 +19,61 @@ test.describe("Simple workspace", () => {
 		expect(controlsBox?.height).toBeLessThanOrEqual(197);
 		await expect(page.getByText("Macros", { exact: true })).toBeVisible();
 		await expect(page.getByTestId("simple-sound-panel")).toBeVisible();
-		await expect(page.getByTestId("simple-routing-controls")).toBeVisible();
+		await expect(page.getByTestId("simple-line-1-section")).toBeVisible();
+		await expect(page.getByTestId("simple-line-2-section")).toBeVisible();
+		const lineEditor = page.locator(
+			'[data-testid="simple-line-editor"][data-line-index="1"]',
+		);
+		await expect(lineEditor).toBeVisible();
+		await expect(
+			page.locator('[data-testid="simple-line-editor"][data-line-index="2"]'),
+		).toBeVisible();
+		await expect(
+			lineEditor.getByTestId("simple-algorithm-slot-a"),
+		).toBeVisible();
+		await expect(
+			lineEditor.getByTestId("simple-algorithm-slot-b"),
+		).toBeVisible();
+		await expect(page.getByTestId("simple-line-select-section")).toBeVisible();
+		await expect(page.getByTestId("simple-modulation-section")).toBeVisible();
+		await expect(page.getByTestId("simple-voice-section")).toBeVisible();
+		await expect(page.getByTestId("simple-detune-section")).toBeVisible();
+		await expect(page.getByTestId("simple-voice-rack")).toBeVisible();
+		await expect(page.getByText("VOICE", { exact: true })).toBeVisible();
 		await expect(page.getByTestId("simple-envelope-dco")).toHaveCount(0);
-		await expect(page.getByTestId("simple-line-parameters")).toContainText(
-			"Volume",
-		);
-		await expect(page.getByTestId("simple-line-parameters")).toContainText(
-			"DCW",
-		);
-		await expect(page.getByTestId("simple-line-parameters")).toContainText(
-			"Tune",
-		);
-		await expect(page.getByTestId("simple-line-parameters")).toContainText(
-			"L2 Detune",
-		);
+		await expect(lineEditor.getByText("Volume", { exact: true })).toBeVisible();
+		await expect(lineEditor.getByText("DCW", { exact: true })).toBeVisible();
+		await expect(lineEditor.getByText("Oct", { exact: true })).toBeVisible();
+		await expect(
+			lineEditor.getByRole("slider", { name: "Blend" }),
+		).toBeVisible();
+		await expect(
+			lineEditor.getByRole("button", { name: "Edit line 1 algorithm A" }),
+		).toHaveCount(1);
+		await expect(
+			lineEditor.getByRole("button", { name: "Edit line 1 algorithm B" }),
+		).toHaveCount(1);
+		await expect(
+			lineEditor.getByRole("button", {
+				name: "Edit line 1 algorithm A controls",
+			}),
+		).toHaveCount(1);
+		await lineEditor
+			.getByRole("button", { name: "Edit line 1 algorithm A controls" })
+			.click();
+		await expect(
+			page.getByRole("dialog", {
+				name: "Edit line 1 algorithm A controls",
+			}),
+		).toBeVisible();
+		await page.keyboard.press("Escape");
+		await lineEditor
+			.getByRole("button", { name: "Edit line 1 algorithm A" })
+			.click();
+		await expect(
+			page.getByRole("dialog", { name: "Edit line 1 algorithm A" }),
+		).toBeVisible();
+		await page.keyboard.press("Escape");
 		await expect(page.getByTestId("simple-envelope-summary")).toBeVisible();
 		await expect(page.getByTestId("simple-effects-summary")).toBeVisible();
 		await page.getByRole("button", { name: "Expand Envelope section" }).click();
@@ -158,80 +199,105 @@ test.describe("Simple workspace", () => {
 		).toBeVisible();
 	});
 
-	test("edits compact line routing without conflating the edit target", async ({
+	test("edits CZ line routing without conflating the edit target", async ({
 		page,
 	}) => {
 		await page.getByRole("button", { name: "Simple" }).click();
-		await page.getByRole("button", { name: /line select:/i }).click();
-		await page
-			.getByRole("dialog", { name: "Line Select" })
-			.getByRole("button", { name: "L1", exact: true })
-			.click();
+		const lineSelect = page.getByRole("button", { name: /Line Select:/i });
+		const ring = page.getByRole("button", { name: "Modulation: Ring" });
+		const noise = page.getByRole("button", { name: "Modulation: Noise" });
+		const detune = page.getByRole("button", { name: "Detune" });
+		await expect(lineSelect).toHaveAccessibleName(/1\+2′/i);
+		await expect(detune).toBeEnabled();
+		await detune.click();
+		await expect(
+			page.getByRole("dialog", { name: "Detune" }).getByRole("slider"),
+		).toHaveCount(3);
+		await page.keyboard.press("Escape");
+		await expect(ring).toBeEnabled();
+		await ring.click();
+		await expect(ring).toHaveAttribute("aria-pressed", "true");
+		await ring.click();
+		await expect(ring).toHaveAttribute("aria-pressed", "false");
+		await lineSelect.click();
+		await expect(lineSelect).toHaveAccessibleName(/1\+1′/i);
+		await lineSelect.click();
+		await expect(lineSelect).toHaveAccessibleName(/Line Select: 1$/i);
+		await expect(ring).toBeDisabled();
+		await expect(noise).toBeDisabled();
+		await expect(detune).toBeDisabled();
 
-		await page.getByRole("button", { name: /line mod:/i }).click();
-		const modPicker = page.getByRole("dialog", { name: "Line Mod" });
+		const voiceMode = page.getByRole("button", { name: /Voice: Mono/i });
+		await expect(voiceMode).toHaveAttribute("aria-pressed", "false");
+		await voiceMode.click();
+		await expect(voiceMode).toHaveAttribute("aria-pressed", "true");
+		const portamento = page.getByRole("button", {
+			name: /Portamento: Off/i,
+		});
+		await portamento.click();
 		await expect(
-			modPicker.getByRole("button", { name: "Ring" }),
-		).toBeDisabled();
+			page.getByRole("button", { name: /Portamento: On/i }),
+		).toHaveAttribute("aria-pressed", "true");
+		const timeButton = page.getByRole("button", { name: "Portamento time" });
+		await timeButton.click();
+		const timePopover = page.getByRole("dialog", { name: "Portamento time" });
+		await expect(timePopover).toBeVisible();
+		await timePopover
+			.getByRole("button", { name: "Portamento time: Time" })
+			.click();
 		await expect(
-			modPicker.getByRole("button", { name: "Noise" }),
-		).toBeDisabled();
+			timePopover.getByRole("slider", { name: "Rate" }),
+		).toBeVisible();
 		await page.keyboard.press("Escape");
 
+		const lineEditor = page.locator(
+			'[data-testid="simple-line-editor"][data-line-index="1"]',
+		);
+		const line2Editor = page.locator(
+			'[data-testid="simple-line-editor"][data-line-index="2"]',
+		);
+		await expect(lineEditor).toBeVisible();
+		await expect(line2Editor).toBeVisible();
 		await expect(
-			page.getByRole("button", {
-				name: "Edit line 1 algorithm A",
-				exact: true,
-			}),
-		).toHaveAttribute("aria-pressed", "true");
+			lineEditor.getByRole("button", { name: /Edit line 1 algorithm/i }),
+		).toHaveCount(2);
 		await expect(
-			page.getByRole("button", {
-				name: "Edit line 2 algorithm A",
-				exact: true,
-			}),
+			line2Editor.getByRole("button", { name: "Edit line 2 algorithm A" }),
+		).toBeDisabled();
+		await expect(line2Editor).toHaveAttribute("data-line-index", "2");
+		await expect(
+			line2Editor.getByTestId("simple-algorithm-slot-a"),
+		).toBeVisible();
+		await lineSelect.click();
+		await expect(lineSelect).toHaveAccessibleName(/Line Select: 2$/i);
+		await expect(lineEditor).toBeVisible();
+		await expect(line2Editor).toBeVisible();
+		await expect(
+			lineEditor.getByRole("button", { name: "Edit line 1 algorithm A" }),
+		).toBeDisabled();
+		await expect(
+			line2Editor.getByRole("button", { name: "Edit line 2 algorithm A" }),
 		).toBeEnabled();
-		await page
-			.getByRole("button", {
-				name: "Edit line 1 algorithm B",
-				exact: true,
-			})
-			.click();
-		await expect(
-			page.getByText("Algorithm B is currently inactive at the current blend."),
-		).toBeVisible();
-		await page
-			.getByRole("button", {
-				name: "Edit line 2 algorithm A",
-				exact: true,
-			})
-			.click();
-		await expect(
-			page.getByText("Line 2 is currently inactive in L1 mode."),
-		).toBeVisible();
-		await page
-			.getByRole("button", {
-				name: "Edit line 1 algorithm A",
-				exact: true,
-			})
-			.click();
 
-		await page.getByRole("button", { name: /line select:/i }).click();
+		const line2AlgoB = line2Editor.getByRole("button", {
+			name: "Edit line 2 algorithm B",
+		});
+		await line2AlgoB.click();
 		await page
-			.getByRole("dialog", { name: "Line Select" })
-			.getByRole("button", { name: "L2", exact: true })
+			.getByRole("dialog", { name: "Edit line 2 algorithm B" })
+			.getByRole("button", { name: "Pinch" })
 			.click();
 		await expect(
-			page.getByRole("button", {
-				name: "Edit line 2 algorithm A",
-				exact: true,
-			}),
-		).toHaveAttribute("aria-pressed", "true");
-		await expect(
-			page.getByRole("button", {
-				name: "Edit line 1 algorithm A",
-				exact: true,
-			}),
+			line2Editor.getByRole("slider", { name: "Blend" }),
 		).toBeEnabled();
+		await line2AlgoB.click();
+		await page
+			.getByRole("dialog", { name: "Edit line 2 algorithm B" })
+			.getByRole("button", { name: "None" })
+			.click();
+		await expect(
+			line2Editor.getByRole("slider", { name: "Blend" }),
+		).toHaveCount(0);
 
 		await page.getByRole("button", { name: "Expand Envelope section" }).click();
 		await expect(page.getByTestId("simple-envelope-panel")).toBeVisible();
@@ -239,12 +305,7 @@ test.describe("Simple workspace", () => {
 			page.getByRole("button", { name: "Edit line 2", exact: true }),
 		).toHaveAttribute("aria-pressed", "true");
 		await page.getByRole("button", { name: "Expand Sound section" }).click();
-		await expect(
-			page.getByRole("button", {
-				name: "Edit line 2 algorithm A",
-				exact: true,
-			}),
-		).toHaveAttribute("aria-pressed", "true");
+		await expect(line2Editor).toHaveAttribute("data-line-index", "2");
 	});
 
 	test("toggles its display and persists independently from Advanced", async ({

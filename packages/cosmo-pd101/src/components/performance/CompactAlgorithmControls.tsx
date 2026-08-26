@@ -40,51 +40,133 @@ export function AlgorithmMark({ value }: { value: PdAlgo }) {
 export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 	value,
 	disabled,
+	allowNone = false,
+	noneSelected = false,
 	colorClass,
 	onChange,
+	onSelectNone,
+	triggerClassName,
+	ariaLabel,
+	popoverAriaLabel,
+	onOpen,
 }: {
 	value: PdAlgo;
 	disabled: boolean;
+	allowNone?: boolean;
+	noneSelected?: boolean;
 	colorClass: string;
 	onChange: (value: PdAlgo) => void;
+	onSelectNone?: () => void;
+	triggerClassName?: string;
+	ariaLabel?: string;
+	popoverAriaLabel?: string;
+	onOpen?: () => void;
 }) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const current = PD_ALGOS.find((algo) => algo.value === value) ?? PD_ALGOS[0];
+	const currentLabel = noneSelected ? "None" : current.label;
+	const togglePicker = () => {
+		onOpen?.();
+		setOpen((currentOpen) => !currentOpen);
+	};
+	const selectAdjacent = (direction: -1 | 1) => {
+		const options = [
+			...(allowNone ? [null] : []),
+			...PD_ALGOS.map((algorithm) => algorithm.value),
+		];
+		const currentIndex = noneSelected ? 0 : options.indexOf(value);
+		const nextIndex =
+			(currentIndex + direction + options.length) % options.length;
+		const nextValue = options[nextIndex];
+		if (nextValue === null) onSelectNone?.();
+		else onChange(nextValue);
+	};
 
 	return (
 		<>
-			<button
-				ref={triggerRef}
-				type="button"
-				disabled={disabled}
-				aria-label={`Algorithm: ${current.label}`}
-				aria-haspopup="dialog"
-				aria-expanded={open}
-				onClick={() => setOpen((currentOpen) => !currentOpen)}
-				className={`flex w-[4.25rem] shrink-0 flex-col items-center justify-center rounded border border-cz-border bg-cz-inset/65 px-1 hover:border-cz-light-blue focus:outline-none focus:ring-1 focus:ring-cz-light-blue disabled:opacity-35 ${colorClass}`}
+			<div
+				className={`grid shrink-0 grid-cols-[1fr_1.25rem] grid-rows-[1.1rem_1fr_1fr_1.35rem] overflow-hidden border border-cz-border bg-cz-surface [grid-template-areas:'spacer_spacer''icon_up''icon_down''label_label'] focus-within:ring-1 focus-within:ring-cz-light-blue ${disabled ? "opacity-35" : ""} ${triggerClassName ?? "w-[4.25rem]"}`}
 			>
-				<div className="scale-75">
-					<AlgorithmMark value={value} />
-				</div>
-				<span className="max-w-full truncate font-mono text-[0.52rem] uppercase tracking-[0.1em]">
-					{current.label} ▾
-				</span>
-			</button>
+				<span
+					aria-hidden="true"
+					className="border-cz-border border-b bg-base-100 [grid-area:spacer]"
+				/>
+				<button
+					ref={triggerRef}
+					type="button"
+					disabled={disabled}
+					aria-label={ariaLabel ?? `Algorithm: ${currentLabel}`}
+					aria-haspopup="dialog"
+					aria-expanded={open}
+					onClick={togglePicker}
+					className="flex items-center justify-center text-cz-gold transition-colors [grid-area:icon] hover:bg-cz-inset focus:outline-none"
+				>
+					{noneSelected ? (
+						<span className="font-mono text-2xl">—</span>
+					) : (
+						<AlgorithmMark value={value} />
+					)}
+				</button>
+				<button
+					type="button"
+					disabled={disabled}
+					aria-label="Previous algorithm"
+					onClick={() => selectAdjacent(-1)}
+					className={`flex items-center justify-center border-cz-border border-b text-[0.55rem] transition-colors [grid-area:up] hover:bg-cz-inset focus:outline-none disabled:cursor-not-allowed ${colorClass}`}
+				>
+					▲
+				</button>
+				<button
+					type="button"
+					disabled={disabled}
+					aria-label="Next algorithm"
+					onClick={() => selectAdjacent(1)}
+					className={`flex items-center justify-center text-[0.55rem] transition-colors [grid-area:down] hover:bg-cz-inset focus:outline-none disabled:cursor-not-allowed ${colorClass}`}
+				>
+					▼
+				</button>
+				<button
+					type="button"
+					disabled={disabled}
+					aria-label={`${ariaLabel ?? "Algorithm"} name: ${currentLabel}`}
+					aria-haspopup="dialog"
+					aria-expanded={open}
+					onClick={togglePicker}
+					className={`flex min-w-0 items-center justify-center border-cz-border border-t bg-base-100 px-1 font-mono text-[0.52rem] uppercase tracking-[0.1em] transition-colors [grid-area:label] hover:bg-cz-inset focus:outline-none ${colorClass}`}
+				>
+					<span className="max-w-full truncate">{currentLabel}</span>
+				</button>
+			</div>
 			<Popover
 				open={open}
 				onClose={() => setOpen(false)}
 				triggerRef={triggerRef}
-				ariaLabel="Select algorithm"
+				ariaLabel={popoverAriaLabel ?? ariaLabel ?? "Select algorithm"}
 				placement="top"
 			>
 				<div className="grid grid-cols-5 p-1">
+					{allowNone ? (
+						<button
+							type="button"
+							aria-label="None"
+							aria-pressed={noneSelected}
+							onClick={() => {
+								onSelectNone?.();
+								setOpen(false);
+							}}
+							className="flex size-16 flex-col items-center justify-center border border-cz-border bg-cz-surface font-mono text-[0.45rem] text-cz-gold uppercase hover:border-cz-light-blue hover:text-white aria-pressed:border-cz-light-blue aria-pressed:bg-cz-inset aria-pressed:text-white"
+						>
+							<span className="text-2xl">—</span>
+							<span>None</span>
+						</button>
+					) : null}
 					{PD_ALGOS.map((algorithm) => (
 						<button
 							key={algorithm.value}
 							type="button"
 							aria-label={algorithm.label}
-							aria-pressed={algorithm.value === value}
+							aria-pressed={!noneSelected && algorithm.value === value}
 							onClick={() => {
 								onChange(algorithm.value);
 								setOpen(false);
@@ -127,13 +209,17 @@ function CompactCzControl({
 				aria-haspopup="dialog"
 				aria-expanded={open}
 				onClick={() => setOpen((current) => !current)}
-				className="flex min-w-0 flex-1 flex-col items-center justify-center rounded border border-cz-border bg-cz-inset/65 px-1 text-cz-gold hover:border-cz-light-blue focus:outline-none focus:ring-1 focus:ring-cz-light-blue disabled:opacity-35"
+				className="flex min-w-0 flex-1 flex-col items-center justify-center overflow-hidden rounded border border-cz-border bg-cz-inset/65 px-0.5 text-cz-gold hover:border-cz-light-blue focus:outline-none focus:ring-1 focus:ring-cz-light-blue disabled:opacity-35"
 				data-testid={`simple-cz-${control.id}`}
 			>
-				<span className="font-mono text-[0.45rem] text-cz-cream/70 uppercase tracking-[0.1em]">
+				<span className="max-w-full truncate font-mono text-[0.42rem] text-cz-cream/70 uppercase tracking-[0.06em]">
 					{label}
 				</span>
-				<svg viewBox="0 0 34 22" className="h-8 w-14" aria-hidden="true">
+				<svg
+					viewBox="0 0 34 22"
+					className="h-8 w-full max-w-14"
+					aria-hidden="true"
+				>
 					<WaveformOptionIcon
 						value={activeOption?.value ?? "off"}
 						isWindowFunction={control.id === "windowFunction"}

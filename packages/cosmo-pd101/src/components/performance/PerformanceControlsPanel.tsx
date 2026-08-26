@@ -234,9 +234,6 @@ function ExpandedEffects() {
 function ExpandedSound() {
 	return (
 		<div className="flex h-full min-w-0 flex-col border-cz-border">
-			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
-				Sound
-			</h2>
 			<PerformanceSoundPanel />
 		</div>
 	);
@@ -321,9 +318,9 @@ export default memo(function PerformanceControlsPanel() {
 		(state) => state.setSimpleExpandedSection,
 	);
 	const sectionColumns = {
-		sound: "grid-cols-[minmax(0,1fr)_7rem_7rem]",
-		envelope: "grid-cols-[7rem_minmax(0,1fr)_7rem]",
-		effects: "grid-cols-[7rem_7rem_minmax(0,1fr)]",
+		sound: "grid-cols-[minmax(0,1fr)_5.5rem_5.5rem]",
+		envelope: "grid-cols-[5.5rem_minmax(0,1fr)_5.5rem]",
+		effects: "grid-cols-[5.5rem_5.5rem_minmax(0,1fr)]",
 	}[expandedSection];
 
 	return (
@@ -331,19 +328,19 @@ export default memo(function PerformanceControlsPanel() {
 			className="flex h-48 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
 			data-testid="performance-controls"
 		>
-			<div className="flex max-w-60 flex-[0.85] flex-col">
+			<div className="flex w-[12.5rem] shrink-0 flex-col">
 				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 					Macros
 				</h2>
 				<div className="grid h-full grid-cols-2 items-center justify-around gap-1">
 					{[0, 1, 2, 3].map((index) => (
-						<MacroKnob key={index} macroIndex={index} size={64} />
+						<MacroKnob key={index} macroIndex={index} size={54} />
 					))}
 				</div>
 			</div>
 			<div className="w-px bg-cz-border" />
 			<div
-				className={`grid min-w-0 flex-[3.25] gap-2 overflow-hidden ${sectionColumns}`}
+				className={`grid min-w-0 flex-1 gap-1 overflow-hidden ${sectionColumns}`}
 				data-testid="simple-section-rack"
 			>
 				<div className="min-w-0 overflow-hidden">

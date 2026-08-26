@@ -1,31 +1,29 @@
 import { memo } from "react";
-import { useTranslation } from "react-i18next";
-import { usePhaseLineAlgorithms } from "@/components/editor/usePhaseLineAlgorithms";
 import { usePhaseLineModel } from "@/components/editor/usePhaseLineModel";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 import { PD_ALGOS } from "@/lib/synth/algoUiCatalog";
 import type { Algo } from "@/lib/synth/bindings/synth";
 import type { PdAlgo } from "@/lib/synth/pdAlgorithms";
-import CompactAlgorithmControls, {
-	AlgorithmMark,
-	CompactAlgorithmPicker,
-} from "./CompactAlgorithmControls";
-import { useCoerceSimpleEditedLine } from "./CompactLineEditToggle";
-import CompactLineParameters from "./CompactLineParameters";
-import CompactRoutingControls from "./CompactRoutingControls";
+import { AlgorithmMark } from "./CompactAlgorithmControls";
+import {
+	PerformanceRoutingSection,
+	PerformanceVoiceRack,
+	PerformanceVoiceSection,
+} from "./PerformanceCzSections";
+import PerformanceLineSection from "./PerformanceLineSection";
 
 type AlgoChoice = {
-	algo: PdAlgo;
+	algo: PdAlgo | null;
 	inactive: boolean;
 	slot: "a" | "b";
 };
 
-function getAlgoChoices(algoA: Algo, algoB: Algo | null, blend: number) {
+function getAlgoChoices(algoA: Algo, algoB: Algo | null) {
 	return [
 		{ algo: algoA, inactive: false, slot: "a" },
 		{
-			algo: algoB ?? PD_ALGOS[0].value,
-			inactive: blend <= 0.001,
+			algo: algoB,
+			inactive: algoB === null,
 			slot: "b",
 		},
 	] satisfies AlgoChoice[];
@@ -35,7 +33,6 @@ export function LineAlgorithmCard({
 	lineIndex,
 	algoA,
 	algoB,
-	blend,
 	selectedLine,
 	selectedAlgo,
 	onSelect,
@@ -52,34 +49,43 @@ export function LineAlgorithmCard({
 	compact?: boolean;
 	inactive?: boolean;
 }) {
-	const choices = getAlgoChoices(algoA, algoB, blend);
+	const choices = getAlgoChoices(algoA, algoB);
 	const colorClass = lineIndex === 1 ? "text-[#7f9de4]" : "text-[#c45c5c]";
-	const borderClass =
-		lineIndex === 1 ? "border-[#7f9de4]/65" : "border-[#c45c5c]/65";
 
 	return (
 		<fieldset
 			aria-label={`Line ${lineIndex} algorithms${inactive ? " (inactive)" : ""}`}
-			className={`m-0 grid w-full min-w-0 grid-cols-2 self-center overflow-hidden rounded-sm border bg-cz-inset/55 p-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_2px_4px_rgba(0,0,0,0.25)] ${borderClass} ${compact ? "h-[4.35rem]" : "h-[4.7rem]"} ${inactive ? "opacity-55 saturate-50" : ""}`}
+			className={`m-0 grid w-full min-w-0 grid-cols-2 gap-1 self-center border-0 p-0 ${compact ? "h-[4.35rem]" : "h-[4.7rem]"} ${inactive ? "opacity-55 saturate-50" : ""}`}
 		>
-			{choices.map(({ algo, inactive: algoInactive, slot }, index) => {
-				const definition = PD_ALGOS.find((entry) => entry.value === algo);
-				if (!definition) return null;
+			{choices.map(({ algo, inactive: algoInactive, slot }) => {
+				const definition = algo
+					? PD_ALGOS.find((entry) => entry.value === algo)
+					: null;
+				if (algo && !definition) return null;
 				const selected = selectedLine === lineIndex && selectedAlgo === slot;
 				const content = (
 					<>
-						<span className="font-mono text-[0.38rem] uppercase tracking-[0.12em] opacity-75">
-							L{lineIndex} · {slot.toUpperCase()}
+						<span className="flex h-4 w-full shrink-0 items-center bg-base-100 px-1 font-bold font-mono text-[0.38rem] text-cz-cream/75 uppercase tracking-[0.08em]">
+							{lineIndex}
+							{slot.toUpperCase()}
 						</span>
-						<span className={compact ? "scale-[0.62]" : "scale-[0.72]"}>
-							<AlgorithmMark value={algo} />
+						<span className="flex min-h-0 flex-1 items-center justify-center text-cz-gold">
+							{algo ? (
+								<span className={compact ? "scale-[0.62]" : "scale-[0.72]"}>
+									<AlgorithmMark value={algo} />
+								</span>
+							) : (
+								<span className="font-mono text-xl">—</span>
+							)}
 						</span>
-						<span className="max-w-full truncate border-current border-b px-1 pb-0.5 font-bold font-mono text-[0.38rem] uppercase tracking-[0.07em]">
-							{definition.label}
+						<span
+							className={`flex h-[1.15rem] w-full shrink-0 items-center justify-center truncate border-cz-border border-t bg-base-100 px-1 font-bold font-mono text-[0.38rem] uppercase tracking-[0.07em] ${colorClass}`}
+						>
+							{definition?.label ?? "None"}
 						</span>
 					</>
 				);
-				const className = `flex min-w-0 flex-col items-center justify-center px-1 ${colorClass} ${index > 0 ? "border-cz-border/70 border-l" : ""} ${selected ? "bg-current/10 shadow-[inset_0_0_0_1px_currentColor]" : "bg-transparent"} ${algoInactive && !inactive ? "opacity-40 grayscale" : ""}`;
+				const className = `flex min-w-0 flex-col items-center overflow-hidden border border-cz-border bg-cz-surface ${selected ? `shadow-[inset_0_0_0_1px_currentColor] ${colorClass}` : ""} ${algoInactive && !inactive ? "opacity-40 grayscale" : ""}`;
 
 				return onSelect ? (
 					<button
@@ -87,8 +93,9 @@ export function LineAlgorithmCard({
 						type="button"
 						aria-label={`Edit line ${lineIndex} algorithm ${slot.toUpperCase()}`}
 						aria-pressed={selected}
+						disabled={inactive}
 						onClick={() => onSelect(lineIndex, slot)}
-						className={`${className} hover:bg-current/10 focus:outline-none focus:ring-1 focus:ring-current focus:ring-inset`}
+						className={`${className} focus:outline-none focus:ring-1 focus:ring-current focus:ring-inset`}
 					>
 						{content}
 					</button>
@@ -102,125 +109,32 @@ export function LineAlgorithmCard({
 	);
 }
 
-function LineAlgorithmSelector({
-	line1,
-	line2,
-}: {
-	line1: ReturnType<typeof usePhaseLineModel>;
-	line2: ReturnType<typeof usePhaseLineModel>;
-}) {
-	const selectedAlgo = useSynthUiStore((state) => state.simpleEditedAlgo);
-	const setAlgo = useSynthUiStore((state) => state.setSimpleEditedAlgo);
-	const { line: selectedLine, setLine } = useCoerceSimpleEditedLine(
-		line1.meta.isAudible,
-		line2.meta.isAudible,
-	);
-
-	const select = (line: 1 | 2, algo: "a" | "b") => {
-		setLine(line);
-		setAlgo(algo);
-	};
-
-	return (
-		<div className="flex w-[7rem] shrink-0 flex-col justify-center gap-1">
-			<LineAlgorithmCard
-				lineIndex={1}
-				algoA={line1.algo.algoA}
-				algoB={line1.algo.algoB}
-				blend={line1.algo.blend}
-				selectedLine={selectedLine}
-				selectedAlgo={selectedAlgo}
-				onSelect={select}
-				inactive={!line1.meta.isAudible}
-			/>
-			<LineAlgorithmCard
-				lineIndex={2}
-				algoA={line2.algo.algoA}
-				algoB={line2.algo.algoB}
-				blend={line2.algo.blend}
-				selectedLine={selectedLine}
-				selectedAlgo={selectedAlgo}
-				onSelect={select}
-				inactive={!line2.meta.isAudible}
-			/>
-		</div>
-	);
-}
-
 export default memo(function PerformanceSoundPanel() {
-	const { t } = useTranslation("synth");
-	const selectedLine = useSynthUiStore((state) => state.simpleEditedLine);
-	const selectedAlgo = useSynthUiStore((state) => state.simpleEditedAlgo);
 	const line1 = usePhaseLineModel(1);
 	const line2 = usePhaseLineModel(2);
-	const line = selectedLine === 1 ? line1 : line2;
-	const line1Algorithms = usePhaseLineAlgorithms(line1.algo);
-	const line2Algorithms = usePhaseLineAlgorithms(line2.algo);
-	const algorithms = selectedLine === 1 ? line1Algorithms : line2Algorithms;
-	const slot = selectedAlgo === "a" ? algorithms.slotA : algorithms.slotB;
-	const colorClass = selectedLine === 1 ? "text-[#7f9de4]" : "text-[#c45c5c]";
-	const inactiveMessage = !line.meta.isAudible
-		? t("tooltips.phaseLine.inactive", {
-				line: line.meta.label,
-				mode: line.meta.inactiveModeLabel,
-			})
-		: selectedAlgo === "b" && !algorithms.algoBEnabled
-			? t("tooltips.phaseLine.algoInactive")
-			: null;
+	const setLine = useSynthUiStore((state) => state.setSimpleEditedLine);
 
 	return (
 		<div
-			className="flex min-h-0 flex-1 gap-1 p-1"
+			className="flex min-h-0 min-w-0 flex-1 gap-1"
 			data-testid="simple-sound-panel"
 		>
-			<CompactRoutingControls />
-			<LineAlgorithmSelector line1={line1} line2={line2} />
-			<div className="flex w-[18rem] min-w-0 shrink-0 flex-col justify-center gap-1">
-				<div
-					className={`text-center font-mono text-[0.5rem] uppercase tracking-[0.15em] ${colorClass}`}
-				>
-					Line {selectedLine} · Algo {selectedAlgo.toUpperCase()}
-				</div>
-				<div className="relative flex h-28 min-h-0 gap-1">
-					<CompactAlgorithmPicker
-						value={slot.value}
-						disabled={slot.disabled}
-						colorClass={colorClass}
-						onChange={slot.onChange}
-					/>
-					<CompactAlgorithmControls
-						slot={slot}
-						lineIndex={selectedLine}
-						color={line.meta.color}
-					/>
-					{inactiveMessage ? (
-						<div className="absolute inset-0 z-30 flex items-center justify-center rounded bg-black/70 backdrop-blur-[5px]">
-							<div className="px-3 text-center font-semibold text-cz-cream/80 text-xs tracking-wide">
-								{inactiveMessage}
-							</div>
-						</div>
-					) : null}
-				</div>
-				<label className="grid grid-cols-[1rem_1fr_1rem] items-center gap-1 font-mono text-[0.43rem] text-cz-cream/65 uppercase">
-					<span>A</span>
-					<input
-						type="range"
-						aria-label={`Line ${selectedLine} algorithm blend`}
-						min={0}
-						max={1}
-						step={0.001}
-						value={line.algo.blend}
-						onChange={(event) => line.algo.setBlend(Number(event.target.value))}
-						className="range range-xs [--range-shdw:var(--color-cz-gold)]"
-					/>
-					<span>B</span>
-				</label>
-			</div>
-			<CompactLineParameters
-				lineIndex={selectedLine}
-				parameters={line.parameters}
-				color={line.meta.color}
-			/>
+			<PerformanceVoiceRack>
+				<PerformanceLineSection
+					line={line1}
+					expanded
+					onActivate={() => setLine(1)}
+					embedded
+				/>
+				<PerformanceLineSection
+					line={line2}
+					expanded
+					onActivate={() => setLine(2)}
+					embedded
+				/>
+				<PerformanceRoutingSection embedded />
+				<PerformanceVoiceSection embedded />
+			</PerformanceVoiceRack>
 		</div>
 	);
 });
@@ -231,7 +145,9 @@ export const CollapsedSoundSummary = memo(function CollapsedSoundSummary({
 	onExpand: () => void;
 }) {
 	const selectedLine = useSynthUiStore((state) => state.simpleEditedLine);
-	const selectedAlgo = useSynthUiStore((state) => state.simpleEditedAlgo);
+	const selectedAlgos = useSynthUiStore(
+		(state) => state.simpleEditedAlgoByLine,
+	);
 	const line1 = usePhaseLineModel(1);
 	const line2 = usePhaseLineModel(2);
 	const lines = [line1, line2];
@@ -248,7 +164,7 @@ export const CollapsedSoundSummary = memo(function CollapsedSoundSummary({
 				className="absolute inset-0 z-10 focus:outline-none focus:ring-1 focus:ring-cz-light-blue focus:ring-inset"
 			/>
 			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.48rem] tracking-[0.12em] transition-[filter] group-hover:brightness-125">
-				Sound +
+				VOICE +
 			</span>
 			<div className="pointer-events-none my-auto flex w-full flex-col justify-center gap-2 px-1.5">
 				{lines.map((line) => (
@@ -259,9 +175,9 @@ export const CollapsedSoundSummary = memo(function CollapsedSoundSummary({
 						algoB={line.algo.algoB}
 						blend={line.algo.blend}
 						selectedLine={selectedLine}
-						selectedAlgo={selectedAlgo}
-						inactive={!line.meta.isAudible}
+						selectedAlgo={selectedAlgos[line.meta.lineIndex]}
 						compact
+						inactive={!line.meta.isAudible}
 					/>
 				))}
 			</div>

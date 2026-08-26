@@ -33,7 +33,7 @@ describe("LineAlgorithmCard", () => {
 		expect(onSelect).toHaveBeenCalledWith(1, "b");
 	});
 
-	it("keeps an inactive algorithm B visible and selectable", () => {
+	it("keeps algorithm B active when selected even if blend is zero", () => {
 		const onSelect = vi.fn();
 		render(
 			<LineAlgorithmCard
@@ -48,8 +48,8 @@ describe("LineAlgorithmCard", () => {
 		expect(
 			screen.getByRole("group", { name: "Line 2 algorithms" }),
 		).toHaveClass("w-full", "grid-cols-2", "self-center");
-		expect(screen.getByText("L2 · A")).toBeVisible();
-		expect(screen.getByText("L2 · B")).toBeVisible();
+		expect(screen.getByText("2A")).toBeVisible();
+		expect(screen.getByText("2B")).toBeVisible();
 		const algoB = screen.getByRole("button", {
 			name: "Edit line 2 algorithm B",
 		});
@@ -58,7 +58,7 @@ describe("LineAlgorithmCard", () => {
 		expect(onSelect).toHaveBeenCalledWith(2, "b");
 	});
 
-	it("keeps an inactive line visible and selectable", () => {
+	it("keeps an inactive line visible but disables its algorithms", () => {
 		const onSelect = vi.fn();
 		render(
 			<LineAlgorithmCard
@@ -80,9 +80,9 @@ describe("LineAlgorithmCard", () => {
 		const algoB = screen.getByRole("button", {
 			name: "Edit line 2 algorithm B",
 		});
-		expect(algoA).toBeEnabled();
-		expect(algoB).toBeEnabled();
+		expect(algoA).toBeDisabled();
+		expect(algoB).toBeDisabled();
 		fireEvent.click(algoA);
-		expect(onSelect).toHaveBeenCalledWith(2, "a");
+		expect(onSelect).not.toHaveBeenCalled();
 	});
 });
