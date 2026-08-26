@@ -41,7 +41,7 @@ describe("PerformanceControlsPanel", () => {
 		const sectionRack = screen.getByTestId("simple-section-rack");
 
 		expect(screen.getByTestId("mock-sound-panel")).toBeVisible();
-		expect(sectionRack).toHaveClass("grid-cols-[minmax(0,1fr)_5.5rem_5.5rem]");
+		expect(sectionRack).toHaveClass("grid-cols-[minmax(0,1fr)_8.5rem_8.5rem]");
 		expect(
 			screen.getByRole("button", { name: "Expand Envelope section" }),
 		).toBeVisible();
@@ -54,7 +54,7 @@ describe("PerformanceControlsPanel", () => {
 		expect(screen.getByTestId("mock-envelope-panel")).toBeVisible();
 		expect(screen.queryByTestId("mock-sound-panel")).toBeNull();
 		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("envelope");
-		expect(sectionRack).toHaveClass("grid-cols-[5.5rem_minmax(0,1fr)_5.5rem]");
+		expect(sectionRack).toHaveClass("grid-cols-[8.5rem_minmax(0,1fr)_8.5rem]");
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Expand Effects section" }),
@@ -62,7 +62,7 @@ describe("PerformanceControlsPanel", () => {
 		expect(screen.getByTestId("simple-effects-panel")).toBeVisible();
 		expect(screen.queryByTestId("mock-sound-panel")).toBeNull();
 		expect(useSynthUiStore.getState().simpleExpandedSection).toBe("effects");
-		expect(sectionRack).toHaveClass("grid-cols-[5.5rem_5.5rem_minmax(0,1fr)]");
+		expect(sectionRack).toHaveClass("grid-cols-[8.5rem_8.5rem_minmax(0,1fr)]");
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Expand Sound section" }),

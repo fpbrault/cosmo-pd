@@ -318,17 +318,17 @@ export default memo(function PerformanceControlsPanel() {
 		(state) => state.setSimpleExpandedSection,
 	);
 	const sectionColumns = {
-		sound: "grid-cols-[minmax(0,1fr)_5.5rem_5.5rem]",
-		envelope: "grid-cols-[5.5rem_minmax(0,1fr)_5.5rem]",
-		effects: "grid-cols-[5.5rem_5.5rem_minmax(0,1fr)]",
+		sound: "grid-cols-[minmax(0,1fr)_8.5rem_8.5rem]",
+		envelope: "grid-cols-[8.5rem_minmax(0,1fr)_8.5rem]",
+		effects: "grid-cols-[8.5rem_8.5rem_minmax(0,1fr)]",
 	}[expandedSection];
 
 	return (
 		<section
-			className="flex h-48 shrink-0 items-stretch gap-2 rounded-xl border border-cz-border bg-cz-surface/95 p-2 shadow-lg"
+			className="flex h-48 shrink-0 items-stretch gap-2 p-1 shadow-lg"
 			data-testid="performance-controls"
 		>
-			<div className="flex w-[12.5rem] shrink-0 flex-col">
+			<div className="flex w-[12.5rem] shrink-0 flex-col rounded-lg bg-cz-surface/95 p-1">
 				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
 					Macros
 				</h2>
@@ -338,9 +338,8 @@ export default memo(function PerformanceControlsPanel() {
 					))}
 				</div>
 			</div>
-			<div className="w-px bg-cz-border" />
 			<div
-				className={`grid min-w-0 flex-1 gap-1 overflow-hidden ${sectionColumns}`}
+				className={`grid min-w-0 flex-1 gap-1 overflow-hidden rounded-lg bg-cz-surface/95 p-1 ${sectionColumns}`}
 				data-testid="simple-section-rack"
 			>
 				<div className="min-w-0 overflow-hidden">

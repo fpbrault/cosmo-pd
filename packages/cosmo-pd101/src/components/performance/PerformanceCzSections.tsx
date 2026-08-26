@@ -35,7 +35,7 @@ export function PerformanceVoiceRack({ children }: { children: ReactNode }) {
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.5rem]">
 				VOICE
 			</h2>
-			<div className="flex min-h-0 flex-1 justify-center pt-1">{children}</div>
+			<div className="flex min-h-0 flex-1 justify-center">{children}</div>
 		</section>
 	);
 }
@@ -163,7 +163,7 @@ export const PerformanceVoiceSection = memo(function PerformanceVoiceSection({
 				</h2>
 			)}
 			<div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-0.5 p-1">
-				<div className="grid grid-cols-2 items-start gap-1">
+				<div className="grid grid-cols-2 items-center gap-1">
 					<PerformanceDetuneSection embedded />
 					<CzButton
 						ariaLabel={`${t("simpleMode.voice")}: ${t("voiceMode.mono")}`}

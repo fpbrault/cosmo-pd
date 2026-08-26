@@ -21,10 +21,10 @@ export function AlgorithmMark({ value }: { value: PdAlgo }) {
 	const definition =
 		PD_ALGOS.find((algo) => algo.value === value) ?? PD_ALGOS[0];
 	if (value === "cz101") {
-		return <span className="font-mono text-2xl tracking-[-0.15em]">CZ</span>;
+		return <span className="text-4xl">CZ</span>;
 	}
 	return (
-		<svg viewBox="0 0 24 24" className="size-8" aria-hidden="true">
+		<svg viewBox="0 0 24 24" className="size-14" aria-hidden="true">
 			<path
 				d={definition.icon}
 				fill="none"
@@ -342,7 +342,7 @@ export default memo(function CompactAlgorithmControls({
 							getAlgoControlValue={slot.getControlValue}
 							setAlgoControlValue={slot.setControlValue}
 							color={color}
-							size={40}
+							size={64}
 						/>
 					);
 				}

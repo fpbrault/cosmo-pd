@@ -71,7 +71,7 @@ function AlgorithmCard({
 
 	return (
 		<div
-			className="relative size-[5.25rem] shrink-0"
+			className="relative size-24 shrink-0"
 			data-testid={`simple-algorithm-slot-${slotId}`}
 		>
 			<span className="pointer-events-none absolute top-1 left-1 z-10 font-bold font-mono text-[0.5rem] text-cz-cream/75 uppercase">
@@ -190,7 +190,7 @@ export default memo(function PerformanceLineSection({
 								{index === 1 && !algorithms.algoBEnabled ? (
 									<span className="font-mono text-xl">—</span>
 								) : (
-									<div className="scale-75">
+									<div>
 										<AlgorithmMark value={slot.value} />
 									</div>
 								)}
@@ -235,7 +235,7 @@ export default memo(function PerformanceLineSection({
 							labelClassName={LINE_LABEL_CLASS}
 							value={line.parameters.level}
 							onChange={line.parameters.setLevel}
-							size={40}
+							size={48}
 							variant="accent"
 							color={lineColor}
 							modDestination={lineIndex === 1 ? "line1DcaBase" : "line2DcaBase"}
@@ -247,7 +247,7 @@ export default memo(function PerformanceLineSection({
 							labelClassName={LINE_LABEL_CLASS}
 							value={line.parameters.warpAmount}
 							onChange={line.parameters.setWarpAmount}
-							size={40}
+							size={48}
 							variant="accent"
 							color={lineColor}
 							modDestination={lineIndex === 1 ? "line1DcwBase" : "line2DcwBase"}
@@ -268,7 +268,7 @@ export default memo(function PerformanceLineSection({
 												setLine2EffectiveOctave(value, line.parameters.octave),
 											)
 							}
-							size={40}
+							size={48}
 							min={
 								lineIndex === 1
 									? LINE_BASE_OCTAVE_MIN
@@ -303,7 +303,7 @@ export default memo(function PerformanceLineSection({
 								min={0}
 								max={1}
 								step={0.001}
-								size={40}
+								size={48}
 								variant="accent"
 								color={lineColor}
 								modDestination={blendDestination}
