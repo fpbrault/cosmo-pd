@@ -65,7 +65,7 @@ export function LineAlgorithmCard({
 				const selected = selectedLine === lineIndex && selectedAlgo === slot;
 				const content = (
 					<>
-						<span className="flex h-4 w-full shrink-0 items-center bg-base-100 px-1 font-bold font-mono text-[0.38rem] text-cz-cream/75 uppercase tracking-[0.08em]">
+						<span className="flex h-4 w-full shrink-0 items-center bg-cz-inset px-1 font-bold font-mono text-[0.38rem] text-cz-cream/75 uppercase tracking-[0.08em]">
 							{lineIndex}
 							{slot.toUpperCase()}
 						</span>
@@ -79,7 +79,7 @@ export function LineAlgorithmCard({
 							)}
 						</span>
 						<span
-							className={`flex h-[1.15rem] w-full shrink-0 items-center justify-center truncate border-cz-border border-t bg-base-100 px-1 font-bold font-mono text-[0.38rem] uppercase tracking-[0.07em] ${colorClass}`}
+							className={`flex h-[1.15rem] w-full shrink-0 items-center justify-center truncate border-cz-border border-t bg-cz-inset px-1 font-bold font-mono text-[0.38rem] uppercase tracking-[0.07em] ${colorClass}`}
 						>
 							{definition?.label ?? "None"}
 						</span>

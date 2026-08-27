@@ -30,7 +30,7 @@ import {
 const N = 1024;
 const TAU = Math.PI * 2;
 const CZ_MONOGRAM_ICON =
-	"M10.8 7.8C8.6 7.8 7.2 9.3 7.2 12C7.2 14.7 8.6 16.2 10.8 16.2M13.6 8H18.2L13.9 16.2H18.2L43.6 ";
+	"M10.8 7.8C8.6 7.8 7.2 9.3 7.2 12C7.2 14.7 8.6 16.2 10.8 16.2M13.6 8H18.2L13.9 12H18.2L13.6 16H18.2";
 
 type AlgoIconPreviewOverride = {
 	dcw?: number;

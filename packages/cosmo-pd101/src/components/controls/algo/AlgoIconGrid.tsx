@@ -203,7 +203,7 @@ export default function AlgoIconGrid({
 							aria-label={algoButtonLabel}
 							className={[
 								"[grid-area:label]",
-								"flex items-center justify-center bg-base-100 px-1 py-1 font-mono text-xs uppercase tracking-widest transition-colors focus:outline-none",
+								"flex items-center justify-center bg-cz-inset px-1 py-1 font-mono text-xs uppercase tracking-widest transition-colors focus:outline-none",
 								popoverOpen ? "bg-cz-inset" : "hover:bg-cz-inset",
 							].join(" ")}
 							style={color ? { color } : undefined}

@@ -44,22 +44,34 @@ test.describe("Simple workspace", () => {
 		await expect(lineEditor.getByText("Volume", { exact: true })).toBeVisible();
 		await expect(lineEditor.getByText("DCW", { exact: true })).toBeVisible();
 		await expect(lineEditor.getByText("Oct", { exact: true })).toBeVisible();
+		// Algo B starts as NONE in the simplified surface, so its Blend knob is
+		// intentionally omitted until a secondary algorithm is selected.
+		await expect(lineEditor.getByRole("slider", { name: "Blend" })).toHaveCount(
+			0,
+		);
 		await expect(
-			lineEditor.getByRole("slider", { name: "Blend" }),
-		).toBeVisible();
-		await expect(
-			lineEditor.getByRole("button", { name: "Edit line 1 algorithm A" }),
+			lineEditor.getByRole("button", {
+				name: "Edit line 1 algorithm A",
+				exact: true,
+			}),
 		).toHaveCount(1);
 		await expect(
-			lineEditor.getByRole("button", { name: "Edit line 1 algorithm B" }),
+			lineEditor.getByRole("button", {
+				name: "Edit line 1 algorithm B",
+				exact: true,
+			}),
 		).toHaveCount(1);
 		await expect(
 			lineEditor.getByRole("button", {
 				name: "Edit line 1 algorithm A controls",
+				exact: true,
 			}),
 		).toHaveCount(1);
 		await lineEditor
-			.getByRole("button", { name: "Edit line 1 algorithm A controls" })
+			.getByRole("button", {
+				name: "Edit line 1 algorithm A controls",
+				exact: true,
+			})
 			.click();
 		await expect(
 			page.getByRole("dialog", {
@@ -68,7 +80,10 @@ test.describe("Simple workspace", () => {
 		).toBeVisible();
 		await page.keyboard.press("Escape");
 		await lineEditor
-			.getByRole("button", { name: "Edit line 1 algorithm A" })
+			.getByRole("button", {
+				name: "Edit line 1 algorithm A",
+				exact: true,
+			})
 			.click();
 		await expect(
 			page.getByRole("dialog", { name: "Edit line 1 algorithm A" }),
@@ -211,7 +226,7 @@ test.describe("Simple workspace", () => {
 		await expect(detune).toBeEnabled();
 		await detune.click();
 		await expect(
-			page.getByRole("dialog", { name: "Detune" }).getByRole("slider"),
+			page.getByRole("dialog", { name: "Detune" }).getByRole("spinbutton"),
 		).toHaveCount(3);
 		await page.keyboard.press("Escape");
 		await expect(ring).toBeEnabled();
@@ -246,7 +261,7 @@ test.describe("Simple workspace", () => {
 			.getByRole("button", { name: "Portamento time: Time" })
 			.click();
 		await expect(
-			timePopover.getByRole("slider", { name: "Rate" }),
+			timePopover.getByRole("spinbutton", { name: "Rate" }),
 		).toBeVisible();
 		await page.keyboard.press("Escape");
 
@@ -259,10 +274,15 @@ test.describe("Simple workspace", () => {
 		await expect(lineEditor).toBeVisible();
 		await expect(line2Editor).toBeVisible();
 		await expect(
-			lineEditor.getByRole("button", { name: /Edit line 1 algorithm/i }),
+			lineEditor.getByRole("button", {
+				name: /^Edit line 1 algorithm [AB]$/i,
+			}),
 		).toHaveCount(2);
 		await expect(
-			line2Editor.getByRole("button", { name: "Edit line 2 algorithm A" }),
+			line2Editor.getByRole("button", {
+				name: "Edit line 2 algorithm A",
+				exact: true,
+			}),
 		).toBeDisabled();
 		await expect(line2Editor).toHaveAttribute("data-line-index", "2");
 		await expect(
@@ -273,14 +293,21 @@ test.describe("Simple workspace", () => {
 		await expect(lineEditor).toBeVisible();
 		await expect(line2Editor).toBeVisible();
 		await expect(
-			lineEditor.getByRole("button", { name: "Edit line 1 algorithm A" }),
+			lineEditor.getByRole("button", {
+				name: "Edit line 1 algorithm A",
+				exact: true,
+			}),
 		).toBeDisabled();
 		await expect(
-			line2Editor.getByRole("button", { name: "Edit line 2 algorithm A" }),
+			line2Editor.getByRole("button", {
+				name: "Edit line 2 algorithm A",
+				exact: true,
+			}),
 		).toBeEnabled();
 
 		const line2AlgoB = line2Editor.getByRole("button", {
 			name: "Edit line 2 algorithm B",
+			exact: true,
 		});
 		await line2AlgoB.click();
 		await page
@@ -288,7 +315,7 @@ test.describe("Simple workspace", () => {
 			.getByRole("button", { name: "Pinch" })
 			.click();
 		await expect(
-			line2Editor.getByRole("slider", { name: "Blend" }),
+			line2Editor.getByRole("spinbutton", { name: "Blend" }),
 		).toBeEnabled();
 		await line2AlgoB.click();
 		await page
@@ -296,7 +323,7 @@ test.describe("Simple workspace", () => {
 			.getByRole("button", { name: "None" })
 			.click();
 		await expect(
-			line2Editor.getByRole("slider", { name: "Blend" }),
+			line2Editor.getByRole("spinbutton", { name: "Blend" }),
 		).toHaveCount(0);
 
 		await page.getByRole("button", { name: "Expand Envelope section" }).click();

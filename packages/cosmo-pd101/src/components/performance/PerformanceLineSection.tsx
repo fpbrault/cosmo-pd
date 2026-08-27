@@ -71,7 +71,7 @@ function AlgorithmCard({
 
 	return (
 		<div
-			className="relative size-24 shrink-0"
+			className="relative aspect-square w-full"
 			data-testid={`simple-algorithm-slot-${slotId}`}
 		>
 			<span className="pointer-events-none absolute top-1 left-1 z-10 font-bold font-mono text-[0.5rem] text-cz-cream/75 uppercase">
@@ -157,7 +157,7 @@ export default memo(function PerformanceLineSection({
 
 	return (
 		<section
-			className={`${embedded ? "flex w-[13.25rem] shrink-0 flex-col overflow-hidden border-cz-border/80 border-r" : "flex min-w-0 flex-col overflow-hidden border border-cz-border bg-cz-surface/80"} ${expanded && !embedded ? "flex-1" : !expanded ? "w-[5.25rem] shrink-0" : ""} ${lineInactive ? "opacity-55 saturate-50" : ""}`}
+			className={`${embedded ? "flex w-[12.5rem] shrink-0 flex-col overflow-hidden" : "flex min-w-0 flex-col overflow-hidden border border-cz-border bg-cz-surface/80"} ${expanded && !embedded ? "flex-1" : !expanded ? "w-[5.25rem] shrink-0" : ""} ${lineInactive ? "opacity-55 saturate-50" : ""}`}
 			data-testid={`simple-line-${lineIndex}-section`}
 			data-line-index={lineIndex}
 		>
@@ -177,7 +177,7 @@ export default memo(function PerformanceLineSection({
 			)}
 
 			{!expanded ? (
-				<div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-1">
+				<div className="mx-1 flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-1">
 					{([algorithms.slotA, algorithms.slotB] as const).map(
 						(slot, index) => (
 							<div
@@ -200,11 +200,11 @@ export default memo(function PerformanceLineSection({
 				</div>
 			) : (
 				<div
-					className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-0.5 p-1"
+					className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-0.5"
 					data-testid="simple-line-editor"
 					data-line-index={lineIndex}
 				>
-					<div className="flex min-h-0 min-w-0 items-center justify-center gap-2 overflow-hidden">
+					<div className="mx-0.5 flex min-h-0 min-w-0 items-center justify-center gap-2">
 						<AlgorithmCard
 							lineIndex={lineIndex}
 							slotId="a"

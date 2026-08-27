@@ -1,4 +1,12 @@
-import { memo, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+	Children,
+	Fragment,
+	memo,
+	type ReactNode,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import CzButton from "@/components/primitives/CzButton";
@@ -27,6 +35,29 @@ const SECTION_CLASS =
 const EMBEDDED_SECTION_CLASS = "flex min-w-0 shrink-0 flex-col overflow-hidden";
 
 export function PerformanceVoiceRack({ children }: { children: ReactNode }) {
+	let hasPreviousSection = false;
+	const sections = (
+		<>
+			<span aria-hidden="true" className="min-w-0" />
+			{Children.map(children, (section) => {
+				const showDivider = hasPreviousSection;
+				hasPreviousSection = true;
+				return (
+					<Fragment>
+						{showDivider && (
+							<span
+								aria-hidden="true"
+								className="my-1 w-px justify-self-center bg-cz-border/80"
+							/>
+						)}
+						{section}
+					</Fragment>
+				);
+			})}
+			<span aria-hidden="true" className="min-w-0" />
+		</>
+	);
+
 	return (
 		<section
 			className="flex min-w-0 flex-1 flex-col overflow-hidden bg-cz-surface/80"
@@ -35,7 +66,9 @@ export function PerformanceVoiceRack({ children }: { children: ReactNode }) {
 			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.5rem]">
 				VOICE
 			</h2>
-			<div className="flex min-h-0 flex-1 justify-center">{children}</div>
+			<div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_12.5rem_minmax(0,2fr)_12.5rem_minmax(0,2fr)_9rem_minmax(0,2fr)_8.5rem_minmax(0,1fr)]">
+				{sections}
+			</div>
 		</section>
 	);
 }
@@ -57,7 +90,7 @@ export const PerformanceRoutingSection = memo(
 
 		return (
 			<section
-				className={`${embedded ? EMBEDDED_SECTION_CLASS : SECTION_CLASS} ${embedded ? "w-[12rem] border-cz-border/80 border-r" : "w-[9rem] grow"}`}
+				className={`${embedded ? EMBEDDED_SECTION_CLASS : SECTION_CLASS} ${embedded ? "w-[9rem]" : "w-[9rem] grow"}`}
 				data-testid="simple-line-select-section"
 			>
 				{!embedded && (
@@ -154,7 +187,7 @@ export const PerformanceVoiceSection = memo(function PerformanceVoiceSection({
 
 	return (
 		<section
-			className={`${embedded ? EMBEDDED_SECTION_CLASS : SECTION_CLASS} ${embedded ? "w-[10.5rem] border-cz-border/80 border-r" : "w-[7rem] grow"}`}
+			className={`${embedded ? EMBEDDED_SECTION_CLASS : SECTION_CLASS} ${embedded ? "w-[8.5rem]" : "w-[7rem] grow"}`}
 			data-testid="simple-voice-section"
 		>
 			{!embedded && (

@@ -72,8 +72,8 @@ export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 	};
 	const selectAdjacent = (direction: -1 | 1) => {
 		const options = [
-			...(allowNone ? [null] : []),
 			...PD_ALGOS.map((algorithm) => algorithm.value),
+			...(allowNone ? [null] : []),
 		];
 		const currentIndex = noneSelected ? 0 : options.indexOf(value);
 		const nextIndex =
@@ -90,7 +90,7 @@ export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 			>
 				<span
 					aria-hidden="true"
-					className="border-cz-border border-b bg-base-100 [grid-area:spacer]"
+					className="border-cz-border border-b bg-cz-inset [grid-area:spacer]"
 				/>
 				<button
 					ref={triggerRef}
@@ -133,7 +133,7 @@ export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 					aria-haspopup="dialog"
 					aria-expanded={open}
 					onClick={togglePicker}
-					className={`flex min-w-0 items-center justify-center border-cz-border border-t bg-base-100 px-1 font-mono text-[0.52rem] uppercase tracking-[0.1em] transition-colors [grid-area:label] hover:bg-cz-inset focus:outline-none ${colorClass}`}
+					className={`flex min-w-0 items-center justify-center border-cz-border border-t bg-cz-inset px-1 font-mono text-[0.52rem] uppercase tracking-[0.1em] transition-colors [grid-area:label] hover:bg-cz-inset focus:outline-none ${colorClass}`}
 				>
 					<span className="max-w-full truncate">{currentLabel}</span>
 				</button>
@@ -146,21 +146,6 @@ export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 				placement="top"
 			>
 				<div className="grid grid-cols-5 p-1">
-					{allowNone ? (
-						<button
-							type="button"
-							aria-label="None"
-							aria-pressed={noneSelected}
-							onClick={() => {
-								onSelectNone?.();
-								setOpen(false);
-							}}
-							className="flex size-16 flex-col items-center justify-center border border-cz-border bg-cz-surface font-mono text-[0.45rem] text-cz-gold uppercase hover:border-cz-light-blue hover:text-white aria-pressed:border-cz-light-blue aria-pressed:bg-cz-inset aria-pressed:text-white"
-						>
-							<span className="text-2xl">—</span>
-							<span>None</span>
-						</button>
-					) : null}
 					{PD_ALGOS.map((algorithm) => (
 						<button
 							key={algorithm.value}
@@ -177,6 +162,21 @@ export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 							<span className="max-w-14 truncate">{algorithm.label}</span>
 						</button>
 					))}
+						{allowNone ? (
+						<button
+							type="button"
+							aria-label="None"
+							aria-pressed={noneSelected}
+							onClick={() => {
+								onSelectNone?.();
+								setOpen(false);
+							}}
+							className="flex size-16 flex-col items-center justify-center border border-cz-border bg-cz-surface font-mono text-[0.45rem] text-cz-gold uppercase hover:border-cz-light-blue hover:text-white aria-pressed:border-cz-light-blue aria-pressed:bg-cz-inset aria-pressed:text-white"
+						>
+							<span className="text-2xl">—</span>
+							<span>None</span>
+						</button>
+					) : null}
 				</div>
 			</Popover>
 		</>
