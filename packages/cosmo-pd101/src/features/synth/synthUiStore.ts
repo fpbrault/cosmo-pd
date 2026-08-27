@@ -32,7 +32,6 @@ type SynthUiState = {
 	activeEnvTab: EnvTab;
 	simpleExpandedSection: SimpleExpandedSection;
 	simpleEditedLine: SimpleEditedLine;
-	simpleEditedAlgo: SimpleEditedAlgo;
 	simpleEditedAlgoByLine: SimpleEditedAlgoByLine;
 	keyboardVisible: boolean;
 	keyboardOctaves: number;
@@ -61,7 +60,6 @@ type SynthUiActions = {
 	setActiveEnvTab: (tab: EnvTab) => void;
 	setSimpleExpandedSection: (section: SimpleExpandedSection) => void;
 	setSimpleEditedLine: (line: SimpleEditedLine) => void;
-	setSimpleEditedAlgo: (algo: SimpleEditedAlgo) => void;
 	setSimpleEditedAlgoForLine: (
 		line: SimpleEditedLine,
 		algo: SimpleEditedAlgo,
@@ -120,7 +118,6 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	activeEnvTab: "dcw",
 	simpleExpandedSection: "sound",
 	simpleEditedLine: 1,
-	simpleEditedAlgo: "a",
 	simpleEditedAlgoByLine: { 1: "a", 2: "a" },
 	keyboardVisible: true,
 	keyboardOctaves: 2,
@@ -158,7 +155,6 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const phaseLinePanelTab = getStringValue(candidate.phaseLinePanelTab);
 	const activeEnvTab = getStringValue(candidate.activeEnvTab);
 	const simpleExpandedSection = getStringValue(candidate.simpleExpandedSection);
-	const simpleEditedAlgo = getStringValue(candidate.simpleEditedAlgo);
 	const persistedAlgos = candidate.simpleEditedAlgoByLine;
 	const persistedAlgoByLine: SimpleEditedAlgoByLine = {
 		1:
@@ -198,22 +194,10 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 		candidate.simpleEditedLine === 1 || candidate.simpleEditedLine === 2
 			? candidate.simpleEditedLine
 			: DEFAULT_UI_STATE.simpleEditedLine;
-	const normalizedSimpleEditedAlgo =
-		simpleEditedAlgo &&
-		SIMPLE_EDITED_ALGOS.has(simpleEditedAlgo as SimpleEditedAlgo)
-			? (simpleEditedAlgo as SimpleEditedAlgo)
-			: DEFAULT_UI_STATE.simpleEditedAlgo;
-	const hasPersistedAlgoByLine =
-		typeof persistedAlgos === "object" && persistedAlgos !== null;
-	const simpleEditedAlgoByLine = hasPersistedAlgoByLine
-		? persistedAlgoByLine
-		: {
-				...DEFAULT_UI_STATE.simpleEditedAlgoByLine,
-				[simpleEditedLine]: normalizedSimpleEditedAlgo,
-			};
-	const activeSimpleEditedAlgo = hasPersistedAlgoByLine
-		? simpleEditedAlgoByLine[simpleEditedLine]
-		: normalizedSimpleEditedAlgo;
+	const simpleEditedAlgoByLine =
+		typeof persistedAlgos === "object" && persistedAlgos !== null
+			? persistedAlgoByLine
+			: DEFAULT_UI_STATE.simpleEditedAlgoByLine;
 
 	return {
 		workspaceMode: normalizedWorkspaceMode,
@@ -238,7 +222,6 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 				? (simpleExpandedSection as SimpleExpandedSection)
 				: DEFAULT_UI_STATE.simpleExpandedSection,
 		simpleEditedLine,
-		simpleEditedAlgo: activeSimpleEditedAlgo,
 		simpleEditedAlgoByLine,
 		keyboardVisible:
 			typeof candidate.keyboardVisible === "boolean"
@@ -338,23 +321,10 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setActiveEnvTab: (tab) => set({ activeEnvTab: tab }),
 			setSimpleExpandedSection: (section) =>
 				set({ simpleExpandedSection: section }),
-			setSimpleEditedLine: (line) =>
-				set((state) => ({
-					simpleEditedLine: line,
-					simpleEditedAlgo: state.simpleEditedAlgoByLine[line],
-				})),
-			setSimpleEditedAlgo: (algo) =>
-				set((state) => ({
-					simpleEditedAlgo: algo,
-					simpleEditedAlgoByLine: {
-						...state.simpleEditedAlgoByLine,
-						[state.simpleEditedLine]: algo,
-					},
-				})),
+			setSimpleEditedLine: (line) => set({ simpleEditedLine: line }),
 			setSimpleEditedAlgoForLine: (line, algo) =>
 				set((state) => ({
 					simpleEditedLine: line,
-					simpleEditedAlgo: algo,
 					simpleEditedAlgoByLine: {
 						...state.simpleEditedAlgoByLine,
 						[line]: algo,
@@ -390,7 +360,6 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				activeEnvTab: state.activeEnvTab,
 				simpleExpandedSection: state.simpleExpandedSection,
 				simpleEditedLine: state.simpleEditedLine,
-				simpleEditedAlgo: state.simpleEditedAlgo,
 				simpleEditedAlgoByLine: state.simpleEditedAlgoByLine,
 				keyboardVisible: state.keyboardVisible,
 				keyboardOctaves: state.keyboardOctaves,

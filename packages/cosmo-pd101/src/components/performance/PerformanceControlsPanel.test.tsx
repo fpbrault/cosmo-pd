@@ -11,16 +11,40 @@ vi.mock("@/components/panels/macro/MacroKnobsPanel", () => ({
 
 vi.mock("./PerformanceSoundPanel", () => ({
 	default: () => <div data-testid="mock-sound-panel">Sound controls</div>,
-	CollapsedSoundSummary: ({ onExpand }: { onExpand: () => void }) => (
+}));
+
+vi.mock("./CollapsedSoundSummary", () => ({
+	default: ({ onExpand }: { onExpand: () => void }) => (
 		<button type="button" onClick={onExpand} aria-label="Expand Sound section">
 			Sound summary
 		</button>
 	),
 }));
 
+vi.mock("./PerformanceEffectsPanel", () => ({
+	default: () => <div data-testid="simple-effects-panel">Effects controls</div>,
+}));
+
+vi.mock("./CollapsedEffectsSummary", () => ({
+	default: ({ onExpand }: { onExpand: () => void }) => (
+		<button
+			type="button"
+			onClick={onExpand}
+			aria-label="Expand Effects section"
+			data-testid="simple-effects-summary"
+			className="h-full"
+		>
+			Effects summary
+		</button>
+	),
+}));
+
 vi.mock("./PerformanceEnvelopePanel", () => ({
 	default: () => <div data-testid="mock-envelope-panel">Envelope controls</div>,
-	CollapsedEnvelopeSummary: ({ onExpand }: { onExpand: () => void }) => (
+}));
+
+vi.mock("./CollapsedEnvelopeSummary", () => ({
+	default: ({ onExpand }: { onExpand: () => void }) => (
 		<button
 			type="button"
 			onClick={onExpand}

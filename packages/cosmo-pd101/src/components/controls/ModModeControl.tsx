@@ -1,29 +1,30 @@
 import { useTranslation } from "react-i18next";
 import CzButton from "@/components/primitives/CzButton";
-import { useSynthParam } from "@/features/synth/SynthParamController";
 import { getEnumTooltip } from "@/lib/synth/paramMeta";
+import {
+	MOD_MODE_OPTIONS,
+	useLineSelectControlModel,
+	useModModeControlModel,
+} from "./useLineRoutingControls";
 
 export default function ModModeControl() {
 	const { t } = useTranslation("synth");
-	const { value: modMode, setValue: setModMode } = useSynthParam("modMode");
-	const { value: lineSelect } = useSynthParam("lineSelect");
-	const dualLineMode = lineSelect === "L1+L1'" || lineSelect === "L1+L2'";
+	const { value: lineSelect } = useLineSelectControlModel();
+	const {
+		value: modMode,
+		setValue: setModMode,
+		isDisabled,
+	} = useModModeControlModel(lineSelect);
 
 	return (
 		<div className="shrink-0">
 			<div className="cz-light-blue mb-1">{t("modMode.label")}</div>
 			<div className="flex gap-1">
-				{(
-					[
-						["normal", "Normal"],
-						["ring", "Ring"],
-						["noise", "Noise"],
-					] as const
-				).map(([mode, _label]) => (
+				{MOD_MODE_OPTIONS.map((mode) => (
 					<CzButton
 						key={mode}
 						active={modMode === mode}
-						disabled={mode !== "normal" && !dualLineMode}
+						disabled={isDisabled(mode)}
 						onClick={() => setModMode(mode)}
 						tooltip={getEnumTooltip("modMode", mode)}
 						className="flex-1"

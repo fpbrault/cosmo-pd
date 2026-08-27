@@ -5,7 +5,6 @@ import type {
 	AlgoControlRuntime,
 } from "@/components/controls/algo/algoControlTypes";
 import { buildDefaultAlgoControls } from "@/lib/synth/algoRef";
-import { PD_ALGOS } from "@/lib/synth/algoUiCatalog";
 import type {
 	AlgoControlValueV1,
 	AlgoDefinitionV1,
@@ -53,7 +52,8 @@ export function usePhaseLineAlgorithms(
 	const algoBEnabled = algo.algoB !== null;
 
 	const handleAlgoChangeA = useCallback(
-		(nextAlgo: PdAlgo) => {
+		(nextAlgo: PdAlgo | null) => {
+			if (nextAlgo === null) return;
 			algo.setAlgoA(nextAlgo);
 			const nextDefinition = ALGO_DEFINITIONS.find(
 				(entry) => entry.id === nextAlgo,
@@ -67,8 +67,9 @@ export function usePhaseLineAlgorithms(
 	);
 
 	const handleAlgoChangeB = useCallback(
-		(nextAlgo: PdAlgo) => {
+		(nextAlgo: PdAlgo | null) => {
 			algo.setAlgoB(nextAlgo);
+			if (nextAlgo === null) return;
 			const nextDefinition = ALGO_DEFINITIONS.find(
 				(entry) => entry.id === nextAlgo,
 			);
@@ -85,10 +86,7 @@ export function usePhaseLineAlgorithms(
 		[algo.algoA],
 	);
 	const activeAlgoDefinitionB = useMemo(
-		() =>
-			ALGO_DEFINITIONS.find(
-				(entry) => entry.id === (algo.algoB ?? PD_ALGOS[0].value),
-			),
+		() => ALGO_DEFINITIONS.find((entry) => entry.id === algo.algoB),
 		[algo.algoB],
 	);
 	const controlsA = useMemo(
@@ -273,7 +271,8 @@ export function usePhaseLineAlgorithms(
 			slotId: "a",
 			value: algo.algoA,
 			onChange: handleAlgoChangeA,
-			disabled: false,
+			allowNone: false,
+			controlsDisabled: false,
 			controls: controlsA,
 			controlBindings: controlBindingsA,
 			algoControlSlotIndex: slotIndexA,
@@ -305,9 +304,10 @@ export function usePhaseLineAlgorithms(
 	const slotB = useMemo<AlgoSlotViewModel>(
 		() => ({
 			slotId: "b",
-			value: algo.algoB ?? PD_ALGOS[0].value,
+			value: algo.algoB,
 			onChange: handleAlgoChangeB,
-			disabled: !algoBEnabled,
+			allowNone: true,
+			controlsDisabled: !algoBEnabled,
 			controls: controlsB,
 			controlBindings: controlBindingsB,
 			algoControlSlotIndex: slotIndexB,

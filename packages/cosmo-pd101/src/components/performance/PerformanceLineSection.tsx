@@ -1,15 +1,11 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { MdSettings } from "react-icons/md";
+import AlgorithmMark from "@/components/controls/algo/AlgorithmMark";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
 import type { PhaseLineModel } from "@/components/editor/phaseLineTypes";
 import { usePhaseLineAlgorithms } from "@/components/editor/usePhaseLineAlgorithms";
-import Popover from "@/components/primitives/Popover";
 import type { ModDestination } from "@/lib/synth/bindings/synth";
-import CompactAlgorithmControls, {
-	AlgorithmMark,
-	CompactAlgorithmPicker,
-} from "./CompactAlgorithmControls";
+import PerformanceAlgorithmCard from "./PerformanceAlgorithmCard";
 
 export const LINE_BASE_OCTAVE_MIN = -2;
 export const LINE_BASE_OCTAVE_MAX = 2;
@@ -23,94 +19,6 @@ function formatOctave(value: number) {
 	return `${value >= 0 ? "+" : ""}${Math.round(value)} OCT`;
 }
 
-function AlgorithmCard({
-	lineIndex,
-	slotId,
-	slot,
-	color,
-	onActivate,
-	disabled,
-	allowNone = false,
-	noneSelected = false,
-	onSelectNone,
-}: {
-	lineIndex: 1 | 2;
-	slotId: "a" | "b";
-	slot: ReturnType<typeof usePhaseLineAlgorithms>["slotA"];
-	color: string;
-	onActivate: () => void;
-	disabled: boolean;
-	allowNone?: boolean;
-	noneSelected?: boolean;
-	onSelectNone?: () => void;
-}) {
-	const [controlsOpen, setControlsOpen] = useState(false);
-	const controlsTriggerRef = useRef<HTMLButtonElement>(null);
-
-	useEffect(() => {
-		if (disabled || slot.disabled) setControlsOpen(false);
-	}, [disabled, slot.disabled]);
-
-	return (
-		<div
-			className="relative aspect-square w-full"
-			data-testid={`simple-algorithm-slot-${slotId}`}
-		>
-			<span className="pointer-events-none absolute top-1 left-1 z-10 font-bold font-mono text-[0.5rem] text-cz-cream/75 uppercase">
-				{lineIndex}
-				{slotId}
-			</span>
-			<CompactAlgorithmPicker
-				value={slot.value}
-				disabled={disabled}
-				allowNone={allowNone}
-				noneSelected={noneSelected}
-				colorClass={lineIndex === 1 ? "text-[#7f9de4]" : "text-[#c45c5c]"}
-				onChange={slot.onChange}
-				onSelectNone={onSelectNone}
-				ariaLabel={`Edit line ${lineIndex} algorithm ${slotId.toUpperCase()}`}
-				popoverAriaLabel={`Edit line ${lineIndex} algorithm ${slotId.toUpperCase()}`}
-				onOpen={onActivate}
-				triggerClassName="size-full"
-			/>
-			<button
-				ref={controlsTriggerRef}
-				type="button"
-				disabled={disabled || slot.disabled}
-				aria-label={`Edit line ${lineIndex} algorithm ${slotId.toUpperCase()} controls`}
-				aria-haspopup="dialog"
-				aria-expanded={controlsOpen}
-				onClick={(event) => {
-					event.stopPropagation();
-					onActivate();
-					setControlsOpen((open) => !open);
-				}}
-				className="absolute top-0.5 right-0.5 z-10 flex size-4 items-center justify-center rounded-sm bg-cz-inset/80 text-cz-cream/70 hover:text-cz-cream focus:outline-none focus:ring-1 focus:ring-cz-light-blue disabled:cursor-not-allowed disabled:opacity-35"
-			>
-				<MdSettings className="size-3" aria-hidden="true" />
-			</button>
-			<Popover
-				open={controlsOpen}
-				onClose={() => setControlsOpen(false)}
-				triggerRef={controlsTriggerRef}
-				placement="top"
-				ariaLabel={`Edit line ${lineIndex} algorithm ${slotId.toUpperCase()} controls`}
-			>
-				<div className="flex min-w-[22rem] flex-col gap-2 p-2">
-					<div className="font-mono text-[0.58rem] text-cz-cream uppercase tracking-[0.16em]">
-						Line {lineIndex} · Algo {slotId.toUpperCase()} controls
-					</div>
-					<CompactAlgorithmControls
-						slot={slot}
-						lineIndex={lineIndex}
-						color={color}
-					/>
-				</div>
-			</Popover>
-		</div>
-	);
-}
-
 export default memo(function PerformanceLineSection({
 	line,
 	expanded,
@@ -121,7 +29,7 @@ export default memo(function PerformanceLineSection({
 	line: PhaseLineModel;
 	expanded: boolean;
 	onToggle?: () => void;
-	onActivate: () => void;
+	onActivate: (slot: "a" | "b") => void;
 	embedded?: boolean;
 }) {
 	const { t } = useTranslation("synth");
@@ -169,7 +77,7 @@ export default memo(function PerformanceLineSection({
 									<span className="font-mono text-xl">—</span>
 								) : (
 									<div>
-										<AlgorithmMark value={slot.value} />
+										{slot.value ? <AlgorithmMark value={slot.value} /> : null}
 									</div>
 								)}
 							</div>
@@ -183,24 +91,19 @@ export default memo(function PerformanceLineSection({
 					data-line-index={lineIndex}
 				>
 					<div className="mx-0.5 flex min-h-0 min-w-0 items-center justify-center gap-2">
-						<AlgorithmCard
+						<PerformanceAlgorithmCard
 							lineIndex={lineIndex}
-							slotId="a"
 							slot={algorithms.slotA}
 							color={lineColor}
-							onActivate={onActivate}
+							onActivate={() => onActivate("a")}
 							disabled={lineInactive}
 						/>
-						<AlgorithmCard
+						<PerformanceAlgorithmCard
 							lineIndex={lineIndex}
-							slotId="b"
 							slot={algorithms.slotB}
 							color={lineColor}
-							onActivate={onActivate}
+							onActivate={() => onActivate("b")}
 							disabled={lineInactive}
-							allowNone
-							noneSelected={!algorithms.algoBEnabled}
-							onSelectNone={() => line.algo.setAlgoB(null)}
 						/>
 					</div>
 

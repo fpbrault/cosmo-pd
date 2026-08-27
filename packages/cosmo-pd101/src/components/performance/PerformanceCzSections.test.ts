@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isDualLineSelect, isModModeDisabled } from "./PerformanceCzSections";
+import {
+	isDualLineSelect,
+	isModModeDisabled,
+} from "../controls/useLineRoutingControls";
 
 describe("Simple CZ routing controls", () => {
 	it("recognizes only the two dual-line modes", () => {

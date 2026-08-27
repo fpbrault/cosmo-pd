@@ -16,7 +16,6 @@ describe("synthUiStore", () => {
 			activeEnvTab: "dcw",
 			simpleExpandedSection: "sound",
 			simpleEditedLine: 1,
-			simpleEditedAlgo: "a",
 			simpleEditedAlgoByLine: { 1: "a", 2: "a" },
 			keyboardVisible: true,
 			pcKeyboardOverlayVisible: false,
@@ -30,8 +29,7 @@ describe("synthUiStore", () => {
 		useSynthUiStore.getState().setPhaseLinePanelTab("line2-envelopes");
 		useSynthUiStore.getState().setActiveEnvTab("dca");
 		useSynthUiStore.getState().setSimpleExpandedSection("effects");
-		useSynthUiStore.getState().setSimpleEditedLine(2);
-		useSynthUiStore.getState().setSimpleEditedAlgo("b");
+		useSynthUiStore.getState().setSimpleEditedAlgoForLine(2, "b");
 		useSynthUiStore.getState().setKeyboardVisible(false);
 		useSynthUiStore.getState().setPcKeyboardOverlayVisible(true);
 		const savedState = localStorage.getItem(SYNTH_UI_STATE_STORAGE_KEY);
@@ -44,7 +42,7 @@ describe("synthUiStore", () => {
 			activeEnvTab: "dcw",
 			simpleExpandedSection: "sound",
 			simpleEditedLine: 1,
-			simpleEditedAlgo: "a",
+			simpleEditedAlgoByLine: { 1: "a", 2: "a" },
 			keyboardVisible: true,
 			pcKeyboardOverlayVisible: false,
 		});
@@ -61,7 +59,6 @@ describe("synthUiStore", () => {
 			activeEnvTab: "dca",
 			simpleExpandedSection: "effects",
 			simpleEditedLine: 2,
-			simpleEditedAlgo: "b",
 			simpleEditedAlgoByLine: { 1: "a", 2: "b" },
 			keyboardVisible: false,
 			pcKeyboardOverlayVisible: true,
@@ -78,7 +75,7 @@ describe("synthUiStore", () => {
 					activeEnvTab: "pitch",
 					simpleExpandedSection: "drawer",
 					simpleEditedLine: 3,
-					simpleEditedAlgo: "c",
+					simpleEditedAlgoByLine: { 1: "c", 2: "a" },
 					keyboardVisible: "nope",
 				},
 				version: 0,
@@ -95,48 +92,25 @@ describe("synthUiStore", () => {
 			activeEnvTab: "dcw",
 			simpleExpandedSection: "sound",
 			simpleEditedLine: 1,
-			simpleEditedAlgo: "a",
 			simpleEditedAlgoByLine: { 1: "a", 2: "a" },
 			keyboardVisible: true,
 			pcKeyboardOverlayVisible: false,
 		});
 	});
 
-	it("migrates the legacy active algorithm to its selected line", async () => {
-		localStorage.setItem(
-			SYNTH_UI_STATE_STORAGE_KEY,
-			JSON.stringify({
-				state: {
-					simpleEditedLine: 2,
-					simpleEditedAlgo: "b",
-				},
-				version: 0,
-			}),
-		);
-
-		await useSynthUiStore.persist.rehydrate();
-
-		expect(useSynthUiStore.getState()).toMatchObject({
-			simpleEditedLine: 2,
-			simpleEditedAlgo: "b",
-			simpleEditedAlgoByLine: { 1: "a", 2: "b" },
-		});
-	});
-
-	it("keeps independent line choices and compatibility aliases synchronized", () => {
+	it("keeps independent algorithm choices for each line", () => {
 		useSynthUiStore.getState().setSimpleEditedAlgoForLine(1, "b");
 		useSynthUiStore.getState().setSimpleEditedAlgoForLine(2, "a");
 
 		expect(useSynthUiStore.getState()).toMatchObject({
 			simpleEditedLine: 2,
-			simpleEditedAlgo: "a",
 			simpleEditedAlgoByLine: { 1: "b", 2: "a" },
 		});
 
 		useSynthUiStore.getState().setSimpleEditedLine(1);
 		expect(useSynthUiStore.getState()).toMatchObject({
 			simpleEditedLine: 1,
-			simpleEditedAlgo: "b",
+			simpleEditedAlgoByLine: { 1: "b", 2: "a" },
 		});
 	});
 

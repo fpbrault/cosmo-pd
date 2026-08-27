@@ -1,10 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	PerformanceDetuneSection,
-	PerformanceRoutingSection,
-	PerformanceVoiceSection,
-} from "./PerformanceCzSections";
+import PerformanceDetuneSection from "./PerformanceDetuneSection";
+import PerformanceRoutingSection from "./PerformanceRoutingSection";
+import PerformanceVoiceSection from "./PerformanceVoiceSection";
 
 const synthParams = vi.hoisted(() => ({
 	lineSelect: { value: "L1+L2'", setValue: vi.fn() },

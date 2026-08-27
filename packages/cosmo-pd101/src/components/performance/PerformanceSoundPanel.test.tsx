@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { LineAlgorithmCard } from "./PerformanceSoundPanel";
+import LineAlgorithmCard from "./LineAlgorithmCard";
 
 describe("LineAlgorithmCard", () => {
 	it("combines the active A and B algorithms into one horizontal line card", () => {

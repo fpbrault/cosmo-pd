@@ -26,4 +26,11 @@ describe("VoiceModeControl", () => {
 		fireEvent.click(mono);
 		expect(synthParams.polyMode.setValue).toHaveBeenCalledWith("mono");
 	});
+
+	it("toggles any non-mono voice mode to mono consistently", () => {
+		synthParams.polyMode.value = "poly16";
+		render(<VoiceModeControl />);
+		fireEvent.click(screen.getByRole("button", { name: "Mono" }));
+		expect(synthParams.polyMode.setValue).toHaveBeenCalledWith("mono");
+	});
 });

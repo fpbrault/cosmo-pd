@@ -20,6 +20,8 @@ describe("AlgoIconGrid", () => {
 		render(<AlgoIconGrid value="cz101" onChange={onChange} />);
 
 		const second = screen.getByRole("button", { name: "Algo 2" });
+		expect(second).toHaveClass("size-16");
+		expect(second).toHaveAttribute("data-hover-info", "Algorithm 2: behavior");
 		fireEvent.click(second);
 		expect(onChange).toHaveBeenCalledWith("bend");
 	});
@@ -32,5 +34,52 @@ describe("AlgoIconGrid", () => {
 		expect(first).toBeDisabled();
 		fireEvent.click(first);
 		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it("selects None from either presentation", () => {
+		const onChange = vi.fn();
+		render(
+			<AlgoIconGrid
+				value="cz101"
+				onChange={onChange}
+				allowNone
+				variant="compact"
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Algorithm 1: Algo 1. Click to change.",
+			}),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "None" }));
+		expect(onChange).toHaveBeenCalledWith(null);
+	});
+
+	it("navigates from None using its actual final option index", () => {
+		const previousChange = vi.fn();
+		const { unmount } = render(
+			<AlgoIconGrid
+				value={null}
+				onChange={previousChange}
+				allowNone
+				variant="compact"
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Previous algorithm" }));
+		expect(previousChange).toHaveBeenCalledWith("bend");
+		unmount();
+
+		const nextChange = vi.fn();
+		render(
+			<AlgoIconGrid
+				value={null}
+				onChange={nextChange}
+				allowNone
+				variant="compact"
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Next algorithm" }));
+		expect(nextChange).toHaveBeenCalledWith("cz101");
 	});
 });

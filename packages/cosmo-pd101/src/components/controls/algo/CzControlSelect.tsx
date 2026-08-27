@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useRef, useState } from "react";
 import Button from "@/components/controls/Button";
 import { HoverInfoTrigger } from "@/components/layout/HoverInfo";
+import Popover from "@/components/primitives/Popover";
 import {
 	getAlgoControlOptionLabel,
 	useAlgoControl,
@@ -131,6 +132,7 @@ interface CzControlSelectProps {
 		control: AlgoControlRuntime,
 	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignments: (option: AlgoControlOptionRuntime) => void;
+	variant?: "standard" | "compact";
 }
 
 function CzControlSelectInner({
@@ -139,7 +141,10 @@ function CzControlSelectInner({
 	binding,
 	getActiveSelectOption,
 	applyOptionAssignments,
+	variant = "standard",
 }: CzControlSelectProps) {
+	const [open, setOpen] = useState(false);
+	const triggerRef = useRef<HTMLButtonElement>(null);
 	const translated = useAlgoControl(control.algo, control.id);
 	const label = translated.label || control.label || control.id;
 	const description = translated.description || control.description || "";
@@ -150,6 +155,92 @@ function CzControlSelectInner({
 		control.id === "waveform1" || control.id === "waveform2";
 	const useSingleLineLayout =
 		isPresetControl || control.id === "windowFunction";
+
+	if (variant === "compact") {
+		return (
+			<>
+				<button
+					ref={triggerRef}
+					type="button"
+					disabled={disabled}
+					aria-label={`${label}: ${activeOption?.label ?? "Custom"}`}
+					aria-haspopup="dialog"
+					aria-expanded={open}
+					onClick={() => setOpen((current) => !current)}
+					className="flex min-w-0 flex-1 flex-col items-center justify-center overflow-hidden rounded border border-cz-border bg-cz-inset/65 px-0.5 text-cz-gold hover:border-cz-light-blue focus:outline-none focus:ring-1 focus:ring-cz-light-blue disabled:opacity-35"
+					data-testid={`simple-cz-${control.id}`}
+				>
+					<span className="max-w-full truncate font-mono text-[0.42rem] text-cz-cream/70 uppercase tracking-[0.06em]">
+						{label}
+					</span>
+					<svg
+						viewBox="0 0 34 22"
+						className="h-8 w-full max-w-14"
+						aria-hidden="true"
+					>
+						<WaveformOptionIcon
+							value={activeOption?.value ?? "off"}
+							isWindowFunction={control.id === "windowFunction"}
+						/>
+					</svg>
+					<span className="max-w-full truncate font-mono text-[0.47rem] text-cz-cream uppercase">
+						{activeOption?.label ?? "Custom"} ▾
+					</span>
+				</button>
+				<Popover
+					open={open}
+					onClose={() => setOpen(false)}
+					triggerRef={triggerRef}
+					ariaLabel={label}
+					placement="top"
+				>
+					<div className="p-2">
+						<div className="mb-2 text-center font-mono text-[0.62rem] text-cz-cream uppercase tracking-[0.16em]">
+							{label}
+						</div>
+						<div className="grid grid-cols-4">
+							{options.map((option, index) => {
+								const optionLabel = getAlgoControlOptionLabel(
+									control.algo,
+									control.id,
+									option.value,
+								);
+								return (
+									<button
+										key={option.value}
+										type="button"
+										aria-label={optionLabel}
+										aria-pressed={option.value === activeOption?.value}
+										onClick={() => {
+											if (option.set.length > 0) {
+												applyOptionAssignments(option);
+											} else {
+												binding?.setNumber?.(index);
+											}
+											setOpen(false);
+										}}
+										className="flex h-16 w-20 flex-col items-center justify-center border border-cz-border bg-cz-surface font-mono text-[0.45rem] text-cz-gold uppercase hover:border-cz-light-blue aria-pressed:border-cz-light-blue aria-pressed:bg-cz-inset aria-pressed:text-white"
+									>
+										<svg
+											viewBox="0 0 34 22"
+											className="h-7 w-14"
+											aria-hidden="true"
+										>
+											<WaveformOptionIcon
+												value={option.value}
+												isWindowFunction={control.id === "windowFunction"}
+											/>
+										</svg>
+										<span className="max-w-16 truncate">{optionLabel}</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				</Popover>
+			</>
+		);
+	}
 
 	const optionsClassName = useSingleLineLayout
 		? `flex w-full min-w-0 gap-0 ${isPresetControl ? "h-10" : "h-6"}`
