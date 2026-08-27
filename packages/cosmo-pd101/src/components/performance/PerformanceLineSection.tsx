@@ -16,24 +16,6 @@ export const LINE_BASE_OCTAVE_MAX = 2;
 export const LINE_DETUNE_OCTAVE_MIN = -3;
 export const LINE_DETUNE_OCTAVE_MAX = 3;
 
-export function getLine2EffectiveOctave(
-	baseOctave: number,
-	detuneOctave: number,
-): number {
-	return Math.round(baseOctave) + Math.round(detuneOctave);
-}
-
-export function setLine2EffectiveOctave(
-	effectiveOctave: number,
-	baseOctave: number,
-): number {
-	const relativeOctave = Math.round(effectiveOctave) - Math.round(baseOctave);
-	return Math.max(
-		LINE_DETUNE_OCTAVE_MIN,
-		Math.min(LINE_DETUNE_OCTAVE_MAX, relativeOctave),
-	);
-}
-
 const LINE_LABEL_CLASS =
 	"max-w-16 truncate text-[0.46rem] uppercase tracking-[0.08em]";
 
@@ -149,10 +131,6 @@ export default memo(function PerformanceLineSection({
 	const blendParam = lineIndex === 1 ? "algoBlendA" : "algoBlendB";
 	const blendDestination: ModDestination =
 		lineIndex === 1 ? "line1AlgoBlend" : "line2AlgoBlend";
-	const line2EffectiveOctave = getLine2EffectiveOctave(
-		line.parameters.octave,
-		line.parameters.detuneOctave ?? 0,
-	);
 	const lineInactive = !line.meta.isAudible;
 
 	return (
@@ -258,26 +236,26 @@ export default memo(function PerformanceLineSection({
 							label={t("simpleMode.octave")}
 							labelClassName={LINE_LABEL_CLASS}
 							value={
-								lineIndex === 1 ? line.parameters.octave : line2EffectiveOctave
+								lineIndex === 1
+									? line.parameters.octave
+									: (line.parameters.detuneOctave ?? 0)
 							}
 							onChange={
 								lineIndex === 1
 									? (value) => line.parameters.setOctave(Math.round(value))
 									: (value) =>
-											line.parameters.setDetuneOctave?.(
-												setLine2EffectiveOctave(value, line.parameters.octave),
-											)
+											line.parameters.setDetuneOctave?.(Math.round(value))
 							}
 							size={48}
 							min={
 								lineIndex === 1
 									? LINE_BASE_OCTAVE_MIN
-									: line.parameters.octave + LINE_DETUNE_OCTAVE_MIN
+									: LINE_DETUNE_OCTAVE_MIN
 							}
 							max={
 								lineIndex === 1
 									? LINE_BASE_OCTAVE_MAX
-									: line.parameters.octave + LINE_DETUNE_OCTAVE_MAX
+									: LINE_DETUNE_OCTAVE_MAX
 							}
 							step={1}
 							bipolar
@@ -289,7 +267,7 @@ export default memo(function PerformanceLineSection({
 							tooltip={
 								lineIndex === 1
 									? "Transposes both lines by octave steps."
-									: "Sets the effective octave of line 2."
+									: "Relative octave shift for line 2."
 							}
 							valueFormatter={formatOctave}
 						/>
