@@ -248,14 +248,10 @@ export default memo(function PerformanceLineSection({
 							}
 							size={48}
 							min={
-								lineIndex === 1
-									? LINE_BASE_OCTAVE_MIN
-									: LINE_DETUNE_OCTAVE_MIN
+								lineIndex === 1 ? LINE_BASE_OCTAVE_MIN : LINE_DETUNE_OCTAVE_MIN
 							}
 							max={
-								lineIndex === 1
-									? LINE_BASE_OCTAVE_MAX
-									: LINE_DETUNE_OCTAVE_MAX
+								lineIndex === 1 ? LINE_BASE_OCTAVE_MAX : LINE_DETUNE_OCTAVE_MAX
 							}
 							step={1}
 							bipolar
@@ -267,7 +263,7 @@ export default memo(function PerformanceLineSection({
 							tooltip={
 								lineIndex === 1
 									? "Transposes both lines by octave steps."
-									: "Relative octave shift for line 2."
+									: t("params.line2DetuneOctave.tooltip")
 							}
 							valueFormatter={formatOctave}
 						/>

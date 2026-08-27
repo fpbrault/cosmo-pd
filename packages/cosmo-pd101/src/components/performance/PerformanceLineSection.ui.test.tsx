@@ -4,23 +4,49 @@ import type { PhaseLineModel } from "@/components/editor/phaseLineTypes";
 import PerformanceLineSection from "./PerformanceLineSection";
 
 vi.mock("@/components/controls/SynthParamKnob", () => ({
-	default: ({ label, disabled }: { label?: string; disabled?: boolean }) => (
-		<input type="range" aria-label={label} disabled={disabled} />
+	default: ({
+		label,
+		disabled,
+		value,
+		min,
+		max,
+		onChange,
+	}: {
+		label?: string;
+		disabled?: boolean;
+		value?: number;
+		min?: number;
+		max?: number;
+		onChange?: (value: number) => void;
+	}) => (
+		<input
+			type="range"
+			aria-label={label}
+			disabled={disabled}
+			value={value}
+			min={min}
+			max={max}
+			onChange={(event) => onChange?.(Number(event.currentTarget.value))}
+		/>
 	),
 }));
 
 function createLine({
 	isAudible = true,
 	algoB = "pinch",
+	lineIndex = 1,
+	detuneOctave = 0,
 }: {
 	isAudible?: boolean;
 	algoB?: PhaseLineModel["algo"]["algoB"];
+	lineIndex?: 1 | 2;
+	detuneOctave?: number;
 } = {}) {
 	return {
 		meta: {
-			label: "Line 1",
-			color: "#7f9de4",
-			lineIndex: 1,
+			label: `Line ${lineIndex}`,
+			color: lineIndex === 1 ? "#7f9de4" : "#c45c5c",
+			lineIndex,
 			isAudible,
 			inactiveModeLabel: isAudible ? "L1" : "L2",
 		},
@@ -50,8 +76,10 @@ function createLine({
 			octave: 0,
 			setOctave: vi.fn(),
 			lineSelect: isAudible ? "L1" : "L2",
-			detuneDisabled: true,
+			detuneDisabled: lineIndex === 1,
 			detuneLabelPrefix: "L2",
+			detuneOctave,
+			setDetuneOctave: vi.fn(),
 		},
 	} as unknown as PhaseLineModel;
 }
@@ -157,5 +185,24 @@ describe("Simple line algorithm availability", () => {
 				.getAllByRole("slider")
 				.map((control) => control.getAttribute("aria-label")),
 		).toEqual(["Volume", "DCW", "Oct", "Blend"]);
+	});
+
+	it("binds Line 2 Oct to the relative detune value", () => {
+		const line = createLine({ lineIndex: 2, detuneOctave: 2 });
+		render(
+			<PerformanceLineSection
+				line={line}
+				expanded
+				onActivate={vi.fn()}
+				embedded
+			/>,
+		);
+
+		const octave = screen.getByRole("slider", { name: "Oct" });
+		expect(octave).toHaveValue("2");
+		expect(octave).toHaveAttribute("min", "-3");
+		expect(octave).toHaveAttribute("max", "3");
+		fireEvent.change(octave, { target: { value: "-1" } });
+		expect(line.parameters.setDetuneOctave).toHaveBeenCalledWith(-1);
 	});
 });

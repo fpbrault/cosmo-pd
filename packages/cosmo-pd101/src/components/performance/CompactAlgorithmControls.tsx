@@ -162,7 +162,7 @@ export const CompactAlgorithmPicker = memo(function CompactAlgorithmPicker({
 							<span className="max-w-14 truncate">{algorithm.label}</span>
 						</button>
 					))}
-						{allowNone ? (
+					{allowNone ? (
 						<button
 							type="button"
 							aria-label="None"
