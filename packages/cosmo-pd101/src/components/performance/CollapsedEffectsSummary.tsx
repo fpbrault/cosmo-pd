@@ -1,5 +1,6 @@
 import { useSynthStore } from "@/features/synth/synthStore";
 import type { FxSlotType } from "@/lib/synth/bindings/synth";
+import CollapsedSectionSummary from "./CollapsedSectionSummary";
 
 const FX_SLOT_IDS = ["fx-1", "fx-2", "fx-3", "fx-4", "fx-5", "fx-6"];
 const COLORS: Record<FxSlotType, string> = {
@@ -35,17 +36,15 @@ export default function CollapsedEffectsSummary({
 		(slot) => slot.type !== "empty" && slot.params.enabled !== false,
 	).length;
 	return (
-		<button
-			type="button"
-			onClick={onExpand}
-			aria-label="Expand Effects section"
-			className="group flex h-full w-full min-w-0 flex-col items-center border-cz-border border-l bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
-			data-testid="simple-effects-summary"
+		<CollapsedSectionSummary
+			title="FX +"
+			ariaLabel="Expand Effects section"
+			testId="simple-effects-summary"
+			onExpand={onExpand}
+			className="border-cz-border border-l"
+			headerClassName="text-[0.5rem] tracking-[0.12em]"
 		>
-			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.5rem] tracking-[0.12em] transition-[filter] group-hover:brightness-125">
-				FX +
-			</span>
-			<div className="my-auto grid grid-cols-3 gap-1">
+			<div className="pointer-events-none my-auto grid grid-cols-3 gap-1">
 				{slots.map((slot, index) => {
 					const enabled =
 						slot.type !== "empty" && slot.params.enabled !== false;
@@ -61,6 +60,6 @@ export default function CollapsedEffectsSummary({
 			<span className="font-mono text-[0.48rem] uppercase tracking-[0.12em]">
 				{activeCount} on
 			</span>
-		</button>
+		</CollapsedSectionSummary>
 	);
 }

@@ -8,6 +8,7 @@ import CzButton from "@/components/primitives/CzButton";
 import type { LineSelect } from "@/lib/synth/bindings/synth";
 import { getEnumTooltip } from "@/lib/synth/paramMeta";
 import CzLed from "./CzLed";
+import SimpleSectionHeader from "./SimpleSectionHeader";
 
 const DISPLAY_OPTIONS: readonly LineSelect[] = ["L1", "L2", "L1+L2'", "L1+L1'"];
 
@@ -38,9 +39,9 @@ export default memo(function PerformanceRoutingSection({
 			data-testid="simple-line-select-section"
 		>
 			{!embedded ? (
-				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.5rem]">
+				<SimpleSectionHeader className="text-[0.5rem]">
 					{t("simpleMode.lineSelect")}
-				</h2>
+				</SimpleSectionHeader>
 			) : null}
 			<div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-1 p-1">
 				<div className="flex min-h-0 flex-col items-center justify-center gap-1">

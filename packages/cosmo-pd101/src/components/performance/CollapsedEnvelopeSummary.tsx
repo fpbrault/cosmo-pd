@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { usePhaseLineModel } from "@/components/editor/usePhaseLineModel";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
-import { EnvelopeCanvas } from "./CompactEnvelopePreset";
+import CollapsedSectionSummary from "./CollapsedSectionSummary";
+import EnvelopeCanvas from "./EnvelopeCanvas";
 import { PERFORMANCE_ENVELOPE_KINDS } from "./performanceEnvelopeConstants";
 
 export default memo(function CollapsedEnvelopeSummary({
@@ -14,18 +15,16 @@ export default memo(function CollapsedEnvelopeSummary({
 	const line2 = usePhaseLineModel(2);
 	const line = selectedLine === 1 ? line1 : line2;
 	return (
-		<button
-			type="button"
-			onClick={onExpand}
-			aria-label="Expand Envelope section"
-			className="group flex h-full w-full min-w-0 flex-col items-center border-cz-border border-l bg-cz-surface/80 p-0 text-cz-cream transition-colors hover:bg-cz-inset focus:outline-none focus:ring-1 focus:ring-cz-light-blue"
-			data-testid="simple-envelope-summary"
+		<CollapsedSectionSummary
+			title="Envelope +"
+			ariaLabel="Expand Envelope section"
+			testId="simple-envelope-summary"
+			onExpand={onExpand}
+			className="border-cz-border border-l"
+			headerClassName="text-[0.4rem] tracking-[0.04em]"
 		>
-			<span className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center px-0 py-0 text-[0.4rem] tracking-[0.04em] transition-[filter] group-hover:brightness-125">
-				Envelope +
-			</span>
 			<div
-				className="my-auto flex w-full flex-col gap-2 px-2"
+				className="pointer-events-none my-auto flex w-full flex-col gap-2 px-2"
 				aria-hidden="true"
 			>
 				{PERFORMANCE_ENVELOPE_KINDS.map((envKind) => {
@@ -41,6 +40,6 @@ export default memo(function CollapsedEnvelopeSummary({
 					);
 				})}
 			</div>
-		</button>
+		</CollapsedSectionSummary>
 	);
 });

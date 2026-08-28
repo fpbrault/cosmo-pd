@@ -5,6 +5,7 @@ import { useLineSelectControlModel } from "@/components/controls/useLineRoutingC
 import CzButton from "@/components/primitives/CzButton";
 import Popover from "@/components/primitives/Popover";
 import { useSynthParam } from "@/features/synth/SynthParamController";
+import SimpleSectionHeader from "./SimpleSectionHeader";
 
 export default memo(function PerformanceDetuneSection({
 	embedded = false,
@@ -36,9 +37,9 @@ export default memo(function PerformanceDetuneSection({
 			data-testid="simple-detune-section"
 		>
 			{!embedded ? (
-				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.5rem]">
+				<SimpleSectionHeader className="text-[0.5rem]">
 					{t("simpleMode.detune")}
-				</h2>
+				</SimpleSectionHeader>
 			) : null}
 			<div className="flex min-h-0 flex-1 items-start justify-center">
 				<CzButton

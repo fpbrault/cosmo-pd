@@ -1,4 +1,5 @@
 import { Children, Fragment, type ReactNode } from "react";
+import SimpleSectionHeader from "./SimpleSectionHeader";
 
 export default function PerformanceVoiceRack({
 	children,
@@ -11,9 +12,7 @@ export default function PerformanceVoiceRack({
 			className="flex min-w-0 flex-1 flex-col overflow-hidden bg-cz-surface/80"
 			data-testid="simple-voice-rack"
 		>
-			<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.5rem]">
-				VOICE
-			</h2>
+			<SimpleSectionHeader className="text-[0.5rem]">VOICE</SimpleSectionHeader>
 			<div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_12.5rem_minmax(0,2fr)_12.5rem_minmax(0,2fr)_9rem_minmax(0,2fr)_8.5rem_minmax(0,1fr)]">
 				<span aria-hidden="true" className="min-w-0" />
 				{Children.map(children, (section) => {

@@ -15,7 +15,6 @@ export default function LineAlgorithmCard({
 	lineIndex: 1 | 2;
 	algoA: Algo;
 	algoB: Algo | null;
-	blend: number;
 	selectedLine?: 1 | 2;
 	selectedAlgo?: "a" | "b";
 	onSelect?: (line: 1 | 2, algo: "a" | "b") => void;

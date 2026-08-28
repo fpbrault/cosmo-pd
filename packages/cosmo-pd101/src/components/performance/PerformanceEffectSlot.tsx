@@ -1,19 +1,11 @@
 import { useRef, useState } from "react";
-import {
-	MdClose,
-	MdDeleteOutline,
-	MdPowerSettingsNew,
-	MdSettings,
-} from "react-icons/md";
+import { MdPowerSettingsNew, MdSettings } from "react-icons/md";
 import ControlKnob from "@/components/controls/ControlKnob";
-import FxSlotModuleRenderer from "@/components/panels/drawer-modules/FxSlotModuleRenderer";
 import {
 	FX_SLOT_MODULE_CONFIGS,
 	FX_UI_META,
 } from "@/components/panels/drawer-modules/fxSlotModuleConfig";
-import FxTypeSelectorPopover from "@/components/panels/FxTypeSelectorPopover";
 import { getFxTypeLabel } from "@/components/panels/fxTypeCategories";
-import Popover from "@/components/primitives/Popover";
 import { useSynthStore } from "@/features/synth/synthStore";
 import {
 	FX_DEFINITIONS_V1,
@@ -22,6 +14,9 @@ import {
 	type FxSlotType,
 	type ModDestination,
 } from "@/lib/synth/bindings/synth";
+import PerformanceEffectEditor from "./PerformanceEffectEditor";
+import PerformanceEffectSlotShell from "./PerformanceEffectSlotShell";
+import PerformanceEmptyEffectSlot from "./PerformanceEmptyEffectSlot";
 
 function getQuickControl(type: FxSlotType): FxControlV1 | null {
 	const definition = FX_DEFINITIONS_V1.find((entry) => entry.slotType === type);
@@ -47,39 +42,17 @@ export default function PerformanceEffectSlot({ slot }: { slot: number }) {
 
 	if (!config || config.type === "empty") {
 		return (
-			<div className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg border border-cz-border bg-cz-body/45 px-1 pt-6 pb-2 shadow-inner">
-				<MdPowerSettingsNew
-					aria-hidden="true"
-					className="absolute top-2 left-2 size-4 text-cz-cream/25"
-				/>
-				<MdSettings
-					aria-hidden="true"
-					className="absolute top-2 right-2 size-4 text-cz-cream/25"
-				/>
-				<button
-					ref={triggerRef}
-					type="button"
-					aria-label={`Add effect in slot ${slot + 1}`}
-					className="btn btn-ghost btn-sm size-[4rem] min-h-0 rounded-full border-2 border-cz-cream/20 border-dashed text-cz-cream/55 text-xl hover:border-cz-light-blue/70 hover:text-cz-light-blue"
-					onClick={() => setPickerOpen(true)}
-				>
-					+
-				</button>
-				<span className="font-mono text-[0.55rem] text-cz-cream/55 uppercase tracking-[0.12em]">
-					Slot {slot + 1}
-				</span>
-				<FxTypeSelectorPopover
-					open={pickerOpen}
-					triggerRef={triggerRef}
-					currentType="empty"
-					showRemove={false}
-					onSelect={(type) => {
-						if (type !== "empty") setFxSlotType(slot, type);
-						setPickerOpen(false);
-					}}
-					onClose={() => setPickerOpen(false)}
-				/>
-			</div>
+			<PerformanceEmptyEffectSlot
+				slot={slot}
+				open={pickerOpen}
+				triggerRef={triggerRef}
+				onOpen={() => setPickerOpen(true)}
+				onClose={() => setPickerOpen(false)}
+				onSelect={(type) => {
+					if (type !== "empty") setFxSlotType(slot, type);
+					setPickerOpen(false);
+				}}
+			/>
 		);
 	}
 
@@ -97,7 +70,7 @@ export default function PerformanceEffectSlot({ slot }: { slot: number }) {
 			)
 		: 0;
 	return (
-		<div className="relative flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg border border-cz-border bg-cz-body/45 px-1 pt-6 pb-2 shadow-inner">
+		<PerformanceEffectSlotShell>
 			<button
 				type="button"
 				role="switch"
@@ -154,48 +127,18 @@ export default function PerformanceEffectSlot({ slot }: { slot: number }) {
 					</div>
 				)}
 			</div>
-			<Popover
+			<PerformanceEffectEditor
 				open={settingsOpen}
-				onClose={() => setSettingsOpen(false)}
 				triggerRef={settingsRef}
-				closeOnOutsidePress={false}
-				modal={false}
-				placement="top"
-				ariaLabel={`Edit ${effectLabel}`}
-			>
-				<div className="flex h-[18rem] w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 p-2">
-					<div className="flex shrink-0 items-center justify-between border-cz-border border-b pb-1">
-						<span className="font-bold font-mono text-[0.55rem] text-cz-cream uppercase tracking-[0.14em]">
-							{effectLabel}
-						</span>
-						<button
-							type="button"
-							aria-label={`Close ${effectLabel} editor`}
-							onClick={() => setSettingsOpen(false)}
-							className="btn btn-ghost btn-xs size-6 min-h-0 rounded-sm p-0 text-cz-cream/65 hover:text-cz-cream"
-						>
-							<MdClose className="size-4" />
-						</button>
-					</div>
-					<div className="min-h-0 flex-1">
-						{moduleConfig ? (
-							<FxSlotModuleRenderer config={moduleConfig} slot={slot} />
-						) : null}
-					</div>
-					<button
-						type="button"
-						aria-label={`Remove ${effectLabel}`}
-						onClick={() => {
-							setFxSlotType(slot, "empty");
-							setSettingsOpen(false);
-						}}
-						className="btn btn-sm min-h-0 self-end border-red-500/35 bg-red-950/35 text-red-300 hover:bg-red-900/55"
-					>
-						<MdDeleteOutline className="size-4" />
-						Remove effect
-					</button>
-				</div>
-			</Popover>
-		</div>
+				effectLabel={effectLabel}
+				moduleConfig={moduleConfig}
+				slot={slot}
+				onClose={() => setSettingsOpen(false)}
+				onRemove={() => {
+					setFxSlotType(slot, "empty");
+					setSettingsOpen(false);
+				}}
+			/>
+		</PerformanceEffectSlotShell>
 	);
 }

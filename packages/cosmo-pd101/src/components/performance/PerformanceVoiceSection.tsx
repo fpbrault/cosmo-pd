@@ -9,6 +9,7 @@ import CzButton from "@/components/primitives/CzButton";
 import Popover from "@/components/primitives/Popover";
 import CzLed from "./CzLed";
 import PerformanceDetuneSection from "./PerformanceDetuneSection";
+import SimpleSectionHeader from "./SimpleSectionHeader";
 
 export default memo(function PerformanceVoiceSection({
 	embedded = false,
@@ -35,9 +36,9 @@ export default memo(function PerformanceVoiceSection({
 			data-testid="simple-voice-section"
 		>
 			{!embedded ? (
-				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.5rem]">
+				<SimpleSectionHeader className="text-[0.5rem]">
 					{t("simpleMode.voice")}
-				</h2>
+				</SimpleSectionHeader>
 			) : null}
 			<div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-0.5 p-1">
 				<div className="grid grid-cols-2 items-center gap-1">

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { MdClose } from "react-icons/md";
 import { EnvelopeKeyFollowControl } from "@/components/editor/EnvelopeKeyFollowControl";
 import { EnvelopePresetControls } from "@/components/editor/EnvelopePresetControls";
@@ -7,9 +7,8 @@ import StepEnvelopeEditor from "@/components/editor/StepEnvelopeEditor";
 import Popover from "@/components/primitives/Popover";
 import type { EnvTab } from "@/features/synth/synthUiStore";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
-import { normalizeEnvelope } from "@/lib/synth/envelopeData";
-import { drawEnvPreview } from "../editor/stepEnvelopeGeometry";
 import { useEnvelopePresetController } from "../editor/useEnvelopePresetController";
+import EnvelopeCanvas from "./EnvelopeCanvas";
 
 const ENVELOPE_CLASSES: Record<
 	EnvTab,
@@ -31,44 +30,6 @@ const ENVELOPE_CLASSES: Record<
 		border: "border-[#f97316]/65",
 	},
 };
-
-export const EnvelopeCanvas = memo(function EnvelopeCanvas({
-	envelope,
-	color,
-	large,
-	className = "",
-}: {
-	envelope: StepEnvData;
-	color: string;
-	large: boolean;
-	className?: string;
-}) {
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const normalized = useMemo(() => normalizeEnvelope(envelope), [envelope]);
-	const draw = useCallback(() => {
-		if (canvasRef.current) {
-			drawEnvPreview(canvasRef.current, normalized, color, null, [], true);
-		}
-	}, [color, normalized]);
-
-	useEffect(() => {
-		draw();
-		const canvas = canvasRef.current;
-		if (!canvas || typeof ResizeObserver === "undefined") return;
-		const observer = new ResizeObserver(draw);
-		observer.observe(canvas);
-		return () => observer.disconnect();
-	}, [draw]);
-
-	return (
-		<canvas
-			ref={canvasRef}
-			width={large ? 240 : 160}
-			height={large ? 96 : 48}
-			className={`${large ? "h-24" : "h-10"} w-full rounded-sm bg-black/25 ${className}`}
-		/>
-	);
-});
 
 type CompactEnvelopePresetProps = {
 	envKind: EnvTab;

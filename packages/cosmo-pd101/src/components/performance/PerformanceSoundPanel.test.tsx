@@ -10,7 +10,6 @@ describe("LineAlgorithmCard", () => {
 				lineIndex={1}
 				algoA="cz101"
 				algoB="pinch"
-				blend={0.5}
 				selectedLine={1}
 				selectedAlgo="a"
 				onSelect={onSelect}
@@ -33,14 +32,13 @@ describe("LineAlgorithmCard", () => {
 		expect(onSelect).toHaveBeenCalledWith(1, "b");
 	});
 
-	it("keeps algorithm B active when selected even if blend is zero", () => {
+	it("keeps algorithm B active when it is available", () => {
 		const onSelect = vi.fn();
 		render(
 			<LineAlgorithmCard
 				lineIndex={2}
 				algoA="cz101"
 				algoB="pinch"
-				blend={0}
 				onSelect={onSelect}
 			/>,
 		);
@@ -65,7 +63,6 @@ describe("LineAlgorithmCard", () => {
 				lineIndex={2}
 				algoA="cz101"
 				algoB="pinch"
-				blend={0.5}
 				inactive
 				onSelect={onSelect}
 			/>,

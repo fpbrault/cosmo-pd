@@ -7,6 +7,7 @@ import CollapsedSoundSummary from "./CollapsedSoundSummary";
 import PerformanceEffectsPanel from "./PerformanceEffectsPanel";
 import PerformanceEnvelopePanel from "./PerformanceEnvelopePanel";
 import PerformanceSoundPanel from "./PerformanceSoundPanel";
+import SimpleSectionHeader from "./SimpleSectionHeader";
 
 export default memo(function PerformanceControlsPanel() {
 	const expandedSection = useSynthUiStore(
@@ -27,9 +28,9 @@ export default memo(function PerformanceControlsPanel() {
 			data-testid="performance-controls"
 		>
 			<div className="flex w-[12.5rem] shrink-0 flex-col rounded-lg bg-cz-surface/95 p-1">
-				<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
+				<SimpleSectionHeader className="text-[0.6rem]">
 					Macros
-				</h2>
+				</SimpleSectionHeader>
 				<div className="grid h-full grid-cols-2 items-center justify-around gap-1">
 					{[0, 1, 2, 3].map((index) => (
 						<MacroKnob key={index} macroIndex={index} size={54} />
@@ -52,9 +53,9 @@ export default memo(function PerformanceControlsPanel() {
 				<div className="min-w-0 overflow-hidden">
 					{expandedSection === "envelope" ? (
 						<div className="flex h-full min-w-0 flex-col border-cz-border border-l pl-2">
-							<h2 className="cz-collapse-header cz-section-slanted-title h-5 shrink-0 justify-center py-0 text-[0.6rem]">
+							<SimpleSectionHeader className="text-[0.6rem]">
 								Envelope
-							</h2>
+							</SimpleSectionHeader>
 							<PerformanceEnvelopePanel />
 						</div>
 					) : (
