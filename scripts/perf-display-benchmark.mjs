@@ -256,10 +256,13 @@ async function waitForDisplay(page, mode) {
 	}
 
 	// The persisted UI state hydrates after the first React render. Waiting for
-	// any canvas would race that hydration and measure the Advanced sidebar
-	// canvas while this case is labelled Scope or Waterfall.
+	// the visualization canvas avoids racing hydration and measuring one of the
+	// compact envelope-summary canvases while this case is labelled Scope or
+	// Waterfall.
 	await performanceView.waitFor({ state: "visible" });
-	await performanceView.locator("canvas").waitFor({ state: "visible" });
+	await performanceView
+		.getByLabel("Audio visualization")
+		.waitFor({ state: "visible" });
 }
 
 async function runCase(page, options, mode, voices) {
@@ -325,10 +328,11 @@ async function runCase(page, options, mode, voices) {
 						tier: entry.name.replace("cz-performance-tier-", ""),
 						startTime: entry.startTime,
 					}));
-				const canvas =
+				const canvas = document.querySelector(
 					mode === "advanced"
-						? document.querySelector("canvas")
-						: document.querySelector('[data-testid="performance-view"] canvas');
+						? 'canvas[aria-label="Audio visualization"]'
+						: '[data-testid="performance-view"] canvas[aria-label="Audio visualization"]',
+				);
 				const sortedGaps = [...gaps].sort((a, b) => a - b);
 				return {
 					fps: (gaps.length * 1000) / Math.max(1, elapsedMs),

@@ -24,6 +24,8 @@ interface AlgoControlItemProps {
 	) => AlgoControlOptionRuntime | null;
 	applyOptionAssignments: (option: AlgoControlOptionRuntime) => void;
 	color?: string;
+	variant?: "standard" | "compact";
+	controlSize?: number;
 }
 
 function AlgoControlItemInner({
@@ -37,6 +39,8 @@ function AlgoControlItemInner({
 	getActiveSelectOption,
 	applyOptionAssignments,
 	color,
+	variant = "standard",
+	controlSize,
 }: AlgoControlItemProps) {
 	const controlKind = control.kind ?? "number";
 	const isCzVisualSelect =
@@ -54,6 +58,7 @@ function AlgoControlItemInner({
 					binding={binding}
 					getActiveSelectOption={getActiveSelectOption}
 					applyOptionAssignments={applyOptionAssignments}
+					variant={variant}
 				/>
 			);
 		}
@@ -92,6 +97,7 @@ function AlgoControlItemInner({
 				getAlgoControlValue={getAlgoControlValue}
 				setAlgoControlValue={setAlgoControlValue}
 				color={color}
+				size={controlSize}
 			/>
 		);
 	}

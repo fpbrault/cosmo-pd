@@ -23,6 +23,7 @@ export interface PopoverProps {
 	ariaDescribedby?: string;
 	ariaLabelledby?: string;
 	modal?: boolean;
+	closeOnOutsidePress?: boolean;
 	placement?: Placement;
 	initialFocus?: number;
 }
@@ -36,6 +37,7 @@ export default function Popover({
 	ariaDescribedby,
 	ariaLabelledby,
 	modal = true,
+	closeOnOutsidePress = true,
 	placement = "bottom",
 	initialFocus,
 	children,
@@ -74,7 +76,10 @@ export default function Popover({
 		}
 	}, [triggerRef, triggerRef.current, refs]);
 
-	const dismiss = useDismiss(context, { enabled: open });
+	const dismiss = useDismiss(context, {
+		enabled: open,
+		outsidePress: closeOnOutsidePress,
+	});
 	const { getFloatingProps } = useInteractions([dismiss]);
 
 	if (!portalRoot) return null;

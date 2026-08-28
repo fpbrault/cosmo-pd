@@ -13,7 +13,7 @@ vi.mock("./AlgoSectionCard", () => ({
 		<button
 			type="button"
 			data-testid={`algo-${slot.slotId}`}
-			disabled={slot.disabled}
+			disabled={slot.controlsDisabled}
 			onClick={() => slot.onChange("resonant" as never)}
 		>
 			Algo {slot.slotId}

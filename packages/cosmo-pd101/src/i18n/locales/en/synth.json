@@ -917,6 +917,7 @@
 			"square": "Use a square cycle with strong odd-harmonic character."
 		},
 		"phaseLine": {
+			"algoInactive": "Algorithm B is currently inactive at the current blend.",
 			"algos": "Edit line {{line}}'s oscillator algorithms and waveform blend.",
 			"envelopes": "Edit line {{line}}'s DCO, DCW, and DCA envelopes.",
 			"envelope": "Select the {{title}} envelope for this line.",
@@ -1258,6 +1259,26 @@
 	},
 	"lineSelect": {
 		"label": "Line Select"
+	},
+	"simpleMode": {
+		"lineSelect": "Line Select",
+		"modulation": "Modulation",
+		"voice": "Voice",
+		"detune": "Detune",
+		"portamento": "Portamento",
+		"portamentoTime": "Portamento time",
+		"volume": "Volume",
+		"dcw": "DCW",
+		"octave": "Oct",
+		"blend": "Blend",
+		"note": "Note",
+		"fine": "Fine",
+		"select": "Select",
+		"ring": "Ring",
+		"noise": "Noise",
+		"time": "Time",
+		"rate": "Rate",
+		"onOff": "On/Off"
 	},
 	"fxSlot": {
 		"addEffectAria": "Add effect to slot",

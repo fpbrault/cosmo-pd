@@ -55,6 +55,11 @@ describe("useEnvelopePresetController", () => {
 				"longSwell",
 			]),
 		);
+		expect(
+			result.current.presetOptions.every(
+				(option) => option.envelope.steps.length === 8,
+			),
+		).toBe(true);
 
 		act(() => result.current.handlePresetChange("pulseLoop"));
 

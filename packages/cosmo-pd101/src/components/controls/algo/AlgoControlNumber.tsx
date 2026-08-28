@@ -18,6 +18,7 @@ interface AlgoControlNumberProps {
 	getAlgoControlValue: (id: string, fallback: number) => number;
 	setAlgoControlValue: (id: string, value: number) => void;
 	color?: string;
+	size?: number;
 }
 
 // Derived-display overrides for controls whose readout is a computed value,
@@ -35,7 +36,7 @@ const derivedFormatters: Record<string, (v: number) => string> = {
 	quantizeSteps: (v) => `${Math.round(2 + Math.floor(v * 30))}`,
 };
 
-function formatAlgoControlValue(
+export function formatAlgoControlValue(
 	control: AlgoControlRuntime,
 	value: number,
 ): string {
@@ -83,6 +84,7 @@ function AlgoControlNumberInner({
 	getAlgoControlValue,
 	setAlgoControlValue,
 	color = "cyan",
+	size = 100,
 }: AlgoControlNumberProps) {
 	const translated = useAlgoControl(control.algo, control.id);
 	const label = translated.label || control.label || control.id;
@@ -125,7 +127,7 @@ function AlgoControlNumberInner({
 				min={min}
 				max={max}
 				value={value}
-				size={100}
+				size={size}
 				bipolar={min < 0 && max > 0}
 				defaultValue={control.default ?? undefined}
 				color={color}

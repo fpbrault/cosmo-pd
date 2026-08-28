@@ -27,7 +27,7 @@ export const PERFORMANCE_DISPLAY_PROFILES: Record<
 	},
 	balanced: {
 		bandCount: 48,
-		waveformPointCount: 96,
+		waveformPointCount: 160,
 		rowCount: 24,
 		historyInterval: 33,
 		maxPixelRatio: 1.5,
@@ -35,7 +35,7 @@ export const PERFORMANCE_DISPLAY_PROFILES: Record<
 	},
 	low: {
 		bandCount: 32,
-		waveformPointCount: 64,
+		waveformPointCount: 160,
 		rowCount: 16,
 		historyInterval: 33,
 		maxPixelRatio: 1,

@@ -37,7 +37,7 @@ export function PhaseLineAlgoSideSection({
 					title={`Base Wave ${section}`}
 					value={baseWaveValue}
 					onChange={onBaseWaveChange}
-					disabled={slot.disabled}
+					disabled={slot.controlsDisabled}
 					color={color}
 				/>
 			</div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PresetOption } from "@/components/primitives/PresetPopover";
 import type { StepEnvData } from "@/lib/synth/bindings/synth";
+import { normalizeEnvelope } from "@/lib/synth/envelopeData";
 import {
 	deleteEnvelopePreset,
 	getEnvelopePresetEnvelope,
@@ -15,11 +16,14 @@ type UseEnvelopePresetControllerOptions = {
 	onApply: (envelope: StepEnvData) => void;
 };
 
+export type EnvelopePresetOption = PresetOption & {
+	envelope: StepEnvData;
+};
+
 export function useEnvelopePresetController({
 	envelope,
 	onApply,
 }: UseEnvelopePresetControllerOptions) {
-	const [selectedPreset, setSelectedPreset] = useState("");
 	const [userPresets, setUserPresets] = useState<StoredEnvelopePreset[]>([]);
 
 	useEffect(() => {
@@ -37,15 +41,17 @@ export function useEnvelopePresetController({
 		};
 	}, []);
 
-	const presetOptions = useMemo<PresetOption[]>(
+	const presetOptions = useMemo<EnvelopePresetOption[]>(
 		() => [
 			...BUILTIN_ENVELOPE_PRESETS.map((preset) => ({
 				id: preset.id,
 				label: preset.label,
+				envelope: preset.envelope,
 			})),
 			...userPresets.map((preset) => ({
 				id: preset.id,
 				label: preset.name,
+				envelope: getEnvelopePresetEnvelope(preset),
 			})),
 		],
 		[userPresets],
@@ -55,11 +61,28 @@ export function useEnvelopePresetController({
 		() => new Set(BUILTIN_ENVELOPE_PRESETS.map((preset) => preset.id)),
 		[],
 	);
+	const selectedPreset = useMemo(() => {
+		const normalizedEnvelope = JSON.stringify(normalizeEnvelope(envelope));
+		const builtin = BUILTIN_ENVELOPE_PRESETS.find(
+			(preset) =>
+				JSON.stringify(normalizeEnvelope(preset.envelope)) ===
+				normalizedEnvelope,
+		);
+		if (builtin) return builtin.id;
+
+		return (
+			userPresets.find(
+				(preset) =>
+					JSON.stringify(
+						normalizeEnvelope(getEnvelopePresetEnvelope(preset)),
+					) === normalizedEnvelope,
+			)?.id ?? ""
+		);
+	}, [envelope, userPresets]);
 
 	const handlePresetChange = useCallback(
 		(presetId: string) => {
 			const preset = userPresets.find((candidate) => candidate.id === presetId);
-			setSelectedPreset(presetId);
 			if (preset) {
 				onApply(getEnvelopePresetEnvelope(preset));
 				return;
@@ -82,7 +105,6 @@ export function useEnvelopePresetController({
 		async (name: string) => {
 			const saved = await saveEnvelopePreset({ name, envelope });
 			setUserPresets((previous) => [...previous, saved]);
-			setSelectedPreset(saved.id);
 		},
 		[envelope],
 	);
@@ -92,7 +114,6 @@ export function useEnvelopePresetController({
 		setUserPresets((previous) =>
 			previous.filter((preset) => preset.id !== presetId),
 		);
-		setSelectedPreset((current) => (current === presetId ? "" : current));
 	}, []);
 
 	return {
