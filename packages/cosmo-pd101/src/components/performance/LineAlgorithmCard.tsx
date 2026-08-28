@@ -30,7 +30,7 @@ export default function LineAlgorithmCard({
 	return (
 		<fieldset
 			aria-label={`Line ${lineIndex} algorithms${inactive ? " (inactive)" : ""}`}
-			className={`m-0 grid w-full min-w-0 grid-cols-2 gap-1 self-center border-0 p-0 ${compact ? "h-[4.35rem]" : "h-[4.7rem]"} ${inactive ? "opacity-55 saturate-50" : ""}`}
+			className={`m-0 grid w-full min-w-0 grid-cols-2 gap-1 self-center border-0 p-0 ${compact ? "h-full min-h-0" : "h-[4.7rem]"} ${inactive ? "opacity-55 saturate-50" : ""}`}
 		>
 			{choices.map(({ algo, inactive: algoInactive, slot }) => {
 				const definition = algo
@@ -60,7 +60,7 @@ export default function LineAlgorithmCard({
 						</span>
 					</>
 				);
-				const itemClass = `flex min-w-0 flex-col items-center overflow-hidden border border-cz-border bg-cz-surface ${selected ? `shadow-[inset_0_0_0_1px_currentColor] ${colorClass}` : ""} ${algoInactive && !inactive ? "opacity-40 grayscale" : ""}`;
+				const itemClass = `flex min-h-0 min-w-0 flex-col items-center overflow-hidden border border-cz-border bg-cz-surface ${selected ? `shadow-[inset_0_0_0_1px_currentColor] ${colorClass}` : ""} ${algoInactive && !inactive ? "opacity-40 grayscale" : ""}`;
 				return onSelect ? (
 					<button
 						key={slot}

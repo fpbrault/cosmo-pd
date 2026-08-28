@@ -16,6 +16,10 @@ type UseEnvelopePresetControllerOptions = {
 	onApply: (envelope: StepEnvData) => void;
 };
 
+export type EnvelopePresetOption = PresetOption & {
+	envelope: StepEnvData;
+};
+
 export function useEnvelopePresetController({
 	envelope,
 	onApply,
@@ -37,15 +41,17 @@ export function useEnvelopePresetController({
 		};
 	}, []);
 
-	const presetOptions = useMemo<PresetOption[]>(
+	const presetOptions = useMemo<EnvelopePresetOption[]>(
 		() => [
 			...BUILTIN_ENVELOPE_PRESETS.map((preset) => ({
 				id: preset.id,
 				label: preset.label,
+				envelope: preset.envelope,
 			})),
 			...userPresets.map((preset) => ({
 				id: preset.id,
 				label: preset.name,
+				envelope: getEnvelopePresetEnvelope(preset),
 			})),
 		],
 		[userPresets],

@@ -23,7 +23,7 @@ export default memo(function CollapsedSoundSummary({
 			onExpand={onExpand}
 			headerClassName="text-[0.48rem] tracking-[0.12em]"
 		>
-			<div className="pointer-events-none my-auto flex w-full flex-col justify-center gap-2 px-1.5">
+			<div className="pointer-events-none grid min-h-0 w-full flex-1 grid-rows-2 gap-1 px-1.5 py-1">
 				{lines.map((line) => (
 					<LineAlgorithmCard
 						key={line.meta.lineIndex}

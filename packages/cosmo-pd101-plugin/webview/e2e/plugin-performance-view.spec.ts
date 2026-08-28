@@ -117,26 +117,39 @@ test.describe("Simple workspace", () => {
 		).toBeVisible();
 		await page.getByText("Macros", { exact: true }).click();
 		await expect(envelopeEditor).toBeVisible();
-		await envelopeEditor
-			.getByRole("button", { name: "Close Line 1 DCW envelope editor" })
+		await page
+			.getByRole("button", { name: "Edit Line 1 DCA envelope" })
 			.click();
 		await expect(envelopeEditor).toBeHidden();
+		const dcaEnvelopeEditor = page.getByRole("dialog", {
+			name: "Edit Line 1 DCA envelope",
+		});
+		await expect(dcaEnvelopeEditor).toBeVisible();
 
 		await page.getByRole("button", { name: /DCO envelope preset:/i }).click();
-		await expect(
-			page.getByRole("listbox", { name: "DCO envelope presets" }),
-		).toBeVisible();
+		await expect(dcaEnvelopeEditor).toBeHidden();
+		const dcoPresetList = page.getByRole("listbox", {
+			name: "DCO envelope presets",
+		});
+		await expect(dcoPresetList).toBeVisible();
+		await expect(dcoPresetList.locator("canvas").first()).toBeVisible();
 		await page.keyboard.press("Escape");
 
 		const soundSummaryBox = await page
 			.getByTestId("simple-sound-summary")
 			.boundingBox();
-		expect(
-			await page
-				.getByTestId("simple-sound-summary")
-				.locator("fieldset")
-				.count(),
-		).toBe(2);
+		const collapsedAlgorithmCards = page
+			.getByTestId("simple-sound-summary")
+			.locator("fieldset");
+		expect(await collapsedAlgorithmCards.count()).toBe(2);
+		const line1CardBox = await collapsedAlgorithmCards.nth(0).boundingBox();
+		const line2CardBox = await collapsedAlgorithmCards.nth(1).boundingBox();
+		if (!line1CardBox || !line2CardBox) {
+			throw new Error("Collapsed Voice algorithm cards must be measurable");
+		}
+		expect(line2CardBox.y).toBeGreaterThanOrEqual(
+			line1CardBox.y + line1CardBox.height,
+		);
 		const effectsSummaryBox = await page
 			.getByTestId("simple-effects-summary")
 			.boundingBox();
