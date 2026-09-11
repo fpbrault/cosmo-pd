@@ -1,230 +1,8 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787687056883,
+  "lastUpdate": 1789131623908,
   "repoUrl": "https://github.com/fpbrault/cosmo-pd",
   "entries": {
     "cosmo-synth-engine": [
-      {
-        "commit": {
-          "author": {
-            "email": "fpbrault@gmail.com",
-            "name": "Felix Perron-Brault",
-            "username": "fpbrault"
-          },
-          "committer": {
-            "email": "noreply@github.com",
-            "name": "GitHub",
-            "username": "web-flow"
-          },
-          "distinct": true,
-          "id": "1fb88b42f3c2cae3d12b85b26e4a3579226db3ff",
-          "message": "feat(envelopes): add reusable envelope presets and copying (#350)\n\n* feat(envelopes): add presets and cross-target copying\n\n* adjust env presets\n\n* fix: enhance envelope patch parsing to handle null values and improve validation",
-          "timestamp": "2026-08-08T14:14:27Z",
-          "tree_id": "0e84c6a0a2f35f8dd37d2beddb68c5292c48f8db",
-          "url": "https://github.com/fpbrault/cosmo-pd/commit/1fb88b42f3c2cae3d12b85b26e4a3579226db3ff"
-        },
-        "date": 1786199026121,
-        "tool": "cargo",
-        "benches": [
-          {
-            "name": "default_3_voices",
-            "value": 4313685,
-            "range": "± 29565",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "default_6_voices",
-            "value": 6218358,
-            "range": "± 51780",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "default_8_voices",
-            "value": 7580280,
-            "range": "± 81461",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fun_bass_like_3_voices",
-            "value": 3410589,
-            "range": "± 30905",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fun_bass_like_6_voices",
-            "value": 3427671,
-            "range": "± 28429",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fun_bass_like_8_voices",
-            "value": 3434392,
-            "range": "± 36713",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chants_like_3_voices",
-            "value": 10244596,
-            "range": "± 116846",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chants_like_6_voices",
-            "value": 13330999,
-            "range": "± 169252",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chants_like_8_voices",
-            "value": 15586139,
-            "range": "± 135429",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chops_like_3_voices",
-            "value": 12529041,
-            "range": "± 69604",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chops_like_6_voices",
-            "value": 17304852,
-            "range": "± 75063",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "chops_like_8_voices",
-            "value": 19701803,
-            "range": "± 343405",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "mod_heavy_3_voices",
-            "value": 8359180,
-            "range": "± 48554",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "mod_heavy_6_voices",
-            "value": 10846910,
-            "range": "± 192868",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "mod_heavy_8_voices",
-            "value": 12390861,
-            "range": "± 134903",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fx_heavy_3_voices",
-            "value": 5418880,
-            "range": "± 23559",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fx_heavy_6_voices",
-            "value": 7322997,
-            "range": "± 26832",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "fx_heavy_8_voices",
-            "value": 8671862,
-            "range": "± 46328",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "worst_poly_3_voices",
-            "value": 10840213,
-            "range": "± 60804",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "worst_poly_6_voices",
-            "value": 14333754,
-            "range": "± 51543",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "worst_poly_8_voices",
-            "value": 15792671,
-            "range": "± 280059",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_sine_lfo_heavy_3_voices",
-            "value": 8415129,
-            "range": "± 97423",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_sine_lfo_heavy_6_voices",
-            "value": 11387507,
-            "range": "± 59049",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_sine_lfo_heavy_8_voices",
-            "value": 13311723,
-            "range": "± 118457",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_param_interp_light_3_voices",
-            "value": 5303918,
-            "range": "± 18573",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_param_interp_light_6_voices",
-            "value": 7857888,
-            "range": "± 49506",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_param_interp_light_8_voices",
-            "value": 9612967,
-            "range": "± 114966",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_render_vectorization_3_voices",
-            "value": 5319154,
-            "range": "± 132248",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_render_vectorization_6_voices",
-            "value": 7980023,
-            "range": "± 124453",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_render_vectorization_8_voices",
-            "value": 10019337,
-            "range": "± 102389",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_all_combined_3_voices",
-            "value": 9034967,
-            "range": "± 24773",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_all_combined_6_voices",
-            "value": 11993244,
-            "range": "± 56403",
-            "unit": "ns/iter"
-          },
-          {
-            "name": "opt_all_combined_8_voices",
-            "value": 13787773,
-            "range": "± 93123",
-            "unit": "ns/iter"
-          }
-        ]
-      },
       {
         "commit": {
           "author": {
@@ -4439,6 +4217,228 @@ window.BENCHMARK_DATA = {
             "name": "opt_all_combined_v2_8_voices",
             "value": 8183673,
             "range": "± 331665",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fpbrault@gmail.com",
+            "name": "Felix Perron-Brault",
+            "username": "fpbrault"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f47b138f20b9f32d0555f711171c2f770aa0a4d",
+          "message": "feat(simple): add compact sound and envelope controls (#378)\n\n* feat(simple): add compact sound shaping controls\n\nAdd compact routing, algorithm, line parameter, envelope, and FX controls to Simple mode while sharing the existing synth state with Advanced mode.\n\n* fix(renderer): adjust panel size for better layout in SynthRenderer\n\n* test(display): sync adaptive profile expectations\n\n* feat(simple): add dedicated envelope section\n\n* fix(simple): balance compact rack sections\n\n* adjust height\n\n* clean display\n\n* feat(pd101): refine simple sound and envelope controls\n\n* fix(perf): target visualization canvas explicitly\n\n* fix(ui): adjust layout and sizing in performance controls panel\n\n* Improve simple controls\n\n* clean up\n\n* clean up\n\n* fix oct knob\n\n* lint\n\n* apply review changes\n\n* Refactor performance components to use CollapsedSectionSummary and simplify structure\n\n- Introduced CollapsedSectionSummary component to standardize collapsible sections in performance components.\n- Updated CollapsedEffectsSummary, CollapsedEnvelopeSummary, CollapsedSoundSummary, and PerformanceEffectsPanel to utilize the new CollapsedSectionSummary.\n- Created PerformanceEffectEditor for managing effect settings in a more modular way.\n- Added PerformanceEffectSlotShell and PerformanceEmptyEffectSlot to encapsulate slot rendering logic.\n- Removed unnecessary props and components to streamline the codebase.\n- Added SimpleSectionHeader component for consistent section headers across performance components.\n- Updated tests to reflect changes in component structure and behavior.\n\n* cleanup",
+          "timestamp": "2026-09-11T08:51:10-04:00",
+          "tree_id": "ce8ae92263b162e9c807f4e2de0e24306930469b",
+          "url": "https://github.com/fpbrault/cosmo-pd/commit/4f47b138f20b9f32d0555f711171c2f770aa0a4d"
+        },
+        "date": 1789131621060,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "default_3_voices",
+            "value": 4009229,
+            "range": "± 82792",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_6_voices",
+            "value": 5575157,
+            "range": "± 47245",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "default_8_voices",
+            "value": 6631735,
+            "range": "± 29493",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_3_voices",
+            "value": 3427499,
+            "range": "± 16949",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_6_voices",
+            "value": 3427169,
+            "range": "± 23403",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fun_bass_like_8_voices",
+            "value": 3429805,
+            "range": "± 14320",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_3_voices",
+            "value": 10409577,
+            "range": "± 37693",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_6_voices",
+            "value": 13325156,
+            "range": "± 37707",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chants_like_8_voices",
+            "value": 15304758,
+            "range": "± 58470",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_v2_3_voices",
+            "value": 12358388,
+            "range": "± 49691",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_v2_6_voices",
+            "value": 16750173,
+            "range": "± 214849",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "chops_like_v2_8_voices",
+            "value": 18982325,
+            "range": "± 53839",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_3_voices",
+            "value": 8163719,
+            "range": "± 38420",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_6_voices",
+            "value": 10314871,
+            "range": "± 41466",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "mod_heavy_8_voices",
+            "value": 11566293,
+            "range": "± 36495",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_3_voices",
+            "value": 5226221,
+            "range": "± 40418",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_6_voices",
+            "value": 6795971,
+            "range": "± 31699",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fx_heavy_8_voices",
+            "value": 7788386,
+            "range": "± 74615",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_v2_3_voices",
+            "value": 10577608,
+            "range": "± 42377",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_v2_6_voices",
+            "value": 13395900,
+            "range": "± 50175",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "worst_poly_v2_8_voices",
+            "value": 14517546,
+            "range": "± 49241",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_3_voices",
+            "value": 8092223,
+            "range": "± 65045",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_6_voices",
+            "value": 10625977,
+            "range": "± 39583",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_sine_lfo_heavy_8_voices",
+            "value": 12283531,
+            "range": "± 43933",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_3_voices",
+            "value": 5009933,
+            "range": "± 33205",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_6_voices",
+            "value": 7359405,
+            "range": "± 33013",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_param_interp_light_8_voices",
+            "value": 8850097,
+            "range": "± 46644",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_3_voices",
+            "value": 5220849,
+            "range": "± 24553",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_6_voices",
+            "value": 7776890,
+            "range": "± 35775",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_render_vectorization_8_voices",
+            "value": 8726633,
+            "range": "± 74322",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_v2_3_voices",
+            "value": 8444588,
+            "range": "± 125941",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_v2_6_voices",
+            "value": 11619730,
+            "range": "± 72007",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "opt_all_combined_v2_8_voices",
+            "value": 13451063,
+            "range": "± 59579",
             "unit": "ns/iter"
           }
         ]
