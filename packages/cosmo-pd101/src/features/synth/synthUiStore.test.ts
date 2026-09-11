@@ -85,7 +85,7 @@ describe("synthUiStore", () => {
 		await useSynthUiStore.persist.rehydrate();
 
 		expect(useSynthUiStore.getState()).toMatchObject({
-			workspaceMode: "edit",
+			workspaceMode: "performance",
 			scopeVisualizationMode: "spectrumWaterfall",
 			mainPanelMode: "phase",
 			phaseLinePanelTab: "line1-algos",
