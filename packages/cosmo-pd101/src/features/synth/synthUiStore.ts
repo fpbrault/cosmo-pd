@@ -112,7 +112,7 @@ const KEYBOARD_INPUT_MODES = new Set<KeyboardInputMode>([
 ]);
 
 const DEFAULT_UI_STATE: SynthUiState = {
-	workspaceMode: "edit",
+	workspaceMode: "performance",
 	mainPanelMode: "phase",
 	phaseLinePanelTab: "line1-algos",
 	activeEnvTab: "dcw",

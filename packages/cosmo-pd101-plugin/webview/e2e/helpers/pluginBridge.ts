@@ -17,11 +17,16 @@ export async function setupPluginPage(
 ): Promise<void> {
 	await page.addInitScript(
 		({ keyboardVisible }) => {
-			// Keep test state deterministic across retries/workers.
+			// Keep test state deterministic across retries/workers. Most plugin E2E
+			// tests exercise Advanced-only controls, so opt into that workspace
+			// explicitly instead of depending on the product's fresh-start default.
 			if (localStorage.getItem("cosmo-pd101-ui-state") === null) {
 				localStorage.setItem(
 					"cosmo-pd101-ui-state",
-					JSON.stringify({ state: { keyboardVisible }, version: 0 }),
+					JSON.stringify({
+						state: { keyboardVisible, workspaceMode: "edit" },
+						version: 0,
+					}),
 				);
 			}
 			localStorage.setItem("cz-plugin-ui-scale", "100");
