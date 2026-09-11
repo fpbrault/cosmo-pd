@@ -16,6 +16,13 @@ export type PhaseLinePanelTab =
 	| "line1-envelopes"
 	| "line2-envelopes";
 export type EnvTab = "dco" | "dcw" | "dca";
+export type SimpleExpandedSection = "sound" | "envelope" | "effects";
+export type SimpleEditedLine = 1 | 2;
+export type SimpleEditedAlgo = "a" | "b";
+export type SimpleEditedAlgoByLine = {
+	1: SimpleEditedAlgo;
+	2: SimpleEditedAlgo;
+};
 type KeyboardInputMode = "velocity" | "aftertouch";
 
 type SynthUiState = {
@@ -23,6 +30,9 @@ type SynthUiState = {
 	mainPanelMode: MainPanelMode;
 	phaseLinePanelTab: PhaseLinePanelTab;
 	activeEnvTab: EnvTab;
+	simpleExpandedSection: SimpleExpandedSection;
+	simpleEditedLine: SimpleEditedLine;
+	simpleEditedAlgoByLine: SimpleEditedAlgoByLine;
 	keyboardVisible: boolean;
 	keyboardOctaves: number;
 	keyboardRange: number;
@@ -48,6 +58,12 @@ type SynthUiActions = {
 	setMainPanelMode: (mode: MainPanelMode) => void;
 	setPhaseLinePanelTab: (tab: PhaseLinePanelTab) => void;
 	setActiveEnvTab: (tab: EnvTab) => void;
+	setSimpleExpandedSection: (section: SimpleExpandedSection) => void;
+	setSimpleEditedLine: (line: SimpleEditedLine) => void;
+	setSimpleEditedAlgoForLine: (
+		line: SimpleEditedLine,
+		algo: SimpleEditedAlgo,
+	) => void;
 	setKeyboardVisible: (visible: boolean) => void;
 	setKeyboardOctaves: (octaves: number) => void;
 	setKeyboardRange: (range: number) => void;
@@ -78,6 +94,12 @@ const PHASE_LINE_PANEL_TABS = new Set<PhaseLinePanelTab>([
 	"line2-envelopes",
 ]);
 const ENV_TABS = new Set<EnvTab>(["dco", "dcw", "dca"]);
+const SIMPLE_EXPANDED_SECTIONS = new Set<SimpleExpandedSection>([
+	"sound",
+	"envelope",
+	"effects",
+]);
+const SIMPLE_EDITED_ALGOS = new Set<SimpleEditedAlgo>(["a", "b"]);
 const SCOPE_COLOR_THEMES = new Set<ScopeColorTheme>([
 	"vintage",
 	"amber",
@@ -94,6 +116,9 @@ const DEFAULT_UI_STATE: SynthUiState = {
 	mainPanelMode: "phase",
 	phaseLinePanelTab: "line1-algos",
 	activeEnvTab: "dcw",
+	simpleExpandedSection: "sound",
+	simpleEditedLine: 1,
+	simpleEditedAlgoByLine: { 1: "a", 2: "a" },
 	keyboardVisible: true,
 	keyboardOctaves: 2,
 	keyboardRange: 0,
@@ -129,6 +154,26 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 	const mainPanelMode = getStringValue(candidate.mainPanelMode);
 	const phaseLinePanelTab = getStringValue(candidate.phaseLinePanelTab);
 	const activeEnvTab = getStringValue(candidate.activeEnvTab);
+	const simpleExpandedSection = getStringValue(candidate.simpleExpandedSection);
+	const persistedAlgos = candidate.simpleEditedAlgoByLine;
+	const persistedAlgoByLine: SimpleEditedAlgoByLine = {
+		1:
+			typeof persistedAlgos === "object" &&
+			persistedAlgos !== null &&
+			SIMPLE_EDITED_ALGOS.has(
+				(persistedAlgos as Record<string, unknown>)["1"] as SimpleEditedAlgo,
+			)
+				? ((persistedAlgos as Record<string, unknown>)["1"] as SimpleEditedAlgo)
+				: "a",
+		2:
+			typeof persistedAlgos === "object" &&
+			persistedAlgos !== null &&
+			SIMPLE_EDITED_ALGOS.has(
+				(persistedAlgos as Record<string, unknown>)["2"] as SimpleEditedAlgo,
+			)
+				? ((persistedAlgos as Record<string, unknown>)["2"] as SimpleEditedAlgo)
+				: "a",
+	};
 	const rawScopeColorTheme = getStringValue(candidate.scopeColorTheme);
 	const scopeColorTheme =
 		rawScopeColorTheme === "classic" ? "vintage" : rawScopeColorTheme;
@@ -145,6 +190,15 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			? (legacyPerformanceMode ?? persistedVisualizationMode)
 			: (persistedVisualizationMode ?? legacyPerformanceMode);
 
+	const simpleEditedLine =
+		candidate.simpleEditedLine === 1 || candidate.simpleEditedLine === 2
+			? candidate.simpleEditedLine
+			: DEFAULT_UI_STATE.simpleEditedLine;
+	const simpleEditedAlgoByLine =
+		typeof persistedAlgos === "object" && persistedAlgos !== null
+			? persistedAlgoByLine
+			: DEFAULT_UI_STATE.simpleEditedAlgoByLine;
+
 	return {
 		workspaceMode: normalizedWorkspaceMode,
 		mainPanelMode:
@@ -160,6 +214,15 @@ const normalizeSynthUiState = (value: unknown): SynthUiState => {
 			activeEnvTab && ENV_TABS.has(activeEnvTab as EnvTab)
 				? (activeEnvTab as EnvTab)
 				: DEFAULT_UI_STATE.activeEnvTab,
+		simpleExpandedSection:
+			simpleExpandedSection &&
+			SIMPLE_EXPANDED_SECTIONS.has(
+				simpleExpandedSection as SimpleExpandedSection,
+			)
+				? (simpleExpandedSection as SimpleExpandedSection)
+				: DEFAULT_UI_STATE.simpleExpandedSection,
+		simpleEditedLine,
+		simpleEditedAlgoByLine,
 		keyboardVisible:
 			typeof candidate.keyboardVisible === "boolean"
 				? candidate.keyboardVisible
@@ -256,6 +319,17 @@ export const useSynthUiStore = create<SynthUiStore>()(
 			setMainPanelMode: (mode) => set({ mainPanelMode: mode }),
 			setPhaseLinePanelTab: (tab) => set({ phaseLinePanelTab: tab }),
 			setActiveEnvTab: (tab) => set({ activeEnvTab: tab }),
+			setSimpleExpandedSection: (section) =>
+				set({ simpleExpandedSection: section }),
+			setSimpleEditedLine: (line) => set({ simpleEditedLine: line }),
+			setSimpleEditedAlgoForLine: (line, algo) =>
+				set((state) => ({
+					simpleEditedLine: line,
+					simpleEditedAlgoByLine: {
+						...state.simpleEditedAlgoByLine,
+						[line]: algo,
+					},
+				})),
 			setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
 			setKeyboardOctaves: (octaves) => set({ keyboardOctaves: octaves }),
 			setKeyboardRange: (range) => set({ keyboardRange: range }),
@@ -284,6 +358,9 @@ export const useSynthUiStore = create<SynthUiStore>()(
 				mainPanelMode: state.mainPanelMode,
 				phaseLinePanelTab: state.phaseLinePanelTab,
 				activeEnvTab: state.activeEnvTab,
+				simpleExpandedSection: state.simpleExpandedSection,
+				simpleEditedLine: state.simpleEditedLine,
+				simpleEditedAlgoByLine: state.simpleEditedAlgoByLine,
 				keyboardVisible: state.keyboardVisible,
 				keyboardOctaves: state.keyboardOctaves,
 				keyboardRange: state.keyboardRange,

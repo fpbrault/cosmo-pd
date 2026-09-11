@@ -69,6 +69,7 @@ export function PhaseLineAlgoPanel({
 						labelClassName="text-lg font-bold tracking-[0.3em] text-base-content/75"
 						value={algo.blend}
 						onChange={algo.setBlend}
+						disabled={algo.algoB === null}
 						color={color}
 						showTicks={false}
 						centerMarker

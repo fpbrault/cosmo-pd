@@ -107,4 +107,21 @@ describe("AlgoControlsGroup", () => {
 		expect(screen.getByTestId("item-depth")).toBeInTheDocument();
 		expect(screen.getByTestId("algo-controls-cz-layout")).toBeInTheDocument();
 	});
+
+	it("renders four compact slots through the shared interpretation layer", () => {
+		render(
+			<AlgoControlsGroup
+				variant="compact"
+				controlSize={64}
+				slot={{
+					...sharedSlot,
+					controls: [{ id: "drive", label: "Drive", algo: "saw" }],
+				}}
+			/>,
+		);
+
+		expect(screen.getByTestId("simple-algo-controls")).toBeInTheDocument();
+		expect(screen.getByTestId("item-drive")).toBeInTheDocument();
+		expect(screen.getAllByTitle(/Unused algorithm control/)).toHaveLength(3);
+	});
 });

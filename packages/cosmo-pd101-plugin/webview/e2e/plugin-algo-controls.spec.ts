@@ -131,6 +131,29 @@ test.describe("Algo controls plugin bridge", () => {
 		).toBeVisible();
 	});
 
+	test("hovering an algorithm popover option should update the bottom info bar", async ({
+		page,
+	}) => {
+		await page
+			.getByRole("button", { name: /click to change/i })
+			.first()
+			.click();
+
+		const option = page
+			.getByTestId("algorithm-picker-grid")
+			.first()
+			.getByRole("button", { name: "Classic" });
+		await expect(option).toBeVisible();
+
+		const hoverInfo = await option.getAttribute("data-hover-info");
+		expect(hoverInfo).toBeTruthy();
+		await option.hover();
+
+		await expect(
+			page.getByText(hoverInfo ?? "", { exact: true }),
+		).toBeVisible();
+	});
+
 	test("Line 1 algo control knob edits should invoke setAlgoControls with line 1", async ({
 		page,
 	}) => {

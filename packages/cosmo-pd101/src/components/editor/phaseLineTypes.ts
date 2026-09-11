@@ -93,9 +93,10 @@ export type PhaseLineModel = {
 
 export type AlgoSlotViewModel = {
 	slotId: "a" | "b";
-	value: PdAlgo;
-	onChange: (value: PdAlgo) => void;
-	disabled: boolean;
+	value: PdAlgo | null;
+	onChange: (value: PdAlgo | null) => void;
+	allowNone: boolean;
+	controlsDisabled: boolean;
 	controls: AlgoControlRuntime[];
 	controlBindings: Record<string, AlgoControlBinding>;
 	algoControlSlotIndex: Record<string, number>;

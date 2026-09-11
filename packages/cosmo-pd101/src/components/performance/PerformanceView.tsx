@@ -32,26 +32,6 @@ export default memo(function PerformanceView() {
 						{tags}
 					</p>
 				</div>
-				<div className="pointer-events-none absolute right-20 bottom-11 left-48 flex justify-between font-mono text-[0.5rem] text-cz-cream/60">
-					{displayMode === "spectrumWaterfall" ||
-					displayMode === "spectrogram" ? (
-						<>
-							<span>20</span>
-							<span>100</span>
-							<span>1k</span>
-							<span>10k</span>
-							<span>20k Hz</span>
-						</>
-					) : displayMode === "scopeHistory" || displayMode === "waveform" ? (
-						<>
-							<span>0</span>
-							<span>0.5</span>
-							<span>1</span>
-							<span>1.5</span>
-							<span>2 cycles</span>
-						</>
-					) : null}
-				</div>
 			</section>
 			<PerformanceControlsPanel />
 		</main>

@@ -15,13 +15,13 @@ function AlgoSectionCard({ slot, lineIndex, color }: AlgoSectionCardProps) {
 	return (
 		<Card
 			variant="subtle"
-			className={`flex min-h-0 grow flex-col py-2 [@container_phase_(max-height:620px)]:py-1 ${slot.disabled ? "opacity-45" : ""}`}
+			className="flex min-h-0 grow flex-col py-2 [@container_phase_(max-height:620px)]:py-1"
 		>
 			<div className="flex justify-center">
 				<AlgoIconGrid
 					value={slot.value}
 					onChange={slot.onChange}
-					disabled={slot.disabled}
+					allowNone={slot.allowNone}
 					color={color}
 				/>
 			</div>
@@ -38,7 +38,7 @@ function AlgoSectionCard({ slot, lineIndex, color }: AlgoSectionCardProps) {
 					getActiveSelectOption: slot.getActiveSelectOption,
 					applyOptionAssignments: slot.applyOptionAssignments,
 				}}
-				disabled={slot.disabled}
+				disabled={slot.controlsDisabled}
 				color={color}
 			/>
 		</Card>

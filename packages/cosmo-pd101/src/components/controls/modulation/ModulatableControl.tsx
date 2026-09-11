@@ -22,6 +22,7 @@ interface ModulatableControlProps {
 	label?: string;
 	children: ReactNode;
 	accentColor?: string;
+	className?: string;
 	iconButtonStyle?: React.CSSProperties;
 }
 
@@ -30,6 +31,7 @@ const ModulatableControl = memo(function ModulatableControl({
 	label,
 	children,
 	accentColor,
+	className = "",
 	iconButtonStyle,
 }: ModulatableControlProps) {
 	const { modMatrix, setModMatrix } = useModMatrix();
@@ -154,7 +156,7 @@ const ModulatableControl = memo(function ModulatableControl({
 	return (
 		<div
 			ref={wrapperRef}
-			className={`group relative inline-flex rounded-xl transition-all ${
+			className={`group relative inline-flex rounded-xl transition-all ${className} ${
 				modulationTargetState === "targeted"
 					? "ring-2 ring-cz-light-blue/90 ring-offset-2 ring-offset-cz-panel"
 					: modulationTargetState === "available"

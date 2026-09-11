@@ -67,6 +67,9 @@ export type {
 	EnvTab,
 	MainPanelMode,
 	PhaseLinePanelTab,
+	SimpleEditedAlgo,
+	SimpleEditedAlgoByLine,
+	SimpleEditedLine,
 	SynthUiStore,
 } from "./features/synth/synthUiStore";
 export {

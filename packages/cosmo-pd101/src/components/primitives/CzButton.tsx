@@ -1,8 +1,12 @@
 import { motion } from "motion/react";
 import type React from "react";
+import { forwardRef } from "react";
 import { useHoverInfoHandlers } from "../layout/HoverInfo";
 
 type CzButtonProps = {
+	ariaExpanded?: boolean;
+	ariaLabel?: string;
+	ariaPressed?: boolean;
 	active?: boolean;
 	onClick?: () => void;
 	children: React.ReactNode;
@@ -24,22 +28,32 @@ type CzButtonProps = {
  *     <button>     ← button face with label text only
  *   </div>
  */
-export default function CzButton({
-	active = false,
-	onClick,
-	children,
-	className = "",
-	disabled = false,
-	type = "button",
-	led = true,
-	style,
-	tooltip,
-}: CzButtonProps) {
+const CzButton = forwardRef<HTMLButtonElement, CzButtonProps>(function CzButton(
+	{
+		ariaExpanded,
+		ariaLabel,
+		ariaPressed,
+		active = false,
+		onClick,
+		children,
+		className = "",
+		disabled = false,
+		type = "button",
+		led = true,
+		style,
+		tooltip,
+	},
+	ref,
+) {
 	const resolvedTooltip = tooltip?.trim() ? tooltip : undefined;
 	const hoverHandlers = useHoverInfoHandlers(resolvedTooltip);
 
 	const buttonFace = (
 		<motion.button
+			ref={ref}
+			aria-expanded={ariaExpanded}
+			aria-label={ariaLabel}
+			aria-pressed={ariaPressed}
 			type={type}
 			disabled={disabled}
 			onClick={onClick}
@@ -108,4 +122,6 @@ export default function CzButton({
 			</div>
 		</div>
 	);
-}
+});
+
+export default CzButton;

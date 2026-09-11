@@ -694,7 +694,10 @@ function SynthParamSliderInner({
 
 	if (state.modDestinationResolved) {
 		return (
-			<ModulatableControl destinationId={state.modDestinationResolved}>
+			<ModulatableControl
+				destinationId={state.modDestinationResolved}
+				className={orientation === "horizontal" ? "min-w-0 flex-1" : undefined}
+			>
 				{slider}
 			</ModulatableControl>
 		);

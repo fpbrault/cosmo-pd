@@ -16,9 +16,10 @@ const CZ_STRUCTURED_CONTROL_IDS = new Set([
 	"waveform2",
 	"windowFunction",
 ]);
+const COMPACT_CONTROL_POSITIONS = ["first", "second", "third", "fourth"];
 
-type AlgoControlsGroupSlot = {
-	algo: Algo;
+export type AlgoControlsGroupSlot = {
+	algo: Algo | null;
 	controls: AlgoControlRuntime[];
 	controlBindings: Record<string, AlgoControlBinding>;
 	lineIndex: LineIndex;
@@ -35,6 +36,8 @@ interface AlgoControlsGroupProps {
 	disabled?: boolean;
 	slot: AlgoControlsGroupSlot;
 	color?: string;
+	variant?: "standard" | "compact";
+	controlSize?: number;
 }
 
 type CzStructuredControls = {
@@ -67,6 +70,8 @@ function AlgoControlsGroupInner({
 	slot,
 	disabled = false,
 	color,
+	variant = "standard",
+	controlSize,
 }: AlgoControlsGroupProps) {
 	const {
 		algo,
@@ -99,8 +104,35 @@ function AlgoControlsGroupInner({
 			getActiveSelectOption={getActiveSelectOption}
 			applyOptionAssignments={applyOptionAssignments}
 			color={color}
+			variant={variant}
+			controlSize={controlSize}
 		/>
 	);
+
+	if (variant === "compact") {
+		return (
+			<div
+				className="grid min-w-0 flex-1 grid-cols-4 items-center gap-0.5"
+				data-testid={isCzAlgo ? "simple-cz-controls" : "simple-algo-controls"}
+			>
+				{COMPACT_CONTROL_POSITIONS.map((positionId, index) => {
+					const control = controls[index];
+					if (!control) {
+						return (
+							<div
+								key={positionId}
+								title={`Unused algorithm control ${index + 1}`}
+								className="flex h-20 min-w-0 items-center justify-center rounded border border-cz-border/45 bg-cz-inset/25 text-cz-cream/20"
+							>
+								—
+							</div>
+						);
+					}
+					return renderControl(control);
+				})}
+			</div>
+		);
+	}
 
 	return (
 		<Card

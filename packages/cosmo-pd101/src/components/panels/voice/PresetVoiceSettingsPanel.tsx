@@ -2,6 +2,7 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@/components/controls/Button";
 import SynthParamKnob from "@/components/controls/SynthParamKnob";
+import { usePortamentoControlModel } from "@/components/controls/useVoiceControls";
 import { useHoverInfoHandlers } from "@/components/layout/HoverInfo";
 import SynthPanelContainer from "@/components/layout/SynthPanelContainer";
 import { useSynthParam } from "@/features/synth/SynthParamController";
@@ -82,13 +83,13 @@ export default memo(function PresetVoiceSettingsPanel() {
 		useSynthParam("velocityCurve");
 	const { value: pitchBendRange, setValue: setPitchBendRange } =
 		useSynthParam("pitchBendRange");
-	const { value: portamentoMode, setValue: setPortamentoMode } =
-		useSynthParam("portamentoMode");
-	const { value: portamentoRate, setValue: setPortamentoRate } =
-		useSynthParam("portamentoRate");
-	const { value: portamentoTime, setValue: setPortamentoTime } =
-		useSynthParam("portamentoTime");
-	const isRateMode = portamentoMode === "rate";
+	const {
+		isRateMode,
+		toggleMode,
+		activeParamKey,
+		activeValue,
+		setActiveValue,
+	} = usePortamentoControlModel();
 	const nextMode = isRateMode ? "time" : "rate";
 	const portamentoModeTooltip = getEnumTooltip("portamentoMode", nextMode);
 	const portamentoModeHoverHandlers = useHoverInfoHandlers(
@@ -105,7 +106,7 @@ export default memo(function PresetVoiceSettingsPanel() {
 				<div className="grid min-h-0 flex-1 grid-cols-3 content-center items-center justify-items-center gap-x-1 gap-y-1.5 bg-cz-panel [grid-template-rows:auto_auto]">
 					<Button
 						type="button"
-						onClick={() => setPortamentoMode(nextMode)}
+						onClick={toggleMode}
 						title={portamentoModeTooltip}
 						data-hover-info={portamentoModeTooltip}
 						{...portamentoModeHoverHandlers}
@@ -120,12 +121,12 @@ export default memo(function PresetVoiceSettingsPanel() {
 
 					<div className="flex items-end justify-center self-end">
 						<SynthParamKnob
-							paramKey={isRateMode ? "portamentoRate" : "portamentoTime"}
-							value={(isRateMode ? portamentoRate : portamentoTime) as number}
+							paramKey={activeParamKey}
+							value={activeValue as number}
 							min={isRateMode ? 0.01 : undefined}
 							max={isRateMode ? 100 : undefined}
 							step={isRateMode ? 0.01 : undefined}
-							onChange={isRateMode ? setPortamentoRate : setPortamentoTime}
+							onChange={setActiveValue}
 							color="#7f9de4"
 							size={52}
 							label={t("presetVoice.portamento")}
