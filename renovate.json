@@ -1,10 +1,15 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": ["config:recommended", "customManagers:biomeVersions"],
-	"enabledManagers": ["bun", "cargo", "git-submodules", "github-actions"],
+	"enabledManagers": [
+		"bun",
+		"bun-version",
+		"cargo",
+		"git-submodules",
+		"github-actions"
+	],
 	"cloneSubmodules": true,
 	"ignorePaths": ["**/dist/**", "vendor/**", "public/**", ".opencode/**"],
-
 	"schedule": ["before 5am on Monday"],
 	"timezone": "America/Montreal",
 	"labels": ["dependencies"],
@@ -58,6 +63,19 @@
 			"groupName": "Tanstack packages",
 			"groupSlug": "tanstack",
 			"matchPackageNames": ["@tanstack/{/,}**"]
+		},
+		{
+			"description": "Group the wasm-bindgen Rust monorepo as one compatibility unit",
+			"matchManagers": ["cargo"],
+			"extends": ["monorepo:rust-wasm-bindgen"],
+			"matchUpdateTypes": ["digest", "patch", "minor", "major"],
+			"groupName": "rust-wasm-bindgen monorepo",
+			"groupSlug": "rust-wasm-bindgen"
 		}
-	]
+	],
+	"lockFileMaintenance": {
+		"enabled": true,
+		"schedule": ["before 4am on Monday"]
+	},
+	"gitIgnoredAuthors": ["41898282+github-actions[bot]@users.noreply.github.com"]
 }

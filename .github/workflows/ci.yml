@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: main
@@ -33,7 +34,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -41,33 +42,14 @@ jobs:
           components: rustfmt
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
-
-      - name: Setup Biome
-        uses: biomejs/setup-biome@v2
-        with:
-          version: latest
 
       - name: Run Biome CI
-        id: biome-ci
-        run: biome ci .
+        run: bunx --no-install biome ci .
 
-      - name: Run Cargo fmt
-        run: bun run lint:fix:cargo || true
-        shell: bash
-
-      - name: Check for any formatting changes
-        id: check-changes
-        run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            echo "has-changes=true" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
-      - name: Fail if formatting changes were needed
-        if: steps.check-changes.outputs.has-changes == 'true'
-        run: exit 1
+      - name: Check Cargo formatting
+        run: bun run ./scripts/cargo-fmt-workspace.mjs --check
         shell: bash
 
   rust-tests:
@@ -114,10 +96,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
 
       - name: Run unit tests
@@ -133,10 +115,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
 
       - name: Install Playwright Chromium
@@ -156,10 +138,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist cache
@@ -184,14 +166,14 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
 
       - name: Install plugin webview dependencies
-        run: cd packages/cosmo-pd101-plugin/webview && bun install
+        run: cd packages/cosmo-pd101-plugin/webview && bun install --frozen-lockfile
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist
@@ -220,14 +202,14 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
 
       - name: Install plugin webview dependencies
-        run: cd packages/cosmo-pd101-plugin/webview && bun install
+        run: cd packages/cosmo-pd101-plugin/webview && bun install --frozen-lockfile
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist
@@ -260,14 +242,14 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         shell: bash
 
       - name: Install plugin webview dependencies
-        run: cd packages/cosmo-pd101-plugin/webview && bun install
+        run: cd packages/cosmo-pd101-plugin/webview && bun install --frozen-lockfile
         shell: bash
 
       - name: Restore cosmo-pd101 lib-dist
@@ -321,7 +303,7 @@ jobs:
         if: steps.filter.outputs.engine == 'true'
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Benchmark target branch (JSON)
         if: steps.filter.outputs.engine == 'true'
@@ -452,7 +434,7 @@ jobs:
         if: steps.filter.outputs.display == 'true'
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         if: steps.filter.outputs.display == 'true'

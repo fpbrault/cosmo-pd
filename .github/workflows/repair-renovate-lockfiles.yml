@@ -1,0 +1,72 @@
+name: Repair Renovate Lockfiles
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: renovate-lockfile-repair-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  repair-lockfiles:
+    if: >-
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'renovate/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Renovate branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Repair Bun lockfile
+        run: bun install --ignore-scripts
+        shell: bash
+
+      - name: Repair Cargo lockfile
+        run: cargo metadata --format-version 1 > /dev/null
+        shell: bash
+
+      - name: Commit repaired lockfiles
+        id: commit
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git add -- bun.lock Cargo.lock
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Lockfiles are already consistent."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(deps): repair lockfiles"
+          git push origin "HEAD:${BRANCH}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Run CI for repaired commit
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: gh workflow run ci.yml --ref "$BRANCH"
+        shell: bash
