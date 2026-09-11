@@ -1,9 +1,6 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
-	"extends": [
-		"config:recommended",
-		"customManagers:biomeVersions"
-	],
+	"extends": ["config:recommended", "customManagers:biomeVersions"],
 	"enabledManagers": [
 		"bun",
 		"bun-version",
@@ -12,127 +9,73 @@
 		"github-actions"
 	],
 	"cloneSubmodules": true,
-	"ignorePaths": [
-		"**/dist/**",
-		"vendor/**",
-		"public/**",
-		".opencode/**"
-	],
-	"schedule": [
-		"before 5am on Monday"
-	],
+	"ignorePaths": ["**/dist/**", "vendor/**", "public/**", ".opencode/**"],
+	"schedule": ["before 5am on Monday"],
 	"timezone": "America/Montreal",
-	"labels": [
-		"dependencies"
-	],
+	"labels": ["dependencies"],
 	"packageRules": [
 		{
 			"description": "Automerge non-major devDependency updates",
-			"matchDepTypes": [
-				"devDependencies"
-			],
-			"matchUpdateTypes": [
-				"minor",
-				"patch"
-			],
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor", "patch"],
 			"automerge": true
 		},
 		{
 			"description": "Group all non-major Bun updates into a single PR",
-			"matchManagers": [
-				"bun"
-			],
-			"matchUpdateTypes": [
-				"minor",
-				"patch"
-			],
+			"matchManagers": ["bun"],
+			"matchUpdateTypes": ["minor", "patch"],
 			"groupName": "bun non-major dependencies",
 			"groupSlug": "bun-non-major"
 		},
 		{
 			"description": "Group all non-major Cargo updates into a single PR",
-			"matchManagers": [
-				"cargo"
-			],
-			"matchUpdateTypes": [
-				"minor",
-				"patch"
-			],
+			"matchManagers": ["cargo"],
+			"matchUpdateTypes": ["minor", "patch"],
 			"groupName": "cargo non-major dependencies",
 			"groupSlug": "cargo-non-major"
 		},
 		{
 			"description": "Group all Cargo digest updates into a single PR",
-			"matchManagers": [
-				"cargo"
-			],
-			"matchUpdateTypes": [
-				"digest"
-			],
+			"matchManagers": ["cargo"],
+			"matchUpdateTypes": ["digest"],
 			"groupName": "cargo dependency digests",
 			"groupSlug": "cargo-digests"
 		},
 		{
 			"description": "Separate major updates for individual review",
-			"matchUpdateTypes": [
-				"major"
-			],
+			"matchUpdateTypes": ["major"],
 			"automerge": false,
-			"labels": [
-				"dependencies",
-				"major-update"
-			]
+			"labels": ["dependencies", "major-update"]
 		},
 		{
 			"description": "Enable git submodule updates",
-			"matchManagers": [
-				"git-submodules"
-			],
+			"matchManagers": ["git-submodules"],
 			"enabled": true
 		},
 		{
 			"description": "Group Tauri plugins and core together",
 			"groupName": "Tauri packages",
 			"groupSlug": "tauri",
-			"matchPackageNames": [
-				"@tauri-apps/{/,}**",
-				"tauri{/,}**",
-				"tauri-{/,}**"
-			]
+			"matchPackageNames": ["@tauri-apps/{/,}**", "tauri{/,}**", "tauri-{/,}**"]
 		},
 		{
 			"description": "Group Tanstack packages together",
 			"groupName": "Tanstack packages",
 			"groupSlug": "tanstack",
-			"matchPackageNames": [
-				"@tanstack/{/,}**"
-			]
+			"matchPackageNames": ["@tanstack/{/,}**"]
 		},
 		{
 			"description": "Group the wasm-bindgen Rust monorepo as one compatibility unit",
-			"matchManagers": [
-				"cargo"
-			],
-			"extends": [
-				"monorepo:rust-wasm-bindgen"
-			],
-			"matchUpdateTypes": [
-				"digest",
-				"patch",
-				"minor",
-				"major"
-			],
+			"matchManagers": ["cargo"],
+			"extends": ["monorepo:rust-wasm-bindgen"],
+			"matchUpdateTypes": ["digest", "patch", "minor", "major"],
 			"groupName": "rust-wasm-bindgen monorepo",
 			"groupSlug": "rust-wasm-bindgen"
 		}
 	],
 	"lockFileMaintenance": {
 		"enabled": true,
-		"schedule": [
-			"before 4am on Monday"
-		]
+		"schedule": ["before 4am on Monday"]
 	},
-	"gitIgnoredAuthors": [
-		"41898282+github-actions[bot]@users.noreply.github.com"
-	]
+	"gitIgnoredAuthors": ["41898282+github-actions[bot]@users.noreply.github.com"]
 }
