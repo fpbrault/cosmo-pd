@@ -553,7 +553,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-pd101-bridge-types"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "cosmo-synth-engine",
  "serde",
@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-pd101-plugin"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "arc-swap",
  "assert_no_alloc",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-pd101-presets"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "cosmo-synth-engine",
  "serde",
@@ -614,7 +614,7 @@ dependencies = [
 
 [[package]]
 name = "cosmo-synth-engine"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "arrayvec",
  "assert_no_alloc",
