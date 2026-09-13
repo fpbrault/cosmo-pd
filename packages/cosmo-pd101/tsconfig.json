@@ -5,7 +5,6 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"ignoreDeprecations": "6.0",
-		"baseUrl": ".",
 		"paths": {
 			"@/lib/synth/*": ["./src/lib/synth/*"],
 			"@/lib/midi/*": ["./src/lib/midi/*"],
