@@ -63,7 +63,7 @@ export default function GlobalVoicePanel() {
 								if (!Number.isFinite(nextValue)) return;
 								setTempoBpm(Math.min(300, Math.max(20, nextValue)));
 							}}
-							className="input input-sm h-8 w-full border-cz-border bg-cz-body font-mono text-xs text-cz-cream disabled:text-cz-cream/45"
+							className="input input-sm h-8 w-full border-cz-border bg-cz-body font-mono text-cz-cream text-xs disabled:text-cz-cream/45"
 						/>
 					</label>
 					<span className="font-mono text-4xs text-cz-cream/45 uppercase tracking-[0.15em]">
@@ -71,7 +71,9 @@ export default function GlobalVoicePanel() {
 					</span>
 				</div>
 				<p className="mt-1.5 font-mono text-4xs text-cz-cream-dim/55">
-					{transport.available ? "Controlled by host transport" : "Manual synth tempo"}
+					{transport.available
+						? "Controlled by host transport"
+						: "Manual synth tempo"}
 				</p>
 			</GlobalSection>
 
@@ -79,7 +81,7 @@ export default function GlobalVoicePanel() {
 				<label className="block">
 					<span className="sr-only">{t("globalVoice.voiceLimit")}</span>
 					<select
-						className="select select-sm h-8 w-full border-cz-border bg-cz-body font-mono text-xs text-cz-cream"
+						className="select select-sm h-8 w-full border-cz-border bg-cz-body font-mono text-cz-cream text-xs"
 						value={voiceLimit}
 						onChange={(e) => setVoiceLimit(Number(e.target.value))}
 						aria-label={t("globalVoice.voiceLimitAria", {
