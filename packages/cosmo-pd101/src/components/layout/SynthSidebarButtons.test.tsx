@@ -112,9 +112,9 @@ describe("SynthSidebarButtons", () => {
 		}));
 	});
 
-	it("opens global settings when Global is clicked", () => {
+	it("opens scope settings when Scope is clicked", () => {
 		render(<SynthSidebarButtons />);
-		fireEvent.click(screen.getByRole("button", { name: "Global" }));
+		fireEvent.click(screen.getByRole("button", { name: "Scope" }));
 		expect(setGlobalPanelOpenMock).toHaveBeenCalledWith(true);
 	});
 
