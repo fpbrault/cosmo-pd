@@ -1,6 +1,6 @@
 import { memo } from "react";
 import AudioStartOverlay from "@/components/layout/AudioStartOverlay";
-import { ScopeModal, SynthBrandInfoModal } from "@/components/modals";
+import { SynthBrandInfoModal } from "@/components/modals";
 import { useSynthUiStore } from "@/features/synth/synthUiStore";
 
 type AudioGate = {
@@ -19,8 +19,6 @@ export default memo(function SynthRendererOverlays({
 }: SynthRendererOverlaysProps) {
 	const brandInfoOpen = useSynthUiStore((s) => s.brandInfoOpen);
 	const setBrandInfoOpen = useSynthUiStore((s) => s.setBrandInfoOpen);
-	const globalPanelOpen = useSynthUiStore((s) => s.globalPanelOpen);
-	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
 
 	return (
 		<>
@@ -29,10 +27,6 @@ export default memo(function SynthRendererOverlays({
 				open={brandInfoOpen}
 				onClose={() => setBrandInfoOpen(false)}
 				appVersion={appVersion}
-			/>
-			<ScopeModal
-				open={globalPanelOpen}
-				onClose={() => setGlobalPanelOpen(false)}
 			/>
 		</>
 	);
