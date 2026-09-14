@@ -201,6 +201,7 @@ export default memo(function SynthSidebarButtons() {
 								});
 		const control = (
 			<CzTabButton
+				key={button.id}
 				color={customColor ? "black" : getButtonColor(button.id)}
 				customColor={customColor}
 				active={active}
@@ -228,7 +229,7 @@ export default memo(function SynthSidebarButtons() {
 			);
 		}
 
-		return <div key={button.id}>{control}</div>;
+		return control;
 	};
 
 	return (
