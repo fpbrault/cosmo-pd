@@ -151,7 +151,7 @@ export default memo(function SynthSidebarButtons() {
 		const slotType = slot != null ? (fxSlots[slot]?.type ?? "empty") : null;
 		const topLabel =
 			button.id === "global"
-				? t("sidebar.global")
+				? t("panels.scope")
 				: button.id === "midiLearn"
 					? t("sidebar.midi")
 					: button.id === "modTarget"
@@ -183,7 +183,7 @@ export default memo(function SynthSidebarButtons() {
 				: undefined;
 		const tooltip =
 			button.id === "global"
-				? t("tooltips.sidebar.global")
+				? "Open scope visualization settings."
 				: button.id === "midiLearn"
 					? t("tooltips.sidebar.midiLearn")
 					: button.id === "modTarget"
