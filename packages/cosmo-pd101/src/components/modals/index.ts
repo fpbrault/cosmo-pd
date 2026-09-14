@@ -1,3 +1,3 @@
 export { GlobalVoiceModal } from "./GlobalVoiceModal";
-export { ScopeModal } from "./ScopeModal";
+export { ScopePopover } from "./ScopePopover";
 export { SynthBrandInfoModal } from "./SynthBrandInfoModal";
