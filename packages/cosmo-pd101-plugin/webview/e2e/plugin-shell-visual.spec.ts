@@ -39,9 +39,12 @@ test.describe("Plugin shell visual smoke", () => {
 		});
 	});
 
-	test("shows automatic scope controls without a manual trigger", async ({
-		page,
-	}) => {
+	test("opens scope controls from the Scope button", async ({ page }) => {
+		await expect(page.getByText("Cycles", { exact: true })).toHaveCount(0);
+		await page.getByRole("button", { name: "Scope", exact: true }).click();
+		await expect(
+			page.getByRole("dialog", { name: "Scope visualization settings" }),
+		).toBeVisible();
 		await expect(page.getByText("Cycles", { exact: true })).toBeVisible();
 		await expect(page.getByText("Zoom", { exact: true })).toBeVisible();
 		await expect(page.getByText("Trig", { exact: true })).toHaveCount(0);
