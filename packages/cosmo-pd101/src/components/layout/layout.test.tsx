@@ -7,9 +7,22 @@ import SynthPanelContainer from "./SynthPanelContainer";
 import SynthSidebarButtons from "./SynthSidebarButtons";
 
 vi.mock("@/features/synth/synthUiStore", () => ({
-	useSynthUiStore: vi.fn(() => ({
-		setMainPanelMode: vi.fn(),
-	})),
+	useSynthUiStore: vi.fn(
+		(selector?: (state: Record<string, unknown>) => unknown) => {
+			const state = {
+				globalPanelOpen: false,
+				midiLearnOpen: false,
+				scopeCycles: 2,
+				scopeVerticalZoom: 1,
+				setGlobalPanelOpen: vi.fn(),
+				setMainPanelMode: vi.fn(),
+				setMidiLearnOpen: vi.fn(),
+				setScopeCycles: vi.fn(),
+				setScopeVerticalZoom: vi.fn(),
+			};
+			return typeof selector === "function" ? selector(state) : state;
+		},
+	),
 }));
 
 vi.mock("@/features/synth/SynthParamController", () => ({
