@@ -64,6 +64,7 @@ export function KeyboardSettingsPopover({
 			role="dialog"
 			ariaLabel="Synth settings"
 			placement="top-end"
+			initialFocus={-1}
 		>
 			<div className="w-[min(30rem,94vw)] bg-cz-body/95 p-3">
 				<div className="mb-3 flex items-center gap-2 px-1">
