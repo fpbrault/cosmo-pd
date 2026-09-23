@@ -35,6 +35,14 @@ Le Ring Mod fonctionne mais son comportement pourrait légèrement changer dans 
 16. **Wavefolder** — Replie la forme d'onde sur elle-même pour générer de riches harmoniques, de la chaleur subtile au bourdonnement agressif. Paramètres : Drive (0-100%), Plis (0-100%), Mix
 17. **LoFi** — Combine la dégradation du signal, l'émulation wow & flutter et le façonnage tonal pour un caractère vinyle ou cassette vintage. Paramètres : Dégradation, Prof Ondulation/Taux, Flutter Prof/Taux, Tone, Mix
 
+## Presets d’effets réutilisables
+
+Ouvrez l’éditeur d’un effet pour choisir un preset intégré ou enregistrer les réglages du module sous un nom. Vos presets sont disponibles dans les autres emplacements utilisant le même type d’effet ; vous pouvez aussi supprimer vos presets de module.
+
+Un preset d’effet modifie les réglages de ce module. Enregistrez un preset complet du synthétiseur pour conserver tout le son et la chaîne FX.
+
+En mode **Simple**, développez **Effects** et ouvrez l’éditeur de l’emplacement. Les mêmes commandes d’effets sont disponibles en mode **Advanced**.
+
 ## Conseils pour la chaîne FX
 
 :::tip

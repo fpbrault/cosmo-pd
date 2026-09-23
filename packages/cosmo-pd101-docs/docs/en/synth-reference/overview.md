@@ -21,7 +21,7 @@ Modulation Sources (LFO 1, LFO 2, Random S&H, ADSR Mod Env, Velocity, Mod Wheel,
 Modulation Matrix (11 sources -> 195+ destinations, each with depth)
     |
     v
-Voice (x8 polyphony)
+Voices (adjustable limit: 1–16; default 8)
   Line 1 (DCO Env -> Algorithm + DCW Env -> Base Wave -> DCA Env)
   Line 2 (same structure)
     |

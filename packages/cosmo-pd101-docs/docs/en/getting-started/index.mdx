@@ -21,7 +21,7 @@ Welcome to the **Cosmo PD-101** -- a phase distortion synthesizer inspired by th
 
 ### Open the Web App
 
-Navigate to `cosmo-pd.app` in your browser. No installation required.
+Navigate to [cosmo.purraudio.dev](https://cosmo.purraudio.dev) in your browser. No installation required.
 
 ### Play a Note
 
@@ -39,7 +39,23 @@ Start with the preset browser to explore factory sounds before diving into synth
 
 ## The Interface at a Glance
 
-The synth UI is organized into sections:
+Use the **Simple / Advanced** switch at the top of the synth. New sessions start in **Simple**; your workspace choice is remembered. Both workspaces edit the same sound, so switching keeps your current patch.
+
+### Simple: play and shape a sound
+
+Four **Macros** stay available beside three sections. Select a collapsed section to expand it:
+
+| Section | What to do |
+|---------|------------|
+| **Sound** | Choose algorithms for each line, adjust DCA (level), DCW (waveshape), octave and blend, then set line routing, ring/noise modulation, detune, mono and portamento. Blend appears when algorithm B is enabled. |
+| **Envelope** | Select line 1 or 2. Choose presets for DCO (pitch), DCW (waveshape), and DCA (amplitude), or click an envelope graph to open its editor. |
+| **Effects** | Add effects to the six slots and open an effect to edit its settings. |
+
+The line 1 octave control transposes both lines. The line 2 octave control sets an offset relative to that base octave.
+
+### Advanced: edit the full patch
+
+Switch to **Advanced** for the full line editors, modulation matrix, and global tempo/voice allocation controls. The synth UI is organized into sections:
 
 | Section | What It Controls |
 |---------|-----------------|
@@ -62,7 +78,8 @@ An on-screen keyboard is available when no physical MIDI controller is connected
 
 - **Click or drag** across keys to play.
 - **Octave shift** buttons move the range up/down.
-- **Velocity** is determined by how fast you click (click speed = velocity).
+- In **Velocity** input mode, press near the top of a key for a stronger note and near the bottom for a softer note.
+- In **Aftertouch** input mode, drag upward after pressing to add pressure. Choose the input mode in keyboard settings.
 - Works in both the web app and the plugin UI.
 
 ## Keyboard Shortcuts

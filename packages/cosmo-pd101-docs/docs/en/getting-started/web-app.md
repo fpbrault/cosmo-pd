@@ -12,7 +12,7 @@ The Cosmo PD-101 runs in the browser as a **Web Audio AudioWorklet** module comp
 Navigate to `https://cosmo.purraudio.dev` or run locally:
 
 ```bash
-cd packages/cosmo-pd101-plugin
+# From the repository root
 bun run dev
 ```
 
@@ -55,9 +55,13 @@ Safari has limited Web MIDI API support. Chrome or Edge are recommended for the 
 
 ## Synth Panel Layout
 
+Start in **Simple** for macros and the compact Sound, Envelope, and Effects sections. Use the **Simple / Advanced** switch to open the full editor without changing the patch. See [Quick Start](/getting-started/) for a walkthrough.
+
+In **Advanced**:
+
 - **Phase Lines** -- Select algorithms, set pitch/detune, control blend for each line.
 - **Step Envelope Editor** -- Visually edit three 8-step envelopes per line.
-- **Modulation Matrix** -- 7x195 grid to route modulation sources.
+- **Modulation Matrix** -- Pages with selectable source rows and destination columns; search the pickers and adjust the amount at each intersection.
 - **FX Chain** -- Six serial effect slots.
 
 ## Saving and Loading Patches

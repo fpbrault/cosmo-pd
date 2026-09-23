@@ -35,6 +35,14 @@ Ring Mod works but its behaviour may change slightly in future updates.
 16. **Wavefolder** — Folds the waveform back on itself to generate rich harmonic overtones, from subtle warmth to aggressive buzz. Parameters: Drive (0-100%), Folds (0-100%), Mix
 17. **LoFi** — Combines signal degradation, wow & flutter emulation, and tone shaping for vintage vinyl or cassette character. Parameters: Degrade, Wow Depth/Rate, Flutter Depth/Rate, Tone, Mix
 
+## Reusable Effect Presets
+
+Open an effect’s editor to choose a built-in preset or save the current module settings as a named user preset. User presets are available for other slots using the same effect type; you can also delete your own module presets.
+
+An effect preset changes that module’s settings. Save a full synth preset when you want to preserve the complete sound and FX chain.
+
+In **Simple**, expand **Effects** and open the slot’s editor. The same effect controls are available in **Advanced**.
+
 ## FX Chain Tips
 
 :::tip

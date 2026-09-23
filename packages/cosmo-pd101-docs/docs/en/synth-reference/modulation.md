@@ -7,6 +7,15 @@ description: Routing modulation sources to destinations.
 
 Routes modulation sources to parameters across the entire synth with adjustable depth.
 
+## Using the Matrix
+
+In **Advanced**, open the modulation matrix. It has three pages, each with eight source rows and eight destination columns.
+
+1. Select a source row header and choose a source; use search to narrow the list.
+2. Select a destination column header and browse the parameter groups or search by name.
+3. Adjust the amount in the cell where that row and column meet. Positive and negative amounts give opposite modulation directions.
+4. Use another page when you need more room to organize your routes.
+
 ## Sources
 
 | Source | Description |

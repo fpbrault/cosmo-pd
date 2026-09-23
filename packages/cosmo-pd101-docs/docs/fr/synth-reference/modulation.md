@@ -7,6 +7,15 @@ description: Routage des sources de modulation vers les destinations.
 
 Route les sources de modulation vers les paramètres de tout le synthétiseur avec une profondeur ajustable.
 
+## Utiliser la matrice
+
+En mode **Advanced**, ouvrez la matrice de modulation. Elle comporte trois pages, chacune avec huit lignes de sources et huit colonnes de destinations.
+
+1. Sélectionnez l’en-tête d’une ligne et choisissez une source ; utilisez la recherche pour réduire la liste.
+2. Sélectionnez l’en-tête d’une colonne et parcourez les groupes de paramètres ou recherchez un nom.
+3. Ajustez la quantité dans la cellule à l’intersection. Les valeurs positives et négatives donnent des directions de modulation opposées.
+4. Utilisez une autre page pour organiser davantage de routages.
+
 ## Sources
 
 | Source | Description |

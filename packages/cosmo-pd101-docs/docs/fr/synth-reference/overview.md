@@ -21,7 +21,7 @@ Sources de modulation (LFO 1, LFO 2, Random S&H, Env Mod ADSR, Vélocité, Molet
 Matrice de modulation (11 sources -> 195+ destinations, chacune avec profondeur)
     |
     v
-Voix (polyphonie x8)
+Voix (limite réglable : 1–16 ; défaut 8)
   Ligne 1 (Env DCO -> Algorithme + Env DCW -> Onde de base -> Env DCA)
   Ligne 2 (même structure)
     |

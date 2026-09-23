@@ -7,22 +7,25 @@ description: Polyphonie, portamento, pitch bend, vélocité et autres réglages 
 
 ## Voix
 
-- **Poly 8** -- Jusqu'à 8 voix simultanément
-- **Mono** -- Une note à la fois
+- **Poly** -- Jouez plusieurs notes, dans la limite du nombre de voix choisi.
+- **Mono** -- Jouez une note à la fois.
 
-### Volume
+En mode **Advanced**, ouvrez **Global** pour régler l’allocation de **1 à 16 voix** (défaut **8**). Cette préférence globale est mémorisée séparément du mode Poly/Mono du patch. Une limite plus basse peut réduire la charge de calcul.
+
+## Tempo
+
+Le panneau **Global** propose aussi un tempo manuel de **20 à 300 BPM**. Lorsque le transport de l’hôte est disponible, le tempo suit l’hôte et le champ manuel est désactivé.
+
+## Volume
 
 Sortie master 0-100%, appliqué après la chaîne FX, avant le limiteur soft clip.
 
 ## Portamento (Glissé)
 
-| Paramètre | Plage | Défaut |
-|-----------|-------|--------|
-| Mode | Taux / Temps | Temps |
-| Taux | 0-99 | 85 |
-| Temps | 0.01-1.00s | 0.10s |
+Activez le portamento pour glisser entre les notes. Dans **Simple → Sound**, utilisez la commande On/Off du portamento et ouvrez **Time** pour choisir le mode :
 
-Mode Taux = glissé de hauteur exponentiel. Mode Temps = glissé de durée fixe.
+- **Time** règle la durée du glissé de **0 à 10 secondes**.
+- **Rate** ajuste le taux de glissé de **0,01× à 100×**.
 
 ## Pitch Bend
 

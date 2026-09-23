@@ -21,7 +21,7 @@ Bienvenue sur le **Cosmo PD-101** -- un synthétiseur à distorsion de phase ins
 
 ### Ouvrez l'application Web
 
-Naviguez vers `cosmo-pd.app` dans votre navigateur. Aucune installation requise.
+Naviguez vers [cosmo.purraudio.dev](https://cosmo.purraudio.dev) dans votre navigateur. Aucune installation requise.
 
 ### Jouez une note
 
@@ -39,7 +39,23 @@ Commencez par explorer les presets d'usine avant de plonger dans la synthèse.
 
 ## L'interface en un coup d'œil
 
-L'interface du synthétiseur est organisée en sections :
+Utilisez le sélecteur **Simple / Advanced** en haut du synthétiseur. Les nouvelles sessions s’ouvrent en mode **Simple** ; votre choix est mémorisé. Les deux modes modifient le même son : changer de mode conserve le patch actuel.
+
+### Simple : jouer et façonner un son
+
+Quatre **Macros** restent accessibles à côté de trois sections. Sélectionnez une section réduite pour la développer :
+
+| Section | Utilisation |
+|---------|-------------|
+| **Sound** | Choisissez les algorithmes de chaque ligne, ajustez DCA (niveau), DCW (forme d’onde), octave et mélange, puis le routage, la modulation ring/noise, le désaccord, le mode mono et le portamento. Le mélange apparaît lorsque l’algorithme B est activé. |
+| **Envelope** | Sélectionnez la ligne 1 ou 2. Choisissez des presets pour DCO (hauteur), DCW (forme d’onde) et DCA (amplitude), ou cliquez sur un graphique pour ouvrir son éditeur. |
+| **Effects** | Ajoutez des effets aux six emplacements et ouvrez un effet pour modifier ses réglages. |
+
+La commande d’octave de la ligne 1 transpose les deux lignes. Celle de la ligne 2 définit un décalage par rapport à cette octave de base.
+
+### Advanced : modifier le patch complet
+
+Passez en mode **Advanced** pour accéder aux éditeurs complets, à la matrice de modulation et aux réglages globaux de tempo et d’allocation des voix. L’interface est organisée en sections :
 
 | Section | Ce qu'elle contrôle |
 |---------|-------------------|
@@ -62,7 +78,8 @@ Un clavier à l'écran est disponible lorsqu'aucun contrôleur MIDI physique n'e
 
 - **Cliquez ou glissez** sur les touches pour jouer.
 - Les boutons de **changement d'octave** déplacent la plage vers le haut ou le bas.
-- La **vélocité** est déterminée par la vitesse du clic (la vitesse du clic = vélocité).
+- En mode **Velocity**, appuyez près du haut d’une touche pour une note plus forte, ou près du bas pour une note plus douce.
+- En mode **Aftertouch**, glissez vers le haut après avoir appuyé pour ajouter de la pression. Choisissez le mode dans les réglages du clavier.
 - Fonctionne à la fois dans l'application web et dans l'interface du plugin.
 
 ## Raccourcis clavier

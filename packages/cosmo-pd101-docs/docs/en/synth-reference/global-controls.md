@@ -7,22 +7,25 @@ description: Polyphony, portamento, pitch bend, velocity, and other global setti
 
 ## Voice
 
-- **Poly 8** -- Up to 8 voices simultaneously
-- **Mono** -- One note at a time
+- **Poly** -- Play multiple notes, up to the selected voice limit.
+- **Mono** -- Play one note at a time.
 
-### Volume
+In **Advanced**, open **Global** to set the voice allocation limit from **1 to 16** (default **8**). This is a remembered global preference, separate from the patch’s Poly/Mono mode. Lower limits can reduce processing load.
+
+## Tempo
+
+The **Global** panel also provides manual tempo from **20 to 300 BPM**. When host transport is available, tempo follows the host and the manual field is disabled.
+
+## Volume
 
 Master output 0-100%, applied after FX chain, before soft clip limiter.
 
 ## Portamento (Glide)
 
-| Parameter | Range | Default |
-|-----------|-------|---------|
-| Mode | Rate / Time | Time |
-| Rate | 0-99 | 85 |
-| Time | 0.01-1.00s | 0.10s |
+Enable portamento to glide between notes. In **Simple → Sound**, use the portamento On/Off control and open **Time** to choose the mode:
 
-Rate mode = exponential pitch glide. Time mode = fixed duration slide.
+- **Time** sets the glide duration from **0 to 10 seconds**.
+- **Rate** adjusts the glide rate from **0.01× to 100×**.
 
 ## Pitch Bend
 

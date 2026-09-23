@@ -12,7 +12,7 @@ Le Cosmo PD-101 fonctionne dans le navigateur comme un module **AudioWorklet Web
 Naviguez vers `https://cosmo.purraudio.dev` ou exécutez localement :
 
 ```bash
-cd packages/cosmo-pd101-plugin
+# Depuis la racine du dépôt
 bun run dev
 ```
 
@@ -55,9 +55,13 @@ Safari prend en charge l'API Web MIDI de manière limitée. Chrome ou Edge sont 
 
 ## Disposition des panneaux du synthétiseur
 
+Commencez en mode **Simple** pour les macros et les sections compactes Sound, Envelope et Effects. Le sélecteur **Simple / Advanced** ouvre l’éditeur complet sans changer le patch. Consultez le [Démarrage rapide](/fr/getting-started/).
+
+En mode **Advanced** :
+
 - **Lignes de phase** -- Sélectionnez les algorithmes, réglez la hauteur/désaccord, contrôlez le mélange pour chaque ligne.
 - **Éditeur d'enveloppes à paliers** -- Modifiez visuellement trois enveloppes de 8 étapes par ligne.
-- **Matrice de modulation** -- Grille 7x195 pour router les sources de modulation.
+- **Matrice de modulation** -- Pages avec des sources en lignes et des destinations en colonnes ; recherchez-les dans les sélecteurs et ajustez la quantité à chaque intersection.
 - **Chaîne FX** -- Six emplacements d'effets en série.
 
 ## Sauvegarde et chargement des patches
