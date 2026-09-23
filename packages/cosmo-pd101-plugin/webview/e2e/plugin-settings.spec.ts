@@ -11,10 +11,14 @@ test.describe("Synth settings", () => {
 		page,
 	}) => {
 		await page.getByRole("button", { name: "Simple" }).click();
-		await page.getByRole("button", { name: "Open synth settings" }).click();
+		const settingsButton = page.getByRole("button", {
+			name: "Open synth settings",
+		});
+		await settingsButton.click();
 
 		const settings = page.getByRole("dialog", { name: "Synth settings" });
 		await expect(settings).toBeVisible();
+		await expect(settingsButton).toBeFocused();
 		await expect(
 			settings.getByText("Performance", { exact: true }),
 		).toBeVisible();
