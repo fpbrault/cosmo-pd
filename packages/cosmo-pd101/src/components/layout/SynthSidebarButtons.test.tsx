@@ -23,7 +23,9 @@ let fxSlotsValue = Array.from({ length: 6 }, () => ({
 
 vi.mock("@/components/modals/ScopePopover", () => ({
 	ScopePopover: ({ open }: { open: boolean }) =>
-		open ? <div role="dialog" aria-label="Scope visualization settings" /> : null,
+		open ? (
+			<div role="dialog" aria-label="Scope visualization settings" />
+		) : null,
 }));
 
 vi.mock("@/components/primitives/CzTabButton", () => ({

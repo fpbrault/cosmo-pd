@@ -218,7 +218,11 @@ export default memo(function SynthSidebarButtons() {
 
 		if (button.id === "global") {
 			return (
-				<div key={button.id} ref={scopeTriggerRef} className="flex justify-center">
+				<div
+					key={button.id}
+					ref={scopeTriggerRef}
+					className="flex justify-center"
+				>
 					{control}
 					<ScopePopover
 						open={globalOpen}
