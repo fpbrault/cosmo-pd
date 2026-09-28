@@ -26,12 +26,8 @@ describe("GlobalVoicePanel", () => {
 	it("renders transport and voice allocation settings", () => {
 		render(<GlobalVoicePanel />);
 
-		expect(
-			screen.getByText("Transport", { selector: "legend" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByText("Voice Allocation", { selector: "legend" }),
-		).toBeInTheDocument();
+		expect(screen.getByText("Transport")).toBeInTheDocument();
+		expect(screen.getByText("Voice Allocation")).toBeInTheDocument();
 		expect(screen.getByRole("spinbutton")).toHaveValue(120);
 		expect(
 			screen.getByRole("combobox", { name: "Voice limit: 8" }),

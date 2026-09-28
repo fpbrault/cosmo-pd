@@ -21,6 +21,13 @@ let fxSlotsValue = Array.from({ length: 6 }, () => ({
 	params: { enabled: false },
 }));
 
+vi.mock("@/components/modals/ScopePopover", () => ({
+	ScopePopover: ({ open }: { open: boolean }) =>
+		open ? (
+			<div role="dialog" aria-label="Scope visualization settings" />
+		) : null,
+}));
+
 vi.mock("@/components/primitives/CzTabButton", () => ({
 	default: ({
 		topLabel,
@@ -112,10 +119,20 @@ describe("SynthSidebarButtons", () => {
 		}));
 	});
 
-	it("opens global settings when Global is clicked", () => {
+	it("opens scope settings when Scope is clicked", () => {
 		render(<SynthSidebarButtons />);
-		fireEvent.click(screen.getByRole("button", { name: "Global" }));
+		fireEvent.click(screen.getByRole("button", { name: "Scope" }));
 		expect(setGlobalPanelOpenMock).toHaveBeenCalledWith(true);
+	});
+
+	it("closes scope settings when Scope is clicked while open", () => {
+		mockedGlobalPanelOpen = true;
+		render(<SynthSidebarButtons />);
+		expect(
+			screen.getByRole("dialog", { name: "Scope visualization settings" }),
+		).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Scope" }));
+		expect(setGlobalPanelOpenMock).toHaveBeenCalledWith(false);
 	});
 
 	it("opens midi learn modal when MIDI Learn is clicked", () => {
