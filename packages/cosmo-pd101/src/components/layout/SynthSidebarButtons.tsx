@@ -1,5 +1,6 @@
-import { memo } from "react";
+import { memo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { ScopePopover } from "@/components/modals/ScopePopover";
 import CzTabButton, {
 	type CzTabButtonColor,
 	type CzTabButtonLedColor,
@@ -42,6 +43,7 @@ const FX_BUTTONS: SidebarButton[] = [
 
 export default memo(function SynthSidebarButtons() {
 	const { t } = useTranslation("synth");
+	const scopeTriggerRef = useRef<HTMLDivElement>(null);
 	const globalOpen = useSynthUiStore((s) => s.globalPanelOpen);
 	const setGlobalPanelOpen = useSynthUiStore((s) => s.setGlobalPanelOpen);
 	const midiLearnOpen = useSynthUiStore((s) => s.midiLearnOpen);
@@ -114,7 +116,7 @@ export default memo(function SynthSidebarButtons() {
 
 	const handleClick = (buttonId: string) => {
 		if (buttonId === "global") {
-			setGlobalPanelOpen(true);
+			setGlobalPanelOpen(!globalOpen);
 			return;
 		}
 		if (buttonId === "midiLearn") {
@@ -151,7 +153,7 @@ export default memo(function SynthSidebarButtons() {
 		const slotType = slot != null ? (fxSlots[slot]?.type ?? "empty") : null;
 		const topLabel =
 			button.id === "global"
-				? t("sidebar.global")
+				? t("panels.scope")
 				: button.id === "midiLearn"
 					? t("sidebar.midi")
 					: button.id === "modTarget"
@@ -183,7 +185,7 @@ export default memo(function SynthSidebarButtons() {
 				: undefined;
 		const tooltip =
 			button.id === "global"
-				? t("tooltips.sidebar.global")
+				? "Open scope visualization settings."
 				: button.id === "midiLearn"
 					? t("tooltips.sidebar.midiLearn")
 					: button.id === "modTarget"
@@ -197,7 +199,7 @@ export default memo(function SynthSidebarButtons() {
 											slot: button.id.slice(2),
 										}),
 								});
-		return (
+		const control = (
 			<CzTabButton
 				key={button.id}
 				color={customColor ? "black" : getButtonColor(button.id)}
@@ -213,6 +215,25 @@ export default memo(function SynthSidebarButtons() {
 				tooltip={tooltip}
 			/>
 		);
+
+		if (button.id === "global") {
+			return (
+				<div
+					key={button.id}
+					ref={scopeTriggerRef}
+					className="flex justify-center"
+				>
+					{control}
+					<ScopePopover
+						open={globalOpen}
+						triggerRef={scopeTriggerRef}
+						onClose={() => setGlobalPanelOpen(false)}
+					/>
+				</div>
+			);
+		}
+
+		return control;
 	};
 
 	return (

@@ -39,9 +39,16 @@ test.describe("Plugin shell visual smoke", () => {
 		});
 	});
 
-	test("shows automatic scope controls without a manual trigger", async ({
-		page,
-	}) => {
+	test("opens scope controls beside the Scope button", async ({ page }) => {
+		await expect(page.getByText("Cycles", { exact: true })).toHaveCount(0);
+		await page.getByRole("button", { name: "Scope", exact: true }).click();
+
+		const scopeSettings = page.getByRole("dialog", {
+			name: "Scope visualization settings",
+		});
+		await expect(scopeSettings).toBeVisible();
+		await expect(scopeSettings).not.toHaveAttribute("aria-modal", "true");
+		await expect(page.getByLabel("Audio visualization")).toBeVisible();
 		await expect(page.getByText("Cycles", { exact: true })).toBeVisible();
 		await expect(page.getByText("Zoom", { exact: true })).toBeVisible();
 		await expect(page.getByText("Trig", { exact: true })).toHaveCount(0);

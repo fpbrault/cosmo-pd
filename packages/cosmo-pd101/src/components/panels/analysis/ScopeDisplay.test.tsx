@@ -103,11 +103,11 @@ describe("ScopeMiniDisplay", () => {
 		expect(canvas.style.imageRendering).toBe("");
 	});
 
-	it("uses automatic waveform locking without a manual trigger control", () => {
+	it("keeps visualization controls out of the inline scope display", () => {
 		renderWithScope(<ScopeMiniDisplay />);
 
-		expect(screen.getByText("Cycles")).toBeInTheDocument();
-		expect(screen.getByText("Zoom")).toBeInTheDocument();
+		expect(screen.queryByText("Cycles")).not.toBeInTheDocument();
+		expect(screen.queryByText("Zoom")).not.toBeInTheDocument();
 		expect(screen.queryByText("Trig")).not.toBeInTheDocument();
 	});
 

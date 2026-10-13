@@ -1,4 +1,3 @@
-import { ScopeControls } from "./ScopeControls";
 import { ScopeVisualizationDisplay } from "./ScopeVisualizationDisplay";
 
 export function ScopeMiniDisplay() {
@@ -7,7 +6,6 @@ export function ScopeMiniDisplay() {
 			<div className="min-h-0 flex-1">
 				<ScopeVisualizationDisplay variant="mini" />
 			</div>
-			<ScopeControls />
 		</div>
 	);
 }
