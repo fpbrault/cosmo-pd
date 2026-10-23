@@ -27,14 +27,14 @@ serde_json = { workspace = true }
 cosmo-synth-engine = { path = "../cosmo-synth-engine", default-features = false, features = ["std"] }
 
 [dependencies.specta]
-version = "=2.0.0-rc.25"
+version = "=2.0.0-rc.27"
 optional = true
 features = ["derive", "serde_json"]
 
 [dependencies.specta-serde]
-version = "=0.0.12"
+version = "=0.0.14"
 optional = true
 
 [dependencies.specta-typescript]
-version = "=0.0.12"
+version = "=0.0.14"
 optional = true
