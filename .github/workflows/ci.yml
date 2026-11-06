@@ -108,7 +108,7 @@ jobs:
 
   browser-tests:
     name: Browser Tests (Vitest Browser Mode)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -195,7 +195,7 @@ jobs:
   plugin-webview-browser-tests:
     name: Plugin Webview Browser Tests (Vitest Browser Mode)
     needs: cosmo-pd101-lib
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -235,7 +235,7 @@ jobs:
   plugin-webview-e2e-tests:
     name: Plugin Webview E2E Tests
     needs: cosmo-pd101-lib
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -412,7 +412,7 @@ jobs:
   ui-perf-benchmarks:
     name: Web Display Benchmarks
     if: ${{ false }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
