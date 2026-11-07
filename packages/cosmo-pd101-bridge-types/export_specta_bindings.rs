@@ -76,9 +76,9 @@ type PluginIpcRequestFor<M extends PluginIpcMethod> =
 type PluginIpcResponseFor<M extends PluginIpcMethod> =
   Extract<PluginIpcResponse, { method: M }>;
 type PluginIpcPayload<M extends PluginIpcMethod> =
-  PluginIpcRequestFor<M> extends { payload: infer P } ? P : null;
+  PluginIpcRequestFor<M> extends { payload?: infer P } ? P : null;
 type PluginIpcResult<M extends PluginIpcMethod> =
-  PluginIpcResponseFor<M> extends { result: infer R } ? R : null;
+  PluginIpcResponseFor<M> extends { result?: infer R } ? R : null;
 
 type MissingPluginIpcResponses =
   Exclude<PluginIpcMethod, PluginIpcResponse["method"]>;

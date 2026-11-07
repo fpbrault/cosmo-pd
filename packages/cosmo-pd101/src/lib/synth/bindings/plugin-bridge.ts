@@ -36,7 +36,7 @@ export type BitcrusherParams = {
 	mix?: number | null,
 };
 
-export type BridgeJsonValue = "Null" | boolean | number | null | string | BridgeJsonValue[] | { [key in string]: BridgeJsonValue };
+export type BridgeJsonValue = null | boolean | number | null | string | BridgeJsonValue[] | { [key in string]: BridgeJsonValue };
 
 /**  Chorus parameters */
 export type ChorusParams = {
@@ -406,14 +406,14 @@ export type PluginIpcRequest = { method: "noteOn"; payload: {
 	moduleType: string,
 } } | { method: "saveFxModulePreset"; payload: SaveFxModulePresetPayload } | { method: "deleteFxModulePreset"; payload: {
 	id: string,
-} } | { method: "getEditorState" } | { method: "setEditorState"; payload: EditorState } | { method: "getMidiLearnState" } | { method: "setMidiLearnMode"; payload: boolean } | { method: "setPendingMidiLearnParam"; payload: string | null } | { method: "addMidiBinding"; payload: {
+} } | { method: "getEditorState" } | { method: "setEditorState"; payload: EditorState } | { method: "getMidiLearnState" } | { method: "setMidiLearnMode"; payload: boolean } | { method: "setPendingMidiLearnParam"; payload?: string | null } | { method: "addMidiBinding"; payload: {
 	paramKey: string,
 	channel: number,
 	cc: number,
 } } | { method: "removeMidiBinding"; payload: MidiLearnBinding } | { method: "clearMidiLearnBindings" } | { method: "getVoiceLimit" } | { method: "setVoiceLimit"; payload: number };
 
 /**  Typed result for each IPC request. The transport serializes only `result`. */
-export type PluginIpcResponse = { method: "noteOn" } | { method: "noteOff" } | { method: "sustain" } | { method: "pitchBend" } | { method: "modWheel" } | { method: "aftertouch" } | { method: "polyAftertouch" } | { method: "macroValue" } | { method: "panic" } | { method: "getParams"; result: SynthParams } | { method: "setParams" } | { method: "getParamsVersion"; result: number } | { method: "getPendingParamChanges"; result: UiParamChange[] } | { method: "getRuntimeModSources"; result: RuntimeModSources } | { method: "getRuntimeVoiceStates"; result: RuntimeVoiceDebugState[] } | { method: "getTransportInfo"; result: TransportInfoResponse } | { method: "getScopeData"; result: ScopeDataResponse } | { method: "clientLog" } | { method: "getPresetSession"; result: PresetSession } | { method: "setPresetSession" } | { method: "getPresetName"; result: string } | { method: "setPresetName" } | { method: "loadPreset"; result: LoadPresetResponse } | { method: "getPresetLibrary"; result: PresetLibraryResponse } | { method: "retryPresetLibrary"; result: PresetLibraryActionResponse } | { method: "repairPresetLibrary"; result: PresetLibraryActionResponse } | { method: "rebuildPresetLibrary"; result: PresetLibraryActionResponse } | { method: "addPreset"; result: AddPresetResponse } | { method: "savePreset"; result: SavePresetResponse } | { method: "deletePreset" } | { method: "renamePreset" } | { method: "toggleStarred" } | { method: "setPresetAuthor" } | { method: "setPresetDescription" } | { method: "setPresetTags" } | { method: "importPresetBank" } | { method: "exportPreset"; result: ExportPresetResponse } | { method: "listFxModulePresets"; result: FxModulePresetEntry[] } | { method: "saveFxModulePreset"; result: FxModulePresetEntry } | { method: "deleteFxModulePreset" } | { method: "getEditorState"; result: EditorState | null } | { method: "setEditorState" } | { method: "getMidiLearnState"; result: MidiLearnState } | { method: "setMidiLearnMode" } | { method: "setPendingMidiLearnParam" } | { method: "addMidiBinding" } | { method: "removeMidiBinding" } | { method: "clearMidiLearnBindings" } | { method: "getVoiceLimit"; result: number } | { method: "setVoiceLimit" };
+export type PluginIpcResponse = { method: "noteOn" } | { method: "noteOff" } | { method: "sustain" } | { method: "pitchBend" } | { method: "modWheel" } | { method: "aftertouch" } | { method: "polyAftertouch" } | { method: "macroValue" } | { method: "panic" } | { method: "getParams"; result: SynthParams } | { method: "setParams" } | { method: "getParamsVersion"; result: number } | { method: "getPendingParamChanges"; result: UiParamChange[] } | { method: "getRuntimeModSources"; result: RuntimeModSources } | { method: "getRuntimeVoiceStates"; result: RuntimeVoiceDebugState[] } | { method: "getTransportInfo"; result: TransportInfoResponse } | { method: "getScopeData"; result: ScopeDataResponse } | { method: "clientLog" } | { method: "getPresetSession"; result: PresetSession } | { method: "setPresetSession" } | { method: "getPresetName"; result: string } | { method: "setPresetName" } | { method: "loadPreset"; result: LoadPresetResponse } | { method: "getPresetLibrary"; result: PresetLibraryResponse } | { method: "retryPresetLibrary"; result: PresetLibraryActionResponse } | { method: "repairPresetLibrary"; result: PresetLibraryActionResponse } | { method: "rebuildPresetLibrary"; result: PresetLibraryActionResponse } | { method: "addPreset"; result: AddPresetResponse } | { method: "savePreset"; result: SavePresetResponse } | { method: "deletePreset" } | { method: "renamePreset" } | { method: "toggleStarred" } | { method: "setPresetAuthor" } | { method: "setPresetDescription" } | { method: "setPresetTags" } | { method: "importPresetBank" } | { method: "exportPreset"; result: ExportPresetResponse } | { method: "listFxModulePresets"; result: FxModulePresetEntry[] } | { method: "saveFxModulePreset"; result: FxModulePresetEntry } | { method: "deleteFxModulePreset" } | { method: "getEditorState"; result?: EditorState | null } | { method: "setEditorState" } | { method: "getMidiLearnState"; result: MidiLearnState } | { method: "setMidiLearnMode" } | { method: "setPendingMidiLearnParam" } | { method: "addMidiBinding" } | { method: "removeMidiBinding" } | { method: "clearMidiLearnBindings" } | { method: "getVoiceLimit"; result: number } | { method: "setVoiceLimit" };
 
 /**  Polyphony mode */
 export type PolyMode = "poly8" | "mono";
@@ -730,9 +730,9 @@ type PluginIpcRequestFor<M extends PluginIpcMethod> =
 type PluginIpcResponseFor<M extends PluginIpcMethod> =
   Extract<PluginIpcResponse, { method: M }>;
 type PluginIpcPayload<M extends PluginIpcMethod> =
-  PluginIpcRequestFor<M> extends { payload: infer P } ? P : null;
+  PluginIpcRequestFor<M> extends { payload?: infer P } ? P : null;
 type PluginIpcResult<M extends PluginIpcMethod> =
-  PluginIpcResponseFor<M> extends { result: infer R } ? R : null;
+  PluginIpcResponseFor<M> extends { result?: infer R } ? R : null;
 
 type MissingPluginIpcResponses =
   Exclude<PluginIpcMethod, PluginIpcResponse["method"]>;
