@@ -28,7 +28,7 @@ export default function SynthInfoBar({
 	const keyboardTooltip = keyboardVisible
 		? t("tooltips.keyboard.hide")
 		: t("tooltips.keyboard.show");
-	const settingsTooltip = t("tooltips.keyboard.settings");
+	const settingsTooltip = "Open synth settings";
 	const keyboardHoverHandlers = useHoverInfoHandlers(keyboardTooltip);
 	const settingsHoverHandlers = useHoverInfoHandlers(settingsTooltip);
 
