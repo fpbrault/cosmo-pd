@@ -98,3 +98,33 @@ pub fn process_block(
         processor.process(&mut output[rendered..]);
     }
 }
+
+#[cfg(all(test, debug_assertions, feature = "std", not(target_arch = "wasm32")))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn timed_midi_block_does_not_allocate() {
+        let mut processor = CosmoProcessor::new(48_000.0);
+        let mut output = [0.0; 64];
+        let events = [
+            CosmoTimedInputEvent {
+                sample_offset: 16,
+                event: CosmoInputEvent::NoteOn {
+                    note: 60,
+                    velocity: 1.0,
+                },
+            },
+            CosmoTimedInputEvent {
+                sample_offset: 48,
+                event: CosmoInputEvent::NoteOff { note: 60 },
+            },
+        ];
+
+        assert_no_alloc::assert_no_alloc(|| {
+            processor.process_block(&mut output, &events, CosmoTransportState::default());
+        });
+        assert!(output[..16].iter().all(|&sample| sample == 0.0));
+        assert!(output[16..48].iter().any(|&sample| sample.abs() > 1.0e-4));
+    }
+}
