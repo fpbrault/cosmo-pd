@@ -7,6 +7,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(unsafe_code)]
 
+#[cfg(all(test, debug_assertions, feature = "std", not(target_arch = "wasm32")))]
+#[global_allocator]
+static TEST_ALLOCATOR: assert_no_alloc::AllocDisabler = assert_no_alloc::AllocDisabler;
+
 pub mod default_envelopes;
 pub mod dsp_utils;
 pub mod envelope;

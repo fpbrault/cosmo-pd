@@ -1,5 +1,9 @@
 #![recursion_limit = "256"]
 
+#[cfg(all(test, debug_assertions))]
+#[global_allocator]
+static TEST_ALLOCATOR: assert_no_alloc::AllocDisabler = assert_no_alloc::AllocDisabler;
+
 pub mod audio_runtime;
 pub mod diagnostics;
 pub mod ffi;
